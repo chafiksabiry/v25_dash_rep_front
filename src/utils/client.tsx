@@ -52,7 +52,7 @@ const api = {
   profile: {
     get: () => apiClient.get('/profile'),
     getById: (id: string) => apiClient.get(`/profile/user/${id}`),
-    update: (data: any) => apiClient.put('/profile', data),
+    update: (profileId: string, data: any) => apiClient.put(`/profile/${profileId}`, data),
   },
   
   // Auth endpoints 

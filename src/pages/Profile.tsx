@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Star, Award, Clock, Brain, Trophy, Target } from 'lucide-react';
 import { REPSScore } from '../components/REPSScore';
+import { ProfileEditForm } from '../components/ProfileEditForm';
 import api from '../utils/client';
 
 // Define a type for your profile data
@@ -23,6 +24,7 @@ interface ProfileData {
     startDate: string;
     endDate?: string;
     responsibilities?: string[];
+    achievements?: string[];
   }>;
   skills?: string[];
   languages?: Array<{
@@ -34,12 +36,26 @@ interface ProfileData {
   completionStatus?: string;
   completionSteps?: Record<string, boolean>;
   lastUpdated: string;
+  personalInfo?: {
+    name: string;
+    location?: string;
+    email?: string;
+    phone?: string;
+  };
+  professionalSummary?: {
+    yearsOfExperience: string;
+    currentRole?: string;
+    industries?: string[];
+    keyExpertise?: string[];
+    notableCompanies?: string[];
+  };
 }
 
 export function Profile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -59,13 +75,61 @@ export function Profile() {
         // Try directly calling the endpoint with user ID for testing
         try {
           const response = await api.profile.getById('67a22959828197bb180caa59');
-          setProfile(response.data);
+          // Process the response data to ensure all nested objects are handled properly
+          const profileData = response.data;
+          
+          console.log('Raw profile data from API:', JSON.stringify(profileData, null, 2));
+          
+          // Ensure experienceDetails objects have string values
+          if (profileData.experienceDetails) {
+            console.log('Experience details before processing:', JSON.stringify(profileData.experienceDetails, null, 2));
+            
+            profileData.experienceDetails = profileData.experienceDetails.map((exp: any) => {
+              console.log('Processing experience item:', exp);
+              return {
+                ...exp,
+                responsibilities: Array.isArray(exp.responsibilities) 
+                  ? exp.responsibilities.map((r: any) => {
+                      console.log('Responsibility type:', typeof r, r);
+                      return typeof r === 'string' ? r : JSON.stringify(r);
+                    })
+                  : [],
+                achievements: Array.isArray(exp.achievements)
+                  ? exp.achievements.map((a: any) => {
+                      console.log('Achievement type:', typeof a, a);
+                      return typeof a === 'string' ? a : JSON.stringify(a);
+                    })
+                  : []
+              };
+            });
+            
+            console.log('Experience details after processing:', JSON.stringify(profileData.experienceDetails, null, 2));
+          }
+          
+          setProfile(profileData);
           setLoading(false);
         } catch (idError) {
           console.error('Error fetching by ID, trying default endpoint:', idError);
           // If that fails, fall back to regular profile endpoint
           const response = await api.profile.get();
-          setProfile(response.data);
+          
+          // Process the response data to ensure all nested objects are handled properly
+          const profileData = response.data;
+          
+          // Ensure experienceDetails objects have string values
+          if (profileData.experienceDetails) {
+            profileData.experienceDetails = profileData.experienceDetails.map((exp: any) => ({
+              ...exp,
+              responsibilities: Array.isArray(exp.responsibilities) 
+                ? exp.responsibilities.map((r: any) => typeof r === 'string' ? r : JSON.stringify(r))
+                : [],
+              achievements: Array.isArray(exp.achievements)
+                ? exp.achievements.map((a: any) => typeof a === 'string' ? a : JSON.stringify(a))
+                : []
+            }));
+          }
+          
+          setProfile(profileData);
           setLoading(false);
         }
       } catch (err: any) {
@@ -113,6 +177,57 @@ export function Profile() {
     },
   ];
 
+  // Function to handle saving the edited profile
+  const handleSaveProfile = (updatedProfile: ProfileData) => {
+    console.log('Before processing - updatedProfile:', JSON.stringify(updatedProfile, null, 2));
+    
+    // Split name into firstName and lastName
+    if (updatedProfile.personalInfo && updatedProfile.personalInfo.name) {
+      const nameParts = updatedProfile.personalInfo.name.split(' ');
+      updatedProfile.firstName = nameParts[0] || '';
+      updatedProfile.lastName = nameParts.slice(1).join(' ') || '';
+    }
+    
+    // Convert yearsOfExperience from string to number
+    if (updatedProfile.professionalSummary && updatedProfile.professionalSummary.yearsOfExperience) {
+      updatedProfile.experience = parseInt(updatedProfile.professionalSummary.yearsOfExperience) || 0;
+    }
+    
+    // Map other fields correctly
+    if (updatedProfile.personalInfo) {
+      updatedProfile.location = updatedProfile.personalInfo.location || '';
+      updatedProfile.email = updatedProfile.personalInfo.email || updatedProfile.email;
+      updatedProfile.phone = updatedProfile.personalInfo.phone || '';
+    }
+    
+    if (updatedProfile.professionalSummary) {
+      updatedProfile.role = updatedProfile.professionalSummary.currentRole;
+      updatedProfile.industries = updatedProfile.professionalSummary.industries;
+      updatedProfile.keyExpertise = updatedProfile.professionalSummary.keyExpertise;
+      updatedProfile.notableCompanies = updatedProfile.professionalSummary.notableCompanies;
+    }
+    
+    // Ensure all object properties are properly handled
+    if (updatedProfile.experienceDetails) {
+      updatedProfile.experienceDetails = updatedProfile.experienceDetails.map(exp => {
+        return {
+          ...exp,
+          responsibilities: Array.isArray(exp.responsibilities) 
+            ? exp.responsibilities.map(r => typeof r === 'string' ? r : JSON.stringify(r))
+            : [],
+          achievements: Array.isArray(exp.achievements)
+            ? exp.achievements.map(a => typeof a === 'string' ? a : JSON.stringify(a))
+            : []
+        };
+      });
+    }
+    
+    console.log('After processing - updatedProfile:', JSON.stringify(updatedProfile, null, 2));
+    
+    setProfile(updatedProfile);
+    setIsEditing(false);
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-screen">Loading profile...</div>;
   }
@@ -123,6 +238,19 @@ export function Profile() {
 
   if (!profile) {
     return <div className="text-center mt-8">No profile data available</div>;
+  }
+
+  // If in editing mode, show the edit form
+  if (isEditing && profile) {
+    return (
+      <div className="max-w-4xl mx-auto p-4">
+        <ProfileEditForm 
+          profile={profile} 
+          onCancel={() => setIsEditing(false)} 
+          onSave={handleSaveProfile} 
+        />
+      </div>
+    );
   }
 
   return (
@@ -144,7 +272,10 @@ export function Profile() {
                 <p className="text-gray-500">{profile.role || 'HARX Representative'}</p>
               </div>
               <div>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
                   Edit Profile
                 </button>
               </div>
@@ -314,22 +445,54 @@ export function Profile() {
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Work Experience</h2>
           <div className="space-y-6">
-            {profile.experienceDetails.map((exp, index) => (
-              <div key={index} className="border-l-2 border-blue-200 pl-4 py-2">
-                <div className="flex justify-between">
-                  <h3 className="font-medium text-gray-900">{exp.title}</h3>
-                  <span className="text-sm text-gray-500">
-                    {exp.startDate} - {exp.endDate || 'Present'}
-                  </span>
+            {profile.experienceDetails.map((exp, index) => {
+              // Ensure all properties are properly stringified
+              const experienceItem = {
+                ...exp,
+                title: typeof exp.title === 'string' ? exp.title : JSON.stringify(exp.title),
+                company: typeof exp.company === 'string' ? exp.company : JSON.stringify(exp.company),
+                startDate: typeof exp.startDate === 'string' ? exp.startDate : JSON.stringify(exp.startDate),
+                endDate: exp.endDate && typeof exp.endDate === 'string' ? exp.endDate : exp.endDate ? JSON.stringify(exp.endDate) : 'Present',
+                responsibilities: Array.isArray(exp.responsibilities) 
+                  ? exp.responsibilities.map(r => typeof r === 'string' ? r : JSON.stringify(r))
+                  : [],
+                achievements: Array.isArray(exp.achievements)
+                  ? exp.achievements.map(a => typeof a === 'string' ? a : JSON.stringify(a))
+                  : []
+              };
+              
+              return (
+                <div key={index} className="border-l-2 border-blue-200 pl-4 py-2">
+                  <div className="flex justify-between">
+                    <h3 className="font-medium text-gray-900">{experienceItem.title}</h3>
+                    <span className="text-sm text-gray-500">
+                      {experienceItem.startDate} - {experienceItem.endDate || 'Present'}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 mt-1">{experienceItem.company}</p>
+                  {experienceItem.responsibilities && experienceItem.responsibilities.length > 0 && (
+                    <>
+                      <h4 className="mt-2 text-sm font-medium text-gray-700">Responsibilities:</h4>
+                      <ul className="mt-1 space-y-1 list-disc list-inside text-gray-600 text-sm">
+                        {experienceItem.responsibilities.map((resp, idx) => (
+                          <li key={idx}>{resp}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                  {experienceItem.achievements && experienceItem.achievements.length > 0 && (
+                    <>
+                      <h4 className="mt-2 text-sm font-medium text-gray-700">Achievements:</h4>
+                      <ul className="mt-1 space-y-1 list-disc list-inside text-gray-600 text-sm">
+                        {experienceItem.achievements.map((achievement, idx) => (
+                          <li key={idx}>{achievement}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
                 </div>
-                <p className="text-gray-600 mt-1">{exp.company}</p>
-                <ul className="mt-2 space-y-1 list-disc list-inside text-gray-600 text-sm">
-                  {exp.responsibilities && exp.responsibilities.map((resp, idx) => (
-                    <li key={idx}>{resp}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
