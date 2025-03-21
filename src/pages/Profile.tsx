@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Star, Award, Clock, Brain, Trophy, Target } from 'lucide-react';
 import { REPSScore } from '../components/REPSScore';
-import api from '../utils/client'; // Import our API client
+import api from '../utils/client';
 
 // Define a type for your profile data
 interface ProfileData {
@@ -45,7 +45,6 @@ export function Profile() {
     const fetchProfile = async () => {
       try {
         // For testing, add a token to localStorage if not present
-        // In production, this should be handled by your auth system
         if (!localStorage.getItem('token')) {
           console.warn('No token found, setting test token for development');
           localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2EyMjk1OTgyODE5N2JiMTgwY2FhNTkiLCJpYXQiOjE3NDI0NjQ2ODl9.TW-2zbqDBXsOrf8uujX3FKktc3KmrTa43zPHT9ty_i8');
@@ -72,7 +71,6 @@ export function Profile() {
       } catch (err: any) {
         console.error('Error fetching profile:', err);
         
-        // Better error handling
         if (err.response) {
           setError(`Server error: ${err.response.status} - ${err.response.statusText}`);
         } else if (err.request) {
@@ -88,15 +86,15 @@ export function Profile() {
     fetchProfile();
   }, []);
 
-  // Calculate REPS scores from assessmentKPIs if available
+  // Default REPS scores - no longer derived from assessmentKPIs
   const repsScores = {
-    reliability: profile?.assessmentKPIs?.['Problem Solving'] ?? 85,
-    efficiency: profile?.assessmentKPIs?.['Communication'] ?? 80,
-    professionalism: profile?.assessmentKPIs?.['Customer Service'] ?? 90,
-    service: profile?.assessmentKPIs?.['Customer Service'] ?? 85,
+    reliability: 85,
+    efficiency: 80,
+    professionalism: 90,
+    service: 85,
   };
 
-  // Generic improvement suggestions (could be made dynamic based on lowest scores)
+  // Generic improvement suggestions
   const improvements = [
     {
       category: 'Response Time Optimization',
@@ -131,11 +129,12 @@ export function Profile() {
     <div className="max-w-4xl mx-auto space-y-6 p-4">
       <div className="bg-white rounded-xl p-6 shadow-sm">
         <div className="flex items-start space-x-6">
-          <img
-            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-            alt="Profile"
-            className="w-24 h-24 rounded-full"
-          />
+          {/* Generic profile avatar that doesn't imply gender */}
+          <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
+            <span className="text-3xl text-blue-600 font-semibold">
+              {profile.firstName && profile.firstName[0]}{profile.lastName && profile.lastName[0]}
+            </span>
+          </div>
           <div className="flex-1">
             <div className="flex justify-between items-start">
               <div>
@@ -273,7 +272,7 @@ export function Profile() {
                 </div>
                 <div className="flex items-center">
                   <span className="text-sm text-gray-600 mr-2">Assessment Score:</span>
-                  <span className="font-medium">{lang.assessmentScore}/10</span>
+                  <span className="font-medium">{lang.assessmentScore}/100</span>
                 </div>
               </div>
             ))
@@ -284,7 +283,7 @@ export function Profile() {
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Assessment KPIs</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Center Skills KPIs</h2>
         <div className="space-y-4">
           {profile.assessmentKPIs && Object.keys(profile.assessmentKPIs).length > 0 ? (
             Object.entries(profile.assessmentKPIs).map(([category, score]) => {
