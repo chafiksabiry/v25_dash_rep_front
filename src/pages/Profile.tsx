@@ -1,15 +1,102 @@
-import React from 'react';
-import { Mail, Phone, MapPin, Star, Award, Clock, Brain, Trophy, Target, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Phone, MapPin, Star, Award, Clock, Brain, Trophy, Target } from 'lucide-react';
 import { REPSScore } from '../components/REPSScore';
+import api from '../utils/client'; // Import our API client
+
+// Define a type for your profile data
+interface ProfileData {
+  _id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  role?: string;
+  experience: number;
+  industries?: string[];
+  keyExpertise?: string[];
+  notableCompanies?: string[];
+  experienceDetails?: Array<{
+    title: string;
+    company: string;
+    startDate: string;
+    endDate?: string;
+    responsibilities?: string[];
+  }>;
+  skills?: string[];
+  languages?: Array<{
+    language: string;
+    proficiency: string;
+    assessmentScore: number;
+  }>;
+  assessmentKPIs?: Record<string, number>;
+  completionStatus?: string;
+  completionSteps?: Record<string, boolean>;
+  lastUpdated: string;
+}
 
 export function Profile() {
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        // For testing, add a token to localStorage if not present
+        // In production, this should be handled by your auth system
+        if (!localStorage.getItem('token')) {
+          console.warn('No token found, setting test token for development');
+          localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2EyMjk1OTgyODE5N2JiMTgwY2FhNTkiLCJpYXQiOjE3NDI0NjQ2ODl9.TW-2zbqDBXsOrf8uujX3FKktc3KmrTa43zPHT9ty_i8');
+        }
+
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          throw new Error('Authentication token not found');
+        }
+
+        // Try directly calling the endpoint with user ID for testing
+        try {
+          const response = await api.profile.getById('67a22959828197bb180caa59');
+          setProfile(response.data);
+          setLoading(false);
+        } catch (idError) {
+          console.error('Error fetching by ID, trying default endpoint:', idError);
+          // If that fails, fall back to regular profile endpoint
+          const response = await api.profile.get();
+          setProfile(response.data);
+          setLoading(false);
+        }
+      } catch (err: any) {
+        console.error('Error fetching profile:', err);
+        
+        // Better error handling
+        if (err.response) {
+          setError(`Server error: ${err.response.status} - ${err.response.statusText}`);
+        } else if (err.request) {
+          setError('Network error. Please check your connection and ensure the backend server is running.');
+        } else {
+          setError(err.message || 'Failed to load profile');
+        }
+        
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  // Calculate REPS scores from assessmentKPIs if available
   const repsScores = {
-    reliability: 92,
-    efficiency: 88,
-    professionalism: 95,
-    service: 90,
+    reliability: profile?.assessmentKPIs?.['Problem Solving'] ?? 85,
+    efficiency: profile?.assessmentKPIs?.['Communication'] ?? 80,
+    professionalism: profile?.assessmentKPIs?.['Customer Service'] ?? 90,
+    service: profile?.assessmentKPIs?.['Customer Service'] ?? 85,
   };
 
+  // Generic improvement suggestions (could be made dynamic based on lowest scores)
   const improvements = [
     {
       category: 'Response Time Optimization',
@@ -28,53 +115,20 @@ export function Profile() {
     },
   ];
 
-  const achievements = [
-    {
-      title: 'Speed Demon',
-      description: 'Complete 10 gigs with response time under 5 minutes',
-      progress: 7,
-      total: 10,
-      icon: Clock,
-    },
-    {
-      title: 'Customer Favorite',
-      description: 'Receive 50 five-star ratings',
-      progress: 42,
-      total: 50,
-      icon: Star,
-    },
-    {
-      title: 'Problem Solver',
-      description: 'Successfully resolve 100 customer issues',
-      progress: 85,
-      total: 100,
-      icon: Target,
-    },
-  ];
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Loading profile...</div>;
+  }
 
-  const rewards = [
-    {
-      title: 'Premium Status',
-      description: 'Get early access to high-paying gigs',
-      points: 5000,
-      claimed: false,
-    },
-    {
-      title: 'Bonus Cash',
-      description: '$100 bonus payout',
-      points: 3000,
-      claimed: true,
-    },
-    {
-      title: 'Priority Support',
-      description: 'Direct line to HARX support team',
-      points: 2000,
-      claimed: false,
-    },
-  ];
+  if (error) {
+    return <div className="text-red-500 text-center mt-8">Error: {error}</div>;
+  }
+
+  if (!profile) {
+    return <div className="text-center mt-8">No profile data available</div>;
+  }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 p-4">
       <div className="bg-white rounded-xl p-6 shadow-sm">
         <div className="flex items-start space-x-6">
           <img
@@ -85,14 +139,12 @@ export function Profile() {
           <div className="flex-1">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">John Doe</h1>
-                <p className="text-gray-500">Senior HARX Representative</p>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {profile.firstName} {profile.lastName}
+                </h1>
+                <p className="text-gray-500">{profile.role || 'HARX Representative'}</p>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-lg">
-                  <Trophy className="w-5 h-5 text-blue-600" />
-                  <span className="text-blue-600 font-medium">4,250 Points</span>
-                </div>
+              <div>
                 <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                   Edit Profile
                 </button>
@@ -101,15 +153,15 @@ export function Profile() {
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center text-gray-500">
                 <Mail className="w-4 h-4 mr-2" />
-                <span>john.doe@example.com</span>
+                <span>{profile.email}</span>
               </div>
               <div className="flex items-center text-gray-500">
                 <Phone className="w-4 h-4 mr-2" />
-                <span>+1 (555) 123-4567</span>
+                <span>{profile.phone || 'Not specified'}</span>
               </div>
               <div className="flex items-center text-gray-500">
                 <MapPin className="w-4 h-4 mr-2" />
-                <span>San Francisco, CA</span>
+                <span>{profile.location || 'Not specified'}</span>
               </div>
             </div>
           </div>
@@ -130,137 +182,188 @@ export function Profile() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Rating</h2>
-            <Star className="w-5 h-5 text-yellow-400" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900">4.8</div>
-          <p className="text-sm text-gray-500">Based on 156 reviews</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Experience</h2>
             <Award className="w-5 h-5 text-blue-600" />
           </div>
-          <div className="text-3xl font-bold text-gray-900">2+ years</div>
-          <p className="text-sm text-gray-500">As HARX Representative</p>
+          <div className="text-3xl font-bold text-gray-900">{profile.experience} years</div>
+          <p className="text-sm text-gray-500">As a {profile.role}</p>
         </div>
 
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Response Time</h2>
-            <Clock className="w-5 h-5 text-green-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Industries</h2>
+            <Target className="w-5 h-5 text-green-600" />
           </div>
-          <div className="text-3xl font-bold text-gray-900">15m</div>
-          <p className="text-sm text-gray-500">Average response time</p>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Active Achievements</h2>
-        <div className="space-y-6">
-          {achievements.map((achievement, index) => (
-            <div key={index} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <achievement.icon className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">{achievement.title}</h3>
-                    <p className="text-sm text-gray-500">{achievement.description}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full"
-                  style={{ width: `${(achievement.progress / achievement.total) * 100}%` }}
-                ></div>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">{achievement.progress} / {achievement.total}</span>
-                <span className="text-blue-600 font-medium">
-                  {Math.round((achievement.progress / achievement.total) * 100)}%
+          <div className="flex flex-wrap gap-2 mt-2">
+            {profile.industries && profile.industries.length > 0 ? (
+              profile.industries.map((industry, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm"
+                >
+                  {industry}
                 </span>
-              </div>
-            </div>
-          ))}
+              ))
+            ) : (
+              <span className="text-gray-500">No industries specified</span>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Notable Companies</h2>
+            <Award className="w-5 h-5 text-yellow-600" />
+          </div>
+          <div className="flex flex-col space-y-2">
+            {profile.notableCompanies && profile.notableCompanies.length > 0 ? (
+              profile.notableCompanies.map((company, index) => (
+                <span key={index} className="text-gray-700">{company}</span>
+              ))
+            ) : (
+              <span className="text-gray-500">No companies specified</span>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Available Rewards</h2>
-        <div className="space-y-4">
-          {rewards.map((reward, index) => (
-            <div key={index} className="border border-gray-100 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-yellow-50 rounded-lg">
-                    <Award className="w-5 h-5 text-yellow-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">{reward.title}</h3>
-                    <p className="text-sm text-gray-500">{reward.description}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">{reward.points} points</p>
-                  <button
-                    className={`mt-2 px-4 py-1 rounded-lg text-sm font-medium ${
-                      reward.claimed
-                        ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                    disabled={reward.claimed}
-                  >
-                    {reward.claimed ? 'Claimed' : 'Claim'}
-                  </button>
-                </div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Key Expertise</h2>
+        <div className="space-y-2">
+          {profile.keyExpertise && profile.keyExpertise.length > 0 ? (
+            profile.keyExpertise.map((expertise, index) => (
+              <div key={index} className="flex items-start">
+                <span className="text-blue-500 mr-2">•</span>
+                <span>{expertise}</span>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-gray-500">No key expertise specified</p>
+          )}
         </div>
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Skills & Expertise</h2>
         <div className="flex flex-wrap gap-2">
-          {[
-            'Customer Support',
-            'Problem Solving',
-            'Communication',
-            'Technical Support',
-            'Email Support',
-            'Chat Support',
-            'Phone Support',
-            'CRM Software',
-            'Conflict Resolution',
-            'Time Management',
-          ].map((skill, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
-            >
-              {skill}
-            </span>
-          ))}
+          {profile.skills && profile.skills.length > 0 ? (
+            profile.skills.map((skill, index) => (
+              <span
+                key={index}
+                className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+              >
+                {skill}
+              </span>
+            ))
+          ) : (
+            <span className="text-gray-500">No skills specified</span>
+          )}
         </div>
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Performance</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Languages</h2>
+        <div className="space-y-3">
+          {profile.languages && profile.languages.length > 0 ? (
+            profile.languages.map((lang, index) => (
+              <div key={index} className="flex justify-between items-center">
+                <div>
+                  <span className="font-medium">{lang.language}</span>
+                  <span className="text-gray-500 ml-2">({lang.proficiency})</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-gray-600 mr-2">Assessment Score:</span>
+                  <span className="font-medium">{lang.assessmentScore}/10</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">No languages specified</p>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Assessment KPIs</h2>
         <div className="space-y-4">
-          {[
-            { label: 'Customer Satisfaction', value: '98%' },
-            { label: 'Task Completion Rate', value: '95%' },
-            { label: 'On-time Delivery', value: '100%' },
-          ].map((metric, index) => (
-            <div key={index} className="flex items-center justify-between">
-              <span className="text-gray-600">{metric.label}</span>
-              <span className="font-medium text-gray-900">{metric.value}</span>
+          {profile.assessmentKPIs && Object.keys(profile.assessmentKPIs).length > 0 ? (
+            Object.entries(profile.assessmentKPIs).map(([category, score]) => {
+              // Ensure score is within 0-100 range for the width property
+              const safeScore = Math.min(Math.max(0, score), 100);
+              return (
+                <div key={category} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{category}</span>
+                    <span className="font-medium text-blue-600">{Math.round(score)}/100</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full"
+                      style={{ width: `${safeScore}%` }}
+                    ></div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <p className="text-gray-500">No assessment KPIs available</p>
+          )}
+        </div>
+      </div>
+
+      {profile.experienceDetails && profile.experienceDetails.length > 0 && (
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Work Experience</h2>
+          <div className="space-y-6">
+            {profile.experienceDetails.map((exp, index) => (
+              <div key={index} className="border-l-2 border-blue-200 pl-4 py-2">
+                <div className="flex justify-between">
+                  <h3 className="font-medium text-gray-900">{exp.title}</h3>
+                  <span className="text-sm text-gray-500">
+                    {exp.startDate} - {exp.endDate || 'Present'}
+                  </span>
+                </div>
+                <p className="text-gray-600 mt-1">{exp.company}</p>
+                <ul className="mt-2 space-y-1 list-disc list-inside text-gray-600 text-sm">
+                  {exp.responsibilities && exp.responsibilities.map((resp, idx) => (
+                    <li key={idx}>{resp}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Status</h2>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Status</span>
+            <span className="px-3 py-1 rounded-full text-sm font-medium uppercase" 
+                  style={{ 
+                    backgroundColor: profile.completionStatus === 'complete' ? '#d1fae5' : '#fee2e2',
+                    color: profile.completionStatus === 'complete' ? '#047857' : '#b91c1c'
+                  }}>
+              {profile.completionStatus || 'Incomplete'}
+            </span>
+          </div>
+          {profile.completionSteps && (
+            <div className="space-y-2">
+              <h3 className="font-medium">Completion Steps</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(profile.completionSteps).map(([step, completed]) => (
+                  <div key={step} className="flex items-center space-x-2">
+                    <div className={`w-4 h-4 rounded-full ${completed ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="capitalize">{step.replace(/([A-Z])/g, ' $1').trim()}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          )}
+          <div className="text-sm text-gray-500">
+            Last updated: {new Date(profile.lastUpdated).toLocaleString()}
+          </div>
         </div>
       </div>
     </div>
