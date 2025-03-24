@@ -61,20 +61,23 @@ export function Profile() {
     const fetchProfile = async () => {
       try {
         // For testing, add a token to localStorage if not present
-        if (!localStorage.getItem('token')) {
-          console.warn('No token found, setting test token for development');
-          localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2EyMjk1OTgyODE5N2JiMTgwY2FhNTkiLCJpYXQiOjE3NDI0NjQ2ODl9.TW-2zbqDBXsOrf8uujX3FKktc3KmrTa43zPHT9ty_i8');
-        }
-
         const token = localStorage.getItem('token');
         
         if (!token) {
           throw new Error('Authentication token not found');
         }
 
-        // Try directly calling the endpoint with user ID for testing
+        // Decode token to get userId
+        const decodedToken = JSON.parse(atob(token.split('.')[1]));
+        const userId = decodedToken.userId;
+
+        if (!userId) {
+          throw new Error('User ID not found in token');
+        }
+
+        // Get profile using userId from token
         try {
-          const response = await api.profile.getById('67a22959828197bb180caa59');
+          const response = await api.profile.getById(userId);
           // Process the response data to ensure all nested objects are handled properly
           const profileData = response.data;
           
