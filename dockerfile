@@ -21,7 +21,7 @@ RUN npm run build
 RUN npm install -g serve
 
 # Set environment variables
-ENV VITE_API_URL=https://api-rep-dashboard.harx.ai/api
+ENV VITE_API_URL=https://api-rep-dashboard.harx.ai
 
 # Expose port 3000 for the frontend
 EXPOSE 5183
