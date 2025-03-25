@@ -2,7 +2,8 @@
 import axios from 'axios';
 
 // Use Vite environment variables (instead of process.env)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+console.log("API_URL", import.meta.env.VITE_API_URL);
+const API_URL = import.meta.env.VITE_API_URL;
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -50,16 +51,16 @@ apiClient.interceptors.response.use(
 const api = {
   // Profile endpoints
   profile: {
-    get: () => apiClient.get('/profile'),
-    getById: (id: string) => apiClient.get(`/profile/user/${id}`),
-    update: (profileId: string, data: any) => apiClient.put(`/profile/${profileId}`, data),
+    get: () => apiClient.get('/api/profile'),
+    getById: (id: string) => apiClient.get(`/api/profile/user/${id}`),
+    update: (profileId: string, data: any) => apiClient.put(`/api/profile/${profileId}`, data),
   },
   
   // Auth endpoints 
   auth: {
-    login: (credentials: {email: string, password: string}) => apiClient.post('/auth/login', credentials),
-    register: (userData: {email: string, password: string, [key: string]: any}) => apiClient.post('/auth/register', userData),
-    refreshToken: () => apiClient.post('/auth/refresh'),
+    login: (credentials: {email: string, password: string}) => apiClient.post('/api/auth/login', credentials),
+    register: (userData: {email: string, password: string, [key: string]: any}) => apiClient.post('/api/auth/register', userData),
+    refreshToken: () => apiClient.post('/api/auth/refresh'),
   },
   
   // Add more API endpoints as needed
