@@ -8,6 +8,10 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
+# Set environment variables
+ENV VITE_API_URL=https://api-rep-dashboard.harx.ai
+
+
 # Install dependencies
 RUN npm install
 
@@ -19,9 +23,6 @@ RUN npm run build
 
 # Install serve to host the built files
 RUN npm install -g serve
-
-# Set environment variables
-ENV VITE_API_URL=https://api-rep-dashboard.harx.ai
 
 # Expose port 3000 for the frontend
 EXPOSE 5183
