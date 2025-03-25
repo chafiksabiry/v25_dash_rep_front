@@ -8,8 +8,7 @@ import api from '../utils/client';
 interface ProfileData {
   _id: string;
   userId: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   phone?: string;
   location?: string;
@@ -62,7 +61,7 @@ export function Profile() {
       try {
         // For testing, add a token to localStorage if not present
         const token = localStorage.getItem('token');
-        
+
         if (!token) {
           throw new Error('Authentication token not found');
         }
@@ -80,50 +79,50 @@ export function Profile() {
           const response = await api.profile.getById(userId);
           // Process the response data to ensure all nested objects are handled properly
           const profileData = response.data;
-          
+
           console.log('Raw profile data from API:', JSON.stringify(profileData, null, 2));
-          
+
           // Ensure experienceDetails objects have string values
           if (profileData.experienceDetails) {
             console.log('Experience details before processing:', JSON.stringify(profileData.experienceDetails, null, 2));
-            
+
             profileData.experienceDetails = profileData.experienceDetails.map((exp: any) => {
               console.log('Processing experience item:', exp);
               return {
                 ...exp,
-                responsibilities: Array.isArray(exp.responsibilities) 
+                responsibilities: Array.isArray(exp.responsibilities)
                   ? exp.responsibilities.map((r: any) => {
-                      console.log('Responsibility type:', typeof r, r);
-                      return typeof r === 'string' ? r : JSON.stringify(r);
-                    })
+                    console.log('Responsibility type:', typeof r, r);
+                    return typeof r === 'string' ? r : JSON.stringify(r);
+                  })
                   : [],
                 achievements: Array.isArray(exp.achievements)
                   ? exp.achievements.map((a: any) => {
-                      console.log('Achievement type:', typeof a, a);
-                      return typeof a === 'string' ? a : JSON.stringify(a);
-                    })
+                    console.log('Achievement type:', typeof a, a);
+                    return typeof a === 'string' ? a : JSON.stringify(a);
+                  })
                   : []
               };
             });
-            
+
             console.log('Experience details after processing:', JSON.stringify(profileData.experienceDetails, null, 2));
           }
-          
+
           setProfile(profileData);
           setLoading(false);
         } catch (idError) {
           console.error('Error fetching by ID, trying default endpoint:', idError);
           // If that fails, fall back to regular profile endpoint
           const response = await api.profile.get();
-          
+
           // Process the response data to ensure all nested objects are handled properly
           const profileData = response.data;
-          
+
           // Ensure experienceDetails objects have string values
           if (profileData.experienceDetails) {
             profileData.experienceDetails = profileData.experienceDetails.map((exp: any) => ({
               ...exp,
-              responsibilities: Array.isArray(exp.responsibilities) 
+              responsibilities: Array.isArray(exp.responsibilities)
                 ? exp.responsibilities.map((r: any) => typeof r === 'string' ? r : JSON.stringify(r))
                 : [],
               achievements: Array.isArray(exp.achievements)
@@ -131,13 +130,13 @@ export function Profile() {
                 : []
             }));
           }
-          
+
           setProfile(profileData);
           setLoading(false);
         }
       } catch (err: any) {
         console.error('Error fetching profile:', err);
-        
+
         if (err.response) {
           setError(`Server error: ${err.response.status} - ${err.response.statusText}`);
         } else if (err.request) {
@@ -145,7 +144,7 @@ export function Profile() {
         } else {
           setError(err.message || 'Failed to load profile');
         }
-        
+
         setLoading(false);
       }
     };
@@ -182,51 +181,6 @@ export function Profile() {
 
   // Function to handle saving the edited profile
   const handleSaveProfile = (updatedProfile: ProfileData) => {
-    console.log('Before processing - updatedProfile:', JSON.stringify(updatedProfile, null, 2));
-    
-    // Split name into firstName and lastName
-    if (updatedProfile.personalInfo && updatedProfile.personalInfo.name) {
-      const nameParts = updatedProfile.personalInfo.name.split(' ');
-      updatedProfile.firstName = nameParts[0] || '';
-      updatedProfile.lastName = nameParts.slice(1).join(' ') || '';
-    }
-    
-    // Convert yearsOfExperience from string to number
-    if (updatedProfile.professionalSummary && updatedProfile.professionalSummary.yearsOfExperience) {
-      updatedProfile.experience = parseInt(updatedProfile.professionalSummary.yearsOfExperience) || 0;
-    }
-    
-    // Map other fields correctly
-    if (updatedProfile.personalInfo) {
-      updatedProfile.location = updatedProfile.personalInfo.location || '';
-      updatedProfile.email = updatedProfile.personalInfo.email || updatedProfile.email;
-      updatedProfile.phone = updatedProfile.personalInfo.phone || '';
-    }
-    
-    if (updatedProfile.professionalSummary) {
-      updatedProfile.role = updatedProfile.professionalSummary.currentRole;
-      updatedProfile.industries = updatedProfile.professionalSummary.industries;
-      updatedProfile.keyExpertise = updatedProfile.professionalSummary.keyExpertise;
-      updatedProfile.notableCompanies = updatedProfile.professionalSummary.notableCompanies;
-    }
-    
-    // Ensure all object properties are properly handled
-    if (updatedProfile.experienceDetails) {
-      updatedProfile.experienceDetails = updatedProfile.experienceDetails.map(exp => {
-        return {
-          ...exp,
-          responsibilities: Array.isArray(exp.responsibilities) 
-            ? exp.responsibilities.map(r => typeof r === 'string' ? r : JSON.stringify(r))
-            : [],
-          achievements: Array.isArray(exp.achievements)
-            ? exp.achievements.map(a => typeof a === 'string' ? a : JSON.stringify(a))
-            : []
-        };
-      });
-    }
-    
-    console.log('After processing - updatedProfile:', JSON.stringify(updatedProfile, null, 2));
-    
     setProfile(updatedProfile);
     setIsEditing(false);
   };
@@ -247,10 +201,10 @@ export function Profile() {
   if (isEditing && profile) {
     return (
       <div className="max-w-4xl mx-auto p-4">
-        <ProfileEditForm 
-          profile={profile} 
-          onCancel={() => setIsEditing(false)} 
-          onSave={handleSaveProfile} 
+        <ProfileEditForm
+          profile={profile}
+          onCancel={() => setIsEditing(false)}
+          onSave={handleSaveProfile}
         />
       </div>
     );
@@ -263,19 +217,19 @@ export function Profile() {
           {/* Generic profile avatar that doesn't imply gender */}
           <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
             <span className="text-3xl text-blue-600 font-semibold">
-              {profile.firstName && profile.firstName[0]}{profile.lastName && profile.lastName[0]}
+              {profile.name?.split(' ').map(n => n.charAt(0)).join('')}
             </span>
           </div>
           <div className="flex-1">
             <div className="flex justify-between items-start">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {profile.firstName} {profile.lastName}
+                  {profile.name}
                 </h1>
                 <p className="text-gray-500">{profile.role || 'HARX Representative'}</p>
               </div>
               <div>
-                <button 
+                <button
                   onClick={() => setIsEditing(true)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
@@ -456,14 +410,14 @@ export function Profile() {
                 company: typeof exp.company === 'string' ? exp.company : JSON.stringify(exp.company),
                 startDate: typeof exp.startDate === 'string' ? exp.startDate : JSON.stringify(exp.startDate),
                 endDate: exp.endDate && typeof exp.endDate === 'string' ? exp.endDate : exp.endDate ? JSON.stringify(exp.endDate) : 'Present',
-                responsibilities: Array.isArray(exp.responsibilities) 
+                responsibilities: Array.isArray(exp.responsibilities)
                   ? exp.responsibilities.map(r => typeof r === 'string' ? r : JSON.stringify(r))
                   : [],
                 achievements: Array.isArray(exp.achievements)
                   ? exp.achievements.map(a => typeof a === 'string' ? a : JSON.stringify(a))
                   : []
               };
-              
+
               return (
                 <div key={index} className="border-l-2 border-blue-200 pl-4 py-2">
                   <div className="flex justify-between">
@@ -499,8 +453,8 @@ export function Profile() {
           </div>
         </div>
       )}
-
-      <div className="bg-white rounded-xl p-6 shadow-sm">
+      {/* Comment profile status for the moment */}
+      {/* <div className="bg-white rounded-xl p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Status</h2>
         <div className="space-y-4">
           <div className="flex justify-between items-center">
@@ -530,7 +484,7 @@ export function Profile() {
             Last updated: {new Date(profile.lastUpdated).toLocaleString()}
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
