@@ -4,8 +4,9 @@ import api from '../utils/client';
 interface ProfileEditFormProps {
   profile: {
     _id: string;
-    firstName?: string;
-    lastName?: string;
+    name?: string;
+/*     firstName?: string;
+    lastName?: string; */
     email?: string;
     phone?: string;
     location?: string;
@@ -23,9 +24,7 @@ interface ProfileEditFormProps {
 export function ProfileEditForm({ profile, onCancel, onSave }: ProfileEditFormProps) {
   const [formData, setFormData] = useState({
     personalInfo: {
-      name: profile.firstName && profile.lastName 
-        ? `${profile.firstName} ${profile.lastName}` 
-        : '',
+      name: profile.name || '',
       location: profile.location || '',
       email: profile.email || '',
       phone: profile.phone || '',
@@ -141,38 +140,69 @@ export function ProfileEditForm({ profile, onCancel, onSave }: ProfileEditFormPr
     });
   };
 
+  // Group assessments by category
+  interface Assessment {
+    category: string;
+    score: number;
+  }
+
+  interface AssessmentsByCategory {
+    [key: string]: Assessment[];
+  }
+
+  interface Assessments {
+    contactCenter?: Assessment[];
+  }
+
+  const groupAssessmentsByCategory = (assessments: Assessments): AssessmentsByCategory => {
+    const assessmentsByCategory: AssessmentsByCategory = {};
+    if (assessments.contactCenter && assessments.contactCenter.length > 0) {
+      assessments.contactCenter.forEach((assessment: Assessment) => {
+        if (!assessmentsByCategory[assessment.category]) {
+          assessmentsByCategory[assessment.category] = [];
+        }
+        assessmentsByCategory[assessment.category].push(assessment);
+      });
+    }
+    return assessmentsByCategory;
+  };
+
+  // Calculate KPIs from grouped assessments
+  interface CategoryKPIs {
+    [key: string]: number;
+  }
+
+  const calculateCategoryKPIs = (assessmentsByCategory: AssessmentsByCategory): CategoryKPIs => {
+    const categoryKPIs: CategoryKPIs = {};
+    Object.keys(assessmentsByCategory).forEach(category => {
+      const categoryAssessments = assessmentsByCategory[category];
+      const totalScore = categoryAssessments.reduce((sum: number, assessment: Assessment) => sum + assessment.score, 0);
+      categoryKPIs[category] = totalScore / categoryAssessments.length;
+    });
+    return categoryKPIs;
+  };
+
+  // handle submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     
-    try {
-      // Extract first and last name from the full name
-      const nameParts = formData.personalInfo.name.split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-      
-      // Convert years of experience to a number
-      const experience = parseInt(formData.professionalSummary.yearsOfExperience) || 0;
-      
+    try {      
       // Format the data to match the external API's expected structure
       const profileData = {
-        personalInfo: {
-          name: formData.personalInfo.name,
-          email: formData.personalInfo.email,
-          phone: formData.personalInfo.phone,
-          location: formData.personalInfo.location
-        },
-        professionalSummary: {
-          currentRole: formData.professionalSummary.currentRole,
-          yearsOfExperience: formData.professionalSummary.yearsOfExperience,
-          industries: formData.professionalSummary.industries,
-          keyExpertise: formData.professionalSummary.keyExpertise,
-          notableCompanies: formData.professionalSummary.notableCompanies
-        }
+        'personalInfo.name': formData.personalInfo.name,
+        'personalInfo.email': formData.personalInfo.email,
+        'personalInfo.phone': formData.personalInfo.phone,
+        'personalInfo.location': formData.personalInfo.location,
+        'professionalSummary.currentRole': formData.professionalSummary.currentRole,
+        'professionalSummary.yearsOfExperience': formData.professionalSummary.yearsOfExperience,
+        'professionalSummary.industries': formData.professionalSummary.industries,
+        'professionalSummary.keyExpertise': formData.professionalSummary.keyExpertise,
+        'professionalSummary.notableCompanies': formData.professionalSummary.notableCompanies,
       };
       
-      console.log('Profile data being sent to API:', JSON.stringify(profileData, null, 2));
+      console.log('Profile data being sent to API:', profileData);
       console.log('Profile ID:', profile._id);
       
       // Check for the profile ID
@@ -183,18 +213,22 @@ export function ProfileEditForm({ profile, onCancel, onSave }: ProfileEditFormPr
       // Make the API call to update the profile
       const response = await api.profile.update(profile._id, profileData);
       
-      console.log('API response data:', JSON.stringify(response.data, null, 2));
+      console.log('API response data:', response.data);
       
       // Transform the response to match our frontend's expected format
       const formattedResponse = {
         _id: response.data._id,
         userId: response.data.userId,
-        firstName: response.data.personalInfo?.name?.split(' ')[0] || '',
-        lastName: response.data.personalInfo?.name?.split(' ').slice(1).join(' ') || '',
+        name: response.data.personalInfo?.name || '',
         email: response.data.personalInfo?.email || '',
         phone: response.data.personalInfo?.phone || '',
         location: response.data.personalInfo?.location || '',
-        role: response.data.professionalSummary?.currentRole || '',
+        languages: response.data.personalInfo?.languages?.map((lang: any) => ({
+          language: lang.language,
+          proficiency: lang.proficiency,
+          assessmentScore: lang.assessmentResults?.overall?.score || 0
+        }))  || [],
+        role: response.data.professionalSummary?.currentRole || 'HARX Representative',
         experience: parseInt(response.data.professionalSummary?.yearsOfExperience) || 0,
         industries: response.data.professionalSummary?.industries || [],
         keyExpertise: response.data.professionalSummary?.keyExpertise || [],
@@ -206,6 +240,7 @@ export function ProfileEditForm({ profile, onCancel, onSave }: ProfileEditFormPr
            ...(response.data.skills.soft || [])].map(s => s.skill || s) : [],
         completionStatus: response.data.status,
         completionSteps: response.data.completionSteps,
+        assessmentKPIs: calculateCategoryKPIs(groupAssessmentsByCategory(response.data.assessments)),
         lastUpdated: response.data.lastUpdated
       };
       
