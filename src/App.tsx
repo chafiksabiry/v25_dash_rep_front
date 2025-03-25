@@ -21,6 +21,7 @@ function App() {
           <TopBar />
           <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
             <Routes>
+              <Route path="/app8" element={<Dashboard/>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/gigs-marketplace" element={<GigsMarketplace />} />
               <Route path="/payouts" element={<Payouts />} />
