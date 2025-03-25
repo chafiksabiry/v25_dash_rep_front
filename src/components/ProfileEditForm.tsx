@@ -141,10 +141,23 @@ export function ProfileEditForm({ profile, onCancel, onSave }: ProfileEditFormPr
   };
 
   // Group assessments by category
-  const groupAssessmentsByCategory = (assessments: any) => {
-    const assessmentsByCategory = {};
+  interface Assessment {
+    category: string;
+    score: number;
+  }
+
+  interface AssessmentsByCategory {
+    [key: string]: Assessment[];
+  }
+
+  interface Assessments {
+    contactCenter?: Assessment[];
+  }
+
+  const groupAssessmentsByCategory = (assessments: Assessments): AssessmentsByCategory => {
+    const assessmentsByCategory: AssessmentsByCategory = {};
     if (assessments.contactCenter && assessments.contactCenter.length > 0) {
-      assessments.contactCenter.forEach((assessment: String) => {
+      assessments.contactCenter.forEach((assessment: Assessment) => {
         if (!assessmentsByCategory[assessment.category]) {
           assessmentsByCategory[assessment.category] = [];
         }
@@ -155,11 +168,15 @@ export function ProfileEditForm({ profile, onCancel, onSave }: ProfileEditFormPr
   };
 
   // Calculate KPIs from grouped assessments
-  const calculateCategoryKPIs = (assessmentsByCategory: any) => {
-    const categoryKPIs = {};
+  interface CategoryKPIs {
+    [key: string]: number;
+  }
+
+  const calculateCategoryKPIs = (assessmentsByCategory: AssessmentsByCategory): CategoryKPIs => {
+    const categoryKPIs: CategoryKPIs = {};
     Object.keys(assessmentsByCategory).forEach(category => {
       const categoryAssessments = assessmentsByCategory[category];
-      const totalScore = categoryAssessments.reduce((sum, assessment) => sum + assessment.score, 0);
+      const totalScore = categoryAssessments.reduce((sum: number, assessment: Assessment) => sum + assessment.score, 0);
       categoryKPIs[category] = totalScore / categoryAssessments.length;
     });
     return categoryKPIs;
