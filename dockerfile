@@ -10,7 +10,8 @@ COPY package*.json ./
 
 # Set environment variables
 ENV VITE_API_URL=https://api-rep-dashboard.harx.ai
-
+ENV VITE_CALLS_API_URL=https://api-calls.harx.ai
+ENV VITE_DASHBOARD_COMPANY_API_URL=https://api-dashboard.harx.ai/api
 
 # Install dependencies
 RUN npm install
