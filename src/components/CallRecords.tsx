@@ -280,15 +280,10 @@ export function CallRecords() {
                       {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
                     </span>
                     
-                    {record.ai_call_score ? (
+                    {record.ai_call_score?.overall?.score !== undefined && record.ai_call_score?.overall?.score !== null && (
                       <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 rounded-full">
                         <Brain className="w-4 h-4" />
                         <span className="font-medium">{record.ai_call_score.overall.score}%</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-gray-50 text-gray-600 rounded-full">
-                        <Brain className="w-4 h-4" />
-                        <span className="text-xs">Pending</span>
                       </div>
                     )}
 
