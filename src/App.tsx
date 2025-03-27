@@ -11,6 +11,7 @@ import { Operations } from './pages/Operations';
 import { Workspace } from './pages/Workspace';
 import { Community } from './pages/Community';
 import { WalletPage } from './pages/Wallet';
+import CallReportCard from './components/CallReport';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
               <Route path="/operations" element={<Operations />} />
               <Route path="/workspace" element={<Workspace />} />
               <Route path="/community" element={<Community />} />
+              <Route path="/call-report" element={<CallReportCard />} />
               <Route path="/wallet" element={<WalletPage />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>

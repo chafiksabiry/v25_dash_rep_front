@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Phone, Star, Clock, AlertTriangle, CheckCircle, XCircle, BarChart, Download, Filter, ChevronRight, Brain, Info, Play } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
 
 interface CallRecord {
@@ -74,6 +75,7 @@ interface QAMetric {
 }
 
 export function CallRecords() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'recent' | 'qa'>('recent');
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [callRecords, setCallRecords] = useState<CallRecord[]>([]);
@@ -89,12 +91,12 @@ export function CallRecords() {
         }
 
         const response = await api.calls.getByAgentId(agentId);
-        console.log("calls records retrieved for agent", agentId, response.data);
+        console.log("calls records retrieved for agent", agentId, response);
         
-        if (response.data.success) {
-          setCallRecords(response.data.data);
+        if (response.success) {
+          setCallRecords(response.data);
         } else {
-          throw new Error(response.data.message || 'Failed to fetch call records');
+          throw new Error(response.message || 'Failed to fetch call records');
         }
         setLoading(false);
       } catch (err: any) {
@@ -290,8 +292,7 @@ export function CallRecords() {
                     <button 
                       className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
                       onClick={() => {
-                        // TODO: Add call details view logic
-                        console.log('View details for call:', record._id);
+                        navigate(`/call-report`, { state: { call: record } });
                       }}
                     >
                       <Info className="w-5 h-5" />
