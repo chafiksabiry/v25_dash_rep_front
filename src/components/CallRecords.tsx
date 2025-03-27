@@ -1,17 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Phone, Star, Clock, AlertTriangle, CheckCircle, XCircle, BarChart, Download, Filter, ChevronRight, Brain } from 'lucide-react';
+import api from '../utils/client';
 
 interface CallRecord {
-  id: string;
-  customerName: string;
-  timestamp: string;
-  duration: string;
-  type: 'inbound' | 'outbound';
-  status: 'completed' | 'missed' | 'transferred';
-  qaScore: number;
-  tags: string[];
-  notes: string;
-  flags?: string[];
+  _id: string;
+  lead: Lead;
+  startTime: string;
+  duration: Number;
+  direction: 'inbound' | 'outbound-dial';
+  status: string;
+}
+interface Lead {
+  _id: string;
+  name: string;
+  company: string;
+  email: string;
+  phone: string;
+  status: 'new' | 'contacted' | 'qualified' | 'proposal' | 'won' | 'lost';
+  value: number;
+  probability: number;
+  source?: string;
+  assignedTo?: string;
+  lastContact?: Date;
+  nextAction?: 'call' | 'email' | 'meeting' | 'follow-up';
+  notes?: string;
+  metadata?: {
+    ai_analysis?: {
+      score?: number;
+      sentiment?: string;
+    };
+  };
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface QAMetric {
@@ -24,44 +44,36 @@ interface QAMetric {
 export function CallRecords() {
   const [activeTab, setActiveTab] = useState<'recent' | 'qa'>('recent');
   const [selectedPeriod, setSelectedPeriod] = useState('today');
+  const [callRecords, setCallRecords] = useState<CallRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const callRecords: CallRecord[] = [
-    {
-      id: 'call-001',
-      customerName: 'Sarah Wilson',
-      timestamp: '2024-03-20 14:30',
-      duration: '12:45',
-      type: 'inbound',
-      status: 'completed',
-      qaScore: 92,
-      tags: ['technical-support', 'resolved'],
-      notes: 'Customer had issues with software configuration. Successfully resolved.',
-      flags: ['positive-feedback']
-    },
-    {
-      id: 'call-002',
-      customerName: 'John Brown',
-      timestamp: '2024-03-20 15:15',
-      duration: '08:30',
-      type: 'outbound',
-      status: 'completed',
-      qaScore: 85,
-      tags: ['follow-up', 'billing'],
-      notes: 'Follow-up call regarding billing inquiry.',
-      flags: ['needs-improvement']
-    },
-    {
-      id: 'call-003',
-      customerName: 'Emily Davis',
-      timestamp: '2024-03-20 16:00',
-      duration: '03:15',
-      type: 'inbound',
-      status: 'transferred',
-      qaScore: 88,
-      tags: ['account-issues', 'escalated'],
-      notes: 'Transferred to senior support for account verification.',
-    }
-  ];
+  useEffect(() => {
+    const fetchCallRecords = async () => {
+      try {
+        const agentId = localStorage.getItem('agentId');
+        if (!agentId) {
+          throw new Error('Agent ID not found');
+        }
+
+        const response = await api.calls.getByAgentId(agentId);
+        console.log("calls records retrieved for agent", agentId, response.data);
+        
+        if (response.data.success) {
+          setCallRecords(response.data.data);
+        } else {
+          throw new Error(response.data.message || 'Failed to fetch call records');
+        }
+        setLoading(false);
+      } catch (err: any) {
+        console.error('Error fetching call records:', err);
+        setError(err.message || 'Failed to fetch call records');
+        setLoading(false);
+      }
+    };
+
+    fetchCallRecords();
+  }, []);
 
   const qaMetrics: QAMetric[] = [
     {
@@ -111,6 +123,22 @@ export function CallRecords() {
     }
   ];
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-gray-500">Loading call records...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -159,20 +187,20 @@ export function CallRecords() {
         <div className="bg-white rounded-xl shadow-sm">
           <div className="divide-y divide-gray-200">
             {callRecords.map((record) => (
-              <div key={record.id} className="p-6 hover:bg-gray-50">
+              <div key={record._id} className="p-6 hover:bg-gray-50">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-4">
                     <div className={`p-2 rounded-lg ${
-                      record.type === 'inbound' ? 'bg-blue-50' : 'bg-green-50'
+                      record.direction === 'inbound' ? 'bg-blue-50' : 'bg-green-50'
                     }`}>
                       <Phone className={`w-5 h-5 ${
-                        record.type === 'inbound' ? 'text-blue-600' : 'text-green-600'
+                        record.direction === 'inbound' ? 'text-blue-600' : 'text-green-600'
                       }`} />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{record.customerName}</h3>
+                      <h3 className="font-medium text-gray-900">{record.lead.name}</h3>
                       <p className="text-sm text-gray-500">
-                        {new Date(record.timestamp).toLocaleString()}
+                        {new Date(record.startTime).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -184,19 +212,19 @@ export function CallRecords() {
                     }`}>
                       {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
                     </span>
-                    <div className="flex items-center space-x-1">
+                    {/* <div className="flex items-center space-x-1">
                       <Star className="w-4 h-4 text-yellow-400" />
                       <span className="font-medium">{record.qaScore}</span>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="flex items-center text-sm text-gray-500">
                     <Clock className="w-4 h-4 mr-1" />
-                    <span>{record.duration}</span>
+                    <span>{record.duration.toString()} seconds</span>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  {/* <div className="flex flex-wrap gap-2">
                     {record.tags.map((tag, index) => (
                       <span
                         key={index}
@@ -205,12 +233,12 @@ export function CallRecords() {
                         {tag}
                       </span>
                     ))}
-                  </div>
+                  </div> */}
                 </div>
 
-                <p className="text-sm text-gray-600 mb-4">{record.notes}</p>
+               {/*  <p className="text-sm text-gray-600 mb-4">{record.notes}</p> */}
 
-                {record.flags && (
+                {/* {record.flags && (
                   <div className="flex flex-wrap gap-2">
                     {record.flags.map((flag, index) => (
                       <span
@@ -232,7 +260,7 @@ export function CallRecords() {
                       </span>
                     ))}
                   </div>
-                )}
+                )} */}
               </div>
             ))}
           </div>

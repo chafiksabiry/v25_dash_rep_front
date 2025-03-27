@@ -82,6 +82,11 @@ export function Profile() {
 
           console.log('Raw profile data from API:', JSON.stringify(profileData, null, 2));
 
+          // Store the agent ID in localStorage
+          if (profileData._id) {
+            localStorage.setItem('agentId', profileData._id);
+          }
+
           // Ensure experienceDetails objects have string values
           if (profileData.experienceDetails) {
             console.log('Experience details before processing:', JSON.stringify(profileData.experienceDetails, null, 2));
@@ -117,6 +122,11 @@ export function Profile() {
 
           // Process the response data to ensure all nested objects are handled properly
           const profileData = response.data;
+
+          // Store the agent ID in localStorage
+          if (profileData._id) {
+            localStorage.setItem('agentId', profileData._id);
+          }
 
           // Ensure experienceDetails objects have string values
           if (profileData.experienceDetails) {

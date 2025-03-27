@@ -3,7 +3,10 @@ import axios from 'axios';
 
 // Use Vite environment variables (instead of process.env)
 console.log("API_URL", import.meta.env.VITE_API_URL);
+console.log("CALLS_API_URL", import.meta.env.VITE_CALLS_API_URL);
+
 const API_URL = import.meta.env.VITE_API_URL;
+const CALLS_API_URL = import.meta.env.VITE_CALLS_API_URL;
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -13,8 +16,30 @@ const apiClient = axios.create({
   },
 });
 
+// Create a separate axios instance for calls API
+const callsApiClient = axios.create({
+  baseURL: CALLS_API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 // Request interceptor to add auth token to all requests
 apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add the same interceptor for calls API
+callsApiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -47,6 +72,22 @@ apiClient.interceptors.response.use(
   }
 );
 
+// Add the same response interceptor for calls API
+callsApiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      const { status } = error.response;
+      
+      if (status === 401) {
+        localStorage.removeItem('token');
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 // API methods
 const api = {
   // Profile endpoints
@@ -62,8 +103,11 @@ const api = {
     register: (userData: {email: string, password: string, [key: string]: any}) => apiClient.post('/api/auth/register', userData),
     refreshToken: () => apiClient.post('/api/auth/refresh'),
   },
-  
-  // Add more API endpoints as needed
+
+  // Calls endpoints
+  calls: {
+    getByAgentId: (agentId: string) => callsApiClient.get(`/api/calls/agent/${agentId}`),
+  },
 };
 
 export default api;
