@@ -1,17 +1,70 @@
-import React, { useState } from 'react';
-import { Phone, Star, Clock, AlertTriangle, CheckCircle, XCircle, BarChart, Download, Filter, ChevronRight, Brain } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Phone, Star, Clock, AlertTriangle, CheckCircle, XCircle, BarChart, Download, Filter, ChevronRight, Brain, Info, Play } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import api from '../utils/client';
 
 interface CallRecord {
-  id: string;
-  customerName: string;
-  timestamp: string;
-  duration: string;
-  type: 'inbound' | 'outbound';
-  status: 'completed' | 'missed' | 'transferred';
-  qaScore: number;
-  tags: string[];
-  notes: string;
-  flags?: string[];
+  _id: string;
+  call_id?: string;
+  agent: string;
+  lead?: Lead;
+  sid?: string;
+  parentCallSid?: string | null;
+  direction: 'inbound' | 'outbound-dial';
+  provider?: 'twilio' | 'qalqul';
+  startTime: Date;
+  endTime?: Date | null;
+  status: string;
+  duration: number;
+  recording_url?: string;
+  recording_url_cloudinary?: string;
+  quality_score?: number;
+  ai_call_score?: {
+    'Agent fluency': {
+      score: number;
+      feedback: string;
+    };
+    'Sentiment analysis': {
+      score: number;
+      feedback: string;
+    };
+    'Fraud detection': {
+      score: number;
+      feedback: string;
+    };
+    overall: {
+      score: number;
+      feedback: string;
+    };
+  };
+  childCalls?: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+
+interface Lead {
+  _id: string;
+  name: string;
+  company: string;
+  email: string;
+  phone: string;
+  status: 'new' | 'contacted' | 'qualified' | 'proposal' | 'won' | 'lost';
+  value: number;
+  probability: number;
+  source?: string;
+  assignedTo?: string;
+  lastContact?: Date;
+  nextAction?: 'call' | 'email' | 'meeting' | 'follow-up';
+  notes?: string;
+  metadata?: {
+    ai_analysis?: {
+      score?: number;
+      sentiment?: string;
+    };
+  };
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface QAMetric {
@@ -22,46 +75,39 @@ interface QAMetric {
 }
 
 export function CallRecords() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'recent' | 'qa'>('recent');
   const [selectedPeriod, setSelectedPeriod] = useState('today');
+  const [callRecords, setCallRecords] = useState<CallRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const callRecords: CallRecord[] = [
-    {
-      id: 'call-001',
-      customerName: 'Sarah Wilson',
-      timestamp: '2024-03-20 14:30',
-      duration: '12:45',
-      type: 'inbound',
-      status: 'completed',
-      qaScore: 92,
-      tags: ['technical-support', 'resolved'],
-      notes: 'Customer had issues with software configuration. Successfully resolved.',
-      flags: ['positive-feedback']
-    },
-    {
-      id: 'call-002',
-      customerName: 'John Brown',
-      timestamp: '2024-03-20 15:15',
-      duration: '08:30',
-      type: 'outbound',
-      status: 'completed',
-      qaScore: 85,
-      tags: ['follow-up', 'billing'],
-      notes: 'Follow-up call regarding billing inquiry.',
-      flags: ['needs-improvement']
-    },
-    {
-      id: 'call-003',
-      customerName: 'Emily Davis',
-      timestamp: '2024-03-20 16:00',
-      duration: '03:15',
-      type: 'inbound',
-      status: 'transferred',
-      qaScore: 88,
-      tags: ['account-issues', 'escalated'],
-      notes: 'Transferred to senior support for account verification.',
-    }
-  ];
+  useEffect(() => {
+    const fetchCallRecords = async () => {
+      try {
+        const agentId = localStorage.getItem('agentId');
+        if (!agentId) {
+          throw new Error('Agent ID not found');
+        }
+
+        const response = await api.calls.getByAgentId(agentId);
+        console.log("calls records retrieved for agent", agentId, response);
+        
+        if (response.success) {
+          setCallRecords(response.data);
+        } else {
+          throw new Error(response.message || 'Failed to fetch call records');
+        }
+        setLoading(false);
+      } catch (err: any) {
+        console.error('Error fetching call records:', err);
+        setError(err.message || 'Failed to fetch call records');
+        setLoading(false);
+      }
+    };
+
+    fetchCallRecords();
+  }, []);
 
   const qaMetrics: QAMetric[] = [
     {
@@ -111,6 +157,22 @@ export function CallRecords() {
     }
   ];
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-gray-500">Loading call records...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -159,80 +221,93 @@ export function CallRecords() {
         <div className="bg-white rounded-xl shadow-sm">
           <div className="divide-y divide-gray-200">
             {callRecords.map((record) => (
-              <div key={record.id} className="p-6 hover:bg-gray-50">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-2 rounded-lg ${
-                      record.type === 'inbound' ? 'bg-blue-50' : 'bg-green-50'
+              <div key={record._id} className="p-6 hover:bg-gray-50 transition-colors">
+                <div className="flex justify-between">
+                  {/* Left side - Call info */}
+                  <div className="flex items-start space-x-4">
+                    <div className={`relative p-3 rounded-xl ${
+                      record.direction === 'inbound' 
+                        ? 'bg-gradient-to-br from-blue-50 to-blue-100' 
+                        : 'bg-gradient-to-br from-green-50 to-green-100'
                     }`}>
-                      <Phone className={`w-5 h-5 ${
-                        record.type === 'inbound' ? 'text-blue-600' : 'text-green-600'
+                      <Phone className={`w-6 h-6 ${
+                        record.direction === 'inbound' ? 'text-blue-600' : 'text-green-600'
                       }`} />
+                      <div className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        record.direction === 'inbound'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}>
+                        {record.direction === 'inbound' ? 'In' : 'Out'}
+                      </div>
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{record.customerName}</h3>
-                      <p className="text-sm text-gray-500">
-                        {new Date(record.timestamp).toLocaleString()}
-                      </p>
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-semibold text-gray-900">
+                          {record.lead?.name || 'Unknown Customer'}
+                        </h3>
+                        {record.lead?.company && (
+                          <span className="text-sm text-gray-500">
+                            • {record.lead.company}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 text-sm text-gray-500 space-y-2.5">
+                        {record.lead?.phone && (
+                          <p className="flex items-center">
+                            <Phone className="w-4 h-4 mr-1.5" />
+                            {record.lead.phone}
+                          </p>
+                        )}
+                        <p className="flex items-center">
+                          <Clock className="w-4 h-4 mr-1.5" />
+                          {new Date(record.startTime).toLocaleString()}
+                          {record.duration && (
+                            <span className="ml-2">
+                              • {Math.floor(record.duration / 60)}:{String(record.duration % 60).padStart(2, '0')}
+                            </span>
+                          )}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+
+                  {/* Right side - Status and actions */}
+                  <div className="flex items-start space-x-3">
+                    <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${
                       record.status === 'completed' ? 'bg-green-100 text-green-700' :
                       record.status === 'missed' ? 'bg-red-100 text-red-700' :
                       'bg-yellow-100 text-yellow-700'
                     }`}>
                       {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
                     </span>
-                    <div className="flex items-center space-x-1">
-                      <Star className="w-4 h-4 text-yellow-400" />
-                      <span className="font-medium">{record.qaScore}</span>
-                    </div>
+                    
+                    {record.ai_call_score?.overall?.score !== undefined && record.ai_call_score?.overall?.score !== null && (
+                      <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 rounded-full">
+                        <Brain className="w-4 h-4" />
+                        <span className="font-medium">{record.ai_call_score.overall.score}%</span>
+                      </div>
+                    )}
+
+                    <button 
+                      className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+                      onClick={() => {
+                        navigate(`/call-report`, { state: { call: record } });
+                      }}
+                    >
+                      <Info className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Clock className="w-4 h-4 mr-1" />
-                    <span>{record.duration}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {record.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                {/* Additional info row */}
+                <div className="mt-4 flex items-center space-x-3 text-sm text-gray-500">
+                  {record.provider && (
+                    <span className="px-2 py-1 bg-gray-50 rounded-md">
+                      via {record.provider}
+                    </span>
+                  )}
                 </div>
-
-                <p className="text-sm text-gray-600 mb-4">{record.notes}</p>
-
-                {record.flags && (
-                  <div className="flex flex-wrap gap-2">
-                    {record.flags.map((flag, index) => (
-                      <span
-                        key={index}
-                        className={`flex items-center px-2 py-1 rounded-full text-xs ${
-                          flag === 'positive-feedback'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}
-                      >
-                        {flag === 'positive-feedback' ? (
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                        ) : (
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                        )}
-                        {flag.split('-').map(word => 
-                          word.charAt(0).toUpperCase() + word.slice(1)
-                        ).join(' ')}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             ))}
           </div>
