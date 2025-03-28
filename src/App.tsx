@@ -11,6 +11,7 @@ import { Operations } from './pages/Operations';
 import { Workspace } from './pages/Workspace';
 import { Community } from './pages/Community';
 import { WalletPage } from './pages/Wallet';
+import CallReportCard from './components/CallReport';
 
 function App() {
   return (
@@ -21,8 +22,11 @@ function App() {
           <TopBar />
           <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
             <Routes>
+
+              <Route path="/app8" element={<Dashboard/>} />
+
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/app8" element={<Dashboard />} />
+              
               <Route path="/gigs-marketplace" element={<GigsMarketplace />} />
               <Route path="/payouts" element={<Payouts />} />
               <Route path="/learning" element={<Learning />} />
@@ -30,6 +34,7 @@ function App() {
               <Route path="/operations" element={<Operations />} />
               <Route path="/workspace" element={<Workspace />} />
               <Route path="/community" element={<Community />} />
+              <Route path="/call-report" element={<CallReportCard />} />
               <Route path="/wallet" element={<WalletPage />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
