@@ -23,7 +23,7 @@ function App() {
           <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
             <Routes>
 
-              <Route path="/repdashboard" element={<Dashboard/>} />
+              <Route path="/app8" element={<Dashboard/>} />
 
               <Route path="/dashboard" element={<Dashboard />} />
               
