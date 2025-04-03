@@ -31,7 +31,21 @@ interface ProfileData {
     proficiency: string;
     assessmentScore: number;
   }>;
-  assessmentKPIs?: Record<string, number>;
+  assessmentKPIs?: {
+    categoryScores: Record<string, number>;
+    skillAssessments: Record<string, Array<{
+      _id: string;
+      category: string;
+      skill: string;
+      score: number;
+      keyMetrics: Record<string, number>;
+      strengths: string[];
+      improvements: string[];
+      feedback: string;
+      tips: string[];
+      completedAt: string;
+    }>>;
+  };
   completionStatus?: string;
   completionSteps?: Record<string, boolean>;
   lastUpdated: string;
@@ -381,30 +395,66 @@ export function Profile() {
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Center Skills KPIs</h2>
-        <div className="space-y-4">
-          {profile.assessmentKPIs && Object.keys(profile.assessmentKPIs).length > 0 ? (
-            Object.entries(profile.assessmentKPIs).map(([category, score]) => {
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-gray-900">Contact Center Skills KPIs</h2>
+          <div className="flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-lg">
+            <Target className="w-5 h-5 text-blue-600" />
+            <span className="text-blue-600 font-medium">Skills Assessment</span>
+          </div>
+        </div>
+        <div className="space-y-8">
+          {profile.assessmentKPIs?.categoryScores && 
+            Object.entries(profile.assessmentKPIs.categoryScores).map(([category, score]) => {
               // Ensure score is within 0-100 range for the width property
               const safeScore = Math.min(Math.max(0, score), 100);
+              const categorySkills = profile.assessmentKPIs?.skillAssessments[category] || [];
+              
               return (
-                <div key={category} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{category}</span>
-                    <span className="font-medium text-blue-600">{Math.round(score)}/100</span>
+                <div key={category} className="space-y-4">
+                  {/* Category Score */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-semibold text-gray-900">{category}</span>
+                      <div className="flex items-center">
+                        <span className="font-semibold text-blue-600">{Math.round(score)}</span>
+                        <span className="text-gray-400 text-sm ml-1">/100</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2.5">
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-in-out"
+                        style={{ width: `${safeScore}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${safeScore}%` }}
-                    ></div>
-                  </div>
+
+                  {/* Skills under this category */}
+                  {categorySkills.length > 0 && (
+                    <div className="grid grid-cols-1 gap-3 ml-4 mt-2">
+                      {categorySkills.map((skill) => (
+                        <div key={skill._id} className="flex items-center">
+                          <div className="w-2 h-2 bg-blue-200 rounded-full mr-3"></div>
+                          <div className="flex-1 flex items-center justify-between">
+                            <span className="text-sm text-gray-600">{skill.skill}</span>
+                            <div className="flex items-center min-w-[80px]">
+                              <div className="flex-1 mx-2">
+                                <div className="w-24 bg-gray-100 rounded-full h-1.5">
+                                  <div
+                                    className="bg-blue-400 h-1.5 rounded-full transition-all duration-500 ease-in-out"
+                                    style={{ width: `${skill.score}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                              <span className="text-sm text-gray-500 tabular-nums">{skill.score}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
-            })
-          ) : (
-            <p className="text-gray-500">No assessment KPIs available</p>
-          )}
+            })}
         </div>
       </div>
 
