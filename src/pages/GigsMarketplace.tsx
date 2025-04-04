@@ -38,14 +38,39 @@ export function GigsMarketplace() {
   useEffect(() => {
     const fetchGigs = async () => {
       try {
+        console.log('Fetching gigs from:', `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs`);
         const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs`);
-        if (!response.ok)
-          throw new Error("Erreur lors de la récupération des gigs");
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API Error Response:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('Invalid content type:', contentType);
+          console.error('Response body:', text);
+          throw new Error('Invalid response format: Expected JSON but got ' + contentType);
+        }
+
         const data = await response.json();
+        console.log('Received gigs data:', data);
+        
+        if (!data.data || !Array.isArray(data.data)) {
+          console.error('Invalid data structure:', data);
+          throw new Error('Invalid data structure received from API');
+        }
+
         setGigs(data.data);
       } catch (error) {
-        setError("Impossible de récupérer les gigs.");
-        console.error("Erreur:", error);
+        console.error('Error fetching gigs:', error);
+        setError(error instanceof Error ? error.message : "Impossible de récupérer les gigs.");
       } finally {
         setLoading(false);
       }
