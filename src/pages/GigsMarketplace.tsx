@@ -1,84 +1,113 @@
-import React, { useState } from 'react';
-import { Clock, DollarSign, Star, Users, MessageSquare, CheckCircle, XCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Clock, DollarSign, Star, Users, MessageSquare, CheckCircle, XCircle, Globe, Calendar } from 'lucide-react';
 
 export function GigsMarketplace() {
+  interface Gig {
+    _id: string;
+    companyId: string;
+    companyName: string;
+    title: string;
+    description: string;
+    industry: string;
+    requiredSkills: string[];
+    preferredLanguages: string[];
+    requiredExperience: number;
+    expectedConversionRate: number;
+    compensation: {
+      base: number;
+      commission: number;
+    };
+    duration: {
+      startDate: string;
+      endDate: string;
+    };
+    timezone: string;
+    targetRegion: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+
   const [activeTab, setActiveTab] = useState('available');
+  const [gigs, setGigs] = useState<Gig[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('All Industries');
+  const [sortBy, setSortBy] = useState<string>('Sort by: Latest');
 
-  const availableGigs = [
-    {
-      title: 'Customer Support Representative',
-      company: 'TechCorp Inc.',
-      type: 'Phone Support',
-      rate: '$25/hour',
-      duration: '4 hours',
-      requirements: ['Fluent English', 'Tech Knowledge', '2+ years experience'],
-      urgency: 'High',
-    },
-    {
-      title: 'Social Media Manager',
-      company: 'Fashion Brand Co.',
-      type: 'Social Media',
-      rate: '$30/hour',
-      duration: '6 hours',
-      requirements: ['Content Creation', 'Instagram Expert', 'Copywriting'],
-      urgency: 'Medium',
-    },
-    {
-      title: 'Email Support Specialist',
-      company: 'E-commerce Solutions',
-      type: 'Email Support',
-      rate: '$22/hour',
-      duration: '8 hours',
-      requirements: ['Written Communication', 'Problem Solving', 'Multi-tasking'],
-      urgency: 'Low',
-    },
-  ];
+  useEffect(() => {
+    const fetchGigs = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs`);
+        if (!response.ok)
+          throw new Error("Erreur lors de la récupération des gigs");
+        const data = await response.json();
+        setGigs(data.data);
+      } catch (error) {
+        setError("Impossible de récupérer les gigs.");
+        console.error("Erreur:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const activeGigs = [
-    {
-      id: 1,
-      company: 'TechCorp Inc.',
-      task: 'Customer Support Call',
-      timeLeft: '45 minutes',
-      status: 'In Progress',
-      customer: 'Sarah Wilson',
-      type: 'Voice Call',
-    },
-    {
-      id: 2,
-      company: 'E-commerce Solutions',
-      task: 'Email Support',
-      timeLeft: '2 hours',
-      status: 'Scheduled',
-      customer: 'Mike Johnson',
-      type: 'Email',
-    },
-    {
-      id: 3,
-      company: 'Fashion Brand Co.',
-      task: 'Social Media Response',
-      timeLeft: '30 minutes',
-      status: 'In Progress',
-      customer: 'Emily Brown',
-      type: 'Social Media',
-    },
-  ];
+    fetchGigs();
+  }, []);
+
+  // Get unique industries from gigs
+  const industries = ['All Industries', ...new Set(gigs.map(gig => gig.industry))];
+
+  // Filter and sort gigs
+  const filteredAndSortedGigs = gigs
+    .filter(gig => {
+      // Filter by status
+      const statusMatch = activeTab === 'available' ? gig.status === 'open' : gig.status === 'in-progress';
+      // Filter by industry
+      const industryMatch = selectedIndustry === 'All Industries' || gig.industry === selectedIndustry;
+      return statusMatch && industryMatch;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'Sort by: Base Salary':
+          return b.compensation.base - a.compensation.base;
+        case 'Sort by: Experience':
+          return b.requiredExperience - a.requiredExperience;
+        case 'Sort by: Latest':
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-600 text-center p-4">{error}</div>;
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Gigs</h1>
         <div className="flex space-x-3">
-          <select className="border border-gray-200 rounded-lg px-4 py-2 bg-white">
-            <option>All Categories</option>
-            <option>Phone Support</option>
-            <option>Email Support</option>
-            <option>Chat Support</option>
+          <select 
+            className="border border-gray-200 rounded-lg px-4 py-2 bg-white"
+            value={selectedIndustry}
+            onChange={(e) => setSelectedIndustry(e.target.value)}
+          >
+            {industries.map((industry) => (
+              <option key={industry} value={industry}>{industry}</option>
+            ))}
           </select>
-          <select className="border border-gray-200 rounded-lg px-4 py-2 bg-white">
-            <option>Sort by: Latest</option>
-            <option>Sort by: Rate</option>
-            <option>Sort by: Duration</option>
+          <select 
+            className="border border-gray-200 rounded-lg px-4 py-2 bg-white"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="Sort by: Latest">Sort by: Latest</option>
+            <option value="Sort by: Base Salary">Sort by: Base Salary</option>
+            <option value="Sort by: Experience">Sort by: Experience</option>
           </select>
         </div>
       </div>
@@ -106,103 +135,73 @@ export function GigsMarketplace() {
         </button>
       </div>
 
-      {activeTab === 'available' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {availableGigs.map((gig, index) => (
-            <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{gig.title}</h3>
-                  <p className="text-sm text-gray-500">{gig.company}</p>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  gig.urgency === 'High' ? 'bg-red-100 text-red-700' :
-                  gig.urgency === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-green-100 text-green-700'
-                }`}>
-                  {gig.urgency}
-                </span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {filteredAndSortedGigs.map((gig) => (
+          <div key={gig._id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">{gig.title}</h3>
+                <p className="text-sm text-gray-500">{gig.companyName}</p>
               </div>
-
-              <div className="mt-4 space-y-3">
-                <div className="flex items-center text-sm text-gray-500">
-                  <Users className="w-4 h-4 mr-2" />
-                  <span>{gig.type}</span>
-                </div>
-                <div className="flex items-center text-sm text-gray-500">
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  <span>{gig.rate}</span>
-                </div>
-                <div className="flex items-center text-sm text-gray-500">
-                  <Clock className="w-4 h-4 mr-2" />
-                  <span>{gig.duration}</span>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Requirements:</p>
-                <div className="flex flex-wrap gap-2">
-                  {gig.requirements.map((req, i) => (
-                    <span key={i} className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                      {req}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <button className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                Apply Now
-              </button>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                gig.industry === 'Technology' ? 'bg-blue-100 text-blue-700' :
+                gig.industry === 'Healthcare' ? 'bg-green-100 text-green-700' :
+                gig.industry === 'Finance' ? 'bg-purple-100 text-purple-700' :
+                'bg-gray-100 text-gray-700'
+              }`}>
+                {gig.industry}
+              </span>
             </div>
-          ))}
-        </div>
-      )}
 
-      {activeTab === 'active' && (
-        <div className="grid grid-cols-1 gap-6">
-          {activeGigs.map((gig) => (
-            <div key={gig.id} className="bg-white rounded-xl p-6 shadow-sm">
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <h3 className="text-lg font-semibold text-gray-900">{gig.task}</h3>
-                  <p className="text-sm text-gray-500">{gig.company}</p>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  gig.status === 'In Progress' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
-                }`}>
-                  {gig.status}
-                </span>
+            <p className="mt-2 text-sm text-gray-600 line-clamp-2">{gig.description}</p>
+
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center text-sm text-gray-500">
+                <DollarSign className="w-4 h-4 mr-2" />
+                <span>${gig.compensation.base}/hr + {gig.compensation.commission}% commission</span>
               </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <div className="flex items-center text-sm text-gray-600">
-                  <Clock className="w-4 h-4 mr-2 text-gray-400" />
-                  <span>Time Left: {gig.timeLeft}</span>
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <MessageSquare className="w-4 h-4 mr-2 text-gray-400" />
-                  <span>{gig.type}</span>
-                </div>
+              <div className="flex items-center text-sm text-gray-500">
+                <Users className="w-4 h-4 mr-2" />
+                <span>{gig.requiredExperience}+ years experience</span>
               </div>
-
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm font-medium text-gray-700">Customer: {gig.customer}</p>
+              <div className="flex items-center text-sm text-gray-500">
+                <Globe className="w-4 h-4 mr-2" />
+                <span>{gig.targetRegion} ({gig.timezone})</span>
               </div>
-
-              <div className="mt-6 flex space-x-3">
-                <button className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Complete Gig
-                </button>
-                <button className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center">
-                  <XCircle className="w-4 h-4 mr-2" />
-                  Report Issue
-                </button>
+              <div className="flex items-center text-sm text-gray-500">
+                <Calendar className="w-4 h-4 mr-2" />
+                <span>{new Date(gig.duration.startDate).toLocaleDateString()} - {new Date(gig.duration.endDate).toLocaleDateString()}</span>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            <div className="mt-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Required Skills:</p>
+              <div className="flex flex-wrap gap-2">
+                {gig.requiredSkills.map((skill, i) => (
+                  <span key={i} className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Languages:</p>
+              <div className="flex flex-wrap gap-2">
+                {gig.preferredLanguages.map((lang, i) => (
+                  <span key={i} className="px-2 py-1 bg-blue-50 rounded-full text-xs text-blue-600">
+                    {lang}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <button className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+              {activeTab === 'available' ? 'Apply Now' : 'View Details'}
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
