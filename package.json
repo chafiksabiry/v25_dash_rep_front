@@ -15,6 +15,7 @@
     "axios": "^1.8.4",
     "cheerio": "^1.0.0",
     "date-fns": "^3.3.1",
+    "js-cookies": "^1.0.4",
     "lucide-react": "^0.344.0",
     "openai": "^4.28.0",
     "qiankun": "^2.10.16",
