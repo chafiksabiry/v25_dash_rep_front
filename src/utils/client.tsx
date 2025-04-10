@@ -37,6 +37,7 @@ const addAuthInterceptor = (axiosInstance: any) => {
   axiosInstance.interceptors.request.use(
     (config: any) => {
       const token = localStorage.getItem('token');
+      console.log("token from client.js addAuthInterceptor", token);
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -47,7 +48,7 @@ const addAuthInterceptor = (axiosInstance: any) => {
     }
   );
 
-  axiosInstance.interceptors.response.use(
+/*   axiosInstance.interceptors.response.use(
     (response: any) => response,
     (error: any) => {
       if (error.response?.status === 401) {
@@ -55,7 +56,7 @@ const addAuthInterceptor = (axiosInstance: any) => {
       }
       return Promise.reject(error);
     }
-  );
+  ); */
 };
 
 // Add auth interceptors to all instances
