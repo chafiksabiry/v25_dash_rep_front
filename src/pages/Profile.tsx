@@ -3,7 +3,7 @@ import { Mail, Phone, MapPin, Star, Award, Clock, Brain, Trophy, Target } from '
 import { REPSScore } from '../components/REPSScore';
 import { ProfileEditForm } from '../components/ProfileEditForm';
 import api from '../utils/client';
-import Cookies from 'js-cookies'
+import Cookies from 'js-cookie';
 
 // Define a type for your profile data
 interface ProfileData {
@@ -81,11 +81,11 @@ export function Profile() {
           throw new Error('Authentication token not found');
         }
 
-        // Decode token to get userId
-        const userId = Cookies.get('userId')
+        // Get userId from cookies
+        const userId = Cookies.get('userId');
 
         if (!userId) {
-          throw new Error('User ID not found in token');
+          throw new Error('User ID not found in cookies');
         }
 
         // Get profile using userId from token
