@@ -3,6 +3,7 @@ import { Mail, Phone, MapPin, Star, Award, Clock, Brain, Trophy, Target } from '
 import { REPSScore } from '../components/REPSScore';
 import { ProfileEditForm } from '../components/ProfileEditForm';
 import api from '../utils/client';
+import Cookies from 'js-cookies'
 
 // Define a type for your profile data
 interface ProfileData {
@@ -81,8 +82,7 @@ export function Profile() {
         }
 
         // Decode token to get userId
-        const decodedToken = JSON.parse(atob(token.split('.')[1]));
-        const userId = decodedToken.userId;
+        const userId = Cookies.get('userId')
 
         if (!userId) {
           throw new Error('User ID not found in token');
@@ -93,7 +93,6 @@ export function Profile() {
           const response = await api.profile.getById(userId);
           // Process the response data to ensure all nested objects are handled properly
           const profileData = response.data;
-
           console.log('Raw profile data from API:', JSON.stringify(profileData, null, 2));
 
           // Store the agent ID in localStorage
