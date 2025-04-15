@@ -77,9 +77,9 @@ export function Profile() {
         // For testing, add a token to localStorage if not present
         const token = localStorage.getItem('token');
 
-        if (!token) {
+        /* if (!token) {
           throw new Error('Authentication token not found');
-        }
+        } */
 
         // Get userId from cookies
         const userId = Cookies.get('userId');
