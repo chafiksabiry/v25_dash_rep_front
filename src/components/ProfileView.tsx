@@ -169,8 +169,9 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
               <Clock className="w-6 h-6 text-blue-600" />
               <h2 className="text-lg font-semibold">Availability</h2>
             </div>
+            
             <div className="space-y-4">
-              {profile.availability.hours && (
+              {profile.availability.hours ? (
                 <div>
                   <div className="text-sm font-medium text-gray-700 mb-2">Preferred Hours</div>
                   <div className="flex justify-between items-center text-sm text-gray-600">
@@ -179,15 +180,20 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                     <span>{profile.availability.hours.end}</span>
                   </div>
                 </div>
+              ) : (
+                <div>
+                  <div className="text-sm font-medium text-gray-700 mb-2">Preferred Hours</div>
+                  <div className="text-sm text-gray-500 italic">Not specified</div>
+                </div>
               )}
               
-              {profile.availability.days?.length > 0 && (
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-2">Available Days</div>
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Available Days</div>
+                {profile.availability.days && profile.availability.days.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
                       const fullDay = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][index];
-                      const isAvailable = profile.availability.days.includes(fullDay);
+                      const isAvailable = profile.availability.days?.includes(fullDay);
                       
                       return (
                         <div 
@@ -203,25 +209,38 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                       );
                     })}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-sm text-gray-500 italic">No specific days set</div>
+                )}
+              </div>
               
-              {profile.availability.timeZones?.length > 0 && (
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium">Time Zone:</span> {profile.availability.timeZones.join(', ')}
-                </div>
-              )}
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Time Zones</div>
+                {profile.availability.timeZones && profile.availability.timeZones.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {profile.availability.timeZones.map((zone: string, idx: number) => (
+                      <span key={idx} className="px-2 py-1 bg-blue-50 text-blue-800 rounded text-xs">
+                        {zone}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500 italic">No specific time zones set</div>
+                )}
+              </div>
               
-              {profile.availability.flexibility?.length > 0 && (
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-2">Flexibility</div>
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Flexibility</div>
+                {profile.availability.flexibility && profile.availability.flexibility.length > 0 ? (
                   <ul className="text-sm text-gray-600 space-y-1 list-disc ml-4">
-                    {profile.availability.flexibility.map((item, index) => (
+                    {profile.availability.flexibility.map((item: string, index: number) => (
                       <li key={index}>{item}</li>
                     ))}
                   </ul>
-                </div>
-              )}
+                ) : (
+                  <div className="text-sm text-gray-500 italic">No flexibility options specified</div>
+                )}
+              </div>
             </div>
           </div>
         )}
