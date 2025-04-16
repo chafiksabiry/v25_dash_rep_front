@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ProfileView } from '../components/ProfileView';
 import { ProfileEditForm } from '../components/ProfileEditForm';
-import api from '../utils/client';
+import { profileApi } from '../utils/client.tsx';
 import Cookies from 'js-cookie';
 
 // Define a type for your profile data
@@ -116,18 +116,11 @@ export function Profile() {
         }
 
         try {
-          const response = await api.profile.getById(userId);
-          const profileData = response.data;
+          const response = await profileApi.getById(userId);
+          const profileData = response.data.data;
           
           // Add detailed logging
-          console.log('Raw Profile Data:', {
-            fullData: profileData,
-            id: profileData._id,
-            personalInfo: profileData.personalInfo,
-            experience: profileData.experience,
-            skills: profileData.skills,
-            professionalSummary: profileData.professionalSummary
-          });
+          console.log('Raw Profile Data:', profileData);
 
           if (profileData._id) {
             localStorage.setItem('agentId', profileData._id);
@@ -137,7 +130,7 @@ export function Profile() {
           setLoading(false);
         } catch (idError) {
           console.error('Error fetching by ID, trying default endpoint:', idError);
-          const response = await api.profile.get();
+          const response = await profileApi.get();
           const profileData = response.data;
 
           // Add detailed logging for fallback response
@@ -175,19 +168,27 @@ export function Profile() {
     fetchProfile();
   }, []);
 
-  const handleSaveProfile = (updatedProfile: ProfileData) => {
-    // Add logging for profile updates
-    console.log('Saving updated profile:', {
-      fullData: updatedProfile,
-      id: updatedProfile._id,
-      personalInfo: updatedProfile.personalInfo,
-      experience: updatedProfile.experience,
-      skills: updatedProfile.skills,
-      professionalSummary: updatedProfile.professionalSummary
-    });
-    
-    setProfile(updatedProfile);
-    setIsEditing(false);
+  const handleSaveProfile = async (updatedProfile: ProfileData) => {
+    try {
+      // Add logging for profile updates
+      console.log('Saving updated profile:', {
+        fullData: updatedProfile,
+        id: updatedProfile._id,
+        personalInfo: updatedProfile.personalInfo,
+        experience: updatedProfile.experience,
+        skills: updatedProfile.skills,
+        professionalSummary: updatedProfile.professionalSummary
+      });
+      
+      const response = await profileApi.update(updatedProfile._id, updatedProfile);
+      const savedProfile = response.data;  // Access the nested data
+      
+      setProfile(savedProfile);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      // You might want to add error handling here
+    }
   };
 
   if (loading) {

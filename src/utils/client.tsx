@@ -176,9 +176,9 @@ export const authApi = {
 };
 
 export const profileApi = {
-  get: () => apiClient.get('/api/profile'),
-  getById: (id: string) => apiClient.get(`/api/profile/user/${id}`),
-  update: (profileId: string, data: any) => apiClient.put(`/api/profile/${profileId}`, data),
+  get: () => apiClient.get('/api/profiles'),
+  getById: (id: string) => apiClient.get(`/api/profiles/user/${id}`),
+  update: (profileId: string, data: any) => apiClient.put(`/api/profiles/${profileId}`, data),
 };
 
 // Default export with all APIs
