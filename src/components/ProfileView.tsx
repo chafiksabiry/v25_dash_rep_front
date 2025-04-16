@@ -361,21 +361,32 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
             <div className="space-y-6">
               {profile.experience.map((exp: any, index: number) => {
                 // Format dates for display
-                const formatDate = (dateString: string) => {
+                const formatDateToDD_MM_YYYY = (dateString: string) => {
                   if (!dateString) return '';
-                  // Check if it's already a formatted date
+                  // Check if it's already formatted with slashes or dashes
                   if (dateString.includes('/') || dateString.includes('-')) {
-                    return dateString;
+                    // Try to standardize the format
+                    try {
+                      const date = new Date(dateString);
+                      return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
+                    } catch (e) {
+                      return dateString; // Return as is if parsing fails
+                    }
                   }
+                  
+                  // Parse ISO date
                   try {
-                    return new Date(dateString).toLocaleDateString();
+                    const date = new Date(dateString);
+                    return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
                   } catch (e) {
                     return dateString;
                   }
                 };
                 
-                const startDate = formatDate(exp.startDate);
-                const endDate = exp.endDate ? formatDate(exp.endDate) : 'Present';
+                const startDate = formatDateToDD_MM_YYYY(exp.startDate);
+                // Handle endDate specifically - could be 'present' or a Date
+                let endDate = exp.endDate === 'present' ? 'Present' : 
+                              exp.endDate ? formatDateToDD_MM_YYYY(exp.endDate) : 'Present';
                 
                 return (
                   <div key={index} className="border-l-2 border-blue-500 pl-4">
@@ -392,6 +403,19 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                       <p className="text-gray-700 mt-2">{exp.description}</p>
                     )}
                     
+                    {/* Responsibilities section */}
+                    {exp.responsibilities?.length > 0 && (
+                      <div className="mt-3">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Responsibilities:</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {exp.responsibilities.map((responsibility: string, idx: number) => (
+                            <li key={idx} className="text-sm text-gray-600">{responsibility}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {/* Achievements section */}
                     {exp.achievements?.length > 0 && (
                       <div className="mt-3">
                         <h4 className="text-sm font-medium text-gray-700 mb-2">Key Achievements:</h4>
