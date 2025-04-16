@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ProfileView } from '../components/ProfileView';
-import { ProfileEditForm } from '../components/ProfileEditForm';
 import { profileApi } from '../utils/client.tsx';
 import Cookies from 'js-cookie';
 
@@ -104,7 +103,6 @@ export function Profile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -168,29 +166,6 @@ export function Profile() {
     fetchProfile();
   }, []);
 
-  const handleSaveProfile = async (updatedProfile: ProfileData) => {
-    try {
-      // Add logging for profile updates
-      console.log('Saving updated profile:', {
-        fullData: updatedProfile,
-        id: updatedProfile._id,
-        personalInfo: updatedProfile.personalInfo,
-        experience: updatedProfile.experience,
-        skills: updatedProfile.skills,
-        professionalSummary: updatedProfile.professionalSummary
-      });
-      
-      const response = await profileApi.update(updatedProfile._id, updatedProfile);
-      const savedProfile = response.data;  // Access the nested data
-      
-      setProfile(savedProfile);
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      // You might want to add error handling here
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center">
@@ -215,31 +190,9 @@ export function Profile() {
     );
   }
 
-  if (isEditing) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          <ProfileEditForm
-            profile={profile}
-            onCancel={() => setIsEditing(false)}
-            onSave={handleSaveProfile}
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6 flex justify-end">
-          <button
-            onClick={() => setIsEditing(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Edit Profile
-          </button>
-        </div>
         <ProfileView profile={profile} />
       </div>
     </div>

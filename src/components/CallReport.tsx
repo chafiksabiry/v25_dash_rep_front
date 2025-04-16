@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import api, { vertexApi, callsApi } from "../utils/client";
+import { vertexApi, callsApi } from "../utils/client.tsx";
 import { Info, Target, Volume2, BookOpen, User, Phone, Clock, Calendar, CheckCircle, XCircle, FileText, ClipboardList, ArrowRight, ArrowLeft } from 'lucide-react';
 
-// Also need to add Call type
+// Define the Call interface locally
 export interface Call {
     _id: string;
     recording_url: string;
