@@ -245,6 +245,25 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
           </div>
         )}
 
+        {/* Industries Card */}
+        <div className="bg-white rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Briefcase className="w-6 h-6 text-blue-600" />
+            <h2 className="text-lg font-semibold">Industries</h2>
+          </div>
+          {profile.professionalSummary?.industries && profile.professionalSummary.industries.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {profile.professionalSummary.industries.map((industry: string, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm">
+                  {industry}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No industries specified</p>
+          )}
+        </div>
+
         {/* Status Card */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-lg font-semibold mb-4">Current Status</h2>
