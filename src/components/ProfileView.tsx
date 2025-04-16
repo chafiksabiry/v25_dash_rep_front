@@ -38,6 +38,21 @@ const formatDate = (dateString: string | undefined) => {
   }
 };
 
+const CONTACT_CENTER_SKILLS = [
+  {
+    name: "Communication",
+    skills: ["Active Listening", "Clear Speech", "Empathy", "Tone Management"]
+  },
+  {
+    name: "Problem Solving",
+    skills: ["Issue Analysis", "Solution Finding", "Decision Making", "Resource Utilization"]
+  },
+  {
+    name: "Customer Service",
+    skills: ["Service Orientation", "Conflict Resolution", "Product Knowledge", "Quality Assurance"]
+  }
+];
+
 export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
   if (!profile) return null;
 
@@ -58,6 +73,12 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
 
   const overallScore = calculateOverallScore();
   const lastUpdated = formatDate(profile.lastUpdated);
+
+  // Helper function to find skill data from profile
+  const findSkillData = (skillName: string) => {
+    if (!profile.skills?.contactCenter?.length) return null;
+    return profile.skills.contactCenter.find((s: any) => s.skill === skillName);
+  };
 
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
@@ -354,55 +375,75 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
         
         {/* Contact Center Skills Section */}
         <div className="bg-white rounded-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4">Contact Center Skills</h2>
-          {profile.skills?.contactCenter?.length > 0 ? (
-            <div className="space-y-4">
-              {profile.skills.contactCenter.map((skill: any, idx: number) => (
-                <div key={idx} className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-medium text-gray-800">{skill.skill}</h4>
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                      {skill.proficiency}
-                    </span>
-                  </div>
-                  
-                  {skill.assessmentResults && (
-                    <div className="grid md:grid-cols-2 gap-4 mt-4">
-                      {skill.assessmentResults.strengths?.length > 0 && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                            <ThumbsUp className="w-4 h-4 text-green-500" />
-                            Strengths
-                          </h5>
-                          <ul className="space-y-1">
-                            {skill.assessmentResults.strengths.map((strength: string, i: number) => (
-                              <li key={i} className="text-sm text-gray-600">{strength}</li>
-                            ))}
-                          </ul>
+          <h2 className="text-2xl font-semibold mb-6">Contact Center Skills</h2>
+          <div className="space-y-8">
+            {CONTACT_CENTER_SKILLS.map((category) => (
+              <div key={category.name} className="mb-8">
+                <h3 className="text-xl font-medium text-gray-800 mb-4 pb-2 border-b">{category.name}</h3>
+                <div className="space-y-4">
+                  {category.skills.map((skillName) => {
+                    const skillData = findSkillData(skillName);
+                    
+                    return (
+                      <div key={skillName} className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="font-medium text-gray-800">{skillName}</h4>
+                          {skillData ? (
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                {skillData.proficiency}
+                              </span>
+                              {skillData.assessmentResults?.score !== undefined && (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+                                  Score: {skillData.assessmentResults.score}/100
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs italic">
+                              Not assessed yet
+                            </span>
+                          )}
                         </div>
-                      )}
-                      
-                      {skill.assessmentResults.improvements?.length > 0 && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                            <ThumbsDown className="w-4 h-4 text-red-500" />
-                            Areas for Improvement
-                          </h5>
-                          <ul className="space-y-1">
-                            {skill.assessmentResults.improvements.map((area: string, i: number) => (
-                              <li key={i} className="text-sm text-gray-600">{area}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        
+                        {skillData?.assessmentResults ? (
+                          <div className="mt-3">
+                            {/* Display key metrics if available */}
+                            {skillData.assessmentResults.keyMetrics && (
+                              <div className="grid grid-cols-3 gap-2">
+                                {skillData.assessmentResults.keyMetrics.professionalism !== undefined && (
+                                  <div className="bg-blue-50 p-2 rounded text-center">
+                                    <div className="text-xs text-gray-600 mb-1">Professionalism</div>
+                                    <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.professionalism}/100</div>
+                                  </div>
+                                )}
+                                {skillData.assessmentResults.keyMetrics.effectiveness !== undefined && (
+                                  <div className="bg-green-50 p-2 rounded text-center">
+                                    <div className="text-xs text-gray-600 mb-1">Effectiveness</div>
+                                    <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.effectiveness}/100</div>
+                                  </div>
+                                )}
+                                {skillData.assessmentResults.keyMetrics.customerFocus !== undefined && (
+                                  <div className="bg-purple-50 p-2 rounded text-center">
+                                    <div className="text-xs text-gray-600 mb-1">Customer Focus</div>
+                                    <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.customerFocus}/100</div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="mt-2 text-sm text-gray-500 italic">
+                            Complete an assessment to see your KPI metrics
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500">No contact center skills listed</p>
-          )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Languages Section */}
