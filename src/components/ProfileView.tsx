@@ -72,7 +72,7 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
               </div>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{profile.personalInfo?.name}</h1>
-            <p className="text-lg text-gray-600 mb-4">{profile.professionalSummary?.currentRole || 'Professional'}</p>
+            <p className="text-lg text-gray-600 mb-4">{profile.professionalSummary?.currentRole || 'Representative'}</p>
             <div className="flex items-center justify-center gap-2 text-gray-600 mb-4">
               <MapPin className="w-4 h-4" />
               <span>{profile.personalInfo?.location || 'Location not specified'}</span>
