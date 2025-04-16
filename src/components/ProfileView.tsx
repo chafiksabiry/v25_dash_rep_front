@@ -325,28 +325,35 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                         ))}
                       </div>
                     </div>
-                    <div>
+                    <div className="mb-4">
                       <span className="text-sm font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded">
                         {lang.proficiency}
                       </span>
                     </div>
                     
-                    {lang.assessmentResults && (
-                      <div className="grid grid-cols-3 gap-4 mt-4">
-                        <div>
-                          <span className="text-sm text-gray-600">Fluency</span>
-                          <p className="font-medium text-gray-800">{lang.assessmentResults.fluency?.score || 'N/A'}/10</p>
+                    {/* Always show assessment criteria */}
+                    <div className="grid grid-cols-3 gap-4 mt-4">
+                      {!lang.assessmentResults ? (
+                        <div className="col-span-3 text-center">
+                          <p className="text-sm text-gray-500 italic">Not assessed yet</p>
                         </div>
-                        <div>
-                          <span className="text-sm text-gray-600">Proficiency</span>
-                          <p className="font-medium text-gray-800">{lang.assessmentResults.proficiency?.score || 'N/A'}/10</p>
-                        </div>
-                        <div>
-                          <span className="text-sm text-gray-600">Completeness</span>
-                          <p className="font-medium text-gray-800">{lang.assessmentResults.completeness?.score || 'N/A'}/10</p>
-                        </div>
-                      </div>
-                    )}
+                      ) : (
+                        <>
+                          <div>
+                            <span className="text-sm text-gray-600">Fluency</span>
+                            <p className="font-medium text-gray-800">{lang.assessmentResults.fluency?.score || 0}/100</p>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">Proficiency</span>
+                            <p className="font-medium text-gray-800">{lang.assessmentResults.proficiency?.score || 0}/100</p>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">Completeness</span>
+                            <p className="font-medium text-gray-800">{lang.assessmentResults.completeness?.score || 0}/100</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 );
               })}
