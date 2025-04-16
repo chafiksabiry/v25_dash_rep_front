@@ -202,101 +202,104 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
           </div>
         )}
 
+        {/* Technical Skills Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Technical Skills</h2>
+          {profile.skills?.technical?.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {profile.skills.technical.map((skill: any, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                  {typeof skill === 'string' ? skill : skill.skill || ''}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">No technical skills listed</p>
+          )}
+        </div>
+        
         {/* Professional Skills Section */}
         <div className="bg-white rounded-lg p-6">
-          <h2 className="text-2xl font-semibold mb-6">Professional Skills</h2>
-          
-          {/* Technical Skills */}
-          {profile.skills?.technical?.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Technical Skills</h3>
-              <div className="flex flex-wrap gap-2">
-                {profile.skills.technical.map((skill: any, idx: number) => (
-                  <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                    {typeof skill === 'string' ? skill : skill.skill || ''}
-                  </span>
-                ))}
-              </div>
+          <h2 className="text-2xl font-semibold mb-4">Professional Skills</h2>
+          {profile.skills?.professional?.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {profile.skills.professional.map((skill: any, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                  {typeof skill === 'string' ? skill : skill.skill || ''}
+                </span>
+              ))}
             </div>
+          ) : (
+            <p className="text-gray-500">No professional skills listed</p>
           )}
-          
-          {/* Professional Skills */}
-          {profile.skills?.professional?.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Professional Skills</h3>
-              <div className="flex flex-wrap gap-2">
-                {profile.skills.professional.map((skill: any, idx: number) => (
-                  <span key={idx} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                    {typeof skill === 'string' ? skill : skill.skill || ''}
-                  </span>
-                ))}
-              </div>
+        </div>
+        
+        {/* Soft Skills Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Soft Skills</h2>
+          {profile.skills?.soft?.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {profile.skills.soft.map((skill: any, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                  {typeof skill === 'string' ? skill : skill.skill || ''}
+                </span>
+              ))}
             </div>
+          ) : (
+            <p className="text-gray-500">No soft skills listed</p>
           )}
-          
-          {/* Soft Skills */}
-          {profile.skills?.soft?.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Soft Skills</h3>
-              <div className="flex flex-wrap gap-2">
-                {profile.skills.soft.map((skill: any, idx: number) => (
-                  <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
-                    {typeof skill === 'string' ? skill : skill.skill || ''}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Contact Center Skills */}
-          {profile.skills?.contactCenter?.length > 0 && (
-            <div>
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Contact Center Skills</h3>
-              <div className="space-y-4">
-                {profile.skills.contactCenter.map((skill: any, idx: number) => (
-                  <div key={idx} className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-medium text-gray-800">{skill.skill}</h4>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                        {skill.proficiency}
-                      </span>
-                    </div>
-                    
-                    {skill.assessmentResults && (
-                      <div className="grid md:grid-cols-2 gap-4 mt-4">
-                        {skill.assessmentResults.strengths?.length > 0 && (
-                          <div>
-                            <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                              <ThumbsUp className="w-4 h-4 text-green-500" />
-                              Strengths
-                            </h5>
-                            <ul className="space-y-1">
-                              {skill.assessmentResults.strengths.map((strength: string, i: number) => (
-                                <li key={i} className="text-sm text-gray-600">{strength}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        
-                        {skill.assessmentResults.improvements?.length > 0 && (
-                          <div>
-                            <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                              <ThumbsDown className="w-4 h-4 text-red-500" />
-                              Areas for Improvement
-                            </h5>
-                            <ul className="space-y-1">
-                              {skill.assessmentResults.improvements.map((area: string, i: number) => (
-                                <li key={i} className="text-sm text-gray-600">{area}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
+        </div>
+        
+        {/* Contact Center Skills Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Contact Center Skills</h2>
+          {profile.skills?.contactCenter?.length > 0 ? (
+            <div className="space-y-4">
+              {profile.skills.contactCenter.map((skill: any, idx: number) => (
+                <div key={idx} className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-medium text-gray-800">{skill.skill}</h4>
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                      {skill.proficiency}
+                    </span>
                   </div>
-                ))}
-              </div>
+                  
+                  {skill.assessmentResults && (
+                    <div className="grid md:grid-cols-2 gap-4 mt-4">
+                      {skill.assessmentResults.strengths?.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                            <ThumbsUp className="w-4 h-4 text-green-500" />
+                            Strengths
+                          </h5>
+                          <ul className="space-y-1">
+                            {skill.assessmentResults.strengths.map((strength: string, i: number) => (
+                              <li key={i} className="text-sm text-gray-600">{strength}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {skill.assessmentResults.improvements?.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                            <ThumbsDown className="w-4 h-4 text-red-500" />
+                            Areas for Improvement
+                          </h5>
+                          <ul className="space-y-1">
+                            {skill.assessmentResults.improvements.map((area: string, i: number) => (
+                              <li key={i} className="text-sm text-gray-600">{area}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
+          ) : (
+            <p className="text-gray-500">No contact center skills listed</p>
           )}
         </div>
 
