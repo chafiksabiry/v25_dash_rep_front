@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Phone, MapPin, Star, Award, Clock, Brain, Trophy, Target } from 'lucide-react';
-import { REPSScore } from '../components/REPSScore';
+import { ProfileView } from '../components/ProfileView';
 import { ProfileEditForm } from '../components/ProfileEditForm';
 import api from '../utils/client';
 import Cookies from 'js-cookie';
@@ -9,16 +8,88 @@ import Cookies from 'js-cookie';
 interface ProfileData {
   _id: string;
   userId: string;
-  name: string;
-  email: string;
-  phone?: string;
-  location?: string;
-  role?: string;
-  experience: number;
-  industries?: string[];
-  keyExpertise?: string[];
-  notableCompanies?: string[];
-  experienceDetails?: Array<{
+  status: string;
+  completionSteps: {
+    basicInfo: boolean;
+    experience: boolean;
+    skills: boolean;
+    languages: boolean;
+    assessment: boolean;
+  };
+  personalInfo: {
+    name: string;
+    location?: string;
+    email: string;
+    phone?: string;
+    languages: Array<{
+      language: string;
+      proficiency: string;
+      assessmentResults?: {
+        completeness: {
+          score: number;
+          feedback: string;
+        };
+        fluency: {
+          score: number;
+          feedback: string;
+        };
+        proficiency: {
+          score: number;
+          feedback: string;
+        };
+        overall: {
+          score: number;
+          strengths: string;
+          areasForImprovement: string;
+        };
+        completedAt: string;
+      };
+    }>;
+  };
+  professionalSummary: {
+    yearsOfExperience: string;
+    currentRole?: string;
+    industries?: string[];
+    keyExpertise?: string[];
+    notableCompanies?: string[];
+    profileDescription?: string;
+  };
+  skills: {
+    technical: Array<{
+      skill: string;
+      level: number;
+      details?: string;
+    }>;
+    professional: Array<{
+      skill: string;
+      level: number;
+      details?: string;
+    }>;
+    soft: Array<{
+      skill: string;
+      level: number;
+      details?: string;
+    }>;
+    contactCenter: Array<{
+      skill: string;
+      category: string;
+      proficiency: string;
+      assessmentResults: {
+        score: number;
+        strengths: string[];
+        improvements: string[];
+        feedback: string;
+        tips: string[];
+        keyMetrics: {
+          professionalism: number;
+          effectiveness: number;
+          customerFocus: number;
+        };
+        completedAt: string;
+      };
+    }>;
+  };
+  experience: Array<{
     title: string;
     company: string;
     startDate: string;
@@ -26,43 +97,7 @@ interface ProfileData {
     responsibilities?: string[];
     achievements?: string[];
   }>;
-  skills?: string[];
-  languages?: Array<{
-    language: string;
-    proficiency: string;
-    assessmentScore: number;
-  }>;
-  assessmentKPIs?: {
-    categoryScores: Record<string, number>;
-    skillAssessments: Record<string, Array<{
-      _id: string;
-      category: string;
-      skill: string;
-      score: number;
-      keyMetrics: Record<string, number>;
-      strengths: string[];
-      improvements: string[];
-      feedback: string;
-      tips: string[];
-      completedAt: string;
-    }>>;
-  };
-  completionStatus?: string;
-  completionSteps?: Record<string, boolean>;
   lastUpdated: string;
-  personalInfo?: {
-    name: string;
-    location?: string;
-    email?: string;
-    phone?: string;
-  };
-  professionalSummary?: {
-    yearsOfExperience: string;
-    currentRole?: string;
-    industries?: string[];
-    keyExpertise?: string[];
-    notableCompanies?: string[];
-  };
 }
 
 export function Profile() {
@@ -74,84 +109,49 @@ export function Profile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        // For testing, add a token to localStorage if not present
-        const token = localStorage.getItem('token');
-
-        /* if (!token) {
-          throw new Error('Authentication token not found');
-        } */
-
-        // Get userId from cookies
         const userId = Cookies.get('userId');
 
         if (!userId) {
           throw new Error('User ID not found in cookies');
         }
 
-        // Get profile using userId from token
         try {
           const response = await api.profile.getById(userId);
-          // Process the response data to ensure all nested objects are handled properly
           const profileData = response.data;
-          console.log('Raw profile data from API:', JSON.stringify(profileData, null, 2));
+          
+          // Add detailed logging
+          console.log('Raw Profile Data:', {
+            fullData: profileData,
+            id: profileData._id,
+            personalInfo: profileData.personalInfo,
+            experience: profileData.experience,
+            skills: profileData.skills,
+            professionalSummary: profileData.professionalSummary
+          });
 
-          // Store the agent ID in localStorage
           if (profileData._id) {
             localStorage.setItem('agentId', profileData._id);
-          }
-
-          // Ensure experienceDetails objects have string values
-          if (profileData.experienceDetails) {
-            console.log('Experience details before processing:', JSON.stringify(profileData.experienceDetails, null, 2));
-
-            profileData.experienceDetails = profileData.experienceDetails.map((exp: any) => {
-              console.log('Processing experience item:', exp);
-              return {
-                ...exp,
-                responsibilities: Array.isArray(exp.responsibilities)
-                  ? exp.responsibilities.map((r: any) => {
-                    console.log('Responsibility type:', typeof r, r);
-                    return typeof r === 'string' ? r : JSON.stringify(r);
-                  })
-                  : [],
-                achievements: Array.isArray(exp.achievements)
-                  ? exp.achievements.map((a: any) => {
-                    console.log('Achievement type:', typeof a, a);
-                    return typeof a === 'string' ? a : JSON.stringify(a);
-                  })
-                  : []
-              };
-            });
-
-            console.log('Experience details after processing:', JSON.stringify(profileData.experienceDetails, null, 2));
           }
 
           setProfile(profileData);
           setLoading(false);
         } catch (idError) {
           console.error('Error fetching by ID, trying default endpoint:', idError);
-          // If that fails, fall back to regular profile endpoint
           const response = await api.profile.get();
-
-          // Process the response data to ensure all nested objects are handled properly
           const profileData = response.data;
 
-          // Store the agent ID in localStorage
+          // Add detailed logging for fallback response
+          console.log('Fallback Profile Data:', {
+            fullData: profileData,
+            id: profileData._id,
+            personalInfo: profileData.personalInfo,
+            experience: profileData.experience,
+            skills: profileData.skills,
+            professionalSummary: profileData.professionalSummary
+          });
+
           if (profileData._id) {
             localStorage.setItem('agentId', profileData._id);
-          }
-
-          // Ensure experienceDetails objects have string values
-          if (profileData.experienceDetails) {
-            profileData.experienceDetails = profileData.experienceDetails.map((exp: any) => ({
-              ...exp,
-              responsibilities: Array.isArray(exp.responsibilities)
-                ? exp.responsibilities.map((r: any) => typeof r === 'string' ? r : JSON.stringify(r))
-                : [],
-              achievements: Array.isArray(exp.achievements)
-                ? exp.achievements.map((a: any) => typeof a === 'string' ? a : JSON.stringify(a))
-                : []
-            }));
           }
 
           setProfile(profileData);
@@ -175,375 +175,72 @@ export function Profile() {
     fetchProfile();
   }, []);
 
-  // Default REPS scores - no longer derived from assessmentKPIs
-  const repsScores = {
-    reliability: 85,
-    efficiency: 80,
-    professionalism: 90,
-    service: 85,
-  };
-
-  // Generic improvement suggestions
-  const improvements = [
-    {
-      category: 'Response Time Optimization',
-      suggestion: 'Implement quick-reply templates for common inquiries to reduce initial response time.',
-      impact: 'Could improve efficiency score by 5-7 points',
-    },
-    {
-      category: 'Customer Satisfaction Enhancement',
-      suggestion: 'Follow up with customers after resolution to ensure complete satisfaction.',
-      impact: 'Potential 4-6 point increase in service score',
-    },
-    {
-      category: 'Knowledge Base Utilization',
-      suggestion: 'Increase usage of knowledge base articles during customer interactions.',
-      impact: 'Expected 3-5 point boost in efficiency',
-    },
-  ];
-
-  // Function to handle saving the edited profile
   const handleSaveProfile = (updatedProfile: ProfileData) => {
+    // Add logging for profile updates
+    console.log('Saving updated profile:', {
+      fullData: updatedProfile,
+      id: updatedProfile._id,
+      personalInfo: updatedProfile.personalInfo,
+      experience: updatedProfile.experience,
+      skills: updatedProfile.skills,
+      professionalSummary: updatedProfile.professionalSummary
+    });
+    
     setProfile(updatedProfile);
     setIsEditing(false);
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading profile...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <div className="text-lg text-gray-600">Loading profile...</div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-red-500 text-center mt-8">Error: {error}</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <div className="text-lg text-red-600">Error: {error}</div>
+      </div>
+    );
   }
 
   if (!profile) {
-    return <div className="text-center mt-8">No profile data available</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <div className="text-lg text-gray-600">No profile data available</div>
+      </div>
+    );
   }
 
-  // If in editing mode, show the edit form
-  if (isEditing && profile) {
+  if (isEditing) {
     return (
-      <div className="max-w-4xl mx-auto p-4">
-        <ProfileEditForm
-          profile={profile}
-          onCancel={() => setIsEditing(false)}
-          onSave={handleSaveProfile}
-        />
+      <div className="min-h-screen bg-gray-50 py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <ProfileEditForm
+            profile={profile}
+            onCancel={() => setIsEditing(false)}
+            onSave={handleSaveProfile}
+          />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 p-4">
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <div className="flex items-start space-x-6">
-          {/* Generic profile avatar that doesn't imply gender */}
-          <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
-            <span className="text-3xl text-blue-600 font-semibold">
-              {profile.name?.split(' ').map(n => n.charAt(0)).join('')}
-            </span>
-          </div>
-          <div className="flex-1">
-            <div className="flex justify-between items-start">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {profile.name}
-                </h1>
-                <p className="text-gray-500">{profile.role || 'HARX Representative'}</p>
-              </div>
-              <div>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Edit Profile
-                </button>
-              </div>
-            </div>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center text-gray-500">
-                <Mail className="w-4 h-4 mr-2" />
-                <span>{profile.email}</span>
-              </div>
-              <div className="flex items-center text-gray-500">
-                <Phone className="w-4 h-4 mr-2" />
-                <span>{profile.phone || 'Not specified'}</span>
-              </div>
-              <div className="flex items-center text-gray-500">
-                <MapPin className="w-4 h-4 mr-2" />
-                <span>{profile.location || 'Not specified'}</span>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6 flex justify-end">
+          <button
+            onClick={() => setIsEditing(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Edit Profile
+          </button>
         </div>
+        <ProfileView profile={profile} />
       </div>
-
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">REPS Performance Score</h2>
-          <div className="flex items-center space-x-2 bg-purple-50 px-4 py-2 rounded-lg">
-            <Brain className="w-5 h-5 text-purple-600" />
-            <span className="text-purple-600 font-medium">AI-Powered Insights</span>
-          </div>
-        </div>
-        <REPSScore scores={repsScores} improvements={improvements} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Experience</h2>
-            <Award className="w-5 h-5 text-blue-600" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900">{profile.experience} years</div>
-          <p className="text-sm text-gray-500">As a {profile.role}</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Industries</h2>
-            <Target className="w-5 h-5 text-green-600" />
-          </div>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {profile.industries && profile.industries.length > 0 ? (
-              profile.industries.map((industry, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm"
-                >
-                  {industry}
-                </span>
-              ))
-            ) : (
-              <span className="text-gray-500">No industries specified</span>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Notable Companies</h2>
-            <Award className="w-5 h-5 text-yellow-600" />
-          </div>
-          <div className="flex flex-col space-y-2">
-            {profile.notableCompanies && profile.notableCompanies.length > 0 ? (
-              profile.notableCompanies.map((company, index) => (
-                <span key={index} className="text-gray-700">{company}</span>
-              ))
-            ) : (
-              <span className="text-gray-500">No companies specified</span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Key Expertise</h2>
-        <div className="space-y-2">
-          {profile.keyExpertise && profile.keyExpertise.length > 0 ? (
-            profile.keyExpertise.map((expertise, index) => (
-              <div key={index} className="flex items-start">
-                <span className="text-blue-500 mr-2">•</span>
-                <span>{expertise}</span>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500">No key expertise specified</p>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Skills & Expertise</h2>
-        <div className="flex flex-wrap gap-2">
-          {profile.skills && profile.skills.length > 0 ? (
-            profile.skills.map((skill, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
-              >
-                {skill}
-              </span>
-            ))
-          ) : (
-            <span className="text-gray-500">No skills specified</span>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Languages</h2>
-        <div className="space-y-3">
-          {profile.languages && profile.languages.length > 0 ? (
-            profile.languages.map((lang, index) => (
-              <div key={index} className="flex justify-between items-center">
-                <div>
-                  <span className="font-medium">{lang.language}</span>
-                  <span className="text-gray-500 ml-2">({lang.proficiency})</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-sm text-gray-600 mr-2">Assessment Score:</span>
-                  <span className="font-medium">{lang.assessmentScore}/100</span>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500">No languages specified</p>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Contact Center Skills KPIs</h2>
-          <div className="flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-lg">
-            <Target className="w-5 h-5 text-blue-600" />
-            <span className="text-blue-600 font-medium">Skills Assessment</span>
-          </div>
-        </div>
-        <div className="space-y-8">
-          {profile.assessmentKPIs?.categoryScores && 
-            Object.entries(profile.assessmentKPIs.categoryScores).map(([category, score]) => {
-              // Ensure score is within 0-100 range for the width property
-              const safeScore = Math.min(Math.max(0, score), 100);
-              const categorySkills = profile.assessmentKPIs?.skillAssessments[category] || [];
-              
-              return (
-                <div key={category} className="space-y-4">
-                  {/* Category Score */}
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold text-gray-900">{category}</span>
-                      <div className="flex items-center">
-                        <span className="font-semibold text-blue-600">{Math.round(score)}</span>
-                        <span className="text-gray-400 text-sm ml-1">/100</span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2.5">
-                      <div
-                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-in-out"
-                        style={{ width: `${safeScore}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Skills under this category */}
-                  {categorySkills.length > 0 && (
-                    <div className="grid grid-cols-1 gap-3 ml-4 mt-2">
-                      {categorySkills.map((skill) => (
-                        <div key={skill._id} className="flex items-center">
-                          <div className="w-2 h-2 bg-blue-200 rounded-full mr-3"></div>
-                          <div className="flex-1 flex items-center justify-between">
-                            <span className="text-sm text-gray-600">{skill.skill}</span>
-                            <div className="flex items-center min-w-[80px]">
-                              <div className="flex-1 mx-2">
-                                <div className="w-24 bg-gray-100 rounded-full h-1.5">
-                                  <div
-                                    className="bg-blue-400 h-1.5 rounded-full transition-all duration-500 ease-in-out"
-                                    style={{ width: `${skill.score}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-                              <span className="text-sm text-gray-500 tabular-nums">{skill.score}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-        </div>
-      </div>
-
-      {profile.experienceDetails && profile.experienceDetails.length > 0 && (
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Work Experience</h2>
-          <div className="space-y-6">
-            {profile.experienceDetails.map((exp, index) => {
-              // Ensure all properties are properly stringified
-              const experienceItem = {
-                ...exp,
-                title: typeof exp.title === 'string' ? exp.title : JSON.stringify(exp.title),
-                company: typeof exp.company === 'string' ? exp.company : JSON.stringify(exp.company),
-                startDate: typeof exp.startDate === 'string' ? exp.startDate : JSON.stringify(exp.startDate),
-                endDate: exp.endDate && typeof exp.endDate === 'string' ? exp.endDate : exp.endDate ? JSON.stringify(exp.endDate) : 'Present',
-                responsibilities: Array.isArray(exp.responsibilities)
-                  ? exp.responsibilities.map(r => typeof r === 'string' ? r : JSON.stringify(r))
-                  : [],
-                achievements: Array.isArray(exp.achievements)
-                  ? exp.achievements.map(a => typeof a === 'string' ? a : JSON.stringify(a))
-                  : []
-              };
-
-              return (
-                <div key={index} className="border-l-2 border-blue-200 pl-4 py-2">
-                  <div className="flex justify-between">
-                    <h3 className="font-medium text-gray-900">{experienceItem.title}</h3>
-                    <span className="text-sm text-gray-500">
-                      {experienceItem.startDate} - {experienceItem.endDate || 'Present'}
-                    </span>
-                  </div>
-                  <p className="text-gray-600 mt-1">{experienceItem.company}</p>
-                  {experienceItem.responsibilities && experienceItem.responsibilities.length > 0 && (
-                    <>
-                      <h4 className="mt-2 text-sm font-medium text-gray-700">Responsibilities:</h4>
-                      <ul className="mt-1 space-y-1 list-disc list-inside text-gray-600 text-sm">
-                        {experienceItem.responsibilities.map((resp, idx) => (
-                          <li key={idx}>{resp}</li>
-                        ))}
-                      </ul>
-                    </>
-                  )}
-                  {experienceItem.achievements && experienceItem.achievements.length > 0 && (
-                    <>
-                      <h4 className="mt-2 text-sm font-medium text-gray-700">Achievements:</h4>
-                      <ul className="mt-1 space-y-1 list-disc list-inside text-gray-600 text-sm">
-                        {experienceItem.achievements.map((achievement, idx) => (
-                          <li key={idx}>{achievement}</li>
-                        ))}
-                      </ul>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      {/* Comment profile status for the moment */}
-      {/* <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Status</h2>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Status</span>
-            <span className="px-3 py-1 rounded-full text-sm font-medium uppercase" 
-                  style={{ 
-                    backgroundColor: profile.completionStatus === 'complete' ? '#d1fae5' : '#fee2e2',
-                    color: profile.completionStatus === 'complete' ? '#047857' : '#b91c1c'
-                  }}>
-              {profile.completionStatus || 'Incomplete'}
-            </span>
-          </div>
-          {profile.completionSteps && (
-            <div className="space-y-2">
-              <h3 className="font-medium">Completion Steps</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {Object.entries(profile.completionSteps).map(([step, completed]) => (
-                  <div key={step} className="flex items-center space-x-2">
-                    <div className={`w-4 h-4 rounded-full ${completed ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span className="capitalize">{step.replace(/([A-Z])/g, ' $1').trim()}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="text-sm text-gray-500">
-            Last updated: {new Date(profile.lastUpdated).toLocaleString()}
-          </div>
-        </div>
-      </div> */}
     </div>
   );
 }
