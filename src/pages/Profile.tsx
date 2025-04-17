@@ -99,18 +99,25 @@ interface ProfileData {
 }
 
 export function Profile() {
+  console.log('🧩 Profile component initializing');
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('📋 Profile component mounted - loading profile data');
+    
     const loadProfile = async () => {
+      console.log('🔄 Starting profile data loading process');
       try {
+        console.log('🔍 Requesting profile data through getProfileData utility');
         const profileData = await getProfileData();
+        console.log('✅ Profile data received successfully');
+        console.log('💽 Setting profile data in component state');
         setProfile(profileData);
         setLoading(false);
       } catch (err: any) {
-        console.error('Error loading profile:', err);
+        console.error('❌ Error loading profile:', err);
         setError(err.message || 'Failed to load profile');
         setLoading(false);
       }
@@ -120,6 +127,7 @@ export function Profile() {
   }, []);
 
   if (loading) {
+    console.log('⏳ Profile is in loading state, showing loading screen');
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center">
         <div className="text-lg text-gray-600">Loading profile...</div>
@@ -128,6 +136,7 @@ export function Profile() {
   }
 
   if (error) {
+    console.log('❌ Profile has error state, showing error message');
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center">
         <div className="text-lg text-red-600">Error: {error}</div>
@@ -136,6 +145,7 @@ export function Profile() {
   }
 
   if (!profile) {
+    console.log('⚠️ No profile data available');
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center">
         <div className="text-lg text-gray-600">No profile data available</div>
@@ -143,6 +153,7 @@ export function Profile() {
     );
   }
 
+  console.log('🖥️ Rendering profile view with data');
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">

@@ -8,59 +8,99 @@ const CACHE_DURATION = 30 * 60 * 1000;
  * Get profile data from localStorage or API if necessary
  */
 export const getProfileData = async () => {
+  console.log('🔍 Attempting to get profile data...');
+  
   // Try to get from localStorage first
   const storedProfile = localStorage.getItem('profileData');
   const storedTimestamp = localStorage.getItem('profileDataTimestamp');
+  
+  if (!storedProfile) {
+    console.log('📭 No profile data found in localStorage');
+    console.log('🌐 Fetching fresh data from API...');
+    return await fetchProfileFromAPI();
+  }
   
   // Check if data exists and is fresh
   const dataIsFresh = storedTimestamp && 
                      (Date.now() - parseInt(storedTimestamp)) < CACHE_DURATION;
   
-  if (storedProfile && dataIsFresh) {
-    return JSON.parse(storedProfile);
+  if (dataIsFresh) {
+    console.log('✅ Using cached profile data from localStorage');
+    console.log(`⏱️ Cache age: ${Math.round((Date.now() - parseInt(storedTimestamp)) / 1000 / 60)} minutes`);
+    try {
+      const parsedData = JSON.parse(storedProfile);
+      console.log('🔢 Data properties:', Object.keys(parsedData));
+      return parsedData;
+    } catch (err) {
+      console.error('❌ Error parsing localStorage data:', err);
+      console.log('🌐 Falling back to API fetch...');
+      return await fetchProfileFromAPI();
+    }
+  } else {
+    console.log('⏱️ Cached data expired');
+    console.log(`⏱️ Cache age: ${Math.round((Date.now() - parseInt(storedTimestamp || '0')) / 1000 / 60)} minutes (max: ${CACHE_DURATION / 1000 / 60} minutes)`);
+    console.log('🌐 Fetching fresh data from API...');
+    return await fetchProfileFromAPI();
   }
-  
-  // If no data or stale, fetch from API
-  return await fetchProfileFromAPI();
 };
 
 /**
  * Fetch profile data from API and update localStorage
  */
 export const fetchProfileFromAPI = async () => {
+  console.log('🌐 fetchProfileFromAPI: Starting API fetch process');
   const userId = Cookies.get('userId');
   
   if (!userId) {
+    console.error('❌ No userId found in cookies');
     throw new Error('User ID not found in cookies');
   }
   
+  console.log(`👤 Using userId from cookies: ${userId}`);
+  
   try {
+    console.log('🌐 Attempting to fetch profile by user ID...');
     const response = await profileApi.getById(userId);
+    console.log('✅ Successfully fetched profile by user ID');
     const profileData = response.data.data;
     
+    console.log('💾 Storing profile data in localStorage');
     if (profileData._id) {
       localStorage.setItem('agentId', profileData._id);
+      console.log(`📋 Stored agentId: ${profileData._id}`);
     }
     
     // Store the entire profile data in localStorage
     localStorage.setItem('profileData', JSON.stringify(profileData));
     localStorage.setItem('profileDataTimestamp', Date.now().toString());
+    console.log('✅ Profile data cached successfully');
     
     return profileData;
   } catch (idError) {
-    // Fallback to default endpoint
-    const response = await profileApi.get();
-    const profileData = response.data;
+    console.error('❌ Error fetching by ID:', idError);
+    console.log('🌐 Falling back to default profile endpoint...');
     
-    if (profileData._id) {
-      localStorage.setItem('agentId', profileData._id);
+    try {
+      const response = await profileApi.get();
+      console.log('✅ Successfully fetched profile from default endpoint');
+      const profileData = response.data;
+      
+      console.log('💾 Storing profile data in localStorage');
+      if (profileData._id) {
+        localStorage.setItem('agentId', profileData._id);
+        console.log(`📋 Stored agentId: ${profileData._id}`);
+      }
+      
+      // Store the entire profile data in localStorage
+      localStorage.setItem('profileData', JSON.stringify(profileData));
+      localStorage.setItem('profileDataTimestamp', Date.now().toString());
+      console.log('✅ Profile data cached successfully');
+      
+      return profileData;
+    } catch (fallbackError) {
+      console.error('❌ Error fetching from fallback endpoint:', fallbackError);
+      throw fallbackError;
     }
-    
-    // Store the entire profile data in localStorage
-    localStorage.setItem('profileData', JSON.stringify(profileData));
-    localStorage.setItem('profileDataTimestamp', Date.now().toString());
-    
-    return profileData;
   }
 };
 
@@ -68,35 +108,63 @@ export const fetchProfileFromAPI = async () => {
  * Update profile data in API and localStorage
  */
 export const updateProfileData = async (profileId: string, data: any) => {
-  // Update in API
-  const response = await profileApi.update(profileId, data);
+  console.log('🔄 Updating profile data...', { profileId, dataKeys: Object.keys(data) });
   
-  // Get fresh data from API to ensure consistency
-  await fetchProfileFromAPI();
-  
-  return response.data;
+  try {
+    // Update in API
+    console.log('🌐 Sending update to API...');
+    const response = await profileApi.update(profileId, data);
+    console.log('✅ API update successful');
+    
+    // Get fresh data from API to ensure consistency
+    console.log('🔄 Refreshing cached data with latest from API...');
+    await fetchProfileFromAPI();
+    console.log('✅ Cache refresh complete');
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error updating profile data:', error);
+    throw error;
+  }
 };
 
 /**
  * Check if profile data in localStorage is valid and not expired
  */
 export const isProfileDataValid = () => {
+  console.log('🔍 Checking if cached profile data is valid...');
+  
   const storedProfile = localStorage.getItem('profileData');
   const storedTimestamp = localStorage.getItem('profileDataTimestamp');
   
-  if (!storedProfile || !storedTimestamp) {
+  if (!storedProfile) {
+    console.log('📭 No profile data found in localStorage');
+    return false;
+  }
+  
+  if (!storedTimestamp) {
+    console.log('⏱️ No timestamp found for cached data');
     return false;
   }
   
   try {
     // Check if data is valid JSON
     JSON.parse(storedProfile);
+    console.log('✅ Cached data is valid JSON');
     
     // Check if data is fresh
-    const dataIsFresh = (Date.now() - parseInt(storedTimestamp)) < CACHE_DURATION;
+    const cacheAge = Date.now() - parseInt(storedTimestamp);
+    const dataIsFresh = cacheAge < CACHE_DURATION;
     
-    return dataIsFresh;
+    if (dataIsFresh) {
+      console.log(`✅ Cache is fresh (${Math.round(cacheAge / 1000 / 60)} minutes old)`);
+      return true;
+    } else {
+      console.log(`⏱️ Cache expired (${Math.round(cacheAge / 1000 / 60)} minutes old, max: ${CACHE_DURATION / 1000 / 60} minutes)`);
+      return false;
+    }
   } catch (e) {
+    console.error('❌ Error validating cached data:', e);
     return false;
   }
 };
@@ -105,7 +173,9 @@ export const isProfileDataValid = () => {
  * Clear profile data from localStorage
  */
 export const clearProfileData = () => {
+  console.log('🧹 Clearing profile data from localStorage...');
   localStorage.removeItem('profileData');
   localStorage.removeItem('profileDataTimestamp');
   localStorage.removeItem('agentId');
+  console.log('✅ Profile data cleared');
 }; 

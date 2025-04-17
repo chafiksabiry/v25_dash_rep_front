@@ -18,17 +18,30 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🚀 App component mounted - initializing application');
+    
     const initializeProfileData = async () => {
+      console.log('🔄 Starting profile data initialization');
       try {
         // Check if profile data is valid and not expired
-        if (!isProfileDataValid()) {
+        console.log('🔍 Checking profile data validity');
+        const isValid = isProfileDataValid();
+        
+        if (!isValid) {
+          console.log('🌐 Profile data invalid or expired, fetching from API');
           // Fetch fresh data if needed
           await fetchProfileFromAPI();
+          console.log('✅ Fresh profile data loaded successfully');
+        } else {
+          console.log('✅ Using existing profile data from cache');
         }
+        
         setLoading(false);
+        console.log('✅ Application initialization complete');
       } catch (err) {
-        console.error('Error initializing profile data:', err);
+        console.error('❌ Error initializing profile data:', err);
         setLoading(false);
+        console.log('⚠️ Application continuing with initialization errors');
       }
     };
 
@@ -36,6 +49,7 @@ function App() {
   }, []);
 
   if (loading) {
+    console.log('⏳ App is in loading state, showing loading screen');
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center">
         <div className="text-lg text-gray-600">Loading dashboard...</div>
@@ -43,6 +57,7 @@ function App() {
     );
   }
 
+  console.log('🖥️ Rendering main application interface');
   return (
     <Router>
       <div className="flex h-screen bg-gray-50">
