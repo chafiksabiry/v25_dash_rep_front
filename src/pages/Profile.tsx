@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProfileView } from '../components/ProfileView';
-import { profileApi } from '../utils/client.tsx';
-import Cookies from 'js-cookie';
+import { getProfileData } from '../utils/profileUtils';
 
 // Define a type for your profile data
 interface ProfileData {
@@ -105,65 +104,19 @@ export function Profile() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const loadProfile = async () => {
       try {
-        const userId = Cookies.get('userId');
-
-        if (!userId) {
-          throw new Error('User ID not found in cookies');
-        }
-
-        try {
-          const response = await profileApi.getById(userId);
-          const profileData = response.data.data;
-          
-          // Add detailed logging
-          console.log('Raw Profile Data:', profileData);
-
-          if (profileData._id) {
-            localStorage.setItem('agentId', profileData._id);
-          }
-
-          setProfile(profileData);
-          setLoading(false);
-        } catch (idError) {
-          console.error('Error fetching by ID, trying default endpoint:', idError);
-          const response = await profileApi.get();
-          const profileData = response.data;
-
-          // Add detailed logging for fallback response
-          console.log('Fallback Profile Data:', {
-            fullData: profileData,
-            id: profileData._id,
-            personalInfo: profileData.personalInfo,
-            experience: profileData.experience,
-            skills: profileData.skills,
-            professionalSummary: profileData.professionalSummary
-          });
-
-          if (profileData._id) {
-            localStorage.setItem('agentId', profileData._id);
-          }
-
-          setProfile(profileData);
-          setLoading(false);
-        }
+        const profileData = await getProfileData();
+        setProfile(profileData);
+        setLoading(false);
       } catch (err: any) {
-        console.error('Error fetching profile:', err);
-
-        if (err.response) {
-          setError(`Server error: ${err.response.status} - ${err.response.statusText}`);
-        } else if (err.request) {
-          setError('Network error. Please check your connection and ensure the backend server is running.');
-        } else {
-          setError(err.message || 'Failed to load profile');
-        }
-
+        console.error('Error loading profile:', err);
+        setError(err.message || 'Failed to load profile');
         setLoading(false);
       }
     };
 
-    fetchProfile();
+    loadProfile();
   }, []);
 
   if (loading) {
