@@ -1,8 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { vertexApi } from "../utils/client";
-import { Call, callsApi } from "../utils/client";
+import { vertexApi, callsApi } from "../utils/client.tsx";
 import { Info, Target, Volume2, BookOpen, User, Phone, Clock, Calendar, CheckCircle, XCircle, FileText, ClipboardList, ArrowRight, ArrowLeft } from 'lucide-react';
+
+// Define the Call interface locally
+export interface Call {
+    _id: string;
+    recording_url: string;
+    recording_url_cloudinary?: string;
+    duration?: number;
+    status: string;
+    createdAt: string;
+    agent: {
+        personalInfo: {
+            name: string;
+        };
+    };
+    lead?: {
+        name: string;
+        phone: string;
+    };
+    ai_call_score?: any;
+}
 
 interface CallReport {
     "Agent fluency": { score: number; feedback: string };
@@ -28,7 +47,7 @@ function CallReportCard() {
     const [report, setReport] = useState<CallReport>(callPased?.ai_call_score || initialReport);
 
     const [transcription, setTranscription] = useState<string | null>(null);
-    const [summary, setSummary] = useState<{ "key-ideas": [] }>({ "key-ideas": [] });
+    const [summary, setSummary] = useState<{ "key-ideas": Array<Record<string, string>> }>({ "key-ideas": [] });
     const [callPostActions, setCallPostActions] = useState<[]>([]);
 
     const [loadingReport, setLoadingReport] = useState<boolean>(true);
