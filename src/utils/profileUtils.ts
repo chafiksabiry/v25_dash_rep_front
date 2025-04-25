@@ -49,14 +49,31 @@ export const getProfileData = async () => {
  */
 export const fetchProfileFromAPI = async () => {
   console.log('🌐 fetchProfileFromAPI: Starting API fetch process');
-  const userId = Cookies.get('userId');
   
-  if (!userId) {
-    console.error('❌ No userId found in cookies');
-    throw new Error('User ID not found in cookies');
+  // Get run mode from environment variable
+  const runMode = import.meta.env.VITE_RUN_MODE || 'in-app';
+  let userId;
+  
+  // Determine userId based on run mode
+  if (runMode === 'standalone') {
+    console.log("🔑 Running in standalone mode");
+    // Use static userId from environment variable in standalone mode
+    userId = import.meta.env.VITE_STANDALONE_USER_ID;
+    console.log("🔑 Using static userID from env:", userId);
+  } else {
+    console.log("🔑 Running in in-app mode");
+    // Use userId from cookies in in-app mode
+    userId = Cookies.get('userId');
+    console.log("🔑 userId cookie:", userId);
+    console.log("🔑 Verified saved user ID from cookie:", userId);
   }
   
-  console.log(`👤 Using userId from cookies: ${userId}`);
+  if (!userId) {
+    console.error('❌ No userId found based on run mode:', runMode);
+    throw new Error('User ID not found');
+  }
+  
+  console.log(`👤 Using userId: ${userId}`);
   
   try {
     console.log('🌐 Attempting to fetch profile by user ID...');
