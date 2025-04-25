@@ -20,12 +20,12 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    base: 'https://rep-dashboard.harx.ai/',
+    base: 'http://localhost:5183/',
     plugins: [
       react({
         jsxRuntime: 'classic',
       }),
-      qiankun('app8', {
+      qiankun('repdashboard', {
         useDevMode: true,
       }),
       removeReactRefreshScript(), // Add the script removal plugin
@@ -48,12 +48,12 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           format: 'umd',
-          name: 'app8',
+          name: 'repdashboard',
           entryFileNames: 'index.js', // Fixed name for the JS entry file
           chunkFileNames: 'chunk-[name].js', // Fixed name for chunks
           assetFileNames: (assetInfo) => {
             // Ensure CSS files are consistently named
-            if (assetInfo.name.endsWith('.css')) {
+            if (assetInfo.name?.endsWith('.css')) {
               return 'index.css';
             }
             return '[name].[ext]'; // Default for other asset types
