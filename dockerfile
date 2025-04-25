@@ -10,7 +10,7 @@ COPY package*.json ./
 
 # Set environment variables
 ENV VITE_API_URL=https://api-rep-dashboard.harx.ai 
-ENV VITE_CALLS_API_URL=https://api-dash-calls.harx.ai 
+ENV VITE_CALLS_API_URL=https://api-calls.harx.ai 
 ENV VITE_DASHBOARD_COMPANY_API_URL=https://api-dashboard.harx.ai/api
 ENV VITE_BACKEND_URL_GIGS=https://api-gigsmanual.harx.ai/api
 ENV VITE_RUN_MODE=standalone
