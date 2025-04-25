@@ -36,7 +36,22 @@ const dashboardCompanyApiClient = axios.create({
 const addAuthInterceptor = (axiosInstance: any) => {
   axiosInstance.interceptors.request.use(
     (config: any) => {
-      const token = localStorage.getItem('token');
+      const runMode = import.meta.env.VITE_RUN_MODE || 'in-app';
+      let token;
+      // Determine userId based on run mode
+      if (runMode === 'standalone') {
+        console.log("🔑 Running in standalone mode");
+        // Use static userId from environment variable in standalone mode
+        token = import.meta.env.VITE_STANDALONE_TOKEN;
+
+        console.log("🔑 Using static token from env:", token);
+      } else {
+        console.log("🔑 Running in in-app mode");
+        // Use userId from cookies in in-app mode
+        token = localStorage.getItem('token');
+        console.log("🔑 token from localStorage:", token);
+        console.log("🔑 Verified saved token from localStorage:", token);
+      }
       console.log("token from client.js addAuthInterceptor", token);
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -48,15 +63,15 @@ const addAuthInterceptor = (axiosInstance: any) => {
     }
   );
 
-/*   axiosInstance.interceptors.response.use(
-    (response: any) => response,
-    (error: any) => {
-      if (error.response?.status === 401) {
-        localStorage.removeItem('token');
+  /*   axiosInstance.interceptors.response.use(
+      (response: any) => response,
+      (error: any) => {
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token');
+        }
+        return Promise.reject(error);
       }
-      return Promise.reject(error);
-    }
-  ); */
+    ); */
 };
 
 // Add auth interceptors to all instances
@@ -168,17 +183,17 @@ export const vertexApi = {
 };
 
 export const authApi = {
-  login: (credentials: {email: string, password: string}) => 
+  login: (credentials: { email: string, password: string }) =>
     apiClient.post('/api/auth/login', credentials),
-  register: (userData: {email: string, password: string, [key: string]: any}) => 
+  register: (userData: { email: string, password: string, [key: string]: any }) =>
     apiClient.post('/api/auth/register', userData),
   refreshToken: () => apiClient.post('/api/auth/refresh'),
 };
 
 export const profileApi = {
-  get: () => apiClient.get('/api/profile'),
-  getById: (id: string) => apiClient.get(`/api/profile/user/${id}`),
-  update: (profileId: string, data: any) => apiClient.put(`/api/profile/${profileId}`, data),
+  get: () => apiClient.get('/api/profiles'),
+  getById: (id: string) => apiClient.get(`/api/profiles/user/${id}`),
+  update: (profileId: string, data: any) => apiClient.put(`/api/profiles/${profileId}`, data),
 };
 
 // Default export with all APIs

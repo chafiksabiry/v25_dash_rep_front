@@ -1,7 +1,81 @@
-import React from 'react';
-import { Bell, Search } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Bell, Search, User } from 'lucide-react';
+
+interface ProfileData {
+  personalInfo?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+    // Profile image might not be directly in the personalInfo object
+    // so we'll look for it when processing the data
+  };
+  professionalSummary?: {
+    currentRole?: string;
+    yearsOfExperience?: string;
+    profileDescription?: string;
+  };
+}
 
 export function TopBar() {
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  
+  useEffect(() => {
+    console.log('🔄 TopBar component: Loading profile data from localStorage');
+    try {
+      // Get profile data from localStorage
+      const storedProfile = localStorage.getItem('profileData');
+      if (storedProfile) {
+        const parsedProfile = JSON.parse(storedProfile);
+        console.log('✅ TopBar component: Profile data loaded successfully');
+        
+        // Log keys to help debug structure
+        console.log('📋 Profile data top-level keys:', Object.keys(parsedProfile));
+        if (parsedProfile.personalInfo) {
+          console.log('📋 personalInfo keys:', Object.keys(parsedProfile.personalInfo));
+        }
+        
+        setProfileData(parsedProfile);
+        
+        // Try to find profile image in various possible locations
+        if (parsedProfile.personalInfo?.profileImage) {
+          setProfileImage(parsedProfile.personalInfo.profileImage);
+        } else if (parsedProfile.profileImage) {
+          setProfileImage(parsedProfile.profileImage);
+        } else if (parsedProfile.avatar) {
+          setProfileImage(parsedProfile.avatar);
+        } else if (parsedProfile.personalInfo?.avatar) {
+          setProfileImage(parsedProfile.personalInfo.avatar);
+        }
+      } else {
+        console.log('⚠️ TopBar component: No profile data in localStorage');
+      }
+    } catch (error) {
+      console.error('❌ TopBar component: Error loading profile data:', error);
+    }
+  }, []);
+
+  // Get user's name or default to "User"
+  const userName = profileData?.personalInfo?.name || 'User';
+  
+  // Get user's role or default to "HARX Rep"
+  const userRole = profileData?.professionalSummary?.currentRole || 'HARX Rep';
+  
+  // Generate user's initials for avatar placeholder
+  const getInitials = (name: string) => {
+    if (!name || name === 'User') return 'U';
+    
+    const names = name.split(' ');
+    if (names.length === 1) {
+      return names[0].charAt(0).toUpperCase();
+    }
+    
+    return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+  };
+  
+  const initials = getInitials(userName);
+
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
       <div className="flex items-center flex-1">
@@ -20,14 +94,20 @@ export function TopBar() {
           <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
         <div className="flex items-center space-x-3">
-          <img
-            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-            alt="Profile"
-            className="w-8 h-8 rounded-full"
-          />
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt={userName}
+              className="w-8 h-8 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+              {initials}
+            </div>
+          )}
           <div>
-            <p className="text-sm font-medium text-gray-700">John Doe</p>
-            <p className="text-xs text-gray-500">HARX Rep</p>
+            <p className="text-sm font-medium text-gray-700">{userName}</p>
+            <p className="text-xs text-gray-500">{userRole}</p>
           </div>
         </div>
       </div>
