@@ -80,6 +80,46 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
     return profile.skills.contactCenter.find((s: any) => s.skill === skillName);
   };
 
+  // Function to get ISO 639-1 code from language name (fallback)
+  const getIso639CodeFromLanguage = (langName: string): string => {
+    const langMap: Record<string, string> = {
+      'english': 'en',
+      'french': 'fr',
+      'spanish': 'es',
+      'german': 'de',
+      'italian': 'it',
+      'portuguese': 'pt',
+      'russian': 'ru',
+      'chinese': 'zh',
+      'japanese': 'ja',
+      'korean': 'ko',
+      'arabic': 'ar',
+      'hindi': 'hi',
+      'bengali': 'bn',
+      'dutch': 'nl',
+      'swedish': 'sv',
+      'norwegian': 'no',
+      'danish': 'da',
+      'finnish': 'fi',
+      'polish': 'pl',
+      'turkish': 'tr',
+      'greek': 'el',
+      'thai': 'th',
+      'vietnamese': 'vi',
+      // Add more as needed
+    };
+    
+    return langMap[langName.toLowerCase()] || 'en';
+  };
+  
+  // Function to take a language assessment
+  const takeLanguageAssessment = (language: string, iso639_1Code?: string) => {
+    // Use provided ISO code or try to derive it from language name
+    const langCode = iso639_1Code || getIso639CodeFromLanguage(language);
+    const assessmentUrl = `${import.meta.env.VITE_ASSESSMENT_APP}/language/${langCode}`;
+    window.open(assessmentUrl, '_blank');
+  };
+
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
       {/* Left Column */}
@@ -471,10 +511,16 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                         ))}
                       </div>
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-4 flex justify-between items-center">
                       <span className="text-sm font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded">
                         {lang.proficiency}
                       </span>
+                      <button 
+                        onClick={() => takeLanguageAssessment(lang.language, lang.iso639_1)}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+                      >
+                        {lang.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
+                      </button>
                     </div>
                     
                     {/* Always show assessment criteria */}
