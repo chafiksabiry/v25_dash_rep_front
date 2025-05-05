@@ -17,7 +17,7 @@ ENV VITE_RUN_MODE=standalone
 #ENV VITE_RUN_MODE=in-app
 ENV VITE_STANDALONE_USER_ID=6800ce8f4a95bc69c5afbe48
 ENV VITE_STANDALONE_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODAwY2U4ZjRhOTViYzY5YzVhZmJlNDgiLCJpYXQiOjE3NDU1OTE5MTd9.xbdOcqzBU-Vpz5lpVVYl1dFCtvlOq_KjrWVj-NbDkOk 
-ENV VITE_ASSESSMENT_APP=http://localhost:5173/assessment
+ENV VITE_ASSESSMENT_APP=https://rep-assessments.harx.ai/assessment
 # Install dependencies
 RUN npm install
 
