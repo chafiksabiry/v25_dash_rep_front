@@ -114,9 +114,9 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
   
   // Function to take a language assessment
   const takeLanguageAssessment = (language: string, iso639_1Code?: string) => {
-    // Use provided ISO code or try to derive it from language name
-    const langCode = iso639_1Code || getIso639CodeFromLanguage(language);
-    const assessmentUrl = `${import.meta.env.VITE_ASSESSMENT_APP}/language/${langCode}`;
+    // If iso639_1 is not provided, just use the language name directly
+    const langParameter = iso639_1Code || language;
+    const assessmentUrl = `${import.meta.env.VITE_ASSESSMENT_APP}/language/${langParameter}`;
     window.open(assessmentUrl, '_blank');
   };
 
