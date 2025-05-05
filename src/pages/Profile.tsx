@@ -22,6 +22,7 @@ interface ProfileData {
     languages: Array<{
       language: string;
       proficiency: string;
+      iso639_1?: string;
       assessmentResults?: {
         completeness: {
           score: number;
