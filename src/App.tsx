@@ -23,9 +23,9 @@ function App() {
     const initializeProfileData = async () => {
       console.log('🔄 Starting profile data initialization');
       try {
-        // Check if profile data is valid and not expired
+        // Check if profile data is valid and not expired now
         console.log('🔍 Checking profile data validity');
-        const isValid = isProfileDataValid();
+        const isValid = false; //isProfileDataValid();
         
         if (!isValid) {
           console.log('🌐 Profile data invalid or expired, fetching from API');

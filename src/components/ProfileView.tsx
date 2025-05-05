@@ -80,6 +80,58 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
     return profile.skills.contactCenter.find((s: any) => s.skill === skillName);
   };
 
+  // Function to get ISO 639-1 code from language name (fallback)
+  const getIso639CodeFromLanguage = (langName: string): string => {
+    const langMap: Record<string, string> = {
+      'english': 'en',
+      'french': 'fr',
+      'spanish': 'es',
+      'german': 'de',
+      'italian': 'it',
+      'portuguese': 'pt',
+      'russian': 'ru',
+      'chinese': 'zh',
+      'japanese': 'ja',
+      'korean': 'ko',
+      'arabic': 'ar',
+      'hindi': 'hi',
+      'bengali': 'bn',
+      'dutch': 'nl',
+      'swedish': 'sv',
+      'norwegian': 'no',
+      'danish': 'da',
+      'finnish': 'fi',
+      'polish': 'pl',
+      'turkish': 'tr',
+      'greek': 'el',
+      'thai': 'th',
+      'vietnamese': 'vi',
+      // Add more as needed
+    };
+    
+    return langMap[langName.toLowerCase()] || 'en';
+  };
+  
+  // Function to take a language assessment
+  const takeLanguageAssessment = (language: string, iso639_1Code?: string) => {
+    // If iso639_1 is not provided, just use the language name directly
+    const langParameter = iso639_1Code || language;
+    const assessmentUrl = `${import.meta.env.VITE_ASSESSMENT_APP}/language/${langParameter}`;
+    window.open(assessmentUrl, '_blank');
+  };
+
+  // Format skill name for URL (e.g., "Active Listening" -> "active-listening")
+  const formatSkillForUrl = (skillName: string): string => {
+    return skillName.toLowerCase().replace(/\s+/g, '-');
+  };
+
+  // Function to take a contact center skill assessment
+  const takeContactCenterSkillAssessment = (skillName: string) => {
+    const formattedSkill = formatSkillForUrl(skillName);
+    const assessmentUrl = `${import.meta.env.VITE_ASSESSMENT_APP}/contact-center/${formattedSkill}`;
+    window.open(assessmentUrl, '_blank');
+  };
+
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
       {/* Left Column */}
@@ -406,37 +458,46 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                           )}
                         </div>
                         
-                        {skillData?.assessmentResults ? (
-                          <div className="mt-3">
-                            {/* Display key metrics if available */}
-                            {skillData.assessmentResults.keyMetrics && (
-                              <div className="grid grid-cols-3 gap-2">
-                                {skillData.assessmentResults.keyMetrics.professionalism !== undefined && (
-                                  <div className="bg-blue-50 p-2 rounded text-center">
-                                    <div className="text-xs text-gray-600 mb-1">Professionalism</div>
-                                    <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.professionalism}/100</div>
-                                  </div>
-                                )}
-                                {skillData.assessmentResults.keyMetrics.effectiveness !== undefined && (
-                                  <div className="bg-green-50 p-2 rounded text-center">
-                                    <div className="text-xs text-gray-600 mb-1">Effectiveness</div>
-                                    <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.effectiveness}/100</div>
-                                  </div>
-                                )}
-                                {skillData.assessmentResults.keyMetrics.customerFocus !== undefined && (
-                                  <div className="bg-purple-50 p-2 rounded text-center">
-                                    <div className="text-xs text-gray-600 mb-1">Customer Focus</div>
-                                    <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.customerFocus}/100</div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="mt-2 text-sm text-gray-500 italic">
-                            Complete an assessment to see your KPI metrics
-                          </div>
-                        )}
+                        <div className="flex justify-between items-center">
+                          {skillData?.assessmentResults ? (
+                            <div className="mt-3">
+                              {/* Display key metrics if available */}
+                              {skillData.assessmentResults.keyMetrics && (
+                                <div className="grid grid-cols-3 gap-2">
+                                  {skillData.assessmentResults.keyMetrics.professionalism !== undefined && (
+                                    <div className="bg-blue-50 p-2 rounded text-center">
+                                      <div className="text-xs text-gray-600 mb-1">Professionalism</div>
+                                      <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.professionalism}/100</div>
+                                    </div>
+                                  )}
+                                  {skillData.assessmentResults.keyMetrics.effectiveness !== undefined && (
+                                    <div className="bg-green-50 p-2 rounded text-center">
+                                      <div className="text-xs text-gray-600 mb-1">Effectiveness</div>
+                                      <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.effectiveness}/100</div>
+                                    </div>
+                                  )}
+                                  {skillData.assessmentResults.keyMetrics.customerFocus !== undefined && (
+                                    <div className="bg-purple-50 p-2 rounded text-center">
+                                      <div className="text-xs text-gray-600 mb-1">Customer Focus</div>
+                                      <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.customerFocus}/100</div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="mt-2 text-sm text-gray-500 italic">
+                              Complete an assessment to see your KPI metrics
+                            </div>
+                          )}
+                          
+                          <button 
+                            onClick={() => takeContactCenterSkillAssessment(skillName)}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+                          >
+                            {skillData?.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -471,10 +532,16 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                         ))}
                       </div>
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-4 flex justify-between items-center">
                       <span className="text-sm font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded">
                         {lang.proficiency}
                       </span>
+                      <button 
+                        onClick={() => takeLanguageAssessment(lang.language, lang.iso639_1)}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+                      >
+                        {lang.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
+                      </button>
                     </div>
                     
                     {/* Always show assessment criteria */}
