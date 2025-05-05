@@ -120,6 +120,18 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
     window.open(assessmentUrl, '_blank');
   };
 
+  // Format skill name for URL (e.g., "Active Listening" -> "active-listening")
+  const formatSkillForUrl = (skillName: string): string => {
+    return skillName.toLowerCase().replace(/\s+/g, '-');
+  };
+
+  // Function to take a contact center skill assessment
+  const takeContactCenterSkillAssessment = (skillName: string) => {
+    const formattedSkill = formatSkillForUrl(skillName);
+    const assessmentUrl = `${import.meta.env.VITE_ASSESSMENT_APP}/contact-center/${formattedSkill}`;
+    window.open(assessmentUrl, '_blank');
+  };
+
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
       {/* Left Column */}
@@ -446,37 +458,46 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                           )}
                         </div>
                         
-                        {skillData?.assessmentResults ? (
-                          <div className="mt-3">
-                            {/* Display key metrics if available */}
-                            {skillData.assessmentResults.keyMetrics && (
-                              <div className="grid grid-cols-3 gap-2">
-                                {skillData.assessmentResults.keyMetrics.professionalism !== undefined && (
-                                  <div className="bg-blue-50 p-2 rounded text-center">
-                                    <div className="text-xs text-gray-600 mb-1">Professionalism</div>
-                                    <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.professionalism}/100</div>
-                                  </div>
-                                )}
-                                {skillData.assessmentResults.keyMetrics.effectiveness !== undefined && (
-                                  <div className="bg-green-50 p-2 rounded text-center">
-                                    <div className="text-xs text-gray-600 mb-1">Effectiveness</div>
-                                    <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.effectiveness}/100</div>
-                                  </div>
-                                )}
-                                {skillData.assessmentResults.keyMetrics.customerFocus !== undefined && (
-                                  <div className="bg-purple-50 p-2 rounded text-center">
-                                    <div className="text-xs text-gray-600 mb-1">Customer Focus</div>
-                                    <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.customerFocus}/100</div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="mt-2 text-sm text-gray-500 italic">
-                            Complete an assessment to see your KPI metrics
-                          </div>
-                        )}
+                        <div className="flex justify-between items-center">
+                          {skillData?.assessmentResults ? (
+                            <div className="mt-3">
+                              {/* Display key metrics if available */}
+                              {skillData.assessmentResults.keyMetrics && (
+                                <div className="grid grid-cols-3 gap-2">
+                                  {skillData.assessmentResults.keyMetrics.professionalism !== undefined && (
+                                    <div className="bg-blue-50 p-2 rounded text-center">
+                                      <div className="text-xs text-gray-600 mb-1">Professionalism</div>
+                                      <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.professionalism}/100</div>
+                                    </div>
+                                  )}
+                                  {skillData.assessmentResults.keyMetrics.effectiveness !== undefined && (
+                                    <div className="bg-green-50 p-2 rounded text-center">
+                                      <div className="text-xs text-gray-600 mb-1">Effectiveness</div>
+                                      <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.effectiveness}/100</div>
+                                    </div>
+                                  )}
+                                  {skillData.assessmentResults.keyMetrics.customerFocus !== undefined && (
+                                    <div className="bg-purple-50 p-2 rounded text-center">
+                                      <div className="text-xs text-gray-600 mb-1">Customer Focus</div>
+                                      <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.customerFocus}/100</div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="mt-2 text-sm text-gray-500 italic">
+                              Complete an assessment to see your KPI metrics
+                            </div>
+                          )}
+                          
+                          <button 
+                            onClick={() => takeContactCenterSkillAssessment(skillName)}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+                          >
+                            {skillData?.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
