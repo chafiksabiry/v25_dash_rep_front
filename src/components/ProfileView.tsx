@@ -117,6 +117,7 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
     // If iso639_1 is not provided, just use the language name directly
     const langParameter = iso639_1Code || language;
     const assessmentUrl = `${import.meta.env.VITE_ASSESSMENT_APP}/language/${langParameter}`;
+    console.log("assessmentUrl language", assessmentUrl);
     window.open(assessmentUrl, '_blank');
   };
 
@@ -129,6 +130,7 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
   const takeContactCenterSkillAssessment = (skillName: string) => {
     const formattedSkill = formatSkillForUrl(skillName);
     const assessmentUrl = `${import.meta.env.VITE_ASSESSMENT_APP}/contact-center/${formattedSkill}`;
+    console.log("assessmentUrl contact center", assessmentUrl);
     window.open(assessmentUrl, '_blank');
   };
 
