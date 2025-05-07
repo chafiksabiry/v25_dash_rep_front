@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-//import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
+import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
@@ -60,7 +60,7 @@ function App() {
 
   console.log('🖥️ Rendering main application interface');
   return (
-    <Router /* basename={qiankunWindow.__POWERED_BY_QIANKUN__ ? '/repdashboard' : '/'} */>
+    <Router basename={qiankunWindow.__POWERED_BY_QIANKUN__ ? '/repdashboard' : '/'}>
       <div className="flex h-screen bg-gray-50">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
