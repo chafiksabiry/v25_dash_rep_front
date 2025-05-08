@@ -116,7 +116,15 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
   const takeLanguageAssessment = (language: string, iso639_1Code?: string) => {
     // If iso639_1 is not provided, just use the language name directly
     const langParameter = iso639_1Code || language;
-    const assessmentUrl = `${import.meta.env.VITE_ASSESSMENT_APP}/language/${langParameter}`;
+    
+    // Check if we're in standalone mode
+    const isStandaloneMode = import.meta.env.VITE_RUN_MODE === 'standalone';
+    // Use the appropriate assessment app URL based on the mode
+    const assessmentAppUrl = isStandaloneMode 
+      ? import.meta.env.VITE_ASSESSMENT_APP_STANDALONE 
+      : import.meta.env.VITE_ASSESSMENT_APP;
+    
+    const assessmentUrl = `${assessmentAppUrl}/language/${langParameter}`;
     console.log("assessmentUrl language", assessmentUrl);
     window.open(assessmentUrl, '_blank');
   };
@@ -129,7 +137,15 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
   // Function to take a contact center skill assessment
   const takeContactCenterSkillAssessment = (skillName: string) => {
     const formattedSkill = formatSkillForUrl(skillName);
-    const assessmentUrl = `${import.meta.env.VITE_ASSESSMENT_APP}/contact-center/${formattedSkill}`;
+    
+    // Check if we're in standalone mode
+    const isStandaloneMode = import.meta.env.VITE_RUN_MODE === 'standalone';
+    // Use the appropriate assessment app URL based on the mode
+    const assessmentAppUrl = isStandaloneMode 
+      ? import.meta.env.VITE_ASSESSMENT_APP_STANDALONE 
+      : import.meta.env.VITE_ASSESSMENT_APP;
+    
+    const assessmentUrl = `${assessmentAppUrl}/contact-center/${formattedSkill}`;
     console.log("assessmentUrl contact center", assessmentUrl);
     window.open(assessmentUrl, '_blank');
   };
