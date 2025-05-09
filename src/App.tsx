@@ -68,9 +68,10 @@ function App() {
         pathname: window.location.pathname,
         search: window.location.search,
         hash: window.location.hash,
-        isQiankun: qiankunWindow.__POWERED_BY_QIANKUN__,
-        basename: qiankunWindow.__POWERED_BY_QIANKUN__ ? '/repdashboard' : '/',
-        effectivePath: qiankunWindow.__POWERED_BY_QIANKUN__ 
+        // Check if running inside Qiankun micro-frontend framework
+        isQiankun: !!qiankunWindow.__POWERED_BY_QIANKUN__,
+        basename: !!qiankunWindow.__POWERED_BY_QIANKUN__ ? '/repdashboard' : '/',
+        effectivePath: !!qiankunWindow.__POWERED_BY_QIANKUN__ 
           ? window.location.pathname.replace('/repdashboard', '') 
           : window.location.pathname
       });
