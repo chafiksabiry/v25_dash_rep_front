@@ -21,6 +21,19 @@ function App() {
   useEffect(() => {
     console.log('🚀 App component mounted - initializing application');
     
+    // Log routing information
+    console.log('📍 ROUTE INFO:', {
+      url: window.location.href,
+      pathname: window.location.pathname,
+      search: window.location.search,
+      hash: window.location.hash,
+      isQiankun: !!qiankunWindow.__POWERED_BY_QIANKUN__,
+      basename: qiankunWindow.__POWERED_BY_QIANKUN__ ? '/repdashboard' : '/',
+      effectivePath: qiankunWindow.__POWERED_BY_QIANKUN__ 
+        ? window.location.pathname.replace('/repdashboard', '') 
+        : window.location.pathname
+    });
+    
     const initializeProfileData = async () => {
       console.log('🔄 Starting profile data initialization');
       try {
@@ -47,6 +60,28 @@ function App() {
     };
 
     initializeProfileData();
+    
+    // Set up routing change listener
+    const handleRouteChange = () => {
+      console.log('📍 ROUTE CHANGED:', {
+        url: window.location.href,
+        pathname: window.location.pathname,
+        search: window.location.search,
+        hash: window.location.hash,
+        isQiankun: !!qiankunWindow.__POWERED_BY_QIANKUN__,
+        basename: qiankunWindow.__POWERED_BY_QIANKUN__ ? '/repdashboard' : '/',
+        effectivePath: qiankunWindow.__POWERED_BY_QIANKUN__ 
+          ? window.location.pathname.replace('/repdashboard', '') 
+          : window.location.pathname
+      });
+    };
+    
+    window.addEventListener('popstate', handleRouteChange);
+    
+    // Clean up event listener
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
   }, []);
 
   if (loading) {
