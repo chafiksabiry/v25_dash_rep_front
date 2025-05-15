@@ -195,4 +195,58 @@ export const clearProfileData = () => {
   localStorage.removeItem('profileDataTimestamp');
   localStorage.removeItem('agentId');
   console.log('✅ Profile data cleared');
+};
+
+/**
+ * Update basic info of a profile
+ */
+export const updateBasicInfo = async (id: string, basicInfo: any) => {
+  try {
+    console.log('🔄 Updating basic info...', { id, dataKeys: Object.keys(basicInfo) });
+    const { data } = await profileApi.updateBasicInfo(id, basicInfo);
+    
+    // Refresh cached data
+    await fetchProfileFromAPI();
+    
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating basic info:', error);
+    throw error.response?.data || error;
+  }
+};
+
+/**
+ * Update experience of a profile
+ */
+export const updateExperience = async (id: string, experience: any) => {
+  try {
+    console.log('🔄 Updating experience...', { id });
+    const { data } = await profileApi.updateExperience(id, experience);
+    
+    // Refresh cached data
+    await fetchProfileFromAPI();
+    
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating experience:', error);
+    throw error.response?.data || error;
+  }
+};
+
+/**
+ * Update skills of a profile
+ */
+export const updateSkills = async (id: string, skills: any) => {
+  try {
+    console.log('🔄 Updating skills...', { id, skillTypes: Object.keys(skills) });
+    const { data } = await profileApi.updateSkills(id, skills);
+    
+    // Refresh cached data
+    await fetchProfileFromAPI();
+    
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating skills:', error);
+    throw error.response?.data || error;
+  }
 }; 

@@ -1,7 +1,8 @@
 import React from 'react';
 import { 
   MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase, 
-  Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy 
+  Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
+  Edit
 } from 'lucide-react';
 
 // Convert proficiency level to star rating (A1-C2 = 1-6 stars)
@@ -53,7 +54,8 @@ const CONTACT_CENTER_SKILLS = [
   }
 ];
 
-export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
+export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = ({ profile, onEditClick }) => {
+  
   if (!profile) return null;
 
   // Calculate average score from contact center skills if available
@@ -152,6 +154,18 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
 
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
+      {/* Page Header with Edit Button */}
+      <div className="md:col-span-12 flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold text-gray-900">Profile Information</h1>
+        <button
+          onClick={onEditClick}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors"
+        >
+          <Edit className="w-4 h-4" />
+          Edit Profile
+        </button>
+      </div>
+
       {/* Left Column */}
       <div className="md:col-span-4 space-y-6">
         {/* Profile Header */}
@@ -387,13 +401,15 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
 
       {/* Right Column */}
       <div className="md:col-span-8 space-y-6">
-        {/* About Section */}
-        {profile.professionalSummary?.profileDescription && (
-          <div className="bg-white rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">About</h2>
+        {/* About Section - Always show this section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">About</h2>
+          {profile.professionalSummary?.profileDescription ? (
             <p className="text-gray-700 whitespace-pre-wrap">{profile.professionalSummary.profileDescription}</p>
-          </div>
-        )}
+          ) : (
+            <p className="text-gray-500 italic">No profile description available</p>
+          )}
+        </div>
 
         {/* Technical Skills Section */}
         <div className="bg-white rounded-lg p-6">
@@ -407,7 +423,7 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No technical skills listed</p>
+            <p className="text-gray-500 italic">No technical skills listed</p>
           )}
         </div>
         
@@ -423,7 +439,7 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No professional skills listed</p>
+            <p className="text-gray-500 italic">No professional skills listed</p>
           )}
         </div>
         
@@ -439,7 +455,7 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No soft skills listed</p>
+            <p className="text-gray-500 italic">No soft skills listed</p>
           )}
         </div>
         
@@ -525,10 +541,10 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
           </div>
         </div>
 
-        {/* Languages Section */}
-        {profile.personalInfo?.languages?.length > 0 && (
-          <div className="bg-white rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-6">Languages</h2>
+        {/* Languages Section - Always show this section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-6">Languages</h2>
+          {profile.personalInfo?.languages?.length > 0 ? (
             <div className="space-y-4">
               {profile.personalInfo.languages.map((lang: any, index: number) => {
                 const stars = getProficiencyStars(lang.proficiency);
@@ -589,13 +605,15 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                 );
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-gray-500 italic">No languages listed</p>
+          )}
+        </div>
 
-        {/* Experience Section */}
-        {profile.experience?.length > 0 && (
-          <div className="bg-white rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-6">Experience</h2>
+        {/* Experience Section - Always show this section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-6">Experience</h2>
+          {profile.experience?.length > 0 ? (
             <div className="space-y-6">
               {profile.experience.map((exp: any, index: number) => {
                 // Format dates for display
@@ -668,13 +686,15 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                 );
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-gray-500 italic">No experience listed</p>
+          )}
+        </div>
         
-        {/* Notable Companies */}
-        {profile.professionalSummary?.notableCompanies?.length > 0 && (
-          <div className="bg-white rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">Notable Companies</h2>
+        {/* Notable Companies - Always show this section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Notable Companies</h2>
+          {profile.professionalSummary?.notableCompanies?.length > 0 ? (
             <div className="flex flex-wrap gap-3">
               {profile.professionalSummary.notableCompanies.map((company: string, idx: number) => (
                 <span key={idx} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg text-sm">
@@ -682,13 +702,15 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                 </span>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-gray-500 italic">No notable companies listed</p>
+          )}
+        </div>
         
-        {/* Key Expertise */}
-        {profile.professionalSummary?.keyExpertise?.length > 0 && (
-          <div className="bg-white rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">Key Expertise</h2>
+        {/* Key Expertise - Always show this section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Key Expertise</h2>
+          {profile.professionalSummary?.keyExpertise?.length > 0 ? (
             <div className="flex flex-wrap gap-3">
               {profile.professionalSummary.keyExpertise.map((expertise: string, idx: number) => (
                 <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm">
@@ -696,8 +718,10 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                 </span>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-gray-500 italic">No key expertise listed</p>
+          )}
+        </div>
       </div>
     </div>
   );

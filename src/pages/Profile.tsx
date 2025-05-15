@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ProfileView } from '../components/ProfileView';
-import { getProfileData } from '../utils/profileUtils';
+import { ProfileEditView } from '../components/ProfileEditView';
+import { getProfileData, updateProfileData, updateBasicInfo, updateExperience, updateSkills } from '../utils/profileUtils';
+import { profileApi } from '../utils/client';
 
 // Define a type for your profile data
 interface ProfileData {
@@ -104,6 +106,7 @@ export function Profile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     console.log('📋 Profile component mounted - loading profile data');
@@ -126,6 +129,19 @@ export function Profile() {
 
     loadProfile();
   }, []);
+
+  // Handle profile update
+  const handleProfileUpdate = async (updatedProfile: ProfileData) => {
+    try {
+      if (!profile?._id) return;
+      
+      await updateProfileData(profile._id, updatedProfile);
+      setProfile(updatedProfile);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
+  };
 
   if (loading) {
     console.log('⏳ Profile is in loading state, showing loading screen');
@@ -158,7 +174,17 @@ export function Profile() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
-        <ProfileView profile={profile} />
+        {isEditing ? (
+          <ProfileEditView 
+            profile={profile} 
+            onSave={handleProfileUpdate} 
+          />
+        ) : (
+          <ProfileView 
+            profile={profile} 
+            onEditClick={() => setIsEditing(true)}
+          />
+        )}
       </div>
     </div>
   );
