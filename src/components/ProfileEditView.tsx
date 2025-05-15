@@ -101,6 +101,16 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [loading, setLoading] = useState(false);
   
+  // Track which sections have been modified
+  const [modifiedSections, setModifiedSections] = useState({
+    personalInfo: false,
+    professionalSummary: false,
+    skills: false,
+    experience: false,
+    languages: false,
+    availability: false
+  });
+  
   // Additional state for editing
   const [tempLanguage, setTempLanguage] = useState({ language: '', proficiency: 'B1' });
   const [tempIndustry, setTempIndustry] = useState('');
@@ -114,7 +124,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     professional: '',
     soft: ''
   });
-  
+
   // Initialize form data state
   const [newExperience, setNewExperience] = useState({
     title: '',
@@ -194,7 +204,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   };
 
   // Handle save with validation
-  const handleSave = () => {
+  const handleSave = async () => {
     const { isValid, errors } = validateProfile();
     setValidationErrors(errors);
     
@@ -202,57 +212,115 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       showToast('Please fix validation errors before saving', 'error');
       return;
     }
-    
-    // First update the profile data
-    updateProfileData(profile._id, profile)
-      .then(() => {
-        // Then call onSave to notify parent component
-        onSave(profile);
-        showToast('Profile saved successfully', 'success');
-      })
-      .catch((error) => {
-        console.error('Error saving profile:', error);
-        showToast('Failed to save profile', 'error');
+
+    setLoading(true);
+    try {
+      // Save personal info if modified
+      if (modifiedSections.personalInfo) {
+        await updateBasicInfo(profile._id, profile.personalInfo);
+      }
+
+      // Save professional summary if modified
+      if (modifiedSections.professionalSummary) {
+        await updateProfileData(profile._id, { professionalSummary: profile.professionalSummary });
+      }
+
+      // Save skills if modified
+      if (modifiedSections.skills) {
+        // Format skills as objects with proper structure
+        const formattedSkills = {
+          technical: (profile.skills?.technical || []).map((skill: any) => ({
+            skill: typeof skill === 'string' ? skill : skill.skill,
+            proficiency: 'Intermediate',
+            category: 'Technical',
+            level: 1
+          })),
+          professional: (profile.skills?.professional || []).map((skill: any) => ({
+            skill: typeof skill === 'string' ? skill : skill.skill,
+            proficiency: 'Intermediate',
+            category: 'Professional',
+            level: 1
+          })),
+          soft: (profile.skills?.soft || []).map((skill: any) => ({
+            skill: typeof skill === 'string' ? skill : skill.skill,
+            proficiency: 'Intermediate',
+            category: 'Soft',
+            level: 1
+          })),
+          contactCenter: profile.skills?.contactCenter || []
+        };
+        
+        await updateSkills(profile._id, formattedSkills);
+      }
+
+      // Save experience if modified
+      if (modifiedSections.experience) {
+        await updateExperience(profile._id, profile.experience);
+      }
+
+      // Save languages if modified
+      if (modifiedSections.languages) {
+        await updateBasicInfo(profile._id, {
+          ...profile.personalInfo,
+          languages: profile.personalInfo?.languages || []
+        });
+      }
+
+      // Save availability if modified
+      if (modifiedSections.availability) {
+        await updateProfileData(profile._id, { availability: profile.availability });
+      }
+
+      // Reset modified sections
+      setModifiedSections({
+        personalInfo: false,
+        professionalSummary: false,
+        skills: false,
+        experience: false,
+        languages: false,
+        availability: false
       });
+
+      showToast('Profile saved successfully', 'success');
+      onSave(profile);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      showToast('Failed to save profile', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle profile changes for personal info
-  const handleProfileChange = async (field: string, value: any) => {
-    try {
-      // Update local state
-      const updatedPersonalInfo = {
-        ...profile.personalInfo,
-        [field]: value
-      };
-      
-      setProfile((prev: any) => ({
+  const handleProfileChange = (field: string, value: any) => {
+    // Update local state
+    const updatedPersonalInfo = {
+      ...profile.personalInfo,
+      [field]: value
+    };
+    
+    setProfile((prev: any) => ({
+      ...prev,
+      personalInfo: updatedPersonalInfo
+    }));
+    
+    // Mark personal info section as modified
+    setModifiedSections(prev => ({
+      ...prev,
+      personalInfo: true
+    }));
+    
+    // Clear validation error for this field if value is valid
+    if (value && value.trim()) {
+      setValidationErrors((prev: Record<string, string>) => ({
         ...prev,
-        personalInfo: updatedPersonalInfo
+        [field]: ''
       }));
-      
-      // Clear validation error for this field if value is valid
-      if (value && value.trim()) {
-        setValidationErrors((prev: Record<string, string>) => ({
-          ...prev,
-          [field]: ''
-        }));
-      }
-      
-      // Update in API
-      try {
-        setLoading(true);
-        await updateBasicInfo(profile._id, updatedPersonalInfo);
-      } finally {
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error(`Error updating ${field}:`, error);
-      showToast(`Failed to update ${field}`, 'error');
     }
   };
   
   // Add language to profile
-  const addLanguage = async () => {
+  const addLanguage = () => {
     if (!tempLanguage.language.trim()) {
       setValidationErrors((prev: Record<string, string>) => ({
         ...prev,
@@ -261,114 +329,133 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       return;
     }
     
-    try {
-      const updatedLanguages = [
-        ...(profile.personalInfo.languages || []),
-        tempLanguage
-      ];
-      
-      // Update local state
-      setProfile((prev: any) => ({
-        ...prev,
-        personalInfo: {
-          ...prev.personalInfo,
-          languages: updatedLanguages
-        }
-      }));
-      
-      // Clear any language-related validation errors
-      setValidationErrors((prev: Record<string, string>) => ({
-        ...prev,
-        languages: ''
-      }));
-      
-      // Reset form
-      setTempLanguage({ language: '', proficiency: 'B1' });
-      
-      // Update in API
-      try {
-        setLoading(true);
-        await updateBasicInfo(profile._id, {
-          ...profile.personalInfo,
-          languages: updatedLanguages
-        });
-      } finally {
-        setLoading(false);
+    const updatedLanguages = [
+      ...(profile.personalInfo.languages || []),
+      tempLanguage
+    ];
+    
+    // Update local state
+    setProfile((prev: any) => ({
+      ...prev,
+      personalInfo: {
+        ...prev.personalInfo,
+        languages: updatedLanguages
       }
-    } catch (error) {
-      console.error('Error adding language:', error);
-      showToast('Failed to add language', 'error');
-    }
+    }));
+    
+    // Mark languages section as modified
+    setModifiedSections(prev => ({
+      ...prev,
+      languages: true
+    }));
+    
+    // Clear any language-related validation errors
+    setValidationErrors((prev: Record<string, string>) => ({
+      ...prev,
+      languages: ''
+    }));
+    
+    // Reset form
+    setTempLanguage({ language: '', proficiency: 'B1' });
   };
   
   // Remove language from profile
-  const removeLanguage = async (index: number) => {
-    try {
-      const updatedLanguages = profile.personalInfo.languages.filter((_: any, i: number) => i !== index);
-      
-      // Update local state
-      setProfile((prev: any) => ({
+  const removeLanguage = (index: number) => {
+    const updatedLanguages = profile.personalInfo.languages.filter((_: any, i: number) => i !== index);
+    
+    // Update local state
+    setProfile((prev: any) => ({
+      ...prev,
+      personalInfo: {
+        ...prev.personalInfo,
+        languages: updatedLanguages
+      }
+    }));
+    
+    // Mark languages section as modified
+    setModifiedSections(prev => ({
+      ...prev,
+      languages: true
+    }));
+    
+    // Set validation error if removing last language
+    if (updatedLanguages.length === 0) {
+      setValidationErrors((prev: Record<string, string>) => ({
         ...prev,
-        personalInfo: {
-          ...prev.personalInfo,
-          languages: updatedLanguages
-        }
+        languages: 'At least one language is required'
       }));
-      
-      // Set validation error if removing last language
-      if (updatedLanguages.length === 0) {
-        setValidationErrors((prev: Record<string, string>) => ({
-          ...prev,
-          languages: 'At least one language is required'
-        }));
-      }
-      
-      // Update in API
-      try {
-        setLoading(true);
-        await updateBasicInfo(profile._id, {
-          ...profile.personalInfo,
-          languages: updatedLanguages
-        });
-      } finally {
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Error removing language:', error);
-      showToast('Failed to remove language', 'error');
     }
   };
   
   // Update language proficiency
-  const updateLanguageProficiency = async (index: number, newProficiency: string) => {
-    try {
-      const updatedLanguages = profile.personalInfo.languages.map((lang: any, i: number) => 
-        i === index ? { ...lang, proficiency: newProficiency } : lang
-      );
+  const updateLanguageProficiency = (index: number, newProficiency: string) => {
+    const updatedLanguages = profile.personalInfo.languages.map((lang: any, i: number) => 
+      i === index ? { ...lang, proficiency: newProficiency } : lang
+    );
+    
+    // Update local state
+    setProfile((prev: any) => ({
+      ...prev,
+      personalInfo: {
+        ...prev.personalInfo,
+        languages: updatedLanguages
+      }
+    }));
+    
+    // Mark languages section as modified
+    setModifiedSections(prev => ({
+      ...prev,
+      languages: true
+    }));
+  };
+
+  // Add/update skills with proper object structure
+  const addSkill = (type: 'technical' | 'professional' | 'soft', skillName: string) => {
+    if (skillName.trim()) {
+      const skillObject = {
+        skill: skillName.trim(),
+        proficiency: 'Intermediate',
+        category: type.charAt(0).toUpperCase() + type.slice(1),
+        level: 1
+      };
       
-      // Update local state
+      const updatedSkills = [
+        ...(profile.skills?.[type] || []),
+        skillObject
+      ];
+      
       setProfile((prev: any) => ({
         ...prev,
-        personalInfo: {
-          ...prev.personalInfo,
-          languages: updatedLanguages
+        skills: {
+          ...prev.skills,
+          [type]: updatedSkills
         }
       }));
       
-      // Update in API
-      try {
-        setLoading(true);
-        await updateBasicInfo(profile._id, {
-          ...profile.personalInfo,
-          languages: updatedLanguages
-        });
-      } finally {
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Error updating language proficiency:', error);
-      showToast('Failed to update language proficiency', 'error');
+      setModifiedSections(prev => ({
+        ...prev,
+        skills: true
+      }));
     }
+  };
+
+  // Remove skill with proper object handling
+  const removeSkill = (type: 'technical' | 'professional' | 'soft', index: number) => {
+    const updatedSkills = [...(profile.skills?.[type] || [])];
+    updatedSkills.splice(index, 1);
+    
+    setProfile((prev: any) => ({
+      ...prev,
+      skills: {
+        ...prev.skills,
+        [type]: updatedSkills
+      }
+    }));
+    
+    setModifiedSections(prev => ({
+      ...prev,
+      skills: true
+    }));
   };
 
   return (
@@ -386,10 +473,20 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors"
+            disabled={loading}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save className="w-4 h-4" />
-            Save Changes
+            {loading ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Save All Changes
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -488,329 +585,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             </div>
           </div>
         </div>
-
-        {/* Availability Section */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-6 h-6 text-blue-600" />
-            <h2 className="text-lg font-semibold">Availability</h2>
-          </div>
-          
-          {/* Working Hours */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Working Hours</label>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Start Time</label>
-                <input
-                  type="time"
-                  value={profile.availability?.hours?.start || ''}
-                  onChange={(e) => {
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      availability: {
-                        ...prev.availability,
-                        hours: {
-                          ...(prev.availability?.hours || {}),
-                          start: e.target.value
-                        }
-                      }
-                    }));
-                  }}
-                  className="w-full p-2 border rounded-md"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">End Time</label>
-                <input
-                  type="time"
-                  value={profile.availability?.hours?.end || ''}
-                  onChange={(e) => {
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      availability: {
-                        ...prev.availability,
-                        hours: {
-                          ...(prev.availability?.hours || {}),
-                          end: e.target.value
-                        }
-                      }
-                    }));
-                  }}
-                  className="w-full p-2 border rounded-md"
-                />
-              </div>
-            </div>
-          </div>
-          
-          {/* Available Days */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Available Days</label>
-            <div className="grid grid-cols-7 gap-1">
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, index) => {
-                const shortDay = day.substring(0, 3);
-                const isSelected = profile.availability?.days?.includes(day);
-                
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => {
-                      const currentDays = [...(profile.availability?.days || [])];
-                      if (isSelected) {
-                        // Remove day
-                        const updatedDays = currentDays.filter(d => d !== day);
-                        setProfile((prev: any) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            days: updatedDays
-                          }
-                        }));
-                      } else {
-                        // Add day
-                        const updatedDays = [...currentDays, day];
-                        setProfile((prev: any) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            days: updatedDays
-                          }
-                        }));
-                      }
-                    }}
-                    className={`p-2 rounded-full w-10 h-10 flex items-center justify-center text-sm ${
-                      isSelected
-                        ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
-                    }`}
-                  >
-                    {shortDay}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          
-          {/* Time Zones */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Time Zones</label>
-            <select
-              value=""
-              onChange={(e) => {
-                if (e.target.value) {
-                  const currentTimeZones = [...(profile.availability?.timeZones || [])];
-                  if (!currentTimeZones.includes(e.target.value)) {
-                    const updatedTimeZones = [...currentTimeZones, e.target.value];
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      availability: {
-                        ...prev.availability,
-                        timeZones: updatedTimeZones
-                      }
-                    }));
-                  }
-                  e.target.value = '';
-                }
-              }}
-              className="w-full p-2 border rounded-md mb-2"
-            >
-              <option value="">Add a time zone...</option>
-              <option value="UTC">UTC - Coordinated Universal Time</option>
-              <option value="EST">EST - Eastern Standard Time</option>
-              <option value="CST">CST - Central Standard Time</option>
-              <option value="MST">MST - Mountain Standard Time</option>
-              <option value="PST">PST - Pacific Standard Time</option>
-              <option value="GMT">GMT - Greenwich Mean Time</option>
-              <option value="CET">CET - Central European Time</option>
-              <option value="IST">IST - Indian Standard Time</option>
-              <option value="JST">JST - Japan Standard Time</option>
-              <option value="AEST">AEST - Australian Eastern Standard Time</option>
-            </select>
-            
-            <div className="flex flex-wrap gap-2">
-              {profile.availability?.timeZones?.map((zone: string, idx: number) => (
-                <div key={idx} className="flex items-center bg-blue-50 px-2 py-1 rounded text-sm">
-                  <span className="text-blue-800">{zone}</span>
-                  <button
-                    onClick={() => {
-                      const updatedTimeZones = [...(profile.availability?.timeZones || [])];
-                      updatedTimeZones.splice(idx, 1);
-                      setProfile((prev: any) => ({
-                        ...prev,
-                        availability: {
-                          ...prev.availability,
-                          timeZones: updatedTimeZones
-                        }
-                      }));
-                    }}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Flexibility */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Flexibility Options</label>
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={tempFlexibility || ''}
-                  onChange={(e) => setTempFlexibility(e.target.value)}
-                  className="flex-1 p-2 border rounded-md"
-                  placeholder="Add flexibility option"
-                />
-                <button
-                  onClick={() => {
-                    if (tempFlexibility?.trim()) {
-                      const updatedFlexibility = [...(profile.availability?.flexibility || []), tempFlexibility.trim()];
-                      setProfile((prev: any) => ({
-                        ...prev,
-                        availability: {
-                          ...prev.availability,
-                          flexibility: updatedFlexibility
-                        }
-                      }));
-                      setTempFlexibility('');
-                    }
-                  }}
-                  className="px-3 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg"
-                >
-                  Add
-                </button>
-              </div>
-              
-              {profile.availability?.flexibility?.length > 0 ? (
-                <ul className="space-y-1">
-                  {profile.availability.flexibility.map((item: string, idx: number) => (
-                    <li key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                      <span className="text-sm text-gray-700">{item}</span>
-                      <button
-                        onClick={() => {
-                          const updatedFlexibility = [...profile.availability.flexibility];
-                          updatedFlexibility.splice(idx, 1);
-                          setProfile((prev: any) => ({
-                            ...prev,
-                            availability: {
-                              ...prev.availability,
-                              flexibility: updatedFlexibility
-                            }
-                          }));
-                        }}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500 text-sm italic">No flexibility options specified</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Languages Section */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Languages</h2>
-          
-          {/* Current Languages */}
-          <div className="space-y-2 mb-4">
-            {profile.personalInfo?.languages?.map((lang: any, index: number) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                <div>
-                  <span className="font-medium">{lang.language}</span>
-                  <span className="ml-2 text-sm text-blue-600">({lang.proficiency})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={lang.proficiency}
-                    onChange={(e) => updateLanguageProficiency(index, e.target.value)}
-                    className="text-sm p-1 border rounded"
-                  >
-                    {proficiencyLevels.map(level => (
-                      <option key={level.value} value={level.value}>
-                        {level.label}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  <button
-                    onClick={() => removeLanguage(index)}
-                    className="p-1 text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          {/* Add Language Form */}
-          <div className="mt-4">
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={tempLanguage.language}
-                onChange={(e) => setTempLanguage((prev: any) => ({ ...prev, language: e.target.value }))}
-                className="w-full p-2 border rounded-md"
-                placeholder="Add language"
-              />
-              
-              <select
-                value={tempLanguage.proficiency}
-                onChange={(e) => setTempLanguage((prev: any) => ({ ...prev, proficiency: e.target.value }))}
-                className="w-24 p-2 border rounded-md"
-              >
-                {proficiencyLevels.map(level => (
-                  <option key={level.value} value={level.value}>
-                    {level.value}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <button
-              onClick={addLanguage}
-              className="w-full py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg flex items-center justify-center gap-1 transition-colors mb-4"
-            >
-              <Plus className="w-4 h-4" />
-              Add Language
-            </button>
-            
-            {renderError(validationErrors.languages, 'languages')}
-          </div>
-
-          <div className="flex justify-end mt-4">
-            <button
-              onClick={async () => {
-                try {
-                  setLoading(true);
-                  await updateBasicInfo(profile._id, {
-                    languages: profile.personalInfo?.languages || []
-                  });
-                  showToast('Languages updated successfully', 'success');
-                } catch (error) {
-                  console.error('Failed to update languages:', error);
-                  showToast('Failed to update languages', 'error');
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-            >
-              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save Languages
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Right Column */}
@@ -831,6 +605,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     ...prev.professionalSummary,
                     profileDescription: e.target.value
                   }
+                }));
+                setModifiedSections(prev => ({
+                  ...prev,
+                  professionalSummary: true
                 }));
               }}
               className="w-full p-2 border rounded-md min-h-[120px]"
@@ -1031,31 +809,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               </button>
             </div>
           </div>
-
-          <div className="flex justify-end mt-4">
-            <button
-              onClick={async () => {
-                try {
-                  setLoading(true);
-                  const professionalData = {
-                    ...profile.professionalSummary
-                  };
-                  await updateProfileData(profile._id, { professionalSummary: professionalData });
-                  showToast('Professional summary updated successfully', 'success');
-                } catch (error) {
-                  console.error('Failed to update professional summary:', error);
-                  showToast('Failed to update professional summary', 'error');
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-            >
-              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save Professional Summary
-            </button>
-          </div>
         </div>
         
         {/* Skills Section */}
@@ -1070,17 +823,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 <div key={index} className="flex items-center bg-blue-100 px-3 py-1 rounded-full">
                   <span className="text-blue-800 text-sm">{typeof skill === 'string' ? skill : skill.skill}</span>
                   <button
-                    onClick={() => {
-                      const updatedSkills = [...(profile.skills?.technical || [])];
-                      updatedSkills.splice(index, 1);
-                      setProfile((prev: any) => ({
-                        ...prev,
-                        skills: {
-                          ...prev.skills,
-                          technical: updatedSkills
-                        }
-                      }));
-                    }}
+                    onClick={() => removeSkill('technical', index)}
                     className="ml-2 text-blue-600 hover:text-blue-800"
                   >
                     <X className="w-3 h-3" />
@@ -1098,47 +841,12 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               />
               <button
                 onClick={() => {
-                  if (tempSkill.technical.trim()) {
-                    const updatedSkills = [
-                      ...(profile.skills?.technical || []),
-                      tempSkill.technical.trim()
-                    ];
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      skills: {
-                        ...prev.skills,
-                        technical: updatedSkills
-                      }
-                    }));
-                    setTempSkill((prev: any) => ({ ...prev, technical: '' }));
-                  }
+                  addSkill('technical', tempSkill.technical);
+                  setTempSkill((prev: any) => ({ ...prev, technical: '' }));
                 }}
                 className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg whitespace-nowrap"
               >
                 Add
-              </button>
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={async () => {
-                  try {
-                    setLoading(true);
-                    await updateSkills(profile._id, {
-                      technical: profile.skills?.technical || []
-                    });
-                    showToast('Technical skills updated successfully', 'success');
-                  } catch (error) {
-                    console.error('Failed to update technical skills:', error);
-                    showToast('Failed to update technical skills', 'error');
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm"
-              >
-                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Save Technical Skills
               </button>
             </div>
           </div>
@@ -1151,17 +859,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 <div key={index} className="flex items-center bg-green-100 px-3 py-1 rounded-full">
                   <span className="text-green-800 text-sm">{typeof skill === 'string' ? skill : skill.skill}</span>
                   <button
-                    onClick={() => {
-                      const updatedSkills = [...(profile.skills?.professional || [])];
-                      updatedSkills.splice(index, 1);
-                      setProfile((prev: any) => ({
-                        ...prev,
-                        skills: {
-                          ...prev.skills,
-                          professional: updatedSkills
-                        }
-                      }));
-                    }}
+                    onClick={() => removeSkill('professional', index)}
                     className="ml-2 text-green-600 hover:text-green-800"
                   >
                     <X className="w-3 h-3" />
@@ -1179,47 +877,12 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               />
               <button
                 onClick={() => {
-                  if (tempSkill.professional.trim()) {
-                    const updatedSkills = [
-                      ...(profile.skills?.professional || []),
-                      tempSkill.professional.trim()
-                    ];
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      skills: {
-                        ...prev.skills,
-                        professional: updatedSkills
-                      }
-                    }));
-                    setTempSkill((prev: any) => ({ ...prev, professional: '' }));
-                  }
+                  addSkill('professional', tempSkill.professional);
+                  setTempSkill((prev: any) => ({ ...prev, professional: '' }));
                 }}
                 className="px-4 py-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg whitespace-nowrap"
               >
                 Add
-              </button>
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={async () => {
-                  try {
-                    setLoading(true);
-                    await updateSkills(profile._id, {
-                      professional: profile.skills?.professional || []
-                    });
-                    showToast('Professional skills updated successfully', 'success');
-                  } catch (error) {
-                    console.error('Failed to update professional skills:', error);
-                    showToast('Failed to update professional skills', 'error');
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                disabled={loading}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm"
-              >
-                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Save Professional Skills
               </button>
             </div>
           </div>
@@ -1232,17 +895,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 <div key={index} className="flex items-center bg-purple-100 px-3 py-1 rounded-full">
                   <span className="text-purple-800 text-sm">{typeof skill === 'string' ? skill : skill.skill}</span>
                   <button
-                    onClick={() => {
-                      const updatedSkills = [...(profile.skills?.soft || [])];
-                      updatedSkills.splice(index, 1);
-                      setProfile((prev: any) => ({
-                        ...prev,
-                        skills: {
-                          ...prev.skills,
-                          soft: updatedSkills
-                        }
-                      }));
-                    }}
+                    onClick={() => removeSkill('soft', index)}
                     className="ml-2 text-purple-600 hover:text-purple-800"
                   >
                     <X className="w-3 h-3" />
@@ -1260,47 +913,12 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               />
               <button
                 onClick={() => {
-                  if (tempSkill.soft.trim()) {
-                    const updatedSkills = [
-                      ...(profile.skills?.soft || []),
-                      tempSkill.soft.trim()
-                    ];
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      skills: {
-                        ...prev.skills,
-                        soft: updatedSkills
-                      }
-                    }));
-                    setTempSkill((prev: any) => ({ ...prev, soft: '' }));
-                  }
+                  addSkill('soft', tempSkill.soft);
+                  setTempSkill((prev: any) => ({ ...prev, soft: '' }));
                 }}
                 className="px-4 py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg whitespace-nowrap"
               >
                 Add
-              </button>
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={async () => {
-                  try {
-                    setLoading(true);
-                    await updateSkills(profile._id, {
-                      soft: profile.skills?.soft || []
-                    });
-                    showToast('Soft skills updated successfully', 'success');
-                  } catch (error) {
-                    console.error('Failed to update soft skills:', error);
-                    showToast('Failed to update soft skills', 'error');
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                disabled={loading}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 text-sm"
-              >
-                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Save Soft Skills
               </button>
             </div>
           </div>
@@ -1462,19 +1080,11 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                       experience: updatedExperience
                     }));
                     
-                    // Call the API to update experience
-                    setLoading(true);
-                    updateExperience(profile._id, updatedExperience)
-                      .then(() => {
-                        showToast('Experience added successfully', 'success');
-                      })
-                      .catch((error) => {
-                        console.error('Failed to add experience:', error);
-                        showToast('Failed to add experience', 'error');
-                      })
-                      .finally(() => {
-                        setLoading(false);
-                      });
+                    // Mark experience section as modified
+                    setModifiedSections(prev => ({
+                      ...prev,
+                      experience: true
+                    }));
                     
                     // Reset form
                     setShowNewExperienceForm(false);
@@ -1527,19 +1137,11 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                         experience: updatedExperience
                       }));
                       
-                      // Call the API to update experience
-                      setLoading(true);
-                      updateExperience(profile._id, updatedExperience)
-                        .then(() => {
-                          showToast('Experience removed successfully', 'success');
-                        })
-                        .catch((error) => {
-                          console.error('Failed to remove experience:', error);
-                          showToast('Failed to remove experience', 'error');
-                        })
-                        .finally(() => {
-                          setLoading(false);
-                        });
+                      // Mark experience section as modified
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        experience: true
+                      }));
                     }}
                     className="p-1 text-red-500 hover:text-red-700"
                   >
@@ -1563,6 +1165,335 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             {(!profile.experience || profile.experience.length === 0) && (
               <p className="text-gray-500 italic text-center py-4">No experience entries yet</p>
             )}
+          </div>
+        </div>
+
+        {/* Languages Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-lg font-semibold mb-4">Languages</h2>
+          
+          {/* Current Languages */}
+          <div className="space-y-2 mb-4">
+            {profile.personalInfo?.languages?.map((lang: any, index: number) => (
+              <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                <div>
+                  <span className="font-medium">{lang.language}</span>
+                  <span className="ml-2 text-sm text-blue-600">({lang.proficiency})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={lang.proficiency}
+                    onChange={(e) => {
+                      updateLanguageProficiency(index, e.target.value);
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        languages: true
+                      }));
+                    }}
+                    className="text-sm p-1 border rounded"
+                  >
+                    {proficiencyLevels.map(level => (
+                      <option key={level.value} value={level.value}>
+                        {level.label}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  <button
+                    onClick={() => {
+                      removeLanguage(index);
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        languages: true
+                      }));
+                    }}
+                    className="p-1 text-red-500 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Add Language Form */}
+          <div className="mt-4">
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={tempLanguage.language}
+                onChange={(e) => setTempLanguage((prev: any) => ({ ...prev, language: e.target.value }))}
+                className="w-full p-2 border rounded-md"
+                placeholder="Add language"
+              />
+              
+              <select
+                value={tempLanguage.proficiency}
+                onChange={(e) => setTempLanguage((prev: any) => ({ ...prev, proficiency: e.target.value }))}
+                className="w-24 p-2 border rounded-md"
+              >
+                {proficiencyLevels.map(level => (
+                  <option key={level.value} value={level.value}>
+                    {level.value}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <button
+              onClick={addLanguage}
+              className="w-full py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg flex items-center justify-center gap-1 transition-colors mb-4"
+            >
+              <Plus className="w-4 h-4" />
+              Add Language
+            </button>
+            
+            {renderError(validationErrors.languages, 'languages')}
+          </div>
+        </div>
+
+        {/* Availability Section */}
+        <div className="bg-white rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-6 h-6 text-blue-600" />
+            <h2 className="text-lg font-semibold">Availability</h2>
+          </div>
+          
+          {/* Working Hours */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Working Hours</label>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Start Time</label>
+                <input
+                  type="time"
+                  value={profile.availability?.hours?.start || ''}
+                  onChange={(e) => {
+                    setProfile((prev: any) => ({
+                      ...prev,
+                      availability: {
+                        ...prev.availability,
+                        hours: {
+                          ...(prev.availability?.hours || {}),
+                          start: e.target.value
+                        }
+                      }
+                    }));
+                    setModifiedSections(prev => ({
+                      ...prev,
+                      availability: true
+                    }));
+                  }}
+                  className="w-full p-2 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">End Time</label>
+                <input
+                  type="time"
+                  value={profile.availability?.hours?.end || ''}
+                  onChange={(e) => {
+                    setProfile((prev: any) => ({
+                      ...prev,
+                      availability: {
+                        ...prev.availability,
+                        hours: {
+                          ...(prev.availability?.hours || {}),
+                          end: e.target.value
+                        }
+                      }
+                    }));
+                    setModifiedSections(prev => ({
+                      ...prev,
+                      availability: true
+                    }));
+                  }}
+                  className="w-full p-2 border rounded-md"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Available Days */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Available Days</label>
+            <div className="grid grid-cols-7 gap-1">
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, index) => {
+                const shortDay = day.substring(0, 3);
+                const isSelected = profile.availability?.days?.includes(day);
+                
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => {
+                      const currentDays = [...(profile.availability?.days || [])];
+                      if (isSelected) {
+                        // Remove day
+                        const updatedDays = currentDays.filter(d => d !== day);
+                        setProfile((prev: any) => ({
+                          ...prev,
+                          availability: {
+                            ...prev.availability,
+                            days: updatedDays
+                          }
+                        }));
+                      } else {
+                        // Add day
+                        const updatedDays = [...currentDays, day];
+                        setProfile((prev: any) => ({
+                          ...prev,
+                          availability: {
+                            ...prev.availability,
+                            days: updatedDays
+                          }
+                        }));
+                      }
+                    }}
+                    className={`p-2 rounded-full w-10 h-10 flex items-center justify-center text-sm ${
+                      isSelected
+                        ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+                    }`}
+                  >
+                    {shortDay}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          
+          {/* Time Zones */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Time Zones</label>
+            <select
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  const currentTimeZones = [...(profile.availability?.timeZones || [])];
+                  if (!currentTimeZones.includes(e.target.value)) {
+                    const updatedTimeZones = [...currentTimeZones, e.target.value];
+                    setProfile((prev: any) => ({
+                      ...prev,
+                      availability: {
+                        ...prev.availability,
+                        timeZones: updatedTimeZones
+                      }
+                    }));
+                  }
+                  e.target.value = '';
+                }
+              }}
+              className="w-full p-2 border rounded-md mb-2"
+            >
+              <option value="">Add a time zone...</option>
+              <option value="UTC">UTC - Coordinated Universal Time</option>
+              <option value="EST">EST - Eastern Standard Time</option>
+              <option value="CST">CST - Central Standard Time</option>
+              <option value="MST">MST - Mountain Standard Time</option>
+              <option value="PST">PST - Pacific Standard Time</option>
+              <option value="GMT">GMT - Greenwich Mean Time</option>
+              <option value="CET">CET - Central European Time</option>
+              <option value="IST">IST - Indian Standard Time</option>
+              <option value="JST">JST - Japan Standard Time</option>
+              <option value="AEST">AEST - Australian Eastern Standard Time</option>
+            </select>
+            
+            <div className="flex flex-wrap gap-2">
+              {profile.availability?.timeZones?.map((zone: string, idx: number) => (
+                <div key={idx} className="flex items-center bg-blue-50 px-2 py-1 rounded text-sm">
+                  <span className="text-blue-800">{zone}</span>
+                  <button
+                    onClick={() => {
+                      const updatedTimeZones = [...(profile.availability?.timeZones || [])];
+                      updatedTimeZones.splice(idx, 1);
+                      setProfile((prev: any) => ({
+                        ...prev,
+                        availability: {
+                          ...prev.availability,
+                          timeZones: updatedTimeZones
+                        }
+                      }));
+                    }}
+                    className="ml-2 text-blue-600 hover:text-blue-800"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Flexibility */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Flexibility Options</label>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={tempFlexibility || ''}
+                  onChange={(e) => setTempFlexibility(e.target.value)}
+                  className="flex-1 p-2 border rounded-md"
+                  placeholder="Add flexibility option"
+                />
+                <button
+                  onClick={() => {
+                    if (tempFlexibility?.trim()) {
+                      const updatedFlexibility = [...(profile.availability?.flexibility || []), tempFlexibility.trim()];
+                      setProfile((prev: any) => ({
+                        ...prev,
+                        availability: {
+                          ...prev.availability,
+                          flexibility: updatedFlexibility
+                        }
+                      }));
+                      // Mark availability section as modified
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        availability: true
+                      }));
+                      setTempFlexibility('');
+                    }
+                  }}
+                  className="px-3 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg"
+                >
+                  Add
+                </button>
+              </div>
+              
+              {profile.availability?.flexibility?.length > 0 ? (
+                <ul className="space-y-1">
+                  {profile.availability.flexibility.map((item: string, idx: number) => (
+                    <li key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <span className="text-sm text-gray-700">{item}</span>
+                      <button
+                        onClick={() => {
+                          const updatedFlexibility = [...profile.availability.flexibility];
+                          updatedFlexibility.splice(idx, 1);
+                          setProfile((prev: any) => ({
+                            ...prev,
+                            availability: {
+                              ...prev.availability,
+                              flexibility: updatedFlexibility
+                            }
+                          }));
+                          // Mark availability section as modified
+                          setModifiedSections(prev => ({
+                            ...prev,
+                            availability: true
+                          }));
+                        }}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 text-sm italic">No flexibility options specified</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
