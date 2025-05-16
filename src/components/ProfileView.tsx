@@ -295,6 +295,87 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
             </div>
           </div>
         </div>
+
+        {/* Availability Section - Moved to left column */}
+        <div className="bg-white rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-6 h-6 text-blue-600" />
+            <h2 className="text-lg font-semibold">Availability</h2>
+          </div>
+          
+          <div className="space-y-4">
+            {profile.availability?.hours ? (
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Preferred Hours</div>
+                <div className="flex justify-between items-center text-sm text-gray-600">
+                  <span>{profile.availability.hours.start}</span>
+                  <span>to</span>
+                  <span>{profile.availability.hours.end}</span>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Preferred Hours</div>
+                <div className="text-sm text-gray-500 italic">Not specified</div>
+              </div>
+            )}
+            
+            <div>
+              <div className="text-sm font-medium text-gray-700 mb-2">Available Days</div>
+              {profile.availability?.days && profile.availability.days.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
+                    const fullDay = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][index];
+                    const isAvailable = profile.availability.days?.includes(fullDay);
+                    
+                    return (
+                      <div 
+                        key={day} 
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                          isAvailable 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-gray-100 text-gray-400'
+                        }`}
+                      >
+                        {day.charAt(0)}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500 italic">No specific days set</div>
+              )}
+            </div>
+            
+            <div>
+              <div className="text-sm font-medium text-gray-700 mb-2">Time Zones</div>
+              {profile.availability?.timeZones && profile.availability.timeZones.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.availability.timeZones.map((zone: string, idx: number) => (
+                    <span key={idx} className="px-2 py-1 bg-blue-50 text-blue-800 rounded text-xs">
+                      {zone}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500 italic">No specific time zones set</div>
+              )}
+            </div>
+            
+            <div>
+              <div className="text-sm font-medium text-gray-700 mb-2">Flexibility</div>
+              {profile.availability?.flexibility && profile.availability.flexibility.length > 0 ? (
+                <ul className="text-sm text-gray-600 space-y-1 list-disc ml-4">
+                  {profile.availability.flexibility.map((item: string, index: number) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-sm text-gray-500 italic">No flexibility options specified</div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Right Column */}
@@ -506,87 +587,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
           ) : (
             <p className="text-gray-500 italic">No languages listed</p>
           )}
-        </div>
-
-        {/* Availability Section - Moved from left column */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-6 h-6 text-blue-600" />
-            <h2 className="text-lg font-semibold">Availability</h2>
-          </div>
-          
-          <div className="space-y-4">
-            {profile.availability?.hours ? (
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Preferred Hours</div>
-                <div className="flex justify-between items-center text-sm text-gray-600">
-                  <span>{profile.availability.hours.start}</span>
-                  <span>to</span>
-                  <span>{profile.availability.hours.end}</span>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Preferred Hours</div>
-                <div className="text-sm text-gray-500 italic">Not specified</div>
-              </div>
-            )}
-            
-            <div>
-              <div className="text-sm font-medium text-gray-700 mb-2">Available Days</div>
-              {profile.availability?.days && profile.availability.days.length > 0 ? (
-                <div className="flex flex-wrap gap-1">
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
-                    const fullDay = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][index];
-                    const isAvailable = profile.availability.days?.includes(fullDay);
-                    
-                    return (
-                      <div 
-                        key={day} 
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                          isAvailable 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-gray-100 text-gray-400'
-                        }`}
-                      >
-                        {day.charAt(0)}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-sm text-gray-500 italic">No specific days set</div>
-              )}
-            </div>
-            
-            <div>
-              <div className="text-sm font-medium text-gray-700 mb-2">Time Zones</div>
-              {profile.availability?.timeZones && profile.availability.timeZones.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {profile.availability.timeZones.map((zone: string, idx: number) => (
-                    <span key={idx} className="px-2 py-1 bg-blue-50 text-blue-800 rounded text-xs">
-                      {zone}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-sm text-gray-500 italic">No specific time zones set</div>
-              )}
-            </div>
-            
-            <div>
-              <div className="text-sm font-medium text-gray-700 mb-2">Flexibility</div>
-              {profile.availability?.flexibility && profile.availability.flexibility.length > 0 ? (
-                <ul className="text-sm text-gray-600 space-y-1 list-disc ml-4">
-                  {profile.availability.flexibility.map((item: string, index: number) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="text-sm text-gray-500 italic">No flexibility options specified</div>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Experience Section - Always show this section */}
