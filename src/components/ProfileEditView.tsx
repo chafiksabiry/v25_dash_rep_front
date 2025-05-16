@@ -1424,9 +1424,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           </div>
           
           {/* Working Hours */}
-          <div className="mb-4">
+          <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Working Hours</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Start Time</label>
                 <input
@@ -1479,11 +1479,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           </div>
           
           {/* Available Days */}
-          <div className="mb-4">
+          <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Available Days</label>
-            <div className="grid grid-cols-7 gap-1">
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, index) => {
-                const shortDay = day.substring(0, 3);
+            <div className="flex flex-wrap gap-2">
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
                 const isSelected = profile.availability?.days?.includes(day);
                 
                 return (
@@ -1513,14 +1512,18 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                           }
                         }));
                       }
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        availability: true
+                      }));
                     }}
-                    className={`p-2 rounded-full w-10 h-10 flex items-center justify-center text-sm ${
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
                       isSelected
-                        ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    {shortDay}
+                    {day}
                   </button>
                 );
               })}
@@ -1528,135 +1531,129 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           </div>
           
           {/* Time Zones */}
-          <div className="mb-4">
+          <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Time Zones</label>
-            <select
-              value=""
-              onChange={(e) => {
-                if (e.target.value) {
-                  const currentTimeZones = [...(profile.availability?.timeZones || [])];
-                  if (!currentTimeZones.includes(e.target.value)) {
-                    const updatedTimeZones = [...currentTimeZones, e.target.value];
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      availability: {
-                        ...prev.availability,
-                        timeZones: updatedTimeZones
-                      }
-                    }));
-                  }
-                  e.target.value = '';
-                }
-              }}
-              className="w-full p-2 border rounded-md mb-2"
-            >
-              <option value="">Add a time zone...</option>
-              <option value="UTC">UTC - Coordinated Universal Time</option>
-              <option value="EST">EST - Eastern Standard Time</option>
-              <option value="CST">CST - Central Standard Time</option>
-              <option value="MST">MST - Mountain Standard Time</option>
-              <option value="PST">PST - Pacific Standard Time</option>
-              <option value="GMT">GMT - Greenwich Mean Time</option>
-              <option value="CET">CET - Central European Time</option>
-              <option value="IST">IST - Indian Standard Time</option>
-              <option value="JST">JST - Japan Standard Time</option>
-              <option value="AEST">AEST - Australian Eastern Standard Time</option>
-            </select>
-            
-            <div className="flex flex-wrap gap-2">
-              {profile.availability?.timeZones?.map((zone: string, idx: number) => (
-                <div key={idx} className="flex items-center bg-blue-50 px-2 py-1 rounded text-sm">
-                  <span className="text-blue-800">{zone}</span>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                'UTC - Coordinated Universal Time',
+                'EST - Eastern Standard Time',
+                'CST - Central Standard Time',
+                'MST - Mountain Standard Time',
+                'PST - Pacific Standard Time',
+                'GMT - Greenwich Mean Time',
+                'CET - Central European Time',
+                'IST - Indian Standard Time',
+                'JST - Japan Standard Time',
+                'AEST - Australian Eastern Standard Time'
+              ].map((zone) => {
+                const zoneCode = zone.split(' - ')[0];
+                const isSelected = profile.availability?.timeZones?.includes(zoneCode);
+                
+                return (
                   <button
+                    key={zone}
                     onClick={() => {
-                      const updatedTimeZones = [...(profile.availability?.timeZones || [])];
-                      updatedTimeZones.splice(idx, 1);
-                      setProfile((prev: any) => ({
-                        ...prev,
-                        availability: {
-                          ...prev.availability,
-                          timeZones: updatedTimeZones
-                        }
-                      }));
-                    }}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Flexibility */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Flexibility Options</label>
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={tempFlexibility || ''}
-                  onChange={(e) => setTempFlexibility(e.target.value)}
-                  className="flex-1 p-2 border rounded-md"
-                  placeholder="Add flexibility option"
-                />
-                <button
-                  onClick={() => {
-                    if (tempFlexibility?.trim()) {
-                      const updatedFlexibility = [...(profile.availability?.flexibility || []), tempFlexibility.trim()];
-                      setProfile((prev: any) => ({
-                        ...prev,
-                        availability: {
-                          ...prev.availability,
-                          flexibility: updatedFlexibility
-                        }
-                      }));
-                      // Mark availability section as modified
+                      const currentZones = [...(profile.availability?.timeZones || [])];
+                      if (isSelected) {
+                        // Remove zone
+                        const updatedZones = currentZones.filter(z => z !== zoneCode);
+                        setProfile((prev: any) => ({
+                          ...prev,
+                          availability: {
+                            ...prev.availability,
+                            timeZones: updatedZones
+                          }
+                        }));
+                      } else {
+                        // Add zone
+                        const updatedZones = [...currentZones, zoneCode];
+                        setProfile((prev: any) => ({
+                          ...prev,
+                          availability: {
+                            ...prev.availability,
+                            timeZones: updatedZones
+                          }
+                        }));
+                      }
                       setModifiedSections(prev => ({
                         ...prev,
                         availability: true
                       }));
-                      setTempFlexibility('');
-                    }
-                  }}
-                  className="px-3 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg"
-                >
-                  Add
-                </button>
-              </div>
-              
-              {profile.availability?.flexibility?.length > 0 ? (
-                <ul className="space-y-1">
-                  {profile.availability.flexibility.map((item: string, idx: number) => (
-                    <li key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                      <span className="text-sm text-gray-700">{item}</span>
-                      <button
-                        onClick={() => {
-                          const updatedFlexibility = [...profile.availability.flexibility];
-                          updatedFlexibility.splice(idx, 1);
-                          setProfile((prev: any) => ({
-                            ...prev,
-                            availability: {
-                              ...prev.availability,
-                              flexibility: updatedFlexibility
-                            }
-                          }));
-                          // Mark availability section as modified
-                          setModifiedSections(prev => ({
-                            ...prev,
-                            availability: true
-                          }));
-                        }}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500 text-sm italic">No flexibility options specified</p>
-              )}
+                    }}
+                    className={`p-2 rounded-lg text-sm font-medium text-left transition-colors duration-200 ${
+                      isSelected
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {zone}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          
+          {/* Flexibility Options */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Schedule Flexibility</label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                'Remote Work Available',
+                'Flexible Hours',
+                'Weekend Rotation',
+                'Night Shift Available',
+                'Split Shifts',
+                'Part-Time Options',
+                'Compressed Work Week',
+                'Shift Swapping Allowed',
+                'On-Call Available',
+                'Holiday Coverage',
+                'Emergency Response',
+                'Seasonal Flexibility'
+              ].map((option) => {
+                const isSelected = profile.availability?.flexibility?.includes(option);
+                
+                return (
+                  <button
+                    key={option}
+                    onClick={() => {
+                      const currentFlexibility = [...(profile.availability?.flexibility || [])];
+                      if (isSelected) {
+                        // Remove option
+                        const updatedFlexibility = currentFlexibility.filter(f => f !== option);
+                        setProfile((prev: any) => ({
+                          ...prev,
+                          availability: {
+                            ...prev.availability,
+                            flexibility: updatedFlexibility
+                          }
+                        }));
+                      } else {
+                        // Add option
+                        const updatedFlexibility = [...currentFlexibility, option];
+                        setProfile((prev: any) => ({
+                          ...prev,
+                          availability: {
+                            ...prev.availability,
+                            flexibility: updatedFlexibility
+                          }
+                        }));
+                      }
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        availability: true
+                      }));
+                    }}
+                    className={`p-2 rounded-lg text-sm font-medium text-left transition-colors duration-200 ${
+                      isSelected
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
