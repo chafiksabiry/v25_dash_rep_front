@@ -5,6 +5,8 @@ import {
   Edit, Check, X, Save, RefreshCw, Plus, Trash2
 } from 'lucide-react';
 import { updateProfileData, updateBasicInfo, updateExperience, updateSkills } from '../utils/profileUtils';
+import { getLanguageCodeFromAI } from '../utils/languageUtils';
+import OpenAI from 'openai';
 
 // Add CSS styles for error highlighting
 const styles = `
@@ -112,7 +114,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   });
   
   // Additional state for editing
-  const [tempLanguage, setTempLanguage] = useState({ language: '', proficiency: 'B1' });
+  const [tempLanguage, setTempLanguage] = useState({ language: '', proficiency: 'B1', iso639_1: '' });
   const [tempIndustry, setTempIndustry] = useState('');
   const [tempCompany, setTempCompany] = useState('');
   const [tempFlexibility, setTempFlexibility] = useState('');
@@ -379,7 +381,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   };
   
   // Add language to profile
-  const addLanguage = () => {
+  const addLanguage = async () => {
     if (!tempLanguage.language.trim()) {
       setValidationErrors((prev: Record<string, string>) => ({
         ...prev,
@@ -387,35 +389,66 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       }));
       return;
     }
-    
-    const updatedLanguages = [
-      ...(profile.personalInfo.languages || []),
-      tempLanguage
-    ];
-    
-    // Update local state
-    setProfile((prev: any) => ({
-      ...prev,
-      personalInfo: {
-        ...prev.personalInfo,
-        languages: updatedLanguages
+
+    try {
+      setLoading(true);
+      
+      // Get the OpenAI API key from environment variables
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error('OpenAI API key is required');
       }
-    }));
-    
-    // Mark languages section as modified
-    setModifiedSections(prev => ({
-      ...prev,
-      languages: true
-    }));
-    
-    // Clear any language-related validation errors
-    setValidationErrors((prev: Record<string, string>) => ({
-      ...prev,
-      languages: ''
-    }));
-    
-    // Reset form
-    setTempLanguage({ language: '', proficiency: 'B1' });
+
+      // Create OpenAI client
+      const openai = new OpenAI({
+        apiKey: apiKey,
+        dangerouslyAllowBrowser: true
+      });
+
+      // Get language code using AI
+      const iso639_1 = await getLanguageCodeFromAI(tempLanguage.language, openai);
+      
+      const languageWithCode = {
+        ...tempLanguage,
+        iso639_1: iso639_1
+      };
+      
+      const updatedLanguages = [
+        ...(profile.personalInfo.languages || []),
+        languageWithCode
+      ];
+      
+      // Update local state
+      setProfile((prev: any) => ({
+        ...prev,
+        personalInfo: {
+          ...prev.personalInfo,
+          languages: updatedLanguages
+        }
+      }));
+      
+      // Mark languages section as modified
+      setModifiedSections(prev => ({
+        ...prev,
+        languages: true
+      }));
+      
+      // Clear any language-related validation errors
+      setValidationErrors((prev: Record<string, string>) => ({
+        ...prev,
+        languages: ''
+      }));
+      
+      // Reset form
+      setTempLanguage({ language: '', proficiency: 'B1', iso639_1: '' });
+      
+      showToast('Language added successfully', 'success');
+    } catch (error) {
+      console.error('Error adding language:', error);
+      showToast('Failed to add language', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
   
   // Remove language from profile
@@ -1305,7 +1338,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             {profile.personalInfo?.languages?.map((lang: any, index: number) => (
               <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                 <div>
-                  <span className="font-medium">{lang.language}</span>
+                  <span className="font-medium">
+                    {lang.language}
+                    {lang.iso639_1 && <span className="text-gray-500 ml-1">({lang.iso639_1})</span>}
+                  </span>
                   <span className="ml-2 text-sm text-blue-600">({lang.proficiency})</span>
                 </div>
                 <div className="flex items-center gap-2">
