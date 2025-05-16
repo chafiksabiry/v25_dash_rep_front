@@ -685,22 +685,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
             <p className="text-gray-500 italic">No notable companies listed</p>
           )}
         </div>
-        
-        {/* Key Expertise - Always show this section */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4">Key Expertise</h2>
-          {profile.professionalSummary?.keyExpertise?.length > 0 ? (
-            <div className="flex flex-wrap gap-3">
-              {profile.professionalSummary.keyExpertise.map((expertise: string, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm">
-                  {expertise}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 italic">No key expertise listed</p>
-          )}
-        </div>
       </div>
     </div>
   );

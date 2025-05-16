@@ -838,67 +838,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             </div>
           </div>
 
-          {/* Key Expertise */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Key Expertise</label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {profile.professionalSummary?.keyExpertise?.map((expertise: string, index: number) => (
-                <div key={index} className="flex items-center bg-green-50 px-3 py-1 rounded-full">
-                  <span className="text-green-800 text-sm">{expertise}</span>
-                  <button
-                    onClick={() => {
-                      const updatedExpertise = [...(profile.professionalSummary?.keyExpertise || [])];
-                      updatedExpertise.splice(index, 1);
-                      setProfile((prev: any) => ({
-                        ...prev,
-                        professionalSummary: {
-                          ...prev.professionalSummary,
-                          keyExpertise: updatedExpertise
-                        }
-                      }));
-                    }}
-                    className="ml-2 text-green-600 hover:text-green-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={tempExpertise || ''}
-                onChange={(e) => setTempExpertise(e.target.value)}
-                className="w-full p-2 border rounded-md"
-                placeholder="Add key expertise"
-              />
-              <button
-                onClick={() => {
-                  if (tempExpertise?.trim()) {
-                    const updatedExpertise = [
-                      ...(profile.professionalSummary?.keyExpertise || []),
-                      tempExpertise.trim()
-                    ];
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      professionalSummary: {
-                        ...prev.professionalSummary,
-                        keyExpertise: updatedExpertise
-                      }
-                    }));
-                    setTempExpertise('');
-                  }
-                }}
-                className="px-4 py-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg"
-              >
-                Add
-              </button>
-            </div>
-          </div>
-
           {/* Notable Companies */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notable Companies</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Notable Companies</label>
             <div className="flex flex-wrap gap-2 mb-2">
               {profile.professionalSummary?.notableCompanies?.map((company: string, index: number) => (
                 <div key={index} className="flex items-center bg-purple-50 px-3 py-1 rounded-full">
