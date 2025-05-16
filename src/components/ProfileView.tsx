@@ -267,35 +267,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
           </div>
         </div>
 
-        {/* Status Card */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Current Status</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Profile Status</span>
-              <span className={`px-3 py-1 rounded-full text-sm ${
-                profile.status === 'completed' 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {profile.status || 'In Progress'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Industry</span>
-              <span className="text-gray-800">
-                {profile.professionalSummary?.industries?.join(', ') || 'Not specified'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Experience</span>
-              <span className="text-gray-800">
-                {profile.professionalSummary?.yearsOfExperience || 'Not specified'} years
-              </span>
-            </div>
-          </div>
-        </div>
-
         {/* Availability Section - Moved to left column */}
         <div className="bg-white rounded-lg p-6">
           <div className="flex items-center gap-2 mb-4">
