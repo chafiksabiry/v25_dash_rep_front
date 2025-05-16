@@ -733,13 +733,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       {/* Right Column */}
       <div className="md:col-span-8 space-y-6">
-        {/* About/Professional Summary Section */}
+        {/* About Section */}
         <div className="bg-white rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Professional Summary</h2>
+          <h2 className="text-xl font-semibold mb-4">About</h2>
           
           {/* Profile Description */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Profile Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
             <textarea
               value={profile.professionalSummary?.profileDescription || ''}
               onChange={(e) => {
@@ -756,13 +756,15 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 }));
               }}
               className="w-full p-2 border rounded-md min-h-[120px]"
-              placeholder="Describe your professional background and expertise..."
+              placeholder="Tell us about yourself, your background, and your expertise..."
             />
           </div>
-          
-          {/* Years of Experience */}
+        </div>
+
+        {/* Years of Experience Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">Years of Experience</h2>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
             <input
               type="text"
               value={profile.professionalSummary?.yearsOfExperience || ''}
@@ -774,53 +776,28 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     yearsOfExperience: e.target.value
                   }
                 }));
+                setModifiedSections(prev => ({
+                  ...prev,
+                  professionalSummary: true
+                }));
               }}
               className="w-full p-2 border rounded-md"
               placeholder="e.g., 5"
             />
           </div>
+        </div>
           
-          {/* Industries */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Industries</label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {profile.professionalSummary?.industries?.map((industry: string, index: number) => (
-                <div key={index} className="flex items-center bg-blue-50 px-3 py-1 rounded-full">
-                  <span className="text-blue-800 text-sm">{industry}</span>
-                  <button
-                    onClick={() => {
-                      const updatedIndustries = [...(profile.professionalSummary?.industries || [])];
-                      updatedIndustries.splice(index, 1);
-                      setProfile((prev: any) => ({
-                        ...prev,
-                        professionalSummary: {
-                          ...prev.professionalSummary,
-                          industries: updatedIndustries
-                        }
-                      }));
-                    }}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={tempIndustry}
-                onChange={(e) => setTempIndustry(e.target.value)}
-                className="w-full p-2 border rounded-md"
-                placeholder="Add industry"
-              />
-              <button
-                onClick={() => {
-                  if (tempIndustry.trim()) {
-                    const updatedIndustries = [
-                      ...(profile.professionalSummary?.industries || []),
-                      tempIndustry.trim()
-                    ];
+        {/* Industries Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">Industries</h2>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {profile.professionalSummary?.industries?.map((industry: string, index: number) => (
+              <div key={index} className="flex items-center bg-blue-50 px-3 py-1 rounded-full">
+                <span className="text-blue-800 text-sm">{industry}</span>
+                <button
+                  onClick={() => {
+                    const updatedIndustries = [...(profile.professionalSummary?.industries || [])];
+                    updatedIndustries.splice(index, 1);
                     setProfile((prev: any) => ({
                       ...prev,
                       professionalSummary: {
@@ -828,57 +805,65 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                         industries: updatedIndustries
                       }
                     }));
-                    setTempIndustry('');
-                  }
-                }}
-                className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg"
-              >
-                Add
-              </button>
-            </div>
+                    setModifiedSections(prev => ({
+                      ...prev,
+                      professionalSummary: true
+                    }));
+                  }}
+                  className="ml-2 text-blue-600 hover:text-blue-800"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
           </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={tempIndustry}
+              onChange={(e) => setTempIndustry(e.target.value)}
+              className="w-full p-2 border rounded-md"
+              placeholder="Add industry"
+            />
+            <button
+              onClick={() => {
+                if (tempIndustry.trim()) {
+                  const updatedIndustries = [
+                    ...(profile.professionalSummary?.industries || []),
+                    tempIndustry.trim()
+                  ];
+                  setProfile((prev: any) => ({
+                    ...prev,
+                    professionalSummary: {
+                      ...prev.professionalSummary,
+                      industries: updatedIndustries
+                    }
+                  }));
+                  setModifiedSections(prev => ({
+                    ...prev,
+                    professionalSummary: true
+                  }));
+                  setTempIndustry('');
+                }
+              }}
+              className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg"
+            >
+              Add
+            </button>
+          </div>
+        </div>
 
-          {/* Notable Companies */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Notable Companies</label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {profile.professionalSummary?.notableCompanies?.map((company: string, index: number) => (
-                <div key={index} className="flex items-center bg-purple-50 px-3 py-1 rounded-full">
-                  <span className="text-purple-800 text-sm">{company}</span>
-                  <button
-                    onClick={() => {
-                      const updatedCompanies = [...(profile.professionalSummary?.notableCompanies || [])];
-                      updatedCompanies.splice(index, 1);
-                      setProfile((prev: any) => ({
-                        ...prev,
-                        professionalSummary: {
-                          ...prev.professionalSummary,
-                          notableCompanies: updatedCompanies
-                        }
-                      }));
-                    }}
-                    className="ml-2 text-purple-600 hover:text-purple-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={tempCompany}
-                onChange={(e) => setTempCompany(e.target.value)}
-                className="w-full p-2 border rounded-md"
-                placeholder="Add notable company"
-              />
-              <button
-                onClick={() => {
-                  if (tempCompany.trim()) {
-                    const updatedCompanies = [
-                      ...(profile.professionalSummary?.notableCompanies || []),
-                      tempCompany.trim()
-                    ];
+        {/* Notable Companies Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">Notable Companies</h2>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {profile.professionalSummary?.notableCompanies?.map((company: string, index: number) => (
+              <div key={index} className="flex items-center bg-purple-50 px-3 py-1 rounded-full">
+                <span className="text-purple-800 text-sm">{company}</span>
+                <button
+                  onClick={() => {
+                    const updatedCompanies = [...(profile.professionalSummary?.notableCompanies || [])];
+                    updatedCompanies.splice(index, 1);
                     setProfile((prev: any) => ({
                       ...prev,
                       professionalSummary: {
@@ -886,17 +871,54 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                         notableCompanies: updatedCompanies
                       }
                     }));
-                    setTempCompany('');
-                  }
-                }}
-                className="px-4 py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg"
-              >
-                Add
-              </button>
-            </div>
+                    setModifiedSections(prev => ({
+                      ...prev,
+                      professionalSummary: true
+                    }));
+                  }}
+                  className="ml-2 text-purple-600 hover:text-purple-800"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={tempCompany}
+              onChange={(e) => setTempCompany(e.target.value)}
+              className="w-full p-2 border rounded-md"
+              placeholder="Add notable company"
+            />
+            <button
+              onClick={() => {
+                if (tempCompany.trim()) {
+                  const updatedCompanies = [
+                    ...(profile.professionalSummary?.notableCompanies || []),
+                    tempCompany.trim()
+                  ];
+                  setProfile((prev: any) => ({
+                    ...prev,
+                    professionalSummary: {
+                      ...prev.professionalSummary,
+                      notableCompanies: updatedCompanies
+                    }
+                  }));
+                  setModifiedSections(prev => ({
+                    ...prev,
+                    professionalSummary: true
+                  }));
+                  setTempCompany('');
+                }
+              }}
+              className="px-4 py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg"
+            >
+              Add
+            </button>
           </div>
         </div>
-        
+
         {/* Skills Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Skills</h2>

@@ -380,13 +380,60 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
 
       {/* Right Column */}
       <div className="md:col-span-8 space-y-6">
-        {/* About Section - Always show this section */}
+        {/* About Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-4">About</h2>
           {profile.professionalSummary?.profileDescription ? (
             <p className="text-gray-700 whitespace-pre-wrap">{profile.professionalSummary.profileDescription}</p>
           ) : (
             <p className="text-gray-500 italic">No profile description available</p>
+          )}
+        </div>
+
+        {/* Years of Experience Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Years of Experience</h2>
+          <div className="flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-gray-500" />
+            <span className="text-lg text-gray-800">
+              {profile.professionalSummary?.yearsOfExperience ? (
+                `${profile.professionalSummary.yearsOfExperience} years`
+              ) : (
+                <span className="text-gray-500 italic">Not specified</span>
+              )}
+            </span>
+          </div>
+        </div>
+
+        {/* Industries Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Industries</h2>
+          {profile.professionalSummary?.industries?.length > 0 ? (
+            <div className="flex flex-wrap gap-3">
+              {profile.professionalSummary.industries.map((industry: string, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm">
+                  {industry}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No industries listed</p>
+          )}
+        </div>
+
+        {/* Notable Companies Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Notable Companies</h2>
+          {profile.professionalSummary?.notableCompanies?.length > 0 ? (
+            <div className="flex flex-wrap gap-3">
+              {profile.professionalSummary.notableCompanies.map((company: string, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-lg text-sm">
+                  {company}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No notable companies listed</p>
           )}
         </div>
 
@@ -667,22 +714,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
             </div>
           ) : (
             <p className="text-gray-500 italic">No experience listed</p>
-          )}
-        </div>
-        
-        {/* Notable Companies - Always show this section */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4">Notable Companies</h2>
-          {profile.professionalSummary?.notableCompanies?.length > 0 ? (
-            <div className="flex flex-wrap gap-3">
-              {profile.professionalSummary.notableCompanies.map((company: string, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg text-sm">
-                  {company}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 italic">No notable companies listed</p>
           )}
         </div>
       </div>
