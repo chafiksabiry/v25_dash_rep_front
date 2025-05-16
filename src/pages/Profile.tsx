@@ -133,13 +133,13 @@ export function Profile() {
   // Handle profile update
   const handleProfileUpdate = async (updatedProfile: ProfileData) => {
     try {
-      if (!profile?._id) return;
-      
-      await updateProfileData(profile._id, updatedProfile);
+      // Just update the local state and exit edit mode
+      // No need to make another API call since ProfileEditView already handled the updates
+      console.log('📝 Updating local profile state with saved changes');
       setProfile(updatedProfile);
       setIsEditing(false);
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('Error updating profile state:', error);
     }
   };
 

@@ -205,10 +205,15 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
   // Handle save with validation
   const handleSave = async () => {
+    console.log('🔄 Starting save process...');
+    console.log('Modified sections:', modifiedSections);
+    console.log('Current profile state:', profile);
+
     const { isValid, errors } = validateProfile();
     setValidationErrors(errors);
     
     if (!isValid) {
+      console.log('❌ Validation failed:', errors);
       showToast('Please fix validation errors before saving', 'error');
       return;
     }
@@ -217,16 +222,25 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     try {
       // Save personal info if modified
       if (modifiedSections.personalInfo) {
+        console.log('📝 Saving personal info...', {
+          endpoint: `/api/profiles/${profile._id}/basic-info`,
+          data: profile.personalInfo
+        });
         await updateBasicInfo(profile._id, profile.personalInfo);
       }
 
       // Save professional summary if modified
       if (modifiedSections.professionalSummary) {
+        console.log('📝 Saving professional summary...', {
+          endpoint: `/api/profiles/${profile._id}`,
+          data: { professionalSummary: profile.professionalSummary }
+        });
         await updateProfileData(profile._id, { professionalSummary: profile.professionalSummary });
       }
 
       // Save skills if modified
       if (modifiedSections.skills) {
+        console.log('📝 Saving skills...');
         // Format skills as objects with proper structure
         const formattedSkills = {
           technical: (profile.skills?.technical || []).map((skill: any) => ({
@@ -247,19 +261,52 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             category: 'Soft',
             level: 1
           })),
-          contactCenter: profile.skills?.contactCenter || []
+          // Preserve existing contactCenter skills with their assessment results
+          contactCenter: (profile.skills?.contactCenter || []).map((skill: any) => ({
+            skill: skill.skill || '',
+            category: skill.category || 'Customer Service',
+            proficiency: skill.proficiency || 'Basic',
+            assessmentResults: skill.assessmentResults || {
+              score: 0,
+              strengths: [],
+              improvements: [],
+              feedback: '',
+              tips: [],
+              keyMetrics: {
+                professionalism: 0,
+                effectiveness: 0,
+                customerFocus: 0
+              },
+              completedAt: new Date().toISOString()
+            }
+          }))
         };
         
+        console.log('Skills data to be sent:', {
+          endpoint: `/api/profiles/${profile._id}/skills`,
+          data: formattedSkills
+        });
         await updateSkills(profile._id, formattedSkills);
       }
 
       // Save experience if modified
       if (modifiedSections.experience) {
+        console.log('📝 Saving experience...', {
+          endpoint: `/api/profiles/${profile._id}/experience`,
+          data: { experience: profile.experience }
+        });
         await updateExperience(profile._id, profile.experience);
       }
 
       // Save languages if modified
       if (modifiedSections.languages) {
+        console.log('📝 Saving languages...', {
+          endpoint: `/api/profiles/${profile._id}/basic-info`,
+          data: {
+            ...profile.personalInfo,
+            languages: profile.personalInfo?.languages || []
+          }
+        });
         await updateBasicInfo(profile._id, {
           ...profile.personalInfo,
           languages: profile.personalInfo?.languages || []
@@ -268,6 +315,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       // Save availability if modified
       if (modifiedSections.availability) {
+        console.log('📝 Saving availability...', {
+          endpoint: `/api/profiles/${profile._id}`,
+          data: { availability: profile.availability }
+        });
         await updateProfileData(profile._id, { availability: profile.availability });
       }
 
@@ -281,10 +332,15 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         availability: false
       });
 
+      console.log('✅ All changes saved successfully');
       showToast('Profile saved successfully', 'success');
       onSave(profile);
-    } catch (error) {
-      console.error('Error saving profile:', error);
+    } catch (error: any) {
+      console.error('❌ Error saving profile:', {
+        error: error.response?.data || error,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
       showToast('Failed to save profile', 'error');
     } finally {
       setLoading(false);
