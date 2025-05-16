@@ -1048,6 +1048,189 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             </button>
           </div>
           
+          {/* Add new experience form - Moved inside the card */}
+          {showNewExperienceForm && (
+            <div className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-medium mb-3">
+                {editingExperienceId !== null ? 'Edit Experience' : 'Add New Experience'}
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title/Position</label>
+                  <input
+                    type="text"
+                    value={newExperience.title}
+                    onChange={(e) => setNewExperience(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full p-2 border rounded-md"
+                    placeholder="e.g., Customer Service Representative"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                  <input
+                    type="text"
+                    value={newExperience.company}
+                    onChange={(e) => setNewExperience(prev => ({ ...prev, company: e.target.value }))}
+                    className="w-full p-2 border rounded-md"
+                    placeholder="e.g., ABC Corporation"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    value={newExperience.startDate}
+                    onChange={(e) => setNewExperience(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={newExperience.endDate}
+                      onChange={(e) => setNewExperience(prev => ({ ...prev, endDate: e.target.value }))}
+                      className="flex-1 p-2 border rounded-md"
+                      disabled={newExperience.isPresent}
+                    />
+                    <label className="flex items-center gap-1 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={newExperience.isPresent}
+                        onChange={(e) => setNewExperience(prev => ({ 
+                          ...prev, 
+                          isPresent: e.target.checked,
+                          endDate: e.target.checked ? '' : prev.endDate 
+                        }))}
+                      />
+                      Present
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Responsibilities</label>
+                {newExperience.responsibilities.map((responsibility, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={responsibility}
+                      onChange={(e) => {
+                        const updatedResponsibilities = [...newExperience.responsibilities];
+                        updatedResponsibilities[index] = e.target.value;
+                        setNewExperience(prev => ({ ...prev, responsibilities: updatedResponsibilities }));
+                      }}
+                      className="flex-1 p-2 border rounded-md"
+                      placeholder={`Responsibility ${index + 1}`}
+                    />
+                    <button
+                      onClick={() => {
+                        if (newExperience.responsibilities.length > 1) {
+                          const updatedResponsibilities = [...newExperience.responsibilities];
+                          updatedResponsibilities.splice(index, 1);
+                          setNewExperience(prev => ({ ...prev, responsibilities: updatedResponsibilities }));
+                        }
+                      }}
+                      className="p-2 text-red-500 hover:text-red-700"
+                      disabled={newExperience.responsibilities.length <= 1}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setNewExperience(prev => ({
+                    ...prev,
+                    responsibilities: [...prev.responsibilities, '']
+                  }))}
+                  className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 mt-1"
+                >
+                  <Plus className="w-3 h-3" />
+                  Add Responsibility
+                </button>
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setShowNewExperienceForm(false);
+                    setEditingExperienceId(null);
+                    setNewExperience({
+                      title: '',
+                      company: '',
+                      startDate: '',
+                      endDate: '',
+                      responsibilities: [''],
+                      isPresent: false
+                    });
+                  }}
+                  className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (editingExperienceId !== null) {
+                      saveEditedExperience();
+                    } else {
+                      // Create formatted experience object
+                      const newExp = {
+                        title: newExperience.title,
+                        company: newExperience.company,
+                        startDate: newExperience.startDate,
+                        endDate: newExperience.isPresent ? 'present' : newExperience.endDate,
+                        responsibilities: newExperience.responsibilities.filter(r => r.trim())
+                      };
+                      
+                      // Add to profile and update state
+                      const updatedExperience = [...(profile.experience || []), newExp];
+                      setProfile((prev: any) => ({
+                        ...prev,
+                        experience: updatedExperience
+                      }));
+                      
+                      // Mark experience section as modified
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        experience: true
+                      }));
+                      
+                      // Reset form
+                      setShowNewExperienceForm(false);
+                      setNewExperience({
+                        title: '',
+                        company: '',
+                        startDate: '',
+                        endDate: '',
+                        responsibilities: [''],
+                        isPresent: false
+                      });
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  disabled={!newExperience.title || !newExperience.company || !newExperience.startDate || loading}
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin inline mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    editingExperienceId !== null ? 'Save Changes' : 'Save Experience'
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+          
           {/* Experience List */}
           <div className="space-y-4">
             {profile.experience?.map((exp: any, index: number) => (
@@ -1112,189 +1295,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             )}
           </div>
         </div>
-
-        {/* Add new experience form */}
-        {showNewExperienceForm && (
-          <div className="mb-6 bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium mb-3">
-              {editingExperienceId !== null ? 'Edit Experience' : 'Add New Experience'}
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title/Position</label>
-                <input
-                  type="text"
-                  value={newExperience.title}
-                  onChange={(e) => setNewExperience(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full p-2 border rounded-md"
-                  placeholder="e.g., Customer Service Representative"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
-                <input
-                  type="text"
-                  value={newExperience.company}
-                  onChange={(e) => setNewExperience(prev => ({ ...prev, company: e.target.value }))}
-                  className="w-full p-2 border rounded-md"
-                  placeholder="e.g., ABC Corporation"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                <input
-                  type="date"
-                  value={newExperience.startDate}
-                  onChange={(e) => setNewExperience(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="w-full p-2 border rounded-md"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={newExperience.endDate}
-                    onChange={(e) => setNewExperience(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="flex-1 p-2 border rounded-md"
-                    disabled={newExperience.isPresent}
-                  />
-                  <label className="flex items-center gap-1 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={newExperience.isPresent}
-                      onChange={(e) => setNewExperience(prev => ({ 
-                        ...prev, 
-                        isPresent: e.target.checked,
-                        endDate: e.target.checked ? '' : prev.endDate 
-                      }))}
-                    />
-                    Present
-                  </label>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Responsibilities</label>
-              {newExperience.responsibilities.map((responsibility, index) => (
-                <div key={index} className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={responsibility}
-                    onChange={(e) => {
-                      const updatedResponsibilities = [...newExperience.responsibilities];
-                      updatedResponsibilities[index] = e.target.value;
-                      setNewExperience(prev => ({ ...prev, responsibilities: updatedResponsibilities }));
-                    }}
-                    className="flex-1 p-2 border rounded-md"
-                    placeholder={`Responsibility ${index + 1}`}
-                  />
-                  <button
-                    onClick={() => {
-                      if (newExperience.responsibilities.length > 1) {
-                        const updatedResponsibilities = [...newExperience.responsibilities];
-                        updatedResponsibilities.splice(index, 1);
-                        setNewExperience(prev => ({ ...prev, responsibilities: updatedResponsibilities }));
-                      }
-                    }}
-                    className="p-2 text-red-500 hover:text-red-700"
-                    disabled={newExperience.responsibilities.length <= 1}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              <button
-                onClick={() => setNewExperience(prev => ({
-                  ...prev,
-                  responsibilities: [...prev.responsibilities, '']
-                }))}
-                className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 mt-1"
-              >
-                <Plus className="w-3 h-3" />
-                Add Responsibility
-              </button>
-            </div>
-            
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowNewExperienceForm(false);
-                  setEditingExperienceId(null);
-                  setNewExperience({
-                    title: '',
-                    company: '',
-                    startDate: '',
-                    endDate: '',
-                    responsibilities: [''],
-                    isPresent: false
-                  });
-                }}
-                className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (editingExperienceId !== null) {
-                    saveEditedExperience();
-                  } else {
-                    // Create formatted experience object
-                    const newExp = {
-                      title: newExperience.title,
-                      company: newExperience.company,
-                      startDate: newExperience.startDate,
-                      endDate: newExperience.isPresent ? 'present' : newExperience.endDate,
-                      responsibilities: newExperience.responsibilities.filter(r => r.trim())
-                    };
-                    
-                    // Add to profile and update state
-                    const updatedExperience = [...(profile.experience || []), newExp];
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      experience: updatedExperience
-                    }));
-                    
-                    // Mark experience section as modified
-                    setModifiedSections(prev => ({
-                      ...prev,
-                      experience: true
-                    }));
-                    
-                    // Reset form
-                    setShowNewExperienceForm(false);
-                    setNewExperience({
-                      title: '',
-                      company: '',
-                      startDate: '',
-                      endDate: '',
-                      responsibilities: [''],
-                      isPresent: false
-                    });
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                disabled={!newExperience.title || !newExperience.company || !newExperience.startDate || loading}
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin inline mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  editingExperienceId !== null ? 'Save Changes' : 'Save Experience'
-                )}
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Languages Section */}
         <div className="bg-white rounded-lg p-6">
