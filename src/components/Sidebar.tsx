@@ -1,18 +1,35 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Briefcase, UserCircle, LogOut, Wallet, BookOpen, Settings, Monitor, Users } from 'lucide-react';
 
-export function Sidebar() {
+interface SidebarProps {
+  currentStatus: number;
+}
+
+export function Sidebar({ currentStatus }: SidebarProps) {
   const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Briefcase, label: 'Gigs', path: '/gigs-marketplace' },
-    //{ icon: Monitor, label: 'Workspace', path: '/workspace' },
-    //{ icon: Wallet, label: 'Wallet', path: '/wallet' },
-    //{ icon: BookOpen, label: 'Learning', path: '/learning' },
-    //{ icon: Users, label: 'Community', path: '/community' },
-    { icon: UserCircle, label: 'Profile', path: '/profile' },
-    { icon: Settings, label: 'Operations', path: '/operations' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', minStatus: 5 },
+    { icon: Briefcase, label: 'Gigs', path: '/gigs-marketplace', minStatus: 5 },
+    { icon: Monitor, label: 'Workspace', path: '/workspace', minStatus: 5 },
+    //{ icon: Wallet, label: 'Wallet', path: '/wallet', minStatus: 5 },
+    //{ icon: BookOpen, label: 'Learning', path: '/learning', minStatus: 5 },
+    //{ icon: Users, label: 'Community', path: '/community', minStatus: 5 },
+    { icon: UserCircle, label: 'Profile', path: '/profile', minStatus: 0 },
+    { icon: Settings, label: 'Operations', path: '/operations', minStatus: 5 },
   ];
+
+  const filteredNavItems = navItems.filter(item => currentStatus >= item.minStatus);
+
+  useEffect(() => {
+    console.log('🔒 Access Control Status:', {
+      currentPhase: currentStatus,
+      accessLevel: currentStatus >= 5 ? 'Full Access' : 'Limited Access',
+      availableNavItems: filteredNavItems.map(item => item.label),
+      restrictedNavItems: navItems
+        .filter(item => currentStatus < item.minStatus)
+        .map(item => item.label)
+    });
+  }, [currentStatus]);
 
   return (
     <div className="w-64 bg-white border-r border-gray-200">
@@ -20,7 +37,7 @@ export function Sidebar() {
         <h1 className="text-2xl font-bold text-blue-600">HARX.AI</h1>
       </div>
       <nav className="mt-6">
-        {navItems.map((item) => (
+        {filteredNavItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}

@@ -1,7 +1,8 @@
 import React from 'react';
 import { 
   MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase, 
-  Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy 
+  Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
+  Edit
 } from 'lucide-react';
 
 // Convert proficiency level to star rating (A1-C2 = 1-6 stars)
@@ -53,7 +54,8 @@ const CONTACT_CENTER_SKILLS = [
   }
 ];
 
-export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
+export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = ({ profile, onEditClick }) => {
+  
   if (!profile) return null;
 
   // Calculate average score from contact center skills if available
@@ -152,6 +154,18 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
 
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
+      {/* Page Header with Edit Button */}
+      <div className="md:col-span-12 flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold text-gray-900">Profile Information</h1>
+        <button
+          onClick={onEditClick}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors"
+        >
+          <Edit className="w-4 h-4" />
+          Edit Profile
+        </button>
+      </div>
+
       {/* Left Column */}
       <div className="md:col-span-4 space-y-6">
         {/* Profile Header */}
@@ -253,133 +267,83 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
           </div>
         </div>
 
-        {/* Availability Card */}
-        {profile.availability && (
-          <div className="bg-white rounded-lg p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock className="w-6 h-6 text-blue-600" />
-              <h2 className="text-lg font-semibold">Availability</h2>
-            </div>
-            
-            <div className="space-y-4">
-              {profile.availability.hours ? (
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-2">Preferred Hours</div>
-                  <div className="flex justify-between items-center text-sm text-gray-600">
-                    <span>{profile.availability.hours.start}</span>
-                    <span>to</span>
-                    <span>{profile.availability.hours.end}</span>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-2">Preferred Hours</div>
-                  <div className="text-sm text-gray-500 italic">Not specified</div>
-                </div>
-              )}
-              
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Available Days</div>
-                {profile.availability.days && profile.availability.days.length > 0 ? (
-                  <div className="flex flex-wrap gap-1">
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
-                      const fullDay = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][index];
-                      const isAvailable = profile.availability.days?.includes(fullDay);
-                      
-                      return (
-                        <div 
-                          key={day} 
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                            isAvailable 
-                              ? 'bg-blue-100 text-blue-800' 
-                              : 'bg-gray-100 text-gray-400'
-                          }`}
-                        >
-                          {day.charAt(0)}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-500 italic">No specific days set</div>
-                )}
-              </div>
-              
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Time Zones</div>
-                {profile.availability.timeZones && profile.availability.timeZones.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {profile.availability.timeZones.map((zone: string, idx: number) => (
-                      <span key={idx} className="px-2 py-1 bg-blue-50 text-blue-800 rounded text-xs">
-                        {zone}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-500 italic">No specific time zones set</div>
-                )}
-              </div>
-              
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Flexibility</div>
-                {profile.availability.flexibility && profile.availability.flexibility.length > 0 ? (
-                  <ul className="text-sm text-gray-600 space-y-1 list-disc ml-4">
-                    {profile.availability.flexibility.map((item: string, index: number) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="text-sm text-gray-500 italic">No flexibility options specified</div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Industries Card */}
+        {/* Availability Section - Moved to left column */}
         <div className="bg-white rounded-lg p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Briefcase className="w-6 h-6 text-blue-600" />
-            <h2 className="text-lg font-semibold">Industries</h2>
+            <Clock className="w-6 h-6 text-blue-600" />
+            <h2 className="text-lg font-semibold">Availability</h2>
           </div>
-          {profile.professionalSummary?.industries && profile.professionalSummary.industries.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {profile.professionalSummary.industries.map((industry: string, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm">
-                  {industry}
-                </span>
-              ))}
+          
+          <div className="space-y-4">
+            {profile.availability?.hours ? (
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Preferred Hours</div>
+                <div className="flex justify-between items-center text-sm text-gray-600">
+                  <span>{profile.availability.hours.start}</span>
+                  <span>to</span>
+                  <span>{profile.availability.hours.end}</span>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Preferred Hours</div>
+                <div className="text-sm text-gray-500 italic">Not specified</div>
+              </div>
+            )}
+            
+            <div>
+              <div className="text-sm font-medium text-gray-700 mb-2">Available Days</div>
+              {profile.availability?.days && profile.availability.days.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
+                    const fullDay = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][index];
+                    const isAvailable = profile.availability.days?.includes(fullDay);
+                    
+                    return (
+                      <div 
+                        key={day} 
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                          isAvailable 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-gray-100 text-gray-400'
+                        }`}
+                      >
+                        {day.charAt(0)}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500 italic">No specific days set</div>
+              )}
             </div>
-          ) : (
-            <p className="text-gray-500 italic">No industries specified</p>
-          )}
-        </div>
-
-        {/* Status Card */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Current Status</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Profile Status</span>
-              <span className={`px-3 py-1 rounded-full text-sm ${
-                profile.status === 'completed' 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {profile.status || 'In Progress'}
-              </span>
+            
+            <div>
+              <div className="text-sm font-medium text-gray-700 mb-2">Time Zones</div>
+              {profile.availability?.timeZones && profile.availability.timeZones.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.availability.timeZones.map((zone: string, idx: number) => (
+                    <span key={idx} className="px-2 py-1 bg-blue-50 text-blue-800 rounded text-xs">
+                      {zone}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500 italic">No specific time zones set</div>
+              )}
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Industry</span>
-              <span className="text-gray-800">
-                {profile.professionalSummary?.industries?.join(', ') || 'Not specified'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Experience</span>
-              <span className="text-gray-800">
-                {profile.professionalSummary?.yearsOfExperience || 'Not specified'} years
-              </span>
+            
+            <div>
+              <div className="text-sm font-medium text-gray-700 mb-2">Flexibility</div>
+              {profile.availability?.flexibility && profile.availability.flexibility.length > 0 ? (
+                <ul className="text-sm text-gray-600 space-y-1 list-disc ml-4">
+                  {profile.availability.flexibility.map((item: string, index: number) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-sm text-gray-500 italic">No flexibility options specified</div>
+              )}
             </div>
           </div>
         </div>
@@ -388,12 +352,61 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
       {/* Right Column */}
       <div className="md:col-span-8 space-y-6">
         {/* About Section */}
-        {profile.professionalSummary?.profileDescription && (
-          <div className="bg-white rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">About</h2>
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">About</h2>
+          {profile.professionalSummary?.profileDescription ? (
             <p className="text-gray-700 whitespace-pre-wrap">{profile.professionalSummary.profileDescription}</p>
+          ) : (
+            <p className="text-gray-500 italic">No profile description available</p>
+          )}
+        </div>
+
+        {/* Years of Experience Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Years of Experience</h2>
+          <div className="flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-gray-500" />
+            <span className="text-lg text-gray-800">
+              {profile.professionalSummary?.yearsOfExperience ? (
+                `${profile.professionalSummary.yearsOfExperience} years`
+              ) : (
+                <span className="text-gray-500 italic">Not specified</span>
+              )}
+            </span>
           </div>
-        )}
+        </div>
+
+        {/* Industries Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Industries</h2>
+          {profile.professionalSummary?.industries?.length > 0 ? (
+            <div className="flex flex-wrap gap-3">
+              {profile.professionalSummary.industries.map((industry: string, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm">
+                  {industry}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No industries listed</p>
+          )}
+        </div>
+
+        {/* Notable Companies Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Notable Companies</h2>
+          {profile.professionalSummary?.notableCompanies?.length > 0 ? (
+            <div className="flex flex-wrap gap-3">
+              {profile.professionalSummary.notableCompanies.map((company: string, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-lg text-sm">
+                  {company}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No notable companies listed</p>
+          )}
+        </div>
 
         {/* Technical Skills Section */}
         <div className="bg-white rounded-lg p-6">
@@ -407,7 +420,7 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No technical skills listed</p>
+            <p className="text-gray-500 italic">No technical skills listed</p>
           )}
         </div>
         
@@ -423,7 +436,7 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No professional skills listed</p>
+            <p className="text-gray-500 italic">No professional skills listed</p>
           )}
         </div>
         
@@ -439,7 +452,7 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No soft skills listed</p>
+            <p className="text-gray-500 italic">No soft skills listed</p>
           )}
         </div>
         
@@ -525,10 +538,10 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
           </div>
         </div>
 
-        {/* Languages Section */}
-        {profile.personalInfo?.languages?.length > 0 && (
-          <div className="bg-white rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-6">Languages</h2>
+        {/* Languages Section - Moved from left column */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-6">Languages</h2>
+          {profile.personalInfo?.languages?.length > 0 ? (
             <div className="space-y-4">
               {profile.personalInfo.languages.map((lang: any, index: number) => {
                 const stars = getProficiencyStars(lang.proficiency);
@@ -589,13 +602,15 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                 );
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-gray-500 italic">No languages listed</p>
+          )}
+        </div>
 
-        {/* Experience Section */}
-        {profile.experience?.length > 0 && (
-          <div className="bg-white rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-6">Experience</h2>
+        {/* Experience Section - Always show this section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-6">Experience</h2>
+          {profile.experience?.length > 0 ? (
             <div className="space-y-6">
               {profile.experience.map((exp: any, index: number) => {
                 // Format dates for display
@@ -668,36 +683,10 @@ export const ProfileView: React.FC<{ profile: any }> = ({ profile }) => {
                 );
               })}
             </div>
-          </div>
-        )}
-        
-        {/* Notable Companies */}
-        {profile.professionalSummary?.notableCompanies?.length > 0 && (
-          <div className="bg-white rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">Notable Companies</h2>
-            <div className="flex flex-wrap gap-3">
-              {profile.professionalSummary.notableCompanies.map((company: string, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg text-sm">
-                  {company}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Key Expertise */}
-        {profile.professionalSummary?.keyExpertise?.length > 0 && (
-          <div className="bg-white rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">Key Expertise</h2>
-            <div className="flex flex-wrap gap-3">
-              {profile.professionalSummary.keyExpertise.map((expertise: string, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm">
-                  {expertise}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-gray-500 italic">No experience listed</p>
+          )}
+        </div>
       </div>
     </div>
   );
