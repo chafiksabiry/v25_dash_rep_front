@@ -5,7 +5,7 @@ import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
-
+import { StrictMode } from 'react';
 
 
 // Store the root instance for proper unmounting
@@ -24,9 +24,9 @@ function render(props: { container?: HTMLElement }) {
       root = createRoot(rootElement);
     }
     root.render(
-      <React.StrictMode>
+      <StrictMode>
         <App />
-      </React.StrictMode>
+      </StrictMode>
     );
   } else {
     console.warn('[App8] Root element not found!');
