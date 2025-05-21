@@ -268,7 +268,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         </div>
 
         {/* Availability Section - Moved to left column */}
-        <div className="bg-white rounded-lg p-6">
+        {/* <div className="bg-white rounded-lg p-6">
           <div className="flex items-center gap-2 mb-4">
             <Clock className="w-6 h-6 text-blue-600" />
             <h2 className="text-lg font-semibold">Availability</h2>
@@ -346,7 +346,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               )}
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Right Column */}
