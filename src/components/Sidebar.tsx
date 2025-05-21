@@ -21,8 +21,8 @@ export function Sidebar({ currentStatus }: SidebarProps) {
       Cookies.remove(cookieName);
     });
     
-    // Navigate to auth page and replace history
-    navigate('/auth', { replace: true });
+    // Navigate to auth page and replace history stack
+    window.location.replace('/auth');
   };
 
   const navItems = [
