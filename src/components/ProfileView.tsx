@@ -5,6 +5,32 @@ import {
   Edit
 } from 'lucide-react';
 
+// Type definitions
+interface AssessmentResults {
+  score?: number;
+  fluency?: { score: number };
+  proficiency?: { score: number };
+  completeness?: { score: number };
+  keyMetrics?: {
+    professionalism: number;
+    effectiveness: number;
+    customerFocus: number;
+  };
+}
+
+interface Language {
+  language: string;
+  proficiency: string;
+  iso639_1?: string;
+  assessmentResults?: AssessmentResults;
+}
+
+interface ContactCenterSkill {
+  skill: string;
+  proficiency?: string;
+  assessmentResults?: AssessmentResults;
+}
+
 // Convert proficiency level to star rating (A1-C2 = 1-6 stars)
 const getProficiencyStars = (proficiency: string): number => {
   switch(proficiency) {
@@ -433,6 +459,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         {/* Technical Skills Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-4">Technical Skills</h2>
+          {(!profile.skills?.technical || profile.skills.technical.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Technical skills are required. Please add your technical expertise.
+            </div>
+          )}
           {profile.skills?.technical?.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {profile.skills.technical.map((skill: any, idx: number) => (
@@ -449,6 +483,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         {/* Professional Skills Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-4">Professional Skills</h2>
+          {(!profile.skills?.professional || profile.skills.professional.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Professional skills are required. Please add your professional expertise.
+            </div>
+          )}
           {profile.skills?.professional?.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {profile.skills.professional.map((skill: any, idx: number) => (
@@ -465,6 +507,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         {/* Soft Skills Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-4">Soft Skills</h2>
+          {(!profile.skills?.soft || profile.skills.soft.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Soft skills are required. Please add your interpersonal skills.
+            </div>
+          )}
           {profile.skills?.soft?.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {profile.skills.soft.map((skill: any, idx: number) => (
@@ -481,6 +531,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         {/* Contact Center Skills Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-6">Contact Center Skills</h2>
+          {(!profile.skills?.contactCenter || !profile.skills.contactCenter.some((skill: ContactCenterSkill) => skill.assessmentResults)) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              You should be assessed in at least one contact center skill.
+            </div>
+          )}
           <div className="space-y-8">
             {CONTACT_CENTER_SKILLS.map((category) => (
               <div key={category.name} className="mb-8">
@@ -563,6 +621,21 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         {/* Languages Section - Moved from left column */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-6">Languages</h2>
+          {(!profile.personalInfo?.languages || profile.personalInfo.languages.length === 0) ? (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              You should specify at least one language.
+            </div>
+          ) : !profile.personalInfo.languages.some((lang: Language) => lang.assessmentResults) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              You should be assessed in at least one language.
+            </div>
+          )}
           {profile.personalInfo?.languages?.length > 0 ? (
             <div className="space-y-4">
               {profile.personalInfo.languages.map((lang: any, index: number) => {
@@ -632,6 +705,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         {/* Experience Section - Always show this section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-6">Experience</h2>
+          {(!profile.experience || profile.experience.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Please add your work experience.
+            </div>
+          )}
           {profile.experience?.length > 0 ? (
             <div className="space-y-6">
               {profile.experience.map((exp: any, index: number) => {
