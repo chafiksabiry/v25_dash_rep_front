@@ -21,8 +21,10 @@ export function Sidebar({ currentStatus }: SidebarProps) {
       Cookies.remove(cookieName);
     });
     
-    // Navigate to auth page and replace history stack
-    window.location.replace('/auth');
+    // Send logout message to parent window
+    console.log('🚪 Sending logout message to parent window');
+    window.parent.postMessage({ type: 'LOGOUT' }, '*');
+    console.log('✅ Logout message sent');
   };
 
   const navItems = [
