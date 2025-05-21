@@ -21,10 +21,7 @@ export function Sidebar({ currentStatus }: SidebarProps) {
       Cookies.remove(cookieName);
     });
     
-    // Send logout message to parent window
-    console.log('🚪 Sending logout message to parent window');
-    window.parent.postMessage({ type: 'LOGOUT' }, '*');
-    console.log('✅ Logout message sent');
+    window.location.replace('/auth');
   };
 
   const navItems = [
