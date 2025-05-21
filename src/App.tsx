@@ -131,8 +131,10 @@ function App() {
   }
 
   console.log('🖥️ Rendering main application interface');
+  const isStandaloneMode = import.meta.env.VITE_RUN_MODE === 'standalone';
+  const basename = isStandaloneMode ? '/' : '/repdashboard';
   return (
-    <Router basename={qiankunWindow.__POWERED_BY_QIANKUN__ ? '/repdashboard' : '/'}>
+    <Router basename={basename}>
       <div className="flex h-screen bg-gray-50">
         <Sidebar currentStatus={userProfile?.onboardingProgress?.currentPhase || 0} />
         <div className="flex-1 flex flex-col overflow-hidden">
