@@ -1380,14 +1380,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           </div>
         </div>
 
-        {/* Availability Section */}
-        <div className="bg-white rounded-lg p-6">
+        {/* Availability Section - Commented Out */}
+        {/* <div className="bg-white rounded-lg p-6">
           <div className="flex items-center gap-2 mb-4">
             <Clock className="w-6 h-6 text-blue-600" />
             <h2 className="text-lg font-semibold">Availability</h2>
           </div>
           
-          {/* Working Hours */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Working Hours</label>
             <div className="grid grid-cols-2 gap-4">
@@ -1442,7 +1441,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             </div>
           </div>
           
-          {/* Available Days */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Available Days</label>
             <div className="flex flex-wrap gap-2">
@@ -1456,7 +1454,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     onClick={() => {
                       const currentDays = [...(profile.availability?.days || [])];
                       if (isSelected) {
-                        // Remove day
                         const updatedDays = currentDays.filter(d => d !== day);
                         setProfile((prev: any) => ({
                           ...prev,
@@ -1466,7 +1463,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                           }
                         }));
                       } else {
-                        // Add day
                         const updatedDays = [...currentDays, day];
                         setProfile((prev: any) => ({
                           ...prev,
@@ -1494,7 +1490,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             </div>
           </div>
           
-          {/* Time Zones */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Time Zones</label>
             <div className="grid grid-cols-2 gap-2">
@@ -1519,7 +1514,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     onClick={() => {
                       const currentZones = [...(profile.availability?.timeZones || [])];
                       if (isSelected) {
-                        // Remove zone
                         const updatedZones = currentZones.filter(z => z !== zoneCode);
                         setProfile((prev: any) => ({
                           ...prev,
@@ -1529,7 +1523,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                           }
                         }));
                       } else {
-                        // Add zone
                         const updatedZones = [...currentZones, zoneCode];
                         setProfile((prev: any) => ({
                           ...prev,
@@ -1557,7 +1550,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             </div>
           </div>
           
-          {/* Flexibility Options */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Schedule Flexibility</label>
             <div className="grid grid-cols-2 gap-2">
@@ -1583,7 +1575,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     onClick={() => {
                       const currentFlexibility = [...(profile.availability?.flexibility || [])];
                       if (isSelected) {
-                        // Remove option
                         const updatedFlexibility = currentFlexibility.filter(f => f !== option);
                         setProfile((prev: any) => ({
                           ...prev,
@@ -1593,7 +1584,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                           }
                         }));
                       } else {
-                        // Add option
                         const updatedFlexibility = [...currentFlexibility, option];
                         setProfile((prev: any) => ({
                           ...prev,
@@ -1620,7 +1610,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               })}
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Toast notifications */}

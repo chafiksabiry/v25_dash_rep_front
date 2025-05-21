@@ -197,6 +197,28 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
           </div>
         </div>
 
+        {/* Onboarding Status */}
+        <div className="bg-white rounded-lg p-6">
+          <div className="text-center">
+            <h2 className="text-lg font-semibold mb-4">Onboarding Status</h2>
+            <div className="mb-4">
+              <div className="text-3xl font-bold text-blue-600 mb-2">Phase {profile.onboardingProgress?.currentPhase || 0}</div>
+              <p className="text-sm text-gray-600">
+                {profile.currentPhase >= 5 ? 'Full Access' : 'Limited Access'}
+              </p>
+            </div>
+            <button
+              onClick={() => window.location.href = '/reporchestrator'}
+              className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+            >
+              <span>Continue Onboarding</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
         {/* Overall Score Card - Using REPS score if available */}
         <div className="bg-white rounded-lg p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -268,7 +290,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         </div>
 
         {/* Availability Section - Moved to left column */}
-        <div className="bg-white rounded-lg p-6">
+        {/* <div className="bg-white rounded-lg p-6">
           <div className="flex items-center gap-2 mb-4">
             <Clock className="w-6 h-6 text-blue-600" />
             <h2 className="text-lg font-semibold">Availability</h2>
@@ -346,7 +368,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               )}
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Right Column */}
