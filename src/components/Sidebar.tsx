@@ -1,12 +1,30 @@
 import React, { useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Briefcase, UserCircle, LogOut, Wallet, BookOpen, Settings, Monitor, Users } from 'lucide-react';
+import Cookies from 'js-cookie';
+import { clearProfileData } from '../utils/profileUtils';
 
 interface SidebarProps {
   currentStatus: number;
 }
 
 export function Sidebar({ currentStatus }: SidebarProps) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Clear all items from localStorage
+    localStorage.clear();
+
+    // Clear all cookies
+    const cookies = Cookies.get();
+    Object.keys(cookies).forEach(cookieName => {
+      Cookies.remove(cookieName);
+    });
+    
+    // Navigate to auth page and replace history
+    navigate('/auth', { replace: true });
+  };
+
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', minStatus: 5 },
     { icon: Briefcase, label: 'Gigs', path: '/gigs-marketplace', minStatus: 5 },
@@ -51,7 +69,10 @@ export function Sidebar({ currentStatus }: SidebarProps) {
             <span>{item.label}</span>
           </NavLink>
         ))}
-        <button className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors mt-auto">
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors mt-auto"
+        >
           <LogOut className="w-5 h-5 mr-3" />
           <span>Logout</span>
         </button>
