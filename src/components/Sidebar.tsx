@@ -20,12 +20,8 @@ export function Sidebar({ currentStatus }: SidebarProps) {
     Object.keys(cookies).forEach(cookieName => {
       Cookies.remove(cookieName);
     });
-
-    //window.location.replace('/auth');
-    // Send logout message to parent window
-    console.log('🚪 Sending logout message to parent window');
-    window.parent.postMessage({ type: 'LOGOUT' }, '*');
-    console.log('✅ Logout message sent');
+    
+    window.location.replace('/auth');
   };
 
   const navItems = [
@@ -63,7 +59,8 @@ export function Sidebar({ currentStatus }: SidebarProps) {
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${isActive ? 'bg-blue-50 text-blue-600' : ''
+              `flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${
+                isActive ? 'bg-blue-50 text-blue-600' : ''
               }`
             }
           >
@@ -71,7 +68,7 @@ export function Sidebar({ currentStatus }: SidebarProps) {
             <span>{item.label}</span>
           </NavLink>
         ))}
-        <button
+        <button 
           onClick={handleLogout}
           className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors mt-auto"
         >
