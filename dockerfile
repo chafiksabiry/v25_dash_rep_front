@@ -20,6 +20,12 @@ ENV VITE_STANDALONE_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2O
 ENV VITE_ASSESSMENT_APP=/repassessments/assessment
 ENV VITE_ASSESSMENT_APP_STANDALONE=https://rep-assessments.harx.ai/assessment
 ENV VITE_OPENAI_API_KEY=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
+#twilio&calls
+ENV VITE_TWILIO_ACCOUNT_SID=AC8a453959a6cb01cbbd1c819b00c5782f
+ENV VITE_TWILIO_AUTH_TOKEN=7ade91a170bff98bc625543287ee62c8
+ENV VITE_WS_URL=wss://api-calls.harx.ai/speech-to-text
+ENV VITE_API_URL_AI_MESSAGES=https://api-messages-service.harx.ai/api
+ENV VITE_API_URL_CALL=https://api-calls.harx.ai
 # Install dependencies
 RUN npm install
 
