@@ -295,17 +295,57 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
 
         {/* Onboarding Status */}
         <div className="bg-white rounded-lg p-6">
-          <div className="text-center">
-            <h2 className="text-lg font-semibold mb-4">Onboarding Status</h2>
-            <div className="mb-4">
-              <div className="text-3xl font-bold text-blue-600 mb-2">Phase {profile.onboardingProgress?.currentPhase || 0}</div>
-              <p className="text-sm text-gray-600">
-                {profile.currentPhase >= 5 ? 'Full Access' : 'Limited Access'}
-              </p>
-            </div>
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-6 h-6 text-blue-600" />
+            <h2 className="text-lg font-semibold">Onboarding Progress</h2>
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((phaseNum) => {
+              const phaseKey = `phase${phaseNum}`;
+              const status = profile.onboardingProgress?.phases?.[phaseKey]?.status || 'pending';
+              const isCompleted = status === 'completed';
+              const isCurrent = status === 'in_progress';
+              
+              return (
+                <div key={phaseNum} className="flex items-center gap-3">
+                  <div className={`
+                    w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                    ${isCompleted ? 'bg-green-100 text-green-800' : 
+                      isCurrent ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-400' : 
+                      'bg-gray-100 text-gray-400'}
+                  `}>
+                    {phaseNum}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900">
+                      Phase {phaseNum}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {status === 'completed' ? 'Completed' : 
+                       status === 'in_progress' ? 'In Progress' : 
+                       status === 'blocked' ? 'Blocked' :
+                       'Not Started'}
+                    </div>
+                  </div>
+                  <div className={`
+                    px-2 py-1 rounded text-xs font-medium
+                    ${status === 'completed' ? 'bg-green-100 text-green-800' : 
+                      status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
+                      status === 'blocked' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-500'}
+                  `}>
+                    {status === 'completed' ? '✓ Done' : 
+                     status === 'in_progress' ? 'Active' : 
+                     status === 'blocked' ? 'Blocked' :
+                     'Pending'}
+                  </div>
+                </div>
+              );
+            })}
+            
             <button
               onClick={() => window.location.href = '/reporchestrator'}
-              className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              className="w-full mt-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
             >
               <span>Continue Onboarding</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
