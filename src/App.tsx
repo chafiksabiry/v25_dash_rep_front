@@ -19,7 +19,38 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 interface UserProfile {
   onboardingProgress: {
     currentPhase: number;
-    phases: any;
+    phases: {
+      phase1: {
+        status: string;
+        completedAt?: string;
+        requiredActions: any[];
+        optionalActions: any[];
+      };
+      phase2: {
+        status: string;
+        completedAt?: string;
+        requiredActions: any[];
+        optionalActions: any[];
+      };
+      phase3: {
+        status: string;
+        completedAt?: string;
+        requiredActions: any[];
+        optionalActions: any[];
+      };
+      phase4: {
+        status: string;
+        completedAt?: string;
+        requiredActions: any[];
+        optionalActions: any[];
+      };
+      phase5: {
+        status: string;
+        completedAt?: string;
+        requiredActions: any[];
+        optionalActions: any[];
+      };
+    };
   };
   // Add other profile fields as needed
 }
@@ -136,59 +167,59 @@ function App() {
   return (
     <Router basename={basename}>
       <div className="flex h-screen bg-gray-50">
-        <Sidebar currentStatus={userProfile?.onboardingProgress?.currentPhase || 0} />
+        <Sidebar phases={userProfile?.onboardingProgress?.phases} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <TopBar />
           <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
             <Routes>
               <Route path="/" element={
-                <ProtectedRoute currentStatus={userProfile?.onboardingProgress?.currentPhase || 0}>
+                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                   <Dashboard />
                 </ProtectedRoute>
               } />
               <Route path="/dashboard" element={
-                <ProtectedRoute currentStatus={userProfile?.onboardingProgress?.currentPhase || 0}>
+                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                   <Dashboard />
                 </ProtectedRoute>
               } />
               <Route path="/gigs-marketplace" element={
-                <ProtectedRoute currentStatus={userProfile?.onboardingProgress?.currentPhase || 0}>
+                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                   <GigsMarketplace />
                 </ProtectedRoute>
               } />
               <Route path="/payouts" element={
-                <ProtectedRoute currentStatus={userProfile?.onboardingProgress?.currentPhase || 0}>
+                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                   <Payouts />
                 </ProtectedRoute>
               } />
               <Route path="/learning" element={
-                <ProtectedRoute currentStatus={userProfile?.onboardingProgress?.currentPhase || 0}>
+                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                   <Learning />
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={<Profile />} />
               <Route path="/operations" element={
-                <ProtectedRoute currentStatus={userProfile?.onboardingProgress?.currentPhase || 0}>
+                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                   <Operations />
                 </ProtectedRoute>
               } />
               <Route path="/workspace" element={
-                <ProtectedRoute currentStatus={userProfile?.onboardingProgress?.currentPhase || 0}>
+                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
                   <Workspace />
                 </ProtectedRoute>
               } />
               <Route path="/community" element={
-                <ProtectedRoute currentStatus={userProfile?.onboardingProgress?.currentPhase || 0}>
+                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                   <Community />
                 </ProtectedRoute>
               } />
               <Route path="/call-report" element={
-                <ProtectedRoute currentStatus={userProfile?.onboardingProgress?.currentPhase || 0}>
+                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                   <CallReportCard />
                 </ProtectedRoute>
               } />
               <Route path="/wallet" element={
-                <ProtectedRoute currentStatus={userProfile?.onboardingProgress?.currentPhase || 0}>
+                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                   <WalletPage />
                 </ProtectedRoute>
               } />
