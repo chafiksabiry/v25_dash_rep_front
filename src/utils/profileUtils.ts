@@ -4,6 +4,22 @@ import Cookies from 'js-cookie';
 // Cache duration in milliseconds (30 minutes)
 const CACHE_DURATION = 30 * 60 * 1000;
 
+// Add Plan interfaces
+interface Plan {
+  _id: string;
+  name: string;
+  price: number;
+  targetUserType: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PlanResponse {
+  _id: number;
+  userId: number;
+  plan: Plan;
+}
+
 /**
  * Get profile data from localStorage or API if necessary
  */
@@ -195,4 +211,74 @@ export const clearProfileData = () => {
   localStorage.removeItem('profileDataTimestamp');
   localStorage.removeItem('agentId');
   console.log('✅ Profile data cleared');
+};
+
+/**
+ * Update basic info of a profile
+ */
+export const updateBasicInfo = async (id: string, basicInfo: any) => {
+  try {
+    console.log('🔄 Updating basic info...', { id, dataKeys: Object.keys(basicInfo) });
+    const { data } = await profileApi.updateBasicInfo(id, basicInfo);
+    
+    // Refresh cached data
+    await fetchProfileFromAPI();
+    
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating basic info:', error);
+    throw error.response?.data || error;
+  }
+};
+
+/**
+ * Update experience of a profile
+ */
+export const updateExperience = async (id: string, experience: any) => {
+  try {
+    console.log('🔄 Updating experience...', { id });
+    const { data } = await profileApi.updateExperience(id, experience);
+    
+    // Refresh cached data
+    await fetchProfileFromAPI();
+    
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating experience:', error);
+    throw error.response?.data || error;
+  }
+};
+
+/**
+ * Update skills of a profile
+ */
+export const updateSkills = async (id: string, skills: any) => {
+  try {
+    console.log('🔄 Updating skills...', { id, skillTypes: Object.keys(skills) });
+    const { data } = await profileApi.updateSkills(id, skills);
+    
+    // Refresh cached data
+    await fetchProfileFromAPI();
+    
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating skills:', error);
+    throw error.response?.data || error;
+  }
+};
+
+/**
+ * Get profile subscription plan
+ */
+export const getProfilePlan = async (profileId: string): Promise<PlanResponse> => {
+  console.log('🔍 Fetching profile subscription plan...', { profileId });
+  
+  try {
+    const response = await profileApi.getPlan(profileId);
+    console.log('✅ Successfully fetched plan data:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error fetching plan data:', error);
+    throw error;
+  }
 }; 

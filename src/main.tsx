@@ -5,7 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
-
+import { StrictMode } from 'react';
 
 
 // Store the root instance for proper unmounting

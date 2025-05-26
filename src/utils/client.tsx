@@ -194,6 +194,10 @@ export const profileApi = {
   get: () => apiClient.get('/api/profiles'),
   getById: (id: string) => apiClient.get(`/api/profiles/user/${id}`),
   update: (profileId: string, data: any) => apiClient.put(`/api/profiles/${profileId}`, data),
+  updateBasicInfo: (id: string, basicInfo: any) => apiClient.put(`/api/profiles/${id}/basic-info`, basicInfo),
+  updateExperience: (id: string, experience: any) => apiClient.put(`/api/profiles/${id}/experience`, { experience }),
+  updateSkills: (id: string, skills: any) => apiClient.put(`/api/profiles/${id}/skills`, { skills }),
+  getPlan: (profileId: string) => apiClient.get(`/api/profiles/${profileId}/plan`),
 };
 
 // Default export with all APIs
