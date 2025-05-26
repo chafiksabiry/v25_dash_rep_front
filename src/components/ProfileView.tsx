@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase, 
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
-  Edit
+  Edit, CreditCard
 } from 'lucide-react';
+import { getProfilePlan } from '../utils/profileUtils';
 
 // Type definitions
 interface AssessmentResults {
@@ -29,6 +30,22 @@ interface ContactCenterSkill {
   skill: string;
   proficiency?: string;
   assessmentResults?: AssessmentResults;
+}
+
+// Add new interface for Plan
+interface Plan {
+  _id: string;
+  name: string;
+  price: number;
+  targetUserType: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PlanResponse {
+  _id: number;
+  userId: number;
+  plan: Plan;
 }
 
 // Convert proficiency level to star rating (A1-C2 = 1-6 stars)
@@ -81,7 +98,25 @@ const CONTACT_CENTER_SKILLS = [
 ];
 
 export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = ({ profile, onEditClick }) => {
-  
+  const [planData, setPlanData] = useState<PlanResponse | null>(null);
+  const [planError, setPlanError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPlanData = async () => {
+      try {
+        if (!profile?._id) return;
+        
+        const data = await getProfilePlan(profile._id);
+        setPlanData(data);
+      } catch (error) {
+        console.error('Error fetching plan data:', error);
+        setPlanError(error instanceof Error ? error.message : 'Failed to fetch plan data');
+      }
+    };
+
+    fetchPlanData();
+  }, [profile?._id]);
+
   if (!profile) return null;
 
   // Calculate average score from contact center skills if available
@@ -221,6 +256,41 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               )}
             </div>
           </div>
+        </div>
+
+        {/* Subscription Plan Card */}
+        <div className="bg-white rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <CreditCard className="w-6 h-6 text-blue-600" />
+            <h2 className="text-lg font-semibold">Subscription Plan</h2>
+          </div>
+          {planError ? (
+            <div className="text-red-600 text-sm mb-2">{planError}</div>
+          ) : planData ? (
+            <div className="space-y-3">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="text-xl font-bold text-blue-800 mb-2">
+                  {planData.plan.name}
+                </h3>
+                <div className="text-2xl font-bold text-blue-600 mb-2">
+                  ${planData.plan.price}
+                </div>
+                <div className="text-sm text-gray-600">
+                  <p>Type: {planData.plan.targetUserType}</p>
+                  <p className="mt-1">
+                    Since: {new Date(planData.plan.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Onboarding Status */}

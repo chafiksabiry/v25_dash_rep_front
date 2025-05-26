@@ -4,6 +4,22 @@ import Cookies from 'js-cookie';
 // Cache duration in milliseconds (30 minutes)
 const CACHE_DURATION = 30 * 60 * 1000;
 
+// Add Plan interfaces
+interface Plan {
+  _id: string;
+  name: string;
+  price: number;
+  targetUserType: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PlanResponse {
+  _id: number;
+  userId: number;
+  plan: Plan;
+}
+
 /**
  * Get profile data from localStorage or API if necessary
  */
@@ -248,5 +264,21 @@ export const updateSkills = async (id: string, skills: any) => {
   } catch (error: any) {
     console.error('❌ Error updating skills:', error);
     throw error.response?.data || error;
+  }
+};
+
+/**
+ * Get profile subscription plan
+ */
+export const getProfilePlan = async (profileId: string): Promise<PlanResponse> => {
+  console.log('🔍 Fetching profile subscription plan...', { profileId });
+  
+  try {
+    const response = await profileApi.getPlan(profileId);
+    console.log('✅ Successfully fetched plan data:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error fetching plan data:', error);
+    throw error;
   }
 }; 
