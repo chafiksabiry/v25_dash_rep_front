@@ -1380,8 +1380,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           </div>
         </div>
 
-        {/* Availability Section - Commented Out */}
-        {/* <div className="bg-white rounded-lg p-6">
+        {/* Availability Section */}
+        <div className="bg-white rounded-lg p-6">
           <div className="flex items-center gap-2 mb-4">
             <Clock className="w-6 h-6 text-blue-600" />
             <h2 className="text-lg font-semibold">Availability</h2>
@@ -1610,7 +1610,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               })}
             </div>
           </div>
-        </div> */}
+        </div>
       </div>
 
       {/* Toast notifications */}
