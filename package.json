@@ -11,9 +11,11 @@
     "build:qiankun": "vite build --mode qiankun"
   },
   "dependencies": {
+    "@qalqul/sdk-call": "git+https://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@github.com/qalqul/qalqul-sdk-call.git",
     "@tensorflow/tfjs": "^4.17.0",
+    "@twilio/voice-sdk": "^2.13.0",
     "@types/js-cookie": "^3.0.6",
-    "axios": "^1.8.4",
+    "axios": "^1.9.0",
     "cheerio": "^1.0.0",
     "date-fns": "^3.3.1",
     "js-cookie": "^3.0.5",
@@ -24,7 +26,9 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.22.3",
+    "socket.io-client": "^4.8.1",
     "systemjs": "^6.15.1",
+    "uuid": "^11.1.0",
     "vite-plugin-qiankun": "^1.0.15",
     "vite-react-typescript-starter": "file:"
   },

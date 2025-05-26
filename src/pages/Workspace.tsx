@@ -6,14 +6,97 @@ import {
 } from 'lucide-react';
 import { AIAssistant } from '../components/AIAssistant';
 import { AIService } from '../services/ai';
+import { CallInterface } from '../components/CallInterface';
+import { useAuth } from '../contexts/AuthContext';
+import { GlobalAIAssistant } from '../components/GlobalAIAssistant';
+
+interface Interaction {
+  id: number;
+  customer: string;
+  type: string;
+  status: string;
+  priority: string;
+  waitTime: string;
+  issue: string;
+  channel: string;
+}
+
+interface Lead {
+  id: string;
+  Deal_Name: string;
+  Telephony: string;
+  Email_1: string;
+  Stage: string;
+  Created_Time: string;
+  Owner: {
+    name: string;
+    id: string;
+    email: string;
+  };
+}
+
+interface APIResponse {
+  success: boolean;
+  count: number;
+  data: Lead[];
+}
 
 export function Workspace() {
   const [activeTab, setActiveTab] = useState('queue');
   const [message, setMessage] = useState('');
-  const [selectedInteraction, setSelectedInteraction] = useState(null);
+  const [selectedInteraction, setSelectedInteraction] = useState<Interaction | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [sentiment, setSentiment] = useState<'positive' | 'neutral' | 'negative'>('neutral');
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [isLoadingLeads, setIsLoadingLeads] = useState(false);
   const aiService = new AIService();
+  const [showCallInterface, setShowCallInterface] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const { currentUser } = useAuth();
+
+  useEffect(() => {
+    if (activeTab === 'voice') {
+      // fetchLeads(); // Commented for testing
+      
+      // Mock lead for testing
+      const mockLead: Lead = {
+        id: 'mock-1',
+        Deal_Name: 'chafik sabiry',
+        Telephony: '+17244375771',
+        Email_1: 'chafik.sabiry@example.com',
+        Stage: 'Respecte le planning',
+        Created_Time: new Date().toISOString(),
+        Owner: {
+          name: 'Test Owner',
+          id: 'owner-1',
+          email: 'owner@example.com'
+        }
+      };
+      
+      setLeads([mockLead]);
+    }
+  }, [activeTab]);
+
+  const fetchLeads = async () => {
+    console.log("fetching leads");
+    try {
+      setIsLoadingLeads(true);
+      const userId = '682b590b4d60b1ff380973c2';
+      const response = await fetch(`https://api-dashboard.harx.ai/api/leads/user/${userId}`);
+      const responseData: APIResponse = await response.json();
+      console.log("data", responseData);
+      if (responseData.success && Array.isArray(responseData.data)) {
+        setLeads(responseData.data);
+      } else {
+        setLeads([]);
+      }
+    } catch (error) {
+      console.error('Error fetching leads:', error); 
+      setLeads([]);
+    } finally {
+      setIsLoadingLeads(false);
+    }
+  };
 
   const handleAISuggestion = (suggestion: string) => {
     setMessage(suggestion);
@@ -31,7 +114,8 @@ export function Workspace() {
 
   const workspaceTools = [
     { id: 'queue', label: 'Queue', icon: List },
-    { id: 'call', label: 'Voice/Video Call', icon: Phone },
+    { id: 'voice', label: 'Voice Call', icon: Phone },
+    { id: 'video', label: 'Video Call', icon: Video },
     { id: 'email', label: 'Email Support', icon: Mail },
     { id: 'chat', label: 'Live Chat', icon: MessageSquare },
     { id: 'social', label: 'Social Media', icon: Globe },
@@ -170,7 +254,70 @@ export function Workspace() {
     switch (activeTab) {
       case 'queue':
         return renderQueue();
-      case 'call':
+      case 'voice':
+        return (
+          <div className="h-[600px] bg-white rounded-lg p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Voice Calls</h2>
+              <div className="flex items-center space-x-2">
+                <button className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">
+                  <Mic className="w-5 h-5" />
+                </button>
+                <button className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">
+                  <Phone className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <div className="bg-white rounded-lg">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Recent Leads</h3>
+                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
+                    {leads.length} Leads
+                  </span>
+                </div>
+                {isLoadingLeads ? (
+                  <div className="text-center py-4 text-gray-600">Loading leads...</div>
+                ) : (
+                  <div className="space-y-3">
+                    {leads.map((lead) => (
+                      <div 
+                        key={`${lead.id}-${lead.Email_1}-${lead.Created_Time}`} 
+                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-medium text-gray-900">{lead.Deal_Name}</h4>
+                            <p className="text-sm text-gray-600">{lead.Telephony || 'No phone'}</p>
+                            <p className="text-sm text-gray-500">{lead.Email_1 || 'No email'}</p>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              lead.Stage === 'Respecte le planning' ? 'bg-green-100 text-green-700' :
+                              lead.Stage === 'En retard' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {lead.Stage}
+                            </span>
+                            <button 
+                              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                              onClick={() => handleCallClick(lead)}
+                            >
+                              <Phone className="w-4 h-4" />
+                              <span>Call</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'video':
         return (
           <div className="h-[600px] bg-gray-900 rounded-lg p-6 text-white">
             <div className="flex justify-between items-center mb-8">
@@ -342,8 +489,32 @@ export function Workspace() {
     }
   };
 
+  const handleCallEnd = () => {
+    setShowCallInterface(false);
+    setSelectedLead(null);
+  };
+
+  const handleCallClick = (lead: Lead) => {
+    setSelectedLead(lead);
+    setShowCallInterface(true);
+  };
+
   return (
     <div className="space-y-6">
+      <GlobalAIAssistant />
+      {showCallInterface && selectedLead && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96 pointer-events-auto">
+            <CallInterface
+              phoneNumber={selectedLead.Telephony}
+              agentId={currentUser?.id || ''}
+              onEnd={handleCallEnd}
+              provider="twilio"
+              callId={selectedLead.id}
+            />
+          </div>
+        </div>
+      )}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Workspace</h1>
         <div className="flex items-center space-x-4">
