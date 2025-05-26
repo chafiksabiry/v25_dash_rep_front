@@ -7,6 +7,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+RUN apk add --no-cache git
 
 # Set environment variables
 ENV VITE_API_URL=https://api-rep-dashboard.harx.ai 
