@@ -4,49 +4,86 @@ import { LayoutDashboard, Briefcase, UserCircle, LogOut, Wallet, BookOpen, Setti
 import Cookies from 'js-cookie';
 import { clearProfileData } from '../utils/profileUtils';
 
-interface SidebarProps {
-  currentStatus: number;
+interface Phase {
+  status: string;
+  completedAt?: string;
+  requiredActions?: any[];
+  optionalActions?: any[];
 }
 
-export function Sidebar({ currentStatus }: SidebarProps) {
+interface Phases {
+  phase1: Phase;
+  phase2: Phase;
+  phase3: Phase;
+  phase4: Phase;
+  phase5: Phase;
+}
+
+interface SidebarProps {
+  phases: Phases | undefined;
+}
+
+export function Sidebar({ phases }: SidebarProps) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Clear all items from localStorage
     localStorage.clear();
-
-    // Clear all cookies
     const cookies = Cookies.get();
     Object.keys(cookies).forEach(cookieName => {
       Cookies.remove(cookieName);
     });
-    
     window.location.replace('/auth');
   };
 
+  const isPhaseCompleted = (phaseNumber: number): boolean => {
+    if (!phases) return false;
+    return phases[`phase${phaseNumber}` as keyof Phases]?.status === 'completed';
+  };
+
   const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', minStatus: 5 },
-    { icon: Briefcase, label: 'Gigs', path: '/gigs-marketplace', minStatus: 5 },
-    { icon: Monitor, label: 'Workspace', path: '/workspace', minStatus: 5 },
-    //{ icon: Wallet, label: 'Wallet', path: '/wallet', minStatus: 5 },
-    //{ icon: BookOpen, label: 'Learning', path: '/learning', minStatus: 5 },
-    //{ icon: Users, label: 'Community', path: '/community', minStatus: 5 },
-    { icon: UserCircle, label: 'Profile', path: '/profile', minStatus: 0 },
-    { icon: Settings, label: 'Operations', path: '/operations', minStatus: 5 },
+    { 
+      icon: LayoutDashboard, 
+      label: 'Dashboard', 
+      path: '/dashboard', 
+      isAccessible: () => isPhaseCompleted(5)
+    },
+    { 
+      icon: Briefcase, 
+      label: 'Gigs', 
+      path: '/gigs-marketplace', 
+      isAccessible: () => isPhaseCompleted(5)
+    },
+    { 
+      icon: Monitor, 
+      label: 'Workspace', 
+      path: '/workspace', 
+      isAccessible: () => isPhaseCompleted(4)
+    },
+    { 
+      icon: UserCircle, 
+      label: 'Profile', 
+      path: '/profile', 
+      isAccessible: () => true // Always accessible
+    },
+    { 
+      icon: Settings, 
+      label: 'Operations', 
+      path: '/operations', 
+      isAccessible: () => isPhaseCompleted(5)
+    },
   ];
 
-  const filteredNavItems = navItems.filter(item => currentStatus >= item.minStatus);
+  const filteredNavItems = navItems.filter(item => item.isAccessible());
 
   useEffect(() => {
     console.log('🔒 Access Control Status:', {
-      currentPhase: currentStatus,
-      accessLevel: currentStatus >= 5 ? 'Full Access' : 'Limited Access',
+      phases,
       availableNavItems: filteredNavItems.map(item => item.label),
       restrictedNavItems: navItems
-        .filter(item => currentStatus < item.minStatus)
+        .filter(item => !item.isAccessible())
         .map(item => item.label)
     });
-  }, [currentStatus]);
+  }, [phases]);
 
   return (
     <div className="w-64 bg-white border-r border-gray-200">
