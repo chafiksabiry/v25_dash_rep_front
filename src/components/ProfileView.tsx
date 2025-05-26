@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase, 
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
-  Edit
+  Edit, CreditCard
 } from 'lucide-react';
+import { getProfilePlan } from '../utils/profileUtils';
 
 // Type definitions
 interface AssessmentResults {
@@ -29,6 +30,22 @@ interface ContactCenterSkill {
   skill: string;
   proficiency?: string;
   assessmentResults?: AssessmentResults;
+}
+
+// Add new interface for Plan
+interface Plan {
+  _id: string;
+  name: string;
+  price: number;
+  targetUserType: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PlanResponse {
+  _id: number;
+  userId: number;
+  plan: Plan;
 }
 
 // Convert proficiency level to star rating (A1-C2 = 1-6 stars)
@@ -81,7 +98,25 @@ const CONTACT_CENTER_SKILLS = [
 ];
 
 export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = ({ profile, onEditClick }) => {
-  
+  const [planData, setPlanData] = useState<PlanResponse | null>(null);
+  const [planError, setPlanError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPlanData = async () => {
+      try {
+        if (!profile?._id) return;
+        
+        const data = await getProfilePlan(profile._id);
+        setPlanData(data);
+      } catch (error) {
+        console.error('Error fetching plan data:', error);
+        setPlanError(error instanceof Error ? error.message : 'Failed to fetch plan data');
+      }
+    };
+
+    fetchPlanData();
+  }, [profile?._id]);
+
   if (!profile) return null;
 
   // Calculate average score from contact center skills if available
@@ -223,19 +258,94 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
           </div>
         </div>
 
+        {/* Subscription Plan Card */}
+        <div className="bg-white rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <CreditCard className="w-6 h-6 text-blue-600" />
+            <h2 className="text-lg font-semibold">Subscription Plan</h2>
+          </div>
+          {planError ? (
+            <div className="text-red-600 text-sm mb-2">{planError}</div>
+          ) : planData ? (
+            <div className="space-y-3">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="text-xl font-bold text-blue-800 mb-2">
+                  {planData.plan.name}
+                </h3>
+                <div className="text-2xl font-bold text-blue-600 mb-2">
+                  ${planData.plan.price}
+                </div>
+                <div className="text-sm text-gray-600">
+                  <p>Type: {planData.plan.targetUserType}</p>
+                  <p className="mt-1">
+                    Since: {new Date(planData.plan.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Onboarding Status */}
         <div className="bg-white rounded-lg p-6">
-          <div className="text-center">
-            <h2 className="text-lg font-semibold mb-4">Onboarding Status</h2>
-            <div className="mb-4">
-              <div className="text-3xl font-bold text-blue-600 mb-2">Phase {profile.onboardingProgress?.currentPhase || 0}</div>
-              <p className="text-sm text-gray-600">
-                {profile.currentPhase >= 5 ? 'Full Access' : 'Limited Access'}
-              </p>
-            </div>
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-6 h-6 text-blue-600" />
+            <h2 className="text-lg font-semibold">Onboarding Progress</h2>
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((phaseNum) => {
+              const phaseKey = `phase${phaseNum}`;
+              const status = profile.onboardingProgress?.phases?.[phaseKey]?.status || 'pending';
+              const isCompleted = status === 'completed';
+              const isCurrent = status === 'in_progress';
+              
+              return (
+                <div key={phaseNum} className="flex items-center gap-3">
+                  <div className={`
+                    w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                    ${isCompleted ? 'bg-green-100 text-green-800' : 
+                      isCurrent ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-400' : 
+                      'bg-gray-100 text-gray-400'}
+                  `}>
+                    {phaseNum}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900">
+                      Phase {phaseNum}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {status === 'completed' ? 'Completed' : 
+                       status === 'in_progress' ? 'In Progress' : 
+                       status === 'blocked' ? 'Blocked' :
+                       'Not Started'}
+                    </div>
+                  </div>
+                  <div className={`
+                    px-2 py-1 rounded text-xs font-medium
+                    ${status === 'completed' ? 'bg-green-100 text-green-800' : 
+                      status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
+                      status === 'blocked' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-500'}
+                  `}>
+                    {status === 'completed' ? '✓ Done' : 
+                     status === 'in_progress' ? 'Active' : 
+                     status === 'blocked' ? 'Blocked' :
+                     'Pending'}
+                  </div>
+                </div>
+              );
+            })}
+            
             <button
               onClick={() => window.location.href = '/reporchestrator'}
-              className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              className="w-full mt-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
             >
               <span>Continue Onboarding</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

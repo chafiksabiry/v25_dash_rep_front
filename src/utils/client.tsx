@@ -197,6 +197,7 @@ export const profileApi = {
   updateBasicInfo: (id: string, basicInfo: any) => apiClient.put(`/api/profiles/${id}/basic-info`, basicInfo),
   updateExperience: (id: string, experience: any) => apiClient.put(`/api/profiles/${id}/experience`, { experience }),
   updateSkills: (id: string, skills: any) => apiClient.put(`/api/profiles/${id}/skills`, { skills }),
+  getPlan: (profileId: string) => apiClient.get(`/api/profiles/${profileId}/plan`),
 };
 
 // Default export with all APIs
