@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import ReactCrop, { Crop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 import { 
   MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase, 
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
-  Edit, Check, X, Save, RefreshCw, Plus, Trash2
+  Edit, Check, X, Save, RefreshCw, Plus, Trash2, Camera, Upload
 } from 'lucide-react';
 import { updateProfileData, updateBasicInfo, updateExperience, updateSkills } from '../utils/profileUtils';
 import { getLanguageCodeFromAI } from '../utils/languageUtils';
@@ -102,6 +104,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [tempProfileDescription, setTempProfileDescription] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Track which sections have been modified
   const [modifiedSections, setModifiedSections] = useState({
@@ -110,7 +114,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     skills: false,
     experience: false,
     languages: false,
-    availability: false
+    availability: false,
+    profileImage: false
   });
   
   // Additional state for editing
@@ -139,6 +144,19 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
   // Add state for editing experience
   const [editingExperienceId, setEditingExperienceId] = useState<number | null>(null);
+
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [tempImage, setTempImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState<Crop>({
+    unit: '%',
+    width: 90,
+    aspect: 1,
+    x: 5,
+    y: 5,
+    height: 90
+  });
+  const imageRef = useRef<HTMLImageElement>(null);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     if (initialProfile) {
@@ -334,7 +352,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         skills: false,
         experience: false,
         languages: false,
-        availability: false
+        availability: false,
+        profileImage: false
       });
 
       console.log('✅ All changes saved successfully');
@@ -602,6 +621,108 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }
   };
 
+  // Function to calculate scaled dimensions
+  const calculateScaledDimensions = (originalWidth: number, originalHeight: number) => {
+    const maxWidth = Math.min(window.innerWidth * 0.8, 800); // 80% of viewport width or 800px max
+    const maxHeight = Math.min(window.innerHeight * 0.6, 600); // 60% of viewport height or 600px max
+    
+    let newWidth = originalWidth;
+    let newHeight = originalHeight;
+    
+    // Scale down if width exceeds maxWidth
+    if (newWidth > maxWidth) {
+      newHeight = (maxWidth * newHeight) / newWidth;
+      newWidth = maxWidth;
+    }
+    
+    // Scale down further if height still exceeds maxHeight
+    if (newHeight > maxHeight) {
+      newWidth = (maxHeight * newWidth) / newHeight;
+      newHeight = maxHeight;
+    }
+    
+    return {
+      width: Math.floor(newWidth),
+      height: Math.floor(newHeight)
+    };
+  };
+
+  // Modified handleImageChange
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        showToast('Image size should be less than 10MB', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const scaledDimensions = calculateScaledDimensions(img.width, img.height);
+          setImageDimensions(scaledDimensions);
+          setTempImage(reader.result as string);
+          setShowCropModal(true);
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle image crop complete
+  const handleCropComplete = () => {
+    if (imageRef.current && crop.width && crop.height) {
+      const croppedImageUrl = getCroppedImg(imageRef.current, crop);
+      setImagePreview(croppedImageUrl);
+      setShowCropModal(false);
+      setTempImage(null);
+      setModifiedSections(prev => ({
+        ...prev,
+        profileImage: true
+      }));
+    }
+  };
+
+  // Function to get cropped image
+  const getCroppedImg = (image: HTMLImageElement, crop: Crop): string => {
+    const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    canvas.width = crop.width!;
+    canvas.height = crop.height!;
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      ctx.drawImage(
+        image,
+        crop.x! * scaleX,
+        crop.y! * scaleY,
+        crop.width! * scaleX,
+        crop.height! * scaleY,
+        0,
+        0,
+        crop.width!,
+        crop.height!
+      );
+    }
+
+    return canvas.toDataURL('image/jpeg');
+  };
+
+  // Handle image removal
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    setModifiedSections(prev => ({
+      ...prev,
+      profileImage: true
+    }));
+  };
+
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
       {/* Page Header with Save/Cancel Buttons */}
@@ -640,10 +761,48 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         {/* Profile Header with editable fields */}
         <div className="bg-white rounded-lg p-6">
           <div className="text-center">
-            <div className="mb-6">
-              <div className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 flex items-center justify-center text-2xl font-bold text-white">
-                {profile.personalInfo?.name?.charAt(0) || '?'}
+            <div className="mb-6 relative">
+              <div className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group">
+                {imagePreview || profile.personalInfo?.profileImage ? (
+                  <img 
+                    src={imagePreview || profile.personalInfo?.profileImage} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white">
+                    {profile.personalInfo?.name?.charAt(0) || '?'}
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 bg-white rounded-full text-gray-800 hover:bg-gray-100"
+                  >
+                    <Camera className="w-5 h-5" />
+                  </button>
+                  {(imagePreview || profile.personalInfo?.profileImage) && (
+                    <button
+                      onClick={handleRemoveImage}
+                      className="p-2 bg-white rounded-full text-red-600 hover:bg-gray-100 ml-2"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
               </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              <p className="text-sm text-gray-500 mt-2">
+                Click to upload profile picture
+                <br />
+                (Max size: 10MB)
+              </p>
             </div>
             
             {/* Name Field */}
@@ -1612,6 +1771,64 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           </div>
         </div>
       </div>
+
+      {/* Crop Modal */}
+      {showCropModal && tempImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6" style={{ width: `${imageDimensions.width + 48}px` }}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Crop Profile Picture</h3>
+              <button
+                onClick={() => {
+                  setShowCropModal(false);
+                  setTempImage(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="flex items-center justify-center">
+              <ReactCrop
+                crop={crop}
+                onChange={c => setCrop(c)}
+                aspect={1}
+                circularCrop
+              >
+                <img
+                  ref={imageRef}
+                  src={tempImage}
+                  alt="Crop preview"
+                  style={{
+                    width: `${imageDimensions.width}px`,
+                    height: `${imageDimensions.height}px`,
+                    objectFit: 'contain'
+                  }}
+                />
+              </ReactCrop>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+              <button
+                onClick={() => {
+                  setShowCropModal(false);
+                  setTempImage(null);
+                }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCropComplete}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Apply Crop
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast notifications */}
       {toast.show && (
