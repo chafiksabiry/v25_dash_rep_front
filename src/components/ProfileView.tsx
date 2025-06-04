@@ -43,9 +43,9 @@ interface Plan {
 }
 
 interface PlanResponse {
-  _id: number;
-  userId: number;
-  plan: Plan;
+  _id: string;
+  userId: string;
+  plan: Partial<Plan>;  // Using Partial to allow empty object
 }
 
 // Convert proficiency level to star rating (A1-C2 = 1-6 stars)
@@ -108,7 +108,13 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         if (!profile?._id) return;
         
         const data = await getProfilePlan(profile._id);
-        setPlanData(data);
+        // Convert the response to match our interface
+        const planResponse: PlanResponse = {
+          _id: String(data._id),
+          userId: String(data.userId),
+          plan: data.plan
+        };
+        setPlanData(planResponse);
       } catch (error) {
         console.error('Error fetching plan data:', error);
         setPlanError(error instanceof Error ? error.message : 'Failed to fetch plan data');
@@ -286,29 +292,42 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
           </div>
           {planError ? (
             <div className="text-red-600 text-sm mb-2">{planError}</div>
-          ) : planData ? (
+          ) : planData && Object.keys(planData.plan).length > 0 ? (
             <div className="space-y-3">
               <div className="bg-blue-50 rounded-lg p-4">
-                <h3 className="text-xl font-bold text-blue-800 mb-2">
-                  {planData.plan.name}
-                </h3>
-                <div className="text-2xl font-bold text-blue-600 mb-2">
-                  ${planData.plan.price}
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xl font-bold text-blue-800">
+                    {planData.plan.name}
+                  </h3>
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                    Active
+                  </span>
                 </div>
-                <div className="text-sm text-gray-600">
-                  <p>Type: {planData.plan.targetUserType}</p>
-                  <p className="mt-1">
-                    Since: {new Date(planData.plan.createdAt).toLocaleDateString()}
+                <div className="text-2xl font-bold text-blue-600 mb-3">
+                  ${planData.plan.price}
+                  <span className="text-sm text-blue-400 font-normal">/month</span>
+                </div>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p className="flex items-center gap-2">
+                    Type: {planData.plan.targetUserType}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    Start Date: {planData.plan.createdAt ? new Date(planData.plan.createdAt).toLocaleDateString() : 'N/A'}
                   </p>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="text-center py-4">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+            <div className="text-center py-6 px-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="mb-3">
+                <svg className="w-12 h-12 text-blue-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
+              <h3 className="text-lg font-medium text-blue-800 mb-2">Subscription Plan Not Selected</h3>
+              <p className="text-sm text-blue-600">
+                You haven't selected a subscription plan yet. Choose a plan to unlock all features.
+              </p>
             </div>
           )}
         </div>
