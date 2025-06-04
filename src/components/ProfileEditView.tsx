@@ -232,6 +232,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [showImageModal, setShowImageModal] = useState(false);
   const [imageToShow, setImageToShow] = useState<string | null>(null);
 
+  // Add new state for tracking photo deletion
+  const [isPhotoMarkedForDeletion, setIsPhotoMarkedForDeletion] = useState(false);
+
   useEffect(() => {
     if (initialProfile) {
       setProfile(initialProfile);
@@ -327,7 +330,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }
   };
 
-  // Modified handleSave to refresh data after successful save
+  // Modified handleSave to include photo deletion
   const handleSave = async () => {
     console.log('🔄 Starting save process...');
     console.log('Modified sections:', modifiedSections);
@@ -344,8 +347,31 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
     setLoading(true);
     try {
-      // Handle photo upload first if modified
-      if (modifiedSections.profileImage && imagePreview) {
+      // Handle photo deletion first if marked for deletion
+      if (isPhotoMarkedForDeletion) {
+        console.log('📝 Processing photo deletion...');
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
+        console.log('🔗 Deleting photo for profile:', profile._id);
+        const deleteResponse = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${profile._id}/photo`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!deleteResponse.ok) {
+          console.error('❌ Failed to delete photo. Status:', deleteResponse.status);
+          throw new Error(`Failed to delete photo: ${deleteResponse.status}`);
+        }
+        console.log('✅ Photo deleted successfully from server');
+      }
+
+      // Handle photo upload if modified
+      if (modifiedSections.profileImage && imagePreview && !isPhotoMarkedForDeletion) {
         try {
           setUploadingPhoto(true);
           console.log('📸 Uploading new profile photo...');
@@ -484,11 +510,19 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         profileImage: false
       });
 
+      // Reset photo deletion state after successful save
+      setIsPhotoMarkedForDeletion(false);
+
       console.log('✅ All changes saved successfully');
       showToast('Profile saved successfully', 'success');
       onSave(updatedProfile);
     } catch (error) {
       console.error('❌ Error saving profile:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        profileId: profile._id
+      });
       showToast('Failed to save profile', 'error');
     } finally {
       setLoading(false);
@@ -835,48 +869,25 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     return canvas.toDataURL('image/jpeg');
   };
 
-  // Modified handleRemoveImage to handle publicId
-  const handleRemoveImage = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      // Only make API call if there's an existing photo with publicId
-      if (profile.personalInfo?.photo?.publicId) {
-        const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${profile._id}/photo`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            publicId: profile.personalInfo.photo.publicId
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-      }
-
-      setImagePreview(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      setModifiedSections(prev => ({
-        ...prev,
-        profileImage: true
-      }));
-
-      // Refresh profile data to get updated state
-      await refreshProfileData();
-      showToast('Profile photo removed successfully', 'success');
-    } catch (error) {
-      console.error('Error removing profile photo:', error);
-      showToast('Failed to remove profile photo', 'error');
+  // Modified handleRemoveImage to only mark for deletion
+  const handleRemoveImage = () => {
+    console.log('🔄 Marking photo for deletion...');
+    setIsPhotoMarkedForDeletion(true);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
+    console.log('🧹 Cleared local image preview and file input');
+    
+    // Mark profile image as modified
+    setModifiedSections(prev => ({
+      ...prev,
+      profileImage: true
+    }));
+    console.log('📝 Marked profile image as modified');
+    
+    showToast('Photo will be removed when you save changes', 'success');
+    console.log('✨ Photo marked for deletion');
   };
 
   return (
@@ -920,18 +931,22 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             <div className="mb-6 relative">
               <div 
                 className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group cursor-pointer"
-                title="Click to view or edit photo"
+                title={isPhotoMarkedForDeletion ? "Click to add new photo" : "Click to view or edit photo"}
                 onClick={() => {
-                  const imageUrl = imagePreview || profile.personalInfo?.photo?.url;
-                  if (imageUrl) {
-                    setImageToShow(imageUrl);
-                    setShowImageModal(true);
+                  if (!isPhotoMarkedForDeletion) {
+                    const imageUrl = imagePreview || profile.personalInfo?.photo?.url;
+                    if (imageUrl) {
+                      setImageToShow(imageUrl);
+                      setShowImageModal(true);
+                    } else {
+                      fileInputRef.current?.click();
+                    }
                   } else {
                     fileInputRef.current?.click();
                   }
                 }}
               >
-                {(imagePreview || profile.personalInfo?.photo?.url) ? (
+                {!isPhotoMarkedForDeletion && (imagePreview || profile.personalInfo?.photo?.url) ? (
                   <img 
                     src={imagePreview || profile.personalInfo?.photo?.url} 
                     alt="Profile" 
@@ -943,7 +958,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="text-white text-sm">Click to view or edit</div>
+                  <div className="text-white text-sm">
+                    {isPhotoMarkedForDeletion ? 'Click to add new photo' : 'Click to view or edit'}
+                  </div>
                 </div>
               </div>
               <input
@@ -2033,7 +2050,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   <Camera className="w-4 h-4" />
                   Change Photo
                 </button>
-                {(imagePreview || profile.personalInfo?.photo?.url) && (
+                {(imagePreview || profile.personalInfo?.photo?.url) && !isPhotoMarkedForDeletion && (
                   <button
                     onClick={() => {
                       handleRemoveImage();
@@ -2044,6 +2061,23 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   >
                     <Trash2 className="w-4 h-4" />
                     Remove
+                  </button>
+                )}
+                {isPhotoMarkedForDeletion && (
+                  <button
+                    onClick={() => {
+                      setIsPhotoMarkedForDeletion(false);
+                      setImagePreview(profile.personalInfo?.photo?.url || null);
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        profileImage: false
+                      }));
+                      showToast('Photo deletion cancelled', 'success');
+                    }}
+                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Restore Photo
                   </button>
                 )}
               </div>
