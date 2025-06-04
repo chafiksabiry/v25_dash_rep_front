@@ -814,6 +814,12 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         return;
       }
 
+      // If photo was marked for deletion, unmark it since we're adding a new one
+      if (isPhotoMarkedForDeletion) {
+        setIsPhotoMarkedForDeletion(false);
+        console.log('🔄 Unmarking photo deletion as new photo is being added');
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const img = new Image();
@@ -829,17 +835,21 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }
   };
 
-  // Modified handleCropComplete to handle image format
+  // Modified handleCropComplete
   const handleCropComplete = () => {
     if (imageRef.current && crop.width && crop.height) {
       const croppedImageUrl = getCroppedImg(imageRef.current, crop);
       setImagePreview(croppedImageUrl);
       setShowCropModal(false);
       setTempImage(null);
+      
+      // Ensure we mark the profile image as modified
       setModifiedSections(prev => ({
         ...prev,
         profileImage: true
       }));
+      
+      console.log('✨ New photo cropped and ready for upload');
     }
   };
 
