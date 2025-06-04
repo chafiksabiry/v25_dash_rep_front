@@ -953,9 +953,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 onChange={handleImageChange}
                 className="hidden"
               />
-              <p className="text-sm text-gray-500 mt-2">
-                Click the image to view, edit or upload
-              </p>
             </div>
             
             {/* Name Field */}

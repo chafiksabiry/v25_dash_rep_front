@@ -256,9 +256,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                   </div>
                 )}
               </div>
-              <p className="text-sm text-gray-500 mt-2">
-                {profile.personalInfo?.photo?.url ? 'Click the image to view' : 'No profile photo'}
-              </p>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{profile.personalInfo?.name}</h1>
             <p className="text-lg text-gray-600 mb-4">{profile.professionalSummary?.currentRole || 'Representative'}</p>
