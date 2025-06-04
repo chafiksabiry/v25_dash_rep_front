@@ -98,8 +98,80 @@ type ProfileEditViewProps = {
   onSave: (updatedProfile: any) => void;
 };
 
+// Define proper types
+interface Profile {
+  _id: string;
+  personalInfo: {
+    profileImage?: string;
+    photo?: {
+      url: string;
+      publicId: string;
+    };
+    name?: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
+interface PhotoUploadResponse {
+  photoUrl: string;
+  publicId: string;
+  [key: string]: any;
+}
+
+// Modified uploadPhoto function with token
+const uploadPhoto = async (agentId: string, photoFile: Blob): Promise<PhotoUploadResponse> => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const formData = new FormData();
+  formData.append('photo', photoFile);
+
+  try {
+    const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}/photo`, {
+      method: 'PUT',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const updatedProfile = await response.json();
+    return updatedProfile;
+  } catch (error) {
+    console.error('Error uploading photo:', error);
+    throw error;
+  }
+};
+
+// Function to convert base64 to blob
+const base64ToBlob = async (base64String: string): Promise<Blob> => {
+  // Remove data URL prefix if present
+  const base64WithoutPrefix = base64String.split(',')[1] || base64String;
+  
+  // Decode base64
+  const byteString = atob(base64WithoutPrefix);
+  
+  // Create an array buffer from the decoded string
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  
+  // Create blob from array buffer
+  return new Blob([ab], { type: 'image/jpeg' });
+};
+
 export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initialProfile, onSave }) => {
-  const [profile, setProfile] = useState<any>(initialProfile);
+  const [profile, setProfile] = useState<Profile>(initialProfile);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [tempProfileDescription, setTempProfileDescription] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -150,13 +222,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [crop, setCrop] = useState<Crop>({
     unit: '%',
     width: 90,
-    aspect: 1,
     x: 5,
     y: 5,
     height: 90
   });
   const imageRef = useRef<HTMLImageElement>(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     if (initialProfile) {
@@ -226,7 +298,34 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     );
   };
 
-  // Handle save with validation
+  // Add function to fetch updated profile data
+  const refreshProfileData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${profile._id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const updatedProfile = await response.json();
+      setProfile(updatedProfile);
+      return updatedProfile;
+    } catch (error) {
+      console.error('Error refreshing profile data:', error);
+      throw error;
+    }
+  };
+
+  // Modified handleSave to refresh data after successful save
   const handleSave = async () => {
     console.log('🔄 Starting save process...');
     console.log('Modified sections:', modifiedSections);
@@ -243,6 +342,30 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
     setLoading(true);
     try {
+      // Handle photo upload first if modified
+      if (modifiedSections.profileImage && imagePreview) {
+        try {
+          setUploadingPhoto(true);
+          console.log('📸 Uploading new profile photo...');
+          
+          const photoBlob = await base64ToBlob(imagePreview);
+          const photoResult = await uploadPhoto(profile._id, photoBlob);
+          
+          console.log('✅ Photo uploaded successfully');
+        } catch (error) {
+          console.error('❌ Error uploading photo:', error);
+          if (error instanceof Error && error.message === 'No authentication token found') {
+            showToast('Please log in again to upload photo', 'error');
+          } else {
+            showToast('Failed to upload profile photo', 'error');
+          }
+          return;
+        } finally {
+          setUploadingPhoto(false);
+        }
+      }
+
+      // Continue with other profile updates
       // Save personal info if modified
       if (modifiedSections.personalInfo) {
         console.log('📝 Saving personal info...', {
@@ -345,6 +468,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         await updateProfileData(profile._id, { availability: profile.availability });
       }
 
+      // After all updates are done, refresh the profile data
+      const updatedProfile = await refreshProfileData();
+      
       // Reset modified sections
       setModifiedSections({
         personalInfo: false,
@@ -358,13 +484,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       console.log('✅ All changes saved successfully');
       showToast('Profile saved successfully', 'success');
-      onSave(profile);
-    } catch (error: any) {
-      console.error('❌ Error saving profile:', {
-        error: error.response?.data || error,
-        status: error.response?.status,
-        statusText: error.response?.statusText
-      });
+      onSave(updatedProfile);
+    } catch (error) {
+      console.error('❌ Error saving profile:', error);
       showToast('Failed to save profile', 'error');
     } finally {
       setLoading(false);
@@ -379,7 +501,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       [field]: value
     };
     
-    setProfile((prev: any) => ({
+    setProfile((prev: Profile) => ({
       ...prev,
       personalInfo: updatedPersonalInfo
     }));
@@ -438,7 +560,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       ];
       
       // Update local state
-      setProfile((prev: any) => ({
+      setProfile((prev: Profile) => ({
         ...prev,
         personalInfo: {
           ...prev.personalInfo,
@@ -475,7 +597,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     const updatedLanguages = profile.personalInfo.languages.filter((_: any, i: number) => i !== index);
     
     // Update local state
-    setProfile((prev: any) => ({
+    setProfile((prev: Profile) => ({
       ...prev,
       personalInfo: {
         ...prev.personalInfo,
@@ -505,7 +627,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     );
     
     // Update local state
-    setProfile((prev: any) => ({
+    setProfile((prev: Profile) => ({
       ...prev,
       personalInfo: {
         ...prev.personalInfo,
@@ -535,7 +657,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         skillObject
       ];
       
-      setProfile((prev: any) => ({
+      setProfile((prev: Profile) => ({
         ...prev,
         skills: {
           ...prev.skills,
@@ -555,7 +677,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     const updatedSkills = [...(profile.skills?.[type] || [])];
     updatedSkills.splice(index, 1);
     
-    setProfile((prev: any) => ({
+    setProfile((prev: Profile) => ({
       ...prev,
       skills: {
         ...prev.skills,
@@ -596,7 +718,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         responsibilities: newExperience.responsibilities.filter(r => r.trim())
       };
 
-      setProfile((prev: any) => ({
+      setProfile((prev: Profile) => ({
         ...prev,
         experience: updatedExperiences
       }));
@@ -671,7 +793,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }
   };
 
-  // Handle image crop complete
+  // Modified handleCropComplete to handle image format
   const handleCropComplete = () => {
     if (imageRef.current && crop.width && crop.height) {
       const croppedImageUrl = getCroppedImg(imageRef.current, crop);
@@ -711,16 +833,48 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     return canvas.toDataURL('image/jpeg');
   };
 
-  // Handle image removal
-  const handleRemoveImage = () => {
-    setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  // Modified handleRemoveImage to handle publicId
+  const handleRemoveImage = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Only make API call if there's an existing photo with publicId
+      if (profile.personalInfo?.photo?.publicId) {
+        const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${profile._id}/photo`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            publicId: profile.personalInfo.photo.publicId
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+      }
+
+      setImagePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      setModifiedSections(prev => ({
+        ...prev,
+        profileImage: true
+      }));
+
+      // Refresh profile data to get updated state
+      await refreshProfileData();
+      showToast('Profile photo removed successfully', 'success');
+    } catch (error) {
+      console.error('Error removing profile photo:', error);
+      showToast('Failed to remove profile photo', 'error');
     }
-    setModifiedSections(prev => ({
-      ...prev,
-      profileImage: true
-    }));
   };
 
   return (
@@ -738,13 +892,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           </button>
           <button
             onClick={handleSave}
-            disabled={loading}
+            disabled={loading || uploadingPhoto}
             className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (
+            {loading || uploadingPhoto ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                Saving...
+                {uploadingPhoto ? 'Uploading Photo...' : 'Saving...'}
               </>
             ) : (
               <>
@@ -762,10 +916,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         <div className="bg-white rounded-lg p-6">
           <div className="text-center">
             <div className="mb-6 relative">
-              <div className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group">
-                {imagePreview || profile.personalInfo?.profileImage ? (
+              <div 
+                className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group"
+                title={profile.personalInfo?.photo?.publicId ? `Photo ID: ${profile.personalInfo.photo.publicId}` : ''}
+              >
+                {(imagePreview || profile.personalInfo?.photo?.url) ? (
                   <img 
-                    src={imagePreview || profile.personalInfo?.profileImage} 
+                    src={imagePreview || profile.personalInfo?.photo?.url} 
                     alt="Profile" 
                     className="w-full h-full object-cover"
                   />
@@ -778,13 +935,15 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="p-2 bg-white rounded-full text-gray-800 hover:bg-gray-100"
+                    title="Upload new photo"
                   >
                     <Camera className="w-5 h-5" />
                   </button>
-                  {(imagePreview || profile.personalInfo?.profileImage) && (
+                  {(imagePreview || profile.personalInfo?.photo?.url) && (
                     <button
                       onClick={handleRemoveImage}
                       className="p-2 bg-white rounded-full text-red-600 hover:bg-gray-100 ml-2"
+                      title="Remove photo"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -825,7 +984,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 type="text"
                 value={profile.professionalSummary?.currentRole || ''}
                 onChange={(e) => {
-                  setProfile((prev: any) => ({
+                  setProfile((prev: Profile) => ({
                     ...prev,
                     professionalSummary: {
                       ...prev.professionalSummary,
@@ -902,7 +1061,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             <textarea
               value={profile.professionalSummary?.profileDescription || ''}
               onChange={(e) => {
-                setProfile((prev: any) => ({
+                setProfile((prev: Profile) => ({
                   ...prev,
                   professionalSummary: {
                     ...prev.professionalSummary,
@@ -928,7 +1087,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               type="text"
               value={profile.professionalSummary?.yearsOfExperience || ''}
               onChange={(e) => {
-                setProfile((prev: any) => ({
+                setProfile((prev: Profile) => ({
                   ...prev,
                   professionalSummary: {
                     ...prev.professionalSummary,
@@ -957,7 +1116,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   onClick={() => {
                     const updatedIndustries = [...(profile.professionalSummary?.industries || [])];
                     updatedIndustries.splice(index, 1);
-                    setProfile((prev: any) => ({
+                    setProfile((prev: Profile) => ({
                       ...prev,
                       professionalSummary: {
                         ...prev.professionalSummary,
@@ -991,7 +1150,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     ...(profile.professionalSummary?.industries || []),
                     tempIndustry.trim()
                   ];
-                  setProfile((prev: any) => ({
+                  setProfile((prev: Profile) => ({
                     ...prev,
                     professionalSummary: {
                       ...prev.professionalSummary,
@@ -1023,7 +1182,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   onClick={() => {
                     const updatedCompanies = [...(profile.professionalSummary?.notableCompanies || [])];
                     updatedCompanies.splice(index, 1);
-                    setProfile((prev: any) => ({
+                    setProfile((prev: Profile) => ({
                       ...prev,
                       professionalSummary: {
                         ...prev.professionalSummary,
@@ -1057,7 +1216,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     ...(profile.professionalSummary?.notableCompanies || []),
                     tempCompany.trim()
                   ];
-                  setProfile((prev: any) => ({
+                  setProfile((prev: Profile) => ({
                     ...prev,
                     professionalSummary: {
                       ...prev.professionalSummary,
@@ -1242,7 +1401,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     type="date"
                     value={newExperience.startDate}
                     onChange={(e) => setNewExperience(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full p-2 border rounded-md"
+                    className="flex-1 p-2 border rounded-md"
                   />
                 </div>
                 
@@ -1348,7 +1507,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                       
                       // Add to profile and update state
                       const updatedExperience = [...(profile.experience || []), newExp];
-                      setProfile((prev: any) => ({
+                      setProfile((prev: Profile) => ({
                         ...prev,
                         experience: updatedExperience
                       }));
@@ -1414,7 +1573,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                       onClick={() => {
                         const updatedExperience = [...profile.experience];
                         updatedExperience.splice(index, 1);
-                        setProfile((prev: any) => ({
+                        setProfile((prev: Profile) => ({
                           ...prev,
                           experience: updatedExperience
                         }));
@@ -1555,7 +1714,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   type="time"
                   value={profile.availability?.hours?.start || ''}
                   onChange={(e) => {
-                    setProfile((prev: any) => ({
+                    setProfile((prev: Profile) => ({
                       ...prev,
                       availability: {
                         ...prev.availability,
@@ -1579,7 +1738,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   type="time"
                   value={profile.availability?.hours?.end || ''}
                   onChange={(e) => {
-                    setProfile((prev: any) => ({
+                    setProfile((prev: Profile) => ({
                       ...prev,
                       availability: {
                         ...prev.availability,
@@ -1614,7 +1773,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                       const currentDays = [...(profile.availability?.days || [])];
                       if (isSelected) {
                         const updatedDays = currentDays.filter(d => d !== day);
-                        setProfile((prev: any) => ({
+                        setProfile((prev: Profile) => ({
                           ...prev,
                           availability: {
                             ...prev.availability,
@@ -1623,7 +1782,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                         }));
                       } else {
                         const updatedDays = [...currentDays, day];
-                        setProfile((prev: any) => ({
+                        setProfile((prev: Profile) => ({
                           ...prev,
                           availability: {
                             ...prev.availability,
@@ -1674,7 +1833,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                       const currentZones = [...(profile.availability?.timeZones || [])];
                       if (isSelected) {
                         const updatedZones = currentZones.filter(z => z !== zoneCode);
-                        setProfile((prev: any) => ({
+                        setProfile((prev: Profile) => ({
                           ...prev,
                           availability: {
                             ...prev.availability,
@@ -1683,7 +1842,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                         }));
                       } else {
                         const updatedZones = [...currentZones, zoneCode];
-                        setProfile((prev: any) => ({
+                        setProfile((prev: Profile) => ({
                           ...prev,
                           availability: {
                             ...prev.availability,
@@ -1735,7 +1894,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                       const currentFlexibility = [...(profile.availability?.flexibility || [])];
                       if (isSelected) {
                         const updatedFlexibility = currentFlexibility.filter(f => f !== option);
-                        setProfile((prev: any) => ({
+                        setProfile((prev: Profile) => ({
                           ...prev,
                           availability: {
                             ...prev.availability,
@@ -1744,7 +1903,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                         }));
                       } else {
                         const updatedFlexibility = [...currentFlexibility, option];
-                        setProfile((prev: any) => ({
+                        setProfile((prev: Profile) => ({
                           ...prev,
                           availability: {
                             ...prev.availability,

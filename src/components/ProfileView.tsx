@@ -233,8 +233,21 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         <div className="bg-white rounded-lg p-6">
           <div className="text-center">
             <div className="mb-6">
-              <div className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 flex items-center justify-center text-2xl font-bold text-white">
-                {profile.personalInfo?.name?.charAt(0) || '?'}
+              <div 
+                className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden flex items-center justify-center"
+                title={profile.personalInfo?.photo?.publicId ? `Photo ID: ${profile.personalInfo.photo.publicId}` : ''}
+              >
+                {profile.personalInfo?.photo?.url ? (
+                  <img 
+                    src={profile.personalInfo.photo.url} 
+                    alt={profile.personalInfo?.name || 'Profile'} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white">
+                    {profile.personalInfo?.name?.charAt(0) || '?'}
+                  </div>
+                )}
               </div>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{profile.personalInfo?.name}</h1>
