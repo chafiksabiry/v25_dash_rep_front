@@ -170,6 +170,9 @@ const base64ToBlob = async (base64String: string): Promise<Blob> => {
   return new Blob([ab], { type: 'image/jpeg' });
 };
 
+// Add this near the top of the file with other imports
+const PROFILE_UPDATE_EVENT = 'PROFILE_UPDATED';
+
 export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initialProfile, onSave }) => {
   const [profile, setProfile] = useState<Profile>(initialProfile);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -515,6 +518,11 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       console.log('✅ All changes saved successfully');
       showToast('Profile saved successfully', 'success');
+      
+      // Update localStorage and dispatch event for TopBar update
+      localStorage.setItem('profileData', JSON.stringify(updatedProfile));
+      window.dispatchEvent(new Event(PROFILE_UPDATE_EVENT));
+      
       onSave(updatedProfile);
     } catch (error) {
       console.error('❌ Error saving profile:', error);
