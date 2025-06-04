@@ -1990,7 +1990,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           }}
         >
           <div 
-            className="relative max-w-4xl bg-white rounded-lg overflow-hidden flex flex-col"
+            className="relative w-[30%] min-w-[300px] bg-white rounded-lg overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -2014,8 +2014,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               <img
                 src={imageToShow}
                 alt={profile.personalInfo?.name || 'Profile'}
-                className="w-full h-full object-contain rounded-lg"
-                style={{ maxHeight: 'calc(90vh - 16rem)' }}
+                className="w-full h-auto object-contain rounded-lg"
+                style={{ maxHeight: '70vh' }}
               />
             </div>
 
