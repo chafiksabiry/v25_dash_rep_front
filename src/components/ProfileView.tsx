@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { 
   MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase, 
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
-  Edit, CreditCard
+  Edit, CreditCard, X
 } from 'lucide-react';
 import { getProfilePlan } from '../utils/profileUtils';
 
@@ -100,6 +100,7 @@ const CONTACT_CENTER_SKILLS = [
 export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = ({ profile, onEditClick }) => {
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   useEffect(() => {
     const fetchPlanData = async () => {
@@ -234,8 +235,9 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
           <div className="text-center">
             <div className="mb-6">
               <div 
-                className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden flex items-center justify-center"
+                className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
                 title={profile.personalInfo?.photo?.publicId ? `Photo ID: ${profile.personalInfo.photo.publicId}` : ''}
+                onClick={() => profile.personalInfo?.photo?.url && setShowImageModal(true)}
               >
                 {profile.personalInfo?.photo?.url ? (
                   <img 
@@ -914,6 +916,37 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
           )}
         </div>
       </div>
+
+      {/* Image Modal */}
+      {showImageModal && profile.personalInfo?.photo?.url && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowImageModal(false)}
+        >
+          <div 
+            className="relative max-w-4xl max-h-[90vh] bg-white rounded-lg p-2 overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-2 right-2 p-2 bg-white rounded-full text-gray-600 hover:text-gray-900 shadow-lg z-10"
+              onClick={() => setShowImageModal(false)}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={profile.personalInfo.photo.url}
+              alt={profile.personalInfo?.name || 'Profile'}
+              className="w-full h-full object-contain rounded-lg"
+              style={{ maxHeight: 'calc(90vh - 2rem)' }}
+            />
+            {profile.personalInfo?.photo?.publicId && (
+              <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                ID: {profile.personalInfo.photo.publicId}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 

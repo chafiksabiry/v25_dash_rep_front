@@ -229,6 +229,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const imageRef = useRef<HTMLImageElement>(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageToShow, setImageToShow] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialProfile) {
@@ -917,8 +919,15 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           <div className="text-center">
             <div className="mb-6 relative">
               <div 
-                className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group"
+                className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group cursor-pointer"
                 title={profile.personalInfo?.photo?.publicId ? `Photo ID: ${profile.personalInfo.photo.publicId}` : ''}
+                onClick={() => {
+                  const imageUrl = imagePreview || profile.personalInfo?.photo?.url;
+                  if (imageUrl) {
+                    setImageToShow(imageUrl);
+                    setShowImageModal(true);
+                  }
+                }}
               >
                 {(imagePreview || profile.personalInfo?.photo?.url) ? (
                   <img 
@@ -933,7 +942,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 )}
                 <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fileInputRef.current?.click();
+                    }}
                     className="p-2 bg-white rounded-full text-gray-800 hover:bg-gray-100"
                     title="Upload new photo"
                   >
@@ -941,7 +953,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   </button>
                   {(imagePreview || profile.personalInfo?.photo?.url) && (
                     <button
-                      onClick={handleRemoveImage}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveImage();
+                      }}
                       className="p-2 bg-white rounded-full text-red-600 hover:bg-gray-100 ml-2"
                       title="Remove photo"
                     >
@@ -1985,6 +2000,43 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 Apply Crop
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {showImageModal && imageToShow && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setShowImageModal(false);
+            setImageToShow(null);
+          }}
+        >
+          <div 
+            className="relative max-w-4xl max-h-[90vh] bg-white rounded-lg p-2 overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-2 right-2 p-2 bg-white rounded-full text-gray-600 hover:text-gray-900 shadow-lg z-10"
+              onClick={() => {
+                setShowImageModal(false);
+                setImageToShow(null);
+              }}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={imageToShow}
+              alt={profile.personalInfo?.name || 'Profile'}
+              className="w-full h-full object-contain rounded-lg"
+              style={{ maxHeight: 'calc(90vh - 2rem)' }}
+            />
+            {profile.personalInfo?.photo?.publicId && !imagePreview && (
+              <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                ID: {profile.personalInfo.photo.publicId}
+              </div>
+            )}
           </div>
         </div>
       )}
