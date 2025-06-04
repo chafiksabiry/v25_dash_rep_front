@@ -235,22 +235,30 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
           <div className="text-center">
             <div className="mb-6">
               <div 
-                className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
-                title={profile.personalInfo?.photo?.publicId ? `Photo ID: ${profile.personalInfo.photo.publicId}` : ''}
+                className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group cursor-pointer"
+                title="Click to view photo"
                 onClick={() => profile.personalInfo?.photo?.url && setShowImageModal(true)}
               >
                 {profile.personalInfo?.photo?.url ? (
-                  <img 
-                    src={profile.personalInfo.photo.url} 
-                    alt={profile.personalInfo?.name || 'Profile'} 
-                    className="w-full h-full object-cover"
-                  />
+                  <>
+                    <img 
+                      src={profile.personalInfo.photo.url} 
+                      alt={profile.personalInfo?.name || 'Profile'} 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="text-white text-sm">Click to view</div>
+                    </div>
+                  </>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white">
                     {profile.personalInfo?.name?.charAt(0) || '?'}
                   </div>
                 )}
               </div>
+              <p className="text-sm text-gray-500 mt-2">
+                {profile.personalInfo?.photo?.url ? 'Click the image to view' : 'No profile photo'}
+              </p>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{profile.personalInfo?.name}</h1>
             <p className="text-lg text-gray-600 mb-4">{profile.professionalSummary?.currentRole || 'Representative'}</p>
@@ -917,33 +925,38 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         </div>
       </div>
 
-      {/* Image Modal */}
+      {/* Updated Image Modal */}
       {showImageModal && profile.personalInfo?.photo?.url && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
           onClick={() => setShowImageModal(false)}
         >
           <div 
-            className="relative max-w-4xl max-h-[90vh] bg-white rounded-lg p-2 overflow-hidden"
+            className="relative max-w-4xl bg-white rounded-lg overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900">My Profile Image</h3>
+            </div>
+
+            {/* Close button */}
             <button
-              className="absolute top-2 right-2 p-2 bg-white rounded-full text-gray-600 hover:text-gray-900 shadow-lg z-10"
+              className="absolute top-4 right-4 p-2 bg-white rounded-full text-gray-600 hover:text-gray-900 shadow-lg z-10"
               onClick={() => setShowImageModal(false)}
             >
               <X className="w-6 h-6" />
             </button>
-            <img
-              src={profile.personalInfo.photo.url}
-              alt={profile.personalInfo?.name || 'Profile'}
-              className="w-full h-full object-contain rounded-lg"
-              style={{ maxHeight: 'calc(90vh - 2rem)' }}
-            />
-            {profile.personalInfo?.photo?.publicId && (
-              <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-                ID: {profile.personalInfo.photo.publicId}
-              </div>
-            )}
+
+            {/* Main image */}
+            <div className="p-4">
+              <img
+                src={profile.personalInfo.photo.url}
+                alt={profile.personalInfo?.name || 'Profile'}
+                className="w-full h-full object-contain rounded-lg"
+                style={{ maxHeight: 'calc(90vh - 16rem)' }}
+              />
+            </div>
           </div>
         </div>
       )}

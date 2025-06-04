@@ -920,12 +920,14 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             <div className="mb-6 relative">
               <div 
                 className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group cursor-pointer"
-                title={profile.personalInfo?.photo?.publicId ? `Photo ID: ${profile.personalInfo.photo.publicId}` : ''}
+                title="Click to view or edit photo"
                 onClick={() => {
                   const imageUrl = imagePreview || profile.personalInfo?.photo?.url;
                   if (imageUrl) {
                     setImageToShow(imageUrl);
                     setShowImageModal(true);
+                  } else {
+                    fileInputRef.current?.click();
                   }
                 }}
               >
@@ -936,33 +938,12 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white">
+                  <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white hover:bg-gray-400 transition-colors">
                     {profile.personalInfo?.name?.charAt(0) || '?'}
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fileInputRef.current?.click();
-                    }}
-                    className="p-2 bg-white rounded-full text-gray-800 hover:bg-gray-100"
-                    title="Upload new photo"
-                  >
-                    <Camera className="w-5 h-5" />
-                  </button>
-                  {(imagePreview || profile.personalInfo?.photo?.url) && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveImage();
-                      }}
-                      className="p-2 bg-white rounded-full text-red-600 hover:bg-gray-100 ml-2"
-                      title="Remove photo"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  )}
+                <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="text-white text-sm">Click to view or edit</div>
                 </div>
               </div>
               <input
@@ -973,9 +954,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 className="hidden"
               />
               <p className="text-sm text-gray-500 mt-2">
-                Click to upload profile picture
-                <br />
-                (Max size: 10MB)
+                Click the image to view, edit or upload
               </p>
             </div>
             
@@ -2004,7 +1983,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         </div>
       )}
 
-      {/* Image Modal */}
+      {/* Updated Image Modal */}
       {showImageModal && imageToShow && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
@@ -2014,11 +1993,17 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           }}
         >
           <div 
-            className="relative max-w-4xl max-h-[90vh] bg-white rounded-lg p-2 overflow-hidden"
+            className="relative max-w-4xl bg-white rounded-lg overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900">My Profile Image</h3>
+            </div>
+
+            {/* Close button */}
             <button
-              className="absolute top-2 right-2 p-2 bg-white rounded-full text-gray-600 hover:text-gray-900 shadow-lg z-10"
+              className="absolute top-4 right-4 p-2 bg-white rounded-full text-gray-600 hover:text-gray-900 shadow-lg z-10"
               onClick={() => {
                 setShowImageModal(false);
                 setImageToShow(null);
@@ -2026,17 +2011,46 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             >
               <X className="w-6 h-6" />
             </button>
-            <img
-              src={imageToShow}
-              alt={profile.personalInfo?.name || 'Profile'}
-              className="w-full h-full object-contain rounded-lg"
-              style={{ maxHeight: 'calc(90vh - 2rem)' }}
-            />
-            {profile.personalInfo?.photo?.publicId && !imagePreview && (
-              <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-                ID: {profile.personalInfo.photo.publicId}
+
+            {/* Main image */}
+            <div className="p-4">
+              <img
+                src={imageToShow}
+                alt={profile.personalInfo?.name || 'Profile'}
+                className="w-full h-full object-contain rounded-lg"
+                style={{ maxHeight: 'calc(90vh - 16rem)' }}
+              />
+            </div>
+
+            {/* Action buttons */}
+            <div className="border-t border-gray-200 bg-gray-50 p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => {
+                    fileInputRef.current?.click();
+                    setShowImageModal(false);
+                    setImageToShow(null);
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Camera className="w-4 h-4" />
+                  Change Photo
+                </button>
+                {(imagePreview || profile.personalInfo?.photo?.url) && (
+                  <button
+                    onClick={() => {
+                      handleRemoveImage();
+                      setShowImageModal(false);
+                      setImageToShow(null);
+                    }}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Remove
+                  </button>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
