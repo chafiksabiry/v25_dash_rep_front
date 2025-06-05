@@ -522,62 +522,61 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         <div className="bg-white rounded-lg p-6">
           <div className="flex items-center gap-2 mb-4">
             <Clock className="w-6 h-6 text-blue-600" />
-            <h2 className="text-lg font-semibold">Availability</h2>
+            <h2 className="text-lg font-semibold">Working Hours & Availability</h2>
+            <div className="ml-auto text-sm text-gray-500">
+              {profile.availability?.timeZone && (
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  <span>{profile.availability.timeZone}</span>
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="space-y-4">
+            {/* Schedule Display */}
             <div>
-              <div className="text-sm font-medium text-gray-700 mb-2">Working Schedule</div>
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Working Schedule</h4>
               <div className="space-y-2">
                 {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
                   const daySchedule = profile.availability?.schedule?.find((s: ScheduleDay) => s.day === day);
                   return (
                     <div 
-                      key={day} 
-                      className={`flex justify-between items-center p-2 rounded ${
-                        daySchedule ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-400'
+                      key={day}
+                      className={`flex items-center justify-between p-3 rounded ${
+                        daySchedule ? 'bg-blue-50 text-blue-900' : 'bg-gray-50 text-gray-500'
                       }`}
                     >
                       <span className="font-medium">{day}</span>
                       {daySchedule ? (
-                        <span>
+                        <span className="text-blue-700">
                           {daySchedule.hours.start} - {daySchedule.hours.end}
                         </span>
                       ) : (
-                        <span className="italic">Not available</span>
+                        <span className="text-gray-500 italic">Not available</span>
                       )}
                     </div>
                   );
                 })}
               </div>
             </div>
-            
-            <div>
-              <div className="text-sm font-medium text-gray-700 mb-2">Time Zone</div>
-              {profile.availability?.timeZone ? (
-                <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 text-blue-800 rounded w-fit">
-                  <Clock className="w-4 h-4" />
-                  <span>{profile.availability.timeZone}</span>
-                </div>
-              ) : (
-                <div className="text-sm text-gray-500 italic">No time zone set</div>
-              )}
-            </div>
-            
-            <div>
-              <div className="text-sm font-medium text-gray-700 mb-2">Flexibility</div>
-              {profile.availability?.flexibility && profile.availability.flexibility.length > 0 ? (
+
+            {/* Flexibility Options */}
+            {profile.availability?.flexibility && profile.availability.flexibility.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Schedule Flexibility</h4>
                 <div className="flex flex-wrap gap-2">
-                  {profile.availability.flexibility.map((item: string, index: number) => (
-                    <span key={index} className="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm">
-                      {item}
+                  {profile.availability.flexibility.map((option: string, index: number) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-sm font-medium"
+                    >
+                      {option}
                     </span>
                   ))}
                 </div>
-              ) : (
-                <div className="text-sm text-gray-500 italic">No flexibility options specified</div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

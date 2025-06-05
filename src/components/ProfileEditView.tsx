@@ -99,6 +99,22 @@ type ProfileEditViewProps = {
 };
 
 // Define proper types
+interface AvailabilityHours {
+  start: string;
+  end: string;
+}
+
+interface ScheduleDay {
+  day: string;
+  hours: AvailabilityHours;
+}
+
+interface Availability {
+  schedule: ScheduleDay[];
+  timeZone: string;
+  flexibility: string[];
+}
+
 interface Profile {
   _id: string;
   personalInfo: {
@@ -110,6 +126,7 @@ interface Profile {
     name?: string;
     [key: string]: any;
   };
+  availability: Availability;  // Make it required but initialize with defaults
   [key: string]: any;
 }
 
@@ -174,7 +191,34 @@ const base64ToBlob = async (base64String: string): Promise<Blob> => {
 const PROFILE_UPDATE_EVENT = 'PROFILE_UPDATED';
 
 export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initialProfile, onSave }) => {
-  const [profile, setProfile] = useState<Profile>(initialProfile);
+  // Add console.log statements
+  console.log('Initial Profile Data:', initialProfile);
+  console.log('Initial Availability Data:', initialProfile.availability);
+
+  // Initialize profile state with proper default values for availability
+  const [profile, setProfile] = useState<Profile>(() => {
+    // Create default availability object
+    const defaultAvailability: Availability = {
+      schedule: [],
+      timeZone: '',
+      flexibility: []
+    };
+
+    // Merge with initial profile data if it exists
+    const mergedAvailability: Availability = {
+      ...defaultAvailability,
+      ...(initialProfile.availability || {}),
+      // Ensure required fields exist with proper types
+      schedule: initialProfile.availability?.schedule || [],
+      flexibility: initialProfile.availability?.flexibility || [],
+      timeZone: initialProfile.availability?.timeZone || ''
+    };
+
+    return {
+      ...initialProfile,
+      availability: mergedAvailability
+    };
+  });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [tempProfileDescription, setTempProfileDescription] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -906,6 +950,36 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     
     showToast('Photo will be removed when you save changes', 'success');
     console.log('✨ Photo marked for deletion');
+  };
+
+  // Add helper function for updating schedule
+  const updateSchedule = (newSchedule: ScheduleDay[]) => {
+    setProfile((prev: Profile) => ({
+      ...prev,
+      availability: {
+        ...prev.availability,
+        schedule: newSchedule
+      }
+    }));
+    setModifiedSections(prev => ({
+      ...prev,
+      availability: true
+    }));
+  };
+
+  // Add helper function for updating flexibility
+  const updateFlexibility = (newFlexibility: string[]) => {
+    setProfile((prev: Profile) => ({
+      ...prev,
+      availability: {
+        ...prev.availability,
+        flexibility: newFlexibility
+      }
+    }));
+    setModifiedSections(prev => ({
+      ...prev,
+      availability: true
+    }));
   };
 
   return (
@@ -1726,177 +1800,196 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
         {/* Availability Section */}
         <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-6">
             <Clock className="w-6 h-6 text-blue-600" />
-            <h2 className="text-lg font-semibold">Availability</h2>
+            <h2 className="text-xl font-semibold">Working Hours & Availability</h2>
           </div>
-          
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Working Hours</label>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Start Time</label>
+
+          {/* Default Working Hours */}
+          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+            <div className="mb-8">
+              <label className="block text-sm font-medium text-gray-700 mb-3">Add New Schedule</label>
+              <div className="flex items-center gap-4 max-w-md">
                 <input
                   type="time"
-                  value={profile.availability?.hours?.start || ''}
-                  onChange={(e) => {
-                    setProfile((prev: Profile) => ({
-                      ...prev,
-                      availability: {
-                        ...prev.availability,
-                        hours: {
-                          ...(prev.availability?.hours || {}),
-                          start: e.target.value
-                        }
-                      }
-                    }));
-                    setModifiedSections(prev => ({
-                      ...prev,
-                      availability: true
-                    }));
-                  }}
-                  className="w-full p-2 border rounded-md"
+                  defaultValue="09:00"
+                  id="defaultStartTime"
+                  className="w-32 p-2 border rounded"
                 />
+                <span className="text-gray-500">to</span>
+                <input
+                  type="time"
+                  defaultValue="17:00"
+                  id="defaultEndTime"
+                  className="w-32 p-2 border rounded"
+                />
+                <button
+                  onClick={() => {
+                    const startInput = document.getElementById('defaultStartTime') as HTMLInputElement;
+                    const endInput = document.getElementById('defaultEndTime') as HTMLInputElement;
+                    const defaultStart = startInput?.value || '09:00';
+                    const defaultEnd = endInput?.value || '17:00';
+                    
+                    // Get currently unscheduled days
+                    const scheduledDays = new Set(profile.availability.schedule.map(s => s.day));
+                    const unscheduledDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+                      .filter(day => !scheduledDays.has(day));
+                    
+                    // Add schedule for unscheduled weekdays
+                    const newScheduleItems = unscheduledDays.map(day => ({
+                      day,
+                      hours: { start: defaultStart, end: defaultEnd }
+                    }));
+                    
+                    const newSchedule = [...profile.availability.schedule, ...newScheduleItems];
+                    updateSchedule(newSchedule);
+                  }}
+                  className="px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded hover:bg-blue-100"
+                >
+                  Apply to Weekdays
+                </button>
               </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">End Time</label>
-                <input
-                  type="time"
-                  value={profile.availability?.hours?.end || ''}
-                  onChange={(e) => {
-                    setProfile((prev: Profile) => ({
-                      ...prev,
-                      availability: {
-                        ...prev.availability,
-                        hours: {
-                          ...(prev.availability?.hours || {}),
-                          end: e.target.value
-                        }
-                      }
-                    }));
-                    setModifiedSections(prev => ({
-                      ...prev,
-                      availability: true
-                    }));
-                  }}
-                  className="w-full p-2 border rounded-md"
-                />
+            </div>
+
+            {/* Working Days Schedule */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-4">Working Days</label>
+              <div className="space-y-4">
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day: string) => {
+                  const daySchedule = profile.availability.schedule.find((s: ScheduleDay) => s.day === day);
+                  return (
+                    <div
+                      key={day}
+                      className={`p-4 rounded-lg border ${
+                        daySchedule 
+                          ? 'border-blue-200 bg-blue-50 shadow-sm' 
+                          : 'border-gray-200 bg-white hover:border-blue-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-gray-800">{day}</span>
+                        <div className="flex items-center gap-8">
+                          {daySchedule && (
+                            <div className="flex items-center gap-6">
+                              <div className="flex-1 min-w-[140px]">
+                                <label className="block text-xs text-gray-500 mb-1">Start</label>
+                                <input
+                                  type="time"
+                                  value={daySchedule.hours.start}
+                                  onChange={(e) => {
+                                    const newSchedule = profile.availability.schedule.map(s => 
+                                      s.day === day 
+                                        ? { ...s, hours: { ...s.hours, start: e.target.value } }
+                                        : s
+                                    );
+                                    updateSchedule(newSchedule);
+                                  }}
+                                  className="w-full p-2 border rounded bg-white text-sm"
+                                />
+                              </div>
+                              <div className="flex-1 min-w-[140px]">
+                                <label className="block text-xs text-gray-500 mb-1">End</label>
+                                <input
+                                  type="time"
+                                  value={daySchedule.hours.end}
+                                  onChange={(e) => {
+                                    const newSchedule = profile.availability.schedule.map(s => 
+                                      s.day === day 
+                                        ? { ...s, hours: { ...s.hours, end: e.target.value } }
+                                        : s
+                                    );
+                                    updateSchedule(newSchedule);
+                                  }}
+                                  className="w-full p-2 border rounded bg-white text-sm"
+                                />
+                              </div>
+                            </div>
+                          )}
+                          <button
+                            onClick={() => {
+                              const startInput = document.getElementById('defaultStartTime') as HTMLInputElement;
+                              const endInput = document.getElementById('defaultEndTime') as HTMLInputElement;
+                              const defaultStart = startInput?.value || '09:00';
+                              const defaultEnd = endInput?.value || '17:00';
+                              
+                              const currentSchedule = profile.availability.schedule;
+                              let newSchedule;
+                              
+                              if (daySchedule) {
+                                newSchedule = currentSchedule.filter(s => s.day !== day);
+                              } else {
+                                newSchedule = [
+                                  ...currentSchedule,
+                                  {
+                                    day,
+                                    hours: {
+                                      start: defaultStart,
+                                      end: defaultEnd
+                                    }
+                                  }
+                                ];
+                              }
+                              updateSchedule(newSchedule);
+                            }}
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              daySchedule 
+                                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {daySchedule ? 'Remove' : 'Add'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
-          
+
+          {/* Time Zone */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Available Days</label>
-            <div className="flex flex-wrap gap-2">
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
-                const isSelected = profile.availability?.days?.includes(day);
-                
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => {
-                      const currentDays = [...(profile.availability?.days || [])];
-                      if (isSelected) {
-                        const updatedDays = currentDays.filter(d => d !== day);
-                        setProfile((prev: Profile) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            days: updatedDays
-                          }
-                        }));
-                      } else {
-                        const updatedDays = [...currentDays, day];
-                        setProfile((prev: Profile) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            days: updatedDays
-                          }
-                        }));
-                      }
-                      setModifiedSections(prev => ({
-                        ...prev,
-                        availability: true
-                      }));
-                    }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                      isSelected
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Time Zones</label>
-            <div className="grid grid-cols-2 gap-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Time Zone</label>
+            <select
+              value={profile.availability.timeZone || ''}
+              onChange={(e) => {
+                setProfile((prev: Profile) => ({
+                  ...prev,
+                  availability: {
+                    ...prev.availability,
+                    timeZone: e.target.value
+                  }
+                }));
+                setModifiedSections(prev => ({
+                  ...prev,
+                  availability: true
+                }));
+              }}
+              className="w-full p-2 border rounded bg-white"
+            >
+              <option value="">Select your time zone</option>
               {[
-                'UTC - Coordinated Universal Time',
-                'EST - Eastern Standard Time',
-                'CST - Central Standard Time',
-                'MST - Mountain Standard Time',
-                'PST - Pacific Standard Time',
-                'GMT - Greenwich Mean Time',
-                'CET - Central European Time',
-                'IST - Indian Standard Time',
-                'JST - Japan Standard Time',
-                'AEST - Australian Eastern Standard Time'
-              ].map((zone) => {
-                const zoneCode = zone.split(' - ')[0];
-                const isSelected = profile.availability?.timeZones?.includes(zoneCode);
-                
-                return (
-                  <button
-                    key={zone}
-                    onClick={() => {
-                      const currentZones = [...(profile.availability?.timeZones || [])];
-                      if (isSelected) {
-                        const updatedZones = currentZones.filter(z => z !== zoneCode);
-                        setProfile((prev: Profile) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            timeZones: updatedZones
-                          }
-                        }));
-                      } else {
-                        const updatedZones = [...currentZones, zoneCode];
-                        setProfile((prev: Profile) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            timeZones: updatedZones
-                          }
-                        }));
-                      }
-                      setModifiedSections(prev => ({
-                        ...prev,
-                        availability: true
-                      }));
-                    }}
-                    className={`p-2 rounded-lg text-sm font-medium text-left transition-colors duration-200 ${
-                      isSelected
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {zone}
-                  </button>
-                );
-              })}
-            </div>
+                'America/New_York (EST/EDT)',
+                'America/Chicago (CST/CDT)',
+                'America/Denver (MST/MDT)',
+                'America/Los_Angeles (PST/PDT)',
+                'Europe/London (GMT/BST)',
+                'Europe/Paris (CET/CEST)',
+                'Asia/Dubai (GST)',
+                'Asia/Singapore (SGT)',
+                'Asia/Tokyo (JST)',
+                'Australia/Sydney (AEST/AEDT)'
+              ].map((zone) => (
+                <option key={zone} value={zone}>{zone}</option>
+              ))}
+            </select>
           </div>
-          
+
+          {/* Schedule Flexibility */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Schedule Flexibility</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               {[
                 'Remote Work Available',
                 'Flexible Hours',
@@ -1905,47 +1998,24 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 'Split Shifts',
                 'Part-Time Options',
                 'Compressed Work Week',
-                'Shift Swapping Allowed',
-                'On-Call Available',
-                'Holiday Coverage',
-                'Emergency Response',
-                'Seasonal Flexibility'
+                'Shift Swapping Allowed'
               ].map((option) => {
-                const isSelected = profile.availability?.flexibility?.includes(option);
-                
+                const isSelected = profile.availability.flexibility.includes(option);
                 return (
                   <button
                     key={option}
                     onClick={() => {
-                      const currentFlexibility = [...(profile.availability?.flexibility || [])];
-                      if (isSelected) {
-                        const updatedFlexibility = currentFlexibility.filter(f => f !== option);
-                        setProfile((prev: Profile) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            flexibility: updatedFlexibility
-                          }
-                        }));
-                      } else {
-                        const updatedFlexibility = [...currentFlexibility, option];
-                        setProfile((prev: Profile) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            flexibility: updatedFlexibility
-                          }
-                        }));
-                      }
-                      setModifiedSections(prev => ({
-                        ...prev,
-                        availability: true
-                      }));
+                      const currentFlexibility = profile.availability.flexibility;
+                      const updatedFlexibility = isSelected
+                        ? currentFlexibility.filter((f: string) => f !== option)
+                        : [...currentFlexibility, option];
+                      
+                      updateFlexibility(updatedFlexibility);
                     }}
-                    className={`p-2 rounded-lg text-sm font-medium text-left transition-colors duration-200 ${
+                    className={`px-4 py-2 rounded text-sm w-full ${
                       isSelected
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
                     {option}
