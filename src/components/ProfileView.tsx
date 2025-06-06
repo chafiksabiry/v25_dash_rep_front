@@ -520,17 +520,20 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
 
         {/* Availability Section */}
         <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-6 h-6 text-blue-600" />
-            <h2 className="text-lg font-semibold">Working Hours & Availability</h2>
-            <div className="ml-auto text-sm text-gray-500">
-              {profile.availability?.timeZone && (
-                <div className="flex items-center gap-2">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-6 h-6 text-blue-600" />
+              <h2 className="text-lg font-semibold">Working Hours & Availability</h2>
+            </div>
+            {profile.availability?.timeZone && (
+              <div className="mb-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Time Zone</h3>
+                <div className="flex items-center gap-2 text-gray-600">
                   <Clock className="w-4 h-4" />
                   <span>{profile.availability.timeZone}</span>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
           
           <div className="space-y-4">

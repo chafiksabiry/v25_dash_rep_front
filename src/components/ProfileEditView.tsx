@@ -1800,15 +1800,17 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
         {/* Availability Section */}
         <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Clock className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-semibold">Working Hours & Availability</h2>
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-6 h-6 text-blue-600" />
+              <h2 className="text-xl font-semibold">Working Hours & Availability</h2>
+            </div>
           </div>
 
           {/* Default Working Hours */}
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
             <div className="mb-8">
-              <label className="block text-sm font-medium text-gray-700 mb-3">Add New Schedule</label>
+              <h3 className="text-lg font-medium text-gray-800 mb-3">Add New Schedule</h3>
               <div className="flex items-center gap-4 max-w-md">
                 <input
                   type="time"
@@ -1853,7 +1855,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
             {/* Working Days Schedule */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4">Working Days</label>
+              <h3 className="text-lg font-medium text-gray-800 mb-4">Working Days</h3>
               <div className="space-y-4">
                 {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day: string) => {
                   const daySchedule = profile.availability.schedule.find((s: ScheduleDay) => s.day === day);
@@ -1950,7 +1952,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
           {/* Time Zone */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Time Zone</label>
+            <h3 className="text-lg font-medium text-gray-800 mb-2">Time Zone</h3>
             <select
               value={profile.availability.timeZone || ''}
               onChange={(e) => {
@@ -1988,7 +1990,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
           {/* Schedule Flexibility */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Schedule Flexibility</label>
+            <h3 className="text-lg font-medium text-gray-800 mb-2">Schedule Flexibility</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               {[
                 'Remote Work Available',
