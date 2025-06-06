@@ -27,6 +27,7 @@ ENV VITE_TWILIO_AUTH_TOKEN=7ade91a170bff98bc625543287ee62c8
 ENV VITE_WS_URL=wss://api-calls.harx.ai/speech-to-text
 ENV VITE_API_URL_AI_MESSAGES=https://api-messages-service.harx.ai/api
 ENV VITE_API_URL_CALL=https://api-calls.harx.ai
+ENV VITE_REP_API_URL=https://api-repcreationwizard.harx.ai
 # Install dependencies
 RUN npm install
 
