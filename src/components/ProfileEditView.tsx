@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import ReactCrop, { Crop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 import { 
   MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase, 
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
-  Edit, Check, X, Save, RefreshCw, Plus, Trash2
+  Edit, Check, X, Save, RefreshCw, Plus, Trash2, Camera, Upload
 } from 'lucide-react';
 import { updateProfileData, updateBasicInfo, updateExperience, updateSkills } from '../utils/profileUtils';
 import { getLanguageCodeFromAI } from '../utils/languageUtils';
@@ -96,12 +98,133 @@ type ProfileEditViewProps = {
   onSave: (updatedProfile: any) => void;
 };
 
+// Define proper types
+interface AvailabilityHours {
+  start: string;
+  end: string;
+}
+
+interface ScheduleDay {
+  day: string;
+  hours: AvailabilityHours;
+}
+
+interface Availability {
+  schedule: ScheduleDay[];
+  timeZone: string;
+  flexibility: string[];
+}
+
+interface Profile {
+  _id: string;
+  personalInfo: {
+    profileImage?: string;
+    photo?: {
+      url: string;
+      publicId: string;
+    };
+    name?: string;
+    [key: string]: any;
+  };
+  availability: Availability;  // Make it required but initialize with defaults
+  [key: string]: any;
+}
+
+interface PhotoUploadResponse {
+  photoUrl: string;
+  publicId: string;
+  [key: string]: any;
+}
+
+// Modified uploadPhoto function with token
+const uploadPhoto = async (agentId: string, photoFile: Blob): Promise<PhotoUploadResponse> => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const formData = new FormData();
+  formData.append('photo', photoFile);
+
+  try {
+    const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}/photo`, {
+      method: 'PUT',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const updatedProfile = await response.json();
+    return updatedProfile;
+  } catch (error) {
+    console.error('Error uploading photo:', error);
+    throw error;
+  }
+};
+
+// Function to convert base64 to blob
+const base64ToBlob = async (base64String: string): Promise<Blob> => {
+  // Remove data URL prefix if present
+  const base64WithoutPrefix = base64String.split(',')[1] || base64String;
+  
+  // Decode base64
+  const byteString = atob(base64WithoutPrefix);
+  
+  // Create an array buffer from the decoded string
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  
+  // Create blob from array buffer
+  return new Blob([ab], { type: 'image/jpeg' });
+};
+
+// Add this near the top of the file with other imports
+const PROFILE_UPDATE_EVENT = 'PROFILE_UPDATED';
+
 export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initialProfile, onSave }) => {
-  const [profile, setProfile] = useState<any>(initialProfile);
+  // Add console.log statements
+  console.log('Initial Profile Data:', initialProfile);
+  console.log('Initial Availability Data:', initialProfile.availability);
+
+  // Initialize profile state with proper default values for availability
+  const [profile, setProfile] = useState<Profile>(() => {
+    // Create default availability object
+    const defaultAvailability: Availability = {
+      schedule: [],
+      timeZone: '',
+      flexibility: []
+    };
+
+    // Merge with initial profile data if it exists
+    const mergedAvailability: Availability = {
+      ...defaultAvailability,
+      ...(initialProfile.availability || {}),
+      // Ensure required fields exist with proper types
+      schedule: initialProfile.availability?.schedule || [],
+      flexibility: initialProfile.availability?.flexibility || [],
+      timeZone: initialProfile.availability?.timeZone || ''
+    };
+
+    return {
+      ...initialProfile,
+      availability: mergedAvailability
+    };
+  });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [tempProfileDescription, setTempProfileDescription] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Track which sections have been modified
   const [modifiedSections, setModifiedSections] = useState({
@@ -110,7 +233,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     skills: false,
     experience: false,
     languages: false,
-    availability: false
+    availability: false,
+    profileImage: false
   });
   
   // Additional state for editing
@@ -139,6 +263,24 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
   // Add state for editing experience
   const [editingExperienceId, setEditingExperienceId] = useState<number | null>(null);
+
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [tempImage, setTempImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState<Crop>({
+    unit: '%',
+    width: 90,
+    x: 5,
+    y: 5,
+    height: 90
+  });
+  const imageRef = useRef<HTMLImageElement>(null);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageToShow, setImageToShow] = useState<string | null>(null);
+
+  // Add new state for tracking photo deletion
+  const [isPhotoMarkedForDeletion, setIsPhotoMarkedForDeletion] = useState(false);
 
   useEffect(() => {
     if (initialProfile) {
@@ -208,7 +350,34 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     );
   };
 
-  // Handle save with validation
+  // Add function to fetch updated profile data
+  const refreshProfileData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${profile._id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const updatedProfile = await response.json();
+      setProfile(updatedProfile);
+      return updatedProfile;
+    } catch (error) {
+      console.error('Error refreshing profile data:', error);
+      throw error;
+    }
+  };
+
+  // Modified handleSave to include photo deletion
   const handleSave = async () => {
     console.log('🔄 Starting save process...');
     console.log('Modified sections:', modifiedSections);
@@ -225,6 +394,53 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
     setLoading(true);
     try {
+      // Handle photo deletion first if marked for deletion
+      if (isPhotoMarkedForDeletion) {
+        console.log('📝 Processing photo deletion...');
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
+        console.log('🔗 Deleting photo for profile:', profile._id);
+        const deleteResponse = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${profile._id}/photo`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!deleteResponse.ok) {
+          console.error('❌ Failed to delete photo. Status:', deleteResponse.status);
+          throw new Error(`Failed to delete photo: ${deleteResponse.status}`);
+        }
+        console.log('✅ Photo deleted successfully from server');
+      }
+
+      // Handle photo upload if modified
+      if (modifiedSections.profileImage && imagePreview && !isPhotoMarkedForDeletion) {
+        try {
+          setUploadingPhoto(true);
+          console.log('📸 Uploading new profile photo...');
+          
+          const photoBlob = await base64ToBlob(imagePreview);
+          const photoResult = await uploadPhoto(profile._id, photoBlob);
+          
+          console.log('✅ Photo uploaded successfully');
+        } catch (error) {
+          console.error('❌ Error uploading photo:', error);
+          if (error instanceof Error && error.message === 'No authentication token found') {
+            showToast('Please log in again to upload photo', 'error');
+          } else {
+            showToast('Failed to upload profile photo', 'error');
+          }
+          return;
+        } finally {
+          setUploadingPhoto(false);
+        }
+      }
+
+      // Continue with other profile updates
       // Save personal info if modified
       if (modifiedSections.personalInfo) {
         console.log('📝 Saving personal info...', {
@@ -327,6 +543,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         await updateProfileData(profile._id, { availability: profile.availability });
       }
 
+      // After all updates are done, refresh the profile data
+      const updatedProfile = await refreshProfileData();
+      
       // Reset modified sections
       setModifiedSections({
         personalInfo: false,
@@ -334,17 +553,27 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         skills: false,
         experience: false,
         languages: false,
-        availability: false
+        availability: false,
+        profileImage: false
       });
+
+      // Reset photo deletion state after successful save
+      setIsPhotoMarkedForDeletion(false);
 
       console.log('✅ All changes saved successfully');
       showToast('Profile saved successfully', 'success');
-      onSave(profile);
-    } catch (error: any) {
-      console.error('❌ Error saving profile:', {
-        error: error.response?.data || error,
-        status: error.response?.status,
-        statusText: error.response?.statusText
+      
+      // Update localStorage and dispatch event for TopBar update
+      localStorage.setItem('profileData', JSON.stringify(updatedProfile));
+      window.dispatchEvent(new Event(PROFILE_UPDATE_EVENT));
+      
+      onSave(updatedProfile);
+    } catch (error) {
+      console.error('❌ Error saving profile:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        profileId: profile._id
       });
       showToast('Failed to save profile', 'error');
     } finally {
@@ -360,7 +589,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       [field]: value
     };
     
-    setProfile((prev: any) => ({
+    setProfile((prev: Profile) => ({
       ...prev,
       personalInfo: updatedPersonalInfo
     }));
@@ -419,7 +648,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       ];
       
       // Update local state
-      setProfile((prev: any) => ({
+      setProfile((prev: Profile) => ({
         ...prev,
         personalInfo: {
           ...prev.personalInfo,
@@ -456,7 +685,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     const updatedLanguages = profile.personalInfo.languages.filter((_: any, i: number) => i !== index);
     
     // Update local state
-    setProfile((prev: any) => ({
+    setProfile((prev: Profile) => ({
       ...prev,
       personalInfo: {
         ...prev.personalInfo,
@@ -486,7 +715,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     );
     
     // Update local state
-    setProfile((prev: any) => ({
+    setProfile((prev: Profile) => ({
       ...prev,
       personalInfo: {
         ...prev.personalInfo,
@@ -516,7 +745,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         skillObject
       ];
       
-      setProfile((prev: any) => ({
+      setProfile((prev: Profile) => ({
         ...prev,
         skills: {
           ...prev.skills,
@@ -536,7 +765,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     const updatedSkills = [...(profile.skills?.[type] || [])];
     updatedSkills.splice(index, 1);
     
-    setProfile((prev: any) => ({
+    setProfile((prev: Profile) => ({
       ...prev,
       skills: {
         ...prev.skills,
@@ -577,7 +806,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         responsibilities: newExperience.responsibilities.filter(r => r.trim())
       };
 
-      setProfile((prev: any) => ({
+      setProfile((prev: Profile) => ({
         ...prev,
         experience: updatedExperiences
       }));
@@ -602,6 +831,157 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }
   };
 
+  // Function to calculate scaled dimensions
+  const calculateScaledDimensions = (originalWidth: number, originalHeight: number) => {
+    const maxWidth = Math.min(window.innerWidth * 0.8, 800); // 80% of viewport width or 800px max
+    const maxHeight = Math.min(window.innerHeight * 0.6, 600); // 60% of viewport height or 600px max
+    
+    let newWidth = originalWidth;
+    let newHeight = originalHeight;
+    
+    // Scale down if width exceeds maxWidth
+    if (newWidth > maxWidth) {
+      newHeight = (maxWidth * newHeight) / newWidth;
+      newWidth = maxWidth;
+    }
+    
+    // Scale down further if height still exceeds maxHeight
+    if (newHeight > maxHeight) {
+      newWidth = (maxHeight * newWidth) / newHeight;
+      newHeight = maxHeight;
+    }
+    
+    return {
+      width: Math.floor(newWidth),
+      height: Math.floor(newHeight)
+    };
+  };
+
+  // Modified handleImageChange
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        showToast('Image size should be less than 10MB', 'error');
+        return;
+      }
+
+      // If photo was marked for deletion, unmark it since we're adding a new one
+      if (isPhotoMarkedForDeletion) {
+        setIsPhotoMarkedForDeletion(false);
+        console.log('🔄 Unmarking photo deletion as new photo is being added');
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const scaledDimensions = calculateScaledDimensions(img.width, img.height);
+          setImageDimensions(scaledDimensions);
+          setTempImage(reader.result as string);
+          setShowCropModal(true);
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Modified handleCropComplete
+  const handleCropComplete = () => {
+    if (imageRef.current && crop.width && crop.height) {
+      const croppedImageUrl = getCroppedImg(imageRef.current, crop);
+      setImagePreview(croppedImageUrl);
+      setShowCropModal(false);
+      setTempImage(null);
+      
+      // Ensure we mark the profile image as modified
+      setModifiedSections(prev => ({
+        ...prev,
+        profileImage: true
+      }));
+      
+      console.log('✨ New photo cropped and ready for upload');
+    }
+  };
+
+  // Function to get cropped image
+  const getCroppedImg = (image: HTMLImageElement, crop: Crop): string => {
+    const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    canvas.width = crop.width!;
+    canvas.height = crop.height!;
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      ctx.drawImage(
+        image,
+        crop.x! * scaleX,
+        crop.y! * scaleY,
+        crop.width! * scaleX,
+        crop.height! * scaleY,
+        0,
+        0,
+        crop.width!,
+        crop.height!
+      );
+    }
+
+    return canvas.toDataURL('image/jpeg');
+  };
+
+  // Modified handleRemoveImage to only mark for deletion
+  const handleRemoveImage = () => {
+    console.log('🔄 Marking photo for deletion...');
+    setIsPhotoMarkedForDeletion(true);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    console.log('🧹 Cleared local image preview and file input');
+    
+    // Mark profile image as modified
+    setModifiedSections(prev => ({
+      ...prev,
+      profileImage: true
+    }));
+    console.log('📝 Marked profile image as modified');
+    
+    showToast('Photo will be removed when you save changes', 'success');
+    console.log('✨ Photo marked for deletion');
+  };
+
+  // Add helper function for updating schedule
+  const updateSchedule = (newSchedule: ScheduleDay[]) => {
+    setProfile((prev: Profile) => ({
+      ...prev,
+      availability: {
+        ...prev.availability,
+        schedule: newSchedule
+      }
+    }));
+    setModifiedSections(prev => ({
+      ...prev,
+      availability: true
+    }));
+  };
+
+  // Add helper function for updating flexibility
+  const updateFlexibility = (newFlexibility: string[]) => {
+    setProfile((prev: Profile) => ({
+      ...prev,
+      availability: {
+        ...prev.availability,
+        flexibility: newFlexibility
+      }
+    }));
+    setModifiedSections(prev => ({
+      ...prev,
+      availability: true
+    }));
+  };
+
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
       {/* Page Header with Save/Cancel Buttons */}
@@ -617,13 +997,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           </button>
           <button
             onClick={handleSave}
-            disabled={loading}
+            disabled={loading || uploadingPhoto}
             className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (
+            {loading || uploadingPhoto ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                Saving...
+                {uploadingPhoto ? 'Uploading Photo...' : 'Saving...'}
               </>
             ) : (
               <>
@@ -640,10 +1020,48 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         {/* Profile Header with editable fields */}
         <div className="bg-white rounded-lg p-6">
           <div className="text-center">
-            <div className="mb-6">
-              <div className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 flex items-center justify-center text-2xl font-bold text-white">
-                {profile.personalInfo?.name?.charAt(0) || '?'}
+            <div className="mb-6 relative">
+              <div 
+                className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group cursor-pointer"
+                title={isPhotoMarkedForDeletion ? "Click to add new photo" : "Click to view or edit photo"}
+                onClick={() => {
+                  if (!isPhotoMarkedForDeletion) {
+                    const imageUrl = imagePreview || profile.personalInfo?.photo?.url;
+                    if (imageUrl) {
+                      setImageToShow(imageUrl);
+                      setShowImageModal(true);
+                    } else {
+                      fileInputRef.current?.click();
+                    }
+                  } else {
+                    fileInputRef.current?.click();
+                  }
+                }}
+              >
+                {!isPhotoMarkedForDeletion && (imagePreview || profile.personalInfo?.photo?.url) ? (
+                  <img 
+                    src={imagePreview || profile.personalInfo?.photo?.url} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white hover:bg-gray-400 transition-colors">
+                    {profile.personalInfo?.name?.charAt(0) || '?'}
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="text-white text-sm">
+                    {isPhotoMarkedForDeletion ? 'Click to add new photo' : 'Click to view or edit'}
+                  </div>
+                </div>
               </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
             </div>
             
             {/* Name Field */}
@@ -666,7 +1084,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 type="text"
                 value={profile.professionalSummary?.currentRole || ''}
                 onChange={(e) => {
-                  setProfile((prev: any) => ({
+                  setProfile((prev: Profile) => ({
                     ...prev,
                     professionalSummary: {
                       ...prev.professionalSummary,
@@ -743,7 +1161,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             <textarea
               value={profile.professionalSummary?.profileDescription || ''}
               onChange={(e) => {
-                setProfile((prev: any) => ({
+                setProfile((prev: Profile) => ({
                   ...prev,
                   professionalSummary: {
                     ...prev.professionalSummary,
@@ -769,7 +1187,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               type="text"
               value={profile.professionalSummary?.yearsOfExperience || ''}
               onChange={(e) => {
-                setProfile((prev: any) => ({
+                setProfile((prev: Profile) => ({
                   ...prev,
                   professionalSummary: {
                     ...prev.professionalSummary,
@@ -798,7 +1216,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   onClick={() => {
                     const updatedIndustries = [...(profile.professionalSummary?.industries || [])];
                     updatedIndustries.splice(index, 1);
-                    setProfile((prev: any) => ({
+                    setProfile((prev: Profile) => ({
                       ...prev,
                       professionalSummary: {
                         ...prev.professionalSummary,
@@ -832,7 +1250,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     ...(profile.professionalSummary?.industries || []),
                     tempIndustry.trim()
                   ];
-                  setProfile((prev: any) => ({
+                  setProfile((prev: Profile) => ({
                     ...prev,
                     professionalSummary: {
                       ...prev.professionalSummary,
@@ -864,7 +1282,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   onClick={() => {
                     const updatedCompanies = [...(profile.professionalSummary?.notableCompanies || [])];
                     updatedCompanies.splice(index, 1);
-                    setProfile((prev: any) => ({
+                    setProfile((prev: Profile) => ({
                       ...prev,
                       professionalSummary: {
                         ...prev.professionalSummary,
@@ -898,7 +1316,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     ...(profile.professionalSummary?.notableCompanies || []),
                     tempCompany.trim()
                   ];
-                  setProfile((prev: any) => ({
+                  setProfile((prev: Profile) => ({
                     ...prev,
                     professionalSummary: {
                       ...prev.professionalSummary,
@@ -1083,7 +1501,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     type="date"
                     value={newExperience.startDate}
                     onChange={(e) => setNewExperience(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full p-2 border rounded-md"
+                    className="flex-1 p-2 border rounded-md"
                   />
                 </div>
                 
@@ -1189,7 +1607,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                       
                       // Add to profile and update state
                       const updatedExperience = [...(profile.experience || []), newExp];
-                      setProfile((prev: any) => ({
+                      setProfile((prev: Profile) => ({
                         ...prev,
                         experience: updatedExperience
                       }));
@@ -1255,7 +1673,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                       onClick={() => {
                         const updatedExperience = [...profile.experience];
                         updatedExperience.splice(index, 1);
-                        setProfile((prev: any) => ({
+                        setProfile((prev: Profile) => ({
                           ...prev,
                           experience: updatedExperience
                         }));
@@ -1382,177 +1800,198 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
         {/* Availability Section */}
         <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-6 h-6 text-blue-600" />
-            <h2 className="text-lg font-semibold">Availability</h2>
-          </div>
-          
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Working Hours</label>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Start Time</label>
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-6 h-6 text-blue-600" />
+              <h2 className="text-xl font-semibold">Working Hours & Availability</h2>
+            </div>
+          </div>
+
+          {/* Default Working Hours */}
+          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+            <div className="mb-8">
+              <h3 className="text-lg font-medium text-gray-800 mb-3">Add New Schedule</h3>
+              <div className="flex items-center gap-4 max-w-md">
                 <input
                   type="time"
-                  value={profile.availability?.hours?.start || ''}
-                  onChange={(e) => {
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      availability: {
-                        ...prev.availability,
-                        hours: {
-                          ...(prev.availability?.hours || {}),
-                          start: e.target.value
-                        }
-                      }
-                    }));
-                    setModifiedSections(prev => ({
-                      ...prev,
-                      availability: true
-                    }));
-                  }}
-                  className="w-full p-2 border rounded-md"
+                  defaultValue="09:00"
+                  id="defaultStartTime"
+                  className="w-32 p-2 border rounded"
                 />
+                <span className="text-gray-500">to</span>
+                <input
+                  type="time"
+                  defaultValue="17:00"
+                  id="defaultEndTime"
+                  className="w-32 p-2 border rounded"
+                />
+                <button
+                  onClick={() => {
+                    const startInput = document.getElementById('defaultStartTime') as HTMLInputElement;
+                    const endInput = document.getElementById('defaultEndTime') as HTMLInputElement;
+                    const defaultStart = startInput?.value || '09:00';
+                    const defaultEnd = endInput?.value || '17:00';
+                    
+                    // Get currently unscheduled days
+                    const scheduledDays = new Set(profile.availability.schedule.map(s => s.day));
+                    const unscheduledDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+                      .filter(day => !scheduledDays.has(day));
+                    
+                    // Add schedule for unscheduled weekdays
+                    const newScheduleItems = unscheduledDays.map(day => ({
+                      day,
+                      hours: { start: defaultStart, end: defaultEnd }
+                    }));
+                    
+                    const newSchedule = [...profile.availability.schedule, ...newScheduleItems];
+                    updateSchedule(newSchedule);
+                  }}
+                  className="px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded hover:bg-blue-100"
+                >
+                  Apply to Weekdays
+                </button>
               </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">End Time</label>
-                <input
-                  type="time"
-                  value={profile.availability?.hours?.end || ''}
-                  onChange={(e) => {
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      availability: {
-                        ...prev.availability,
-                        hours: {
-                          ...(prev.availability?.hours || {}),
-                          end: e.target.value
-                        }
-                      }
-                    }));
-                    setModifiedSections(prev => ({
-                      ...prev,
-                      availability: true
-                    }));
-                  }}
-                  className="w-full p-2 border rounded-md"
-                />
+            </div>
+
+            {/* Working Days Schedule */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-800 mb-4">Working Days</h3>
+              <div className="space-y-4">
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day: string) => {
+                  const daySchedule = profile.availability.schedule.find((s: ScheduleDay) => s.day === day);
+                  return (
+                    <div
+                      key={day}
+                      className={`p-4 rounded-lg border ${
+                        daySchedule 
+                          ? 'border-blue-200 bg-blue-50 shadow-sm' 
+                          : 'border-gray-200 bg-white hover:border-blue-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-gray-800">{day}</span>
+                        <div className="flex items-center gap-8">
+                          {daySchedule && (
+                            <div className="flex items-center gap-6">
+                              <div className="flex-1 min-w-[140px]">
+                                <label className="block text-xs text-gray-500 mb-1">Start</label>
+                                <input
+                                  type="time"
+                                  value={daySchedule.hours.start}
+                                  onChange={(e) => {
+                                    const newSchedule = profile.availability.schedule.map(s => 
+                                      s.day === day 
+                                        ? { ...s, hours: { ...s.hours, start: e.target.value } }
+                                        : s
+                                    );
+                                    updateSchedule(newSchedule);
+                                  }}
+                                  className="w-full p-2 border rounded bg-white text-sm"
+                                />
+                              </div>
+                              <div className="flex-1 min-w-[140px]">
+                                <label className="block text-xs text-gray-500 mb-1">End</label>
+                                <input
+                                  type="time"
+                                  value={daySchedule.hours.end}
+                                  onChange={(e) => {
+                                    const newSchedule = profile.availability.schedule.map(s => 
+                                      s.day === day 
+                                        ? { ...s, hours: { ...s.hours, end: e.target.value } }
+                                        : s
+                                    );
+                                    updateSchedule(newSchedule);
+                                  }}
+                                  className="w-full p-2 border rounded bg-white text-sm"
+                                />
+                              </div>
+                            </div>
+                          )}
+                          <button
+                            onClick={() => {
+                              const startInput = document.getElementById('defaultStartTime') as HTMLInputElement;
+                              const endInput = document.getElementById('defaultEndTime') as HTMLInputElement;
+                              const defaultStart = startInput?.value || '09:00';
+                              const defaultEnd = endInput?.value || '17:00';
+                              
+                              const currentSchedule = profile.availability.schedule;
+                              let newSchedule;
+                              
+                              if (daySchedule) {
+                                newSchedule = currentSchedule.filter(s => s.day !== day);
+                              } else {
+                                newSchedule = [
+                                  ...currentSchedule,
+                                  {
+                                    day,
+                                    hours: {
+                                      start: defaultStart,
+                                      end: defaultEnd
+                                    }
+                                  }
+                                ];
+                              }
+                              updateSchedule(newSchedule);
+                            }}
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              daySchedule 
+                                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {daySchedule ? 'Remove' : 'Add'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
-          
+
+          {/* Time Zone */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Available Days</label>
-            <div className="flex flex-wrap gap-2">
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
-                const isSelected = profile.availability?.days?.includes(day);
-                
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => {
-                      const currentDays = [...(profile.availability?.days || [])];
-                      if (isSelected) {
-                        const updatedDays = currentDays.filter(d => d !== day);
-                        setProfile((prev: any) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            days: updatedDays
-                          }
-                        }));
-                      } else {
-                        const updatedDays = [...currentDays, day];
-                        setProfile((prev: any) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            days: updatedDays
-                          }
-                        }));
-                      }
-                      setModifiedSections(prev => ({
-                        ...prev,
-                        availability: true
-                      }));
-                    }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                      isSelected
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Time Zones</label>
-            <div className="grid grid-cols-2 gap-2">
+            <h3 className="text-lg font-medium text-gray-800 mb-2">Time Zone</h3>
+            <select
+              value={profile.availability.timeZone || ''}
+              onChange={(e) => {
+                setProfile((prev: Profile) => ({
+                  ...prev,
+                  availability: {
+                    ...prev.availability,
+                    timeZone: e.target.value
+                  }
+                }));
+                setModifiedSections(prev => ({
+                  ...prev,
+                  availability: true
+                }));
+              }}
+              className="w-full p-2 border rounded bg-white"
+            >
+              <option value="">Select your time zone</option>
               {[
-                'UTC - Coordinated Universal Time',
-                'EST - Eastern Standard Time',
-                'CST - Central Standard Time',
-                'MST - Mountain Standard Time',
-                'PST - Pacific Standard Time',
-                'GMT - Greenwich Mean Time',
-                'CET - Central European Time',
-                'IST - Indian Standard Time',
-                'JST - Japan Standard Time',
-                'AEST - Australian Eastern Standard Time'
-              ].map((zone) => {
-                const zoneCode = zone.split(' - ')[0];
-                const isSelected = profile.availability?.timeZones?.includes(zoneCode);
-                
-                return (
-                  <button
-                    key={zone}
-                    onClick={() => {
-                      const currentZones = [...(profile.availability?.timeZones || [])];
-                      if (isSelected) {
-                        const updatedZones = currentZones.filter(z => z !== zoneCode);
-                        setProfile((prev: any) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            timeZones: updatedZones
-                          }
-                        }));
-                      } else {
-                        const updatedZones = [...currentZones, zoneCode];
-                        setProfile((prev: any) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            timeZones: updatedZones
-                          }
-                        }));
-                      }
-                      setModifiedSections(prev => ({
-                        ...prev,
-                        availability: true
-                      }));
-                    }}
-                    className={`p-2 rounded-lg text-sm font-medium text-left transition-colors duration-200 ${
-                      isSelected
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {zone}
-                  </button>
-                );
-              })}
-            </div>
+                'America/New_York (EST/EDT)',
+                'America/Chicago (CST/CDT)',
+                'America/Denver (MST/MDT)',
+                'America/Los_Angeles (PST/PDT)',
+                'Europe/London (GMT/BST)',
+                'Europe/Paris (CET/CEST)',
+                'Asia/Dubai (GST)',
+                'Asia/Singapore (SGT)',
+                'Asia/Tokyo (JST)',
+                'Australia/Sydney (AEST/AEDT)'
+              ].map((zone) => (
+                <option key={zone} value={zone}>{zone}</option>
+              ))}
+            </select>
           </div>
-          
+
+          {/* Schedule Flexibility */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Schedule Flexibility</label>
-            <div className="grid grid-cols-2 gap-2">
+            <h3 className="text-lg font-medium text-gray-800 mb-2">Schedule Flexibility</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               {[
                 'Remote Work Available',
                 'Flexible Hours',
@@ -1561,47 +2000,24 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 'Split Shifts',
                 'Part-Time Options',
                 'Compressed Work Week',
-                'Shift Swapping Allowed',
-                'On-Call Available',
-                'Holiday Coverage',
-                'Emergency Response',
-                'Seasonal Flexibility'
+                'Shift Swapping Allowed'
               ].map((option) => {
-                const isSelected = profile.availability?.flexibility?.includes(option);
-                
+                const isSelected = profile.availability.flexibility.includes(option);
                 return (
                   <button
                     key={option}
                     onClick={() => {
-                      const currentFlexibility = [...(profile.availability?.flexibility || [])];
-                      if (isSelected) {
-                        const updatedFlexibility = currentFlexibility.filter(f => f !== option);
-                        setProfile((prev: any) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            flexibility: updatedFlexibility
-                          }
-                        }));
-                      } else {
-                        const updatedFlexibility = [...currentFlexibility, option];
-                        setProfile((prev: any) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            flexibility: updatedFlexibility
-                          }
-                        }));
-                      }
-                      setModifiedSections(prev => ({
-                        ...prev,
-                        availability: true
-                      }));
+                      const currentFlexibility = profile.availability.flexibility;
+                      const updatedFlexibility = isSelected
+                        ? currentFlexibility.filter((f: string) => f !== option)
+                        : [...currentFlexibility, option];
+                      
+                      updateFlexibility(updatedFlexibility);
                     }}
-                    className={`p-2 rounded-lg text-sm font-medium text-left transition-colors duration-200 ${
+                    className={`px-4 py-2 rounded text-sm w-full ${
                       isSelected
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
                     {option}
@@ -1612,6 +2028,153 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           </div>
         </div>
       </div>
+
+      {/* Crop Modal */}
+      {showCropModal && tempImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6" style={{ width: `${imageDimensions.width + 48}px` }}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Crop Profile Picture</h3>
+              <button
+                onClick={() => {
+                  setShowCropModal(false);
+                  setTempImage(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="flex items-center justify-center">
+              <ReactCrop
+                crop={crop}
+                onChange={c => setCrop(c)}
+                aspect={1}
+                circularCrop
+              >
+                <img
+                  ref={imageRef}
+                  src={tempImage}
+                  alt="Crop preview"
+                  style={{
+                    width: `${imageDimensions.width}px`,
+                    height: `${imageDimensions.height}px`,
+                    objectFit: 'contain'
+                  }}
+                />
+              </ReactCrop>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+              <button
+                onClick={() => {
+                  setShowCropModal(false);
+                  setTempImage(null);
+                }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCropComplete}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Apply Crop
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Updated Image Modal */}
+      {showImageModal && imageToShow && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setShowImageModal(false);
+            setImageToShow(null);
+          }}
+        >
+          <div 
+            className="relative w-[30%] min-w-[300px] bg-white rounded-lg overflow-hidden flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900">My Profile Image</h3>
+            </div>
+
+            {/* Close button */}
+            <button
+              className="absolute top-4 right-4 p-2 bg-white rounded-full text-gray-600 hover:text-gray-900 shadow-lg z-10"
+              onClick={() => {
+                setShowImageModal(false);
+                setImageToShow(null);
+              }}
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* Main image */}
+            <div className="p-4">
+              <img
+                src={imageToShow}
+                alt={profile.personalInfo?.name || 'Profile'}
+                className="w-full h-auto object-contain rounded-lg"
+                style={{ maxHeight: '70vh' }}
+              />
+            </div>
+
+            {/* Action buttons */}
+            <div className="border-t border-gray-200 bg-gray-50 p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => {
+                    fileInputRef.current?.click();
+                    setShowImageModal(false);
+                    setImageToShow(null);
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Camera className="w-4 h-4" />
+                  Change Photo
+                </button>
+                {(imagePreview || profile.personalInfo?.photo?.url) && !isPhotoMarkedForDeletion && (
+                  <button
+                    onClick={() => {
+                      handleRemoveImage();
+                      setShowImageModal(false);
+                      setImageToShow(null);
+                    }}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Remove
+                  </button>
+                )}
+                {isPhotoMarkedForDeletion && (
+                  <button
+                    onClick={() => {
+                      setIsPhotoMarkedForDeletion(false);
+                      setImagePreview(profile.personalInfo?.photo?.url || null);
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        profileImage: false
+                      }));
+                      showToast('Photo deletion cancelled', 'success');
+                    }}
+                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Restore Photo
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast notifications */}
       {toast.show && (

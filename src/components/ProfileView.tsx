@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { 
   MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase, 
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
-  Edit, CreditCard
+  Edit, CreditCard, X
 } from 'lucide-react';
 import { getProfilePlan } from '../utils/profileUtils';
 
@@ -43,9 +43,57 @@ interface Plan {
 }
 
 interface PlanResponse {
-  _id: number;
-  userId: number;
-  plan: Plan;
+  _id: string;
+  userId: string;
+  plan: Partial<Plan>;  // Using Partial to allow empty object
+}
+
+// Add these interfaces near the top with other interfaces
+interface AvailabilityHours {
+  start: string;
+  end: string;
+}
+
+interface ScheduleDay {
+  day: string;
+  hours: AvailabilityHours;
+}
+
+interface Availability {
+  schedule?: ScheduleDay[];
+  timeZone?: string;
+  flexibility?: string[];
+}
+
+interface Profile {
+  _id: string;
+  personalInfo: {
+    name?: string;
+    location?: string;
+    email?: string;
+    phone?: string;
+    photo?: {
+      url: string;
+      publicId: string;
+    };
+    languages?: Language[];
+  };
+  professionalSummary?: {
+    currentRole?: string;
+    yearsOfExperience?: string;
+    profileDescription?: string;
+    industries?: string[];
+    notableCompanies?: string[];
+  };
+  skills?: {
+    technical?: any[];
+    professional?: any[];
+    soft?: any[];
+    contactCenter?: ContactCenterSkill[];
+  };
+  experience?: any[];
+  availability?: Availability;
+  plan?: PlanResponse;
 }
 
 // Convert proficiency level to star rating (A1-C2 = 1-6 stars)
@@ -100,6 +148,13 @@ const CONTACT_CENTER_SKILLS = [
 export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = ({ profile, onEditClick }) => {
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+
+  // Add console logging
+  useEffect(() => {
+    console.log('Profile View - Full Profile Data:', profile);
+    console.log('Profile View - Availability Data:', profile.availability);
+  }, [profile]);
 
   useEffect(() => {
     const fetchPlanData = async () => {
@@ -107,7 +162,13 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         if (!profile?._id) return;
         
         const data = await getProfilePlan(profile._id);
-        setPlanData(data);
+        // Convert the response to match our interface
+        const planResponse: PlanResponse = {
+          _id: String(data._id),
+          userId: String(data.userId),
+          plan: data.plan
+        };
+        setPlanData(planResponse);
       } catch (error) {
         console.error('Error fetching plan data:', error);
         setPlanError(error instanceof Error ? error.message : 'Failed to fetch plan data');
@@ -233,8 +294,27 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         <div className="bg-white rounded-lg p-6">
           <div className="text-center">
             <div className="mb-6">
-              <div className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 flex items-center justify-center text-2xl font-bold text-white">
-                {profile.personalInfo?.name?.charAt(0) || '?'}
+              <div 
+                className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group cursor-pointer"
+                title="Click to view photo"
+                onClick={() => profile.personalInfo?.photo?.url && setShowImageModal(true)}
+              >
+                {profile.personalInfo?.photo?.url ? (
+                  <>
+                    <img 
+                      src={profile.personalInfo.photo.url} 
+                      alt={profile.personalInfo?.name || 'Profile'} 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="text-white text-sm">Click to view</div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white">
+                    {profile.personalInfo?.name?.charAt(0) || '?'}
+                  </div>
+                )}
               </div>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{profile.personalInfo?.name}</h1>
@@ -266,29 +346,42 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
           </div>
           {planError ? (
             <div className="text-red-600 text-sm mb-2">{planError}</div>
-          ) : planData ? (
+          ) : planData && Object.keys(planData.plan).length > 0 ? (
             <div className="space-y-3">
               <div className="bg-blue-50 rounded-lg p-4">
-                <h3 className="text-xl font-bold text-blue-800 mb-2">
-                  {planData.plan.name}
-                </h3>
-                <div className="text-2xl font-bold text-blue-600 mb-2">
-                  ${planData.plan.price}
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xl font-bold text-blue-800">
+                    {planData.plan.name}
+                  </h3>
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                    Active
+                  </span>
                 </div>
-                <div className="text-sm text-gray-600">
-                  <p>Type: {planData.plan.targetUserType}</p>
-                  <p className="mt-1">
-                    Since: {new Date(planData.plan.createdAt).toLocaleDateString()}
+                <div className="text-2xl font-bold text-blue-600 mb-3">
+                  ${planData.plan.price}
+                  <span className="text-sm text-blue-400 font-normal">/month</span>
+                </div>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p className="flex items-center gap-2">
+                    Type: {planData.plan.targetUserType}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    Start Date: {planData.plan.createdAt ? new Date(planData.plan.createdAt).toLocaleDateString() : 'N/A'}
                   </p>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="text-center py-4">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+            <div className="text-center py-6 px-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="mb-3">
+                <svg className="w-12 h-12 text-blue-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
+              <h3 className="text-lg font-medium text-blue-800 mb-2">Subscription Plan Not Selected</h3>
+              <p className="text-sm text-blue-600">
+                You haven't selected a subscription plan yet. Choose a plan to unlock all features.
+              </p>
             </div>
           )}
         </div>
@@ -427,82 +520,66 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
 
         {/* Availability Section */}
         <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-6 h-6 text-blue-600" />
-            <h2 className="text-lg font-semibold">Availability</h2>
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-6 h-6 text-blue-600" />
+              <h2 className="text-lg font-semibold">Working Hours & Availability</h2>
+            </div>
+            {profile.availability?.timeZone && (
+              <div className="mb-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Time Zone</h3>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Clock className="w-4 h-4" />
+                  <span>{profile.availability.timeZone}</span>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="space-y-4">
-            {profile.availability?.hours ? (
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Preferred Hours</div>
-                <div className="flex justify-between items-center text-sm text-gray-600">
-                  <span>{profile.availability.hours.start}</span>
-                  <span>to</span>
-                  <span>{profile.availability.hours.end}</span>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Preferred Hours</div>
-                <div className="text-sm text-gray-500 italic">Not specified</div>
-              </div>
-            )}
-            
+            {/* Schedule Display */}
             <div>
-              <div className="text-sm font-medium text-gray-700 mb-2">Available Days</div>
-              {profile.availability?.days && profile.availability.days.length > 0 ? (
-                <div className="flex flex-wrap gap-1">
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
-                    const fullDay = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][index];
-                    const isAvailable = profile.availability.days?.includes(fullDay);
-                    
-                    return (
-                      <div 
-                        key={day} 
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                          isAvailable 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-gray-100 text-gray-400'
-                        }`}
-                      >
-                        {day.charAt(0)}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-sm text-gray-500 italic">No specific days set</div>
-              )}
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Working Schedule</h4>
+              <div className="space-y-2">
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+                  const daySchedule = profile.availability?.schedule?.find((s: ScheduleDay) => s.day === day);
+                  return (
+                    <div 
+                      key={day}
+                      className={`flex items-center justify-between p-3 rounded ${
+                        daySchedule ? 'bg-blue-50 text-blue-900' : 'bg-gray-50 text-gray-500'
+                      }`}
+                    >
+                      <span className="font-medium">{day}</span>
+                      {daySchedule ? (
+                        <span className="text-blue-700">
+                          {daySchedule.hours.start} - {daySchedule.hours.end}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 italic">Not available</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            
-            <div>
-              <div className="text-sm font-medium text-gray-700 mb-2">Time Zones</div>
-              {profile.availability?.timeZones && profile.availability.timeZones.length > 0 ? (
+
+            {/* Flexibility Options */}
+            {profile.availability?.flexibility && profile.availability.flexibility.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Schedule Flexibility</h4>
                 <div className="flex flex-wrap gap-2">
-                  {profile.availability.timeZones.map((zone: string, idx: number) => (
-                    <span key={idx} className="px-2 py-1 bg-blue-50 text-blue-800 rounded text-xs">
-                      {zone}
+                  {profile.availability.flexibility.map((option: string, index: number) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-sm font-medium"
+                    >
+                      {option}
                     </span>
                   ))}
                 </div>
-              ) : (
-                <div className="text-sm text-gray-500 italic">No specific time zones set</div>
-              )}
-            </div>
-            
-            <div>
-              <div className="text-sm font-medium text-gray-700 mb-2">Flexibility</div>
-              {profile.availability?.flexibility && profile.availability.flexibility.length > 0 ? (
-                <ul className="text-sm text-gray-600 space-y-1 list-disc ml-4">
-                  {profile.availability.flexibility.map((item: string, index: number) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="text-sm text-gray-500 italic">No flexibility options specified</div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -901,6 +978,42 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
           )}
         </div>
       </div>
+
+      {/* Updated Image Modal */}
+      {showImageModal && profile.personalInfo?.photo?.url && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowImageModal(false)}
+        >
+          <div 
+            className="relative w-[30%] min-w-[300px] bg-white rounded-lg overflow-hidden flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900">My Profile Image</h3>
+            </div>
+
+            {/* Close button */}
+            <button
+              className="absolute top-4 right-4 p-2 bg-white rounded-full text-gray-600 hover:text-gray-900 shadow-lg z-10"
+              onClick={() => setShowImageModal(false)}
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* Main image */}
+            <div className="p-4">
+              <img
+                src={profile.personalInfo.photo.url}
+                alt={profile.personalInfo?.name || 'Profile'}
+                className="w-full h-auto object-contain rounded-lg"
+                style={{ maxHeight: '70vh' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 

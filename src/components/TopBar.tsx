@@ -7,8 +7,10 @@ interface ProfileData {
     email?: string;
     phone?: string;
     location?: string;
-    // Profile image might not be directly in the personalInfo object
-    // so we'll look for it when processing the data
+    photo?: {
+      url: string;
+      publicId: string;
+    };
   };
   professionalSummary?: {
     currentRole?: string;
@@ -17,43 +19,45 @@ interface ProfileData {
   };
 }
 
+// Add event listener for profile updates
+const PROFILE_UPDATE_EVENT = 'PROFILE_UPDATED';
+
 export function TopBar() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
   
-  useEffect(() => {
+  const loadProfileData = () => {
     console.log('🔄 TopBar component: Loading profile data from localStorage');
     try {
-      // Get profile data from localStorage
       const storedProfile = localStorage.getItem('profileData');
       if (storedProfile) {
         const parsedProfile = JSON.parse(storedProfile);
         console.log('✅ TopBar component: Profile data loaded successfully');
-        
-        // Log keys to help debug structure
-        console.log('📋 Profile data top-level keys:', Object.keys(parsedProfile));
-        if (parsedProfile.personalInfo) {
-          console.log('📋 personalInfo keys:', Object.keys(parsedProfile.personalInfo));
-        }
+        console.log('📸 Profile photo URL:', parsedProfile.personalInfo?.photo?.url);
         
         setProfileData(parsedProfile);
-        
-        // Try to find profile image in various possible locations
-        if (parsedProfile.personalInfo?.profileImage) {
-          setProfileImage(parsedProfile.personalInfo.profileImage);
-        } else if (parsedProfile.profileImage) {
-          setProfileImage(parsedProfile.profileImage);
-        } else if (parsedProfile.avatar) {
-          setProfileImage(parsedProfile.avatar);
-        } else if (parsedProfile.personalInfo?.avatar) {
-          setProfileImage(parsedProfile.personalInfo.avatar);
-        }
       } else {
         console.log('⚠️ TopBar component: No profile data in localStorage');
       }
     } catch (error) {
       console.error('❌ TopBar component: Error loading profile data:', error);
     }
+  };
+
+  useEffect(() => {
+    // Initial load
+    loadProfileData();
+
+    // Listen for profile updates
+    const handleProfileUpdate = () => {
+      console.log('🔄 TopBar: Detected profile update, refreshing data');
+      loadProfileData();
+    };
+
+    window.addEventListener(PROFILE_UPDATE_EVENT, handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener(PROFILE_UPDATE_EVENT, handleProfileUpdate);
+    };
   }, []);
 
   // Get user's name or default to "User"
@@ -94,9 +98,9 @@ export function TopBar() {
           <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
         <div className="flex items-center space-x-3">
-          {profileImage ? (
+          {profileData?.personalInfo?.photo?.url ? (
             <img
-              src={profileImage}
+              src={profileData.personalInfo.photo.url}
               alt={userName}
               className="w-8 h-8 rounded-full object-cover"
             />
