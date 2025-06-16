@@ -23,9 +23,10 @@ ENV VITE_OPENAI_API_KEY=sk-proj-bUjfUlpFEeS6IrDeoJTvV6IdeBDyrOionN-eBrRuvpXmTgLk
 #twilio&calls
 ENV VITE_TWILIO_ACCOUNT_SID=AC8a453959a6cb01cbbd1c819b00c5782f
 ENV VITE_TWILIO_AUTH_TOKEN=7ade91a170bff98bc625543287ee62c8
-ENV VITE_WS_URL=wss://api-calls.harx.ai/speech-to-text
-ENV VITE_API_URL_AI_MESSAGES=https://api-messages-service.harx.ai/api
-ENV VITE_API_URL_CALL=https://api-calls.harx.ai
+ENV VITE_WS_URL=wss://preprod-api-dash-calls.harx.ai/speech-to-text
+ENV VITE_API_URL_AI_MESSAGES=https://preprod-api-messages-service.harx.ai/api
+ENV VITE_API_URL_CALL=https://preprod-api-dash-calls.harx.ai
+ENV VITE_REP_API_URL=https://preprod-api-repcreationwizard.harx.ai
 # Install dependencies
 RUN npm install
 
