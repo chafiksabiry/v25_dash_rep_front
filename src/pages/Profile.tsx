@@ -4,12 +4,33 @@ import { ProfileEditView } from '../components/ProfileEditView';
 import { getProfileData, updateProfileData, updateBasicInfo, updateExperience, updateSkills } from '../utils/profileUtils';
 import { profileApi } from '../utils/client';
 
-// Define a type for your profile data
+// Import Timezone type from repWizard service
+import { Timezone } from '../services/api/repWizard';
+
+// Define a type for your profile data - Updated to match new schema
 interface ProfileData {
   _id: string;
   userId: string;
   status: string;
-  completionSteps: {
+  // Updated to new onboarding progress structure
+  onboardingProgress?: {
+    currentPhase: number;
+    overallCompletion: number;
+    phases: {
+      [key: string]: {
+        status: 'pending' | 'in_progress' | 'completed' | 'blocked';
+        completion: number;
+        steps: {
+          [key: string]: {
+            completed: boolean;
+            data?: any;
+          };
+        };
+      };
+    };
+  };
+  // Keep old structure for backward compatibility
+  completionSteps?: {
     basicInfo: boolean;
     experience: boolean;
     skills: boolean;
@@ -18,7 +39,9 @@ interface ProfileData {
   };
   personalInfo: {
     name: string;
-    location?: string;
+    // Updated: country instead of location, can be ObjectId or string
+    country?: Timezone | string;
+    location?: string; // Keep for backward compatibility
     email: string;
     phone?: string;
     languages: Array<{
@@ -98,6 +121,18 @@ interface ProfileData {
     responsibilities?: string[];
     achievements?: string[];
   }>;
+  // Updated: availability with timezone as ObjectId or string
+  availability?: {
+    schedule?: Array<{
+      day: string;
+      hours: {
+        start: string;
+        end: string;
+      };
+    }>;
+    timeZone?: Timezone | string;
+    flexibility?: string[];
+  };
   lastUpdated: string;
 }
 

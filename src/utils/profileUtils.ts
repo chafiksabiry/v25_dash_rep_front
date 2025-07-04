@@ -95,7 +95,15 @@ export const fetchProfileFromAPI = async () => {
     console.log('🌐 Attempting to fetch profile by user ID...');
     const response = await profileApi.getById(userId);
     console.log('✅ Successfully fetched profile by user ID');
-    const profileData = response.data.data;
+    console.log('🔍 Response structure:', response.data);
+    
+    // Handle different response structures
+    const profileData = response.data.data || response.data;
+    console.log('📋 Extracted profile data:', profileData);
+    
+    if (!profileData) {
+      throw new Error('No profile data found in response');
+    }
     
     console.log('💾 Storing profile data in localStorage');
     if (profileData._id) {
