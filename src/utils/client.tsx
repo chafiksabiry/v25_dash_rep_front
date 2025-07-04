@@ -3,15 +3,26 @@ import axios from 'axios';
 
 // Use Vite environment variables (instead of process.env)
 console.log("API_URL", import.meta.env.VITE_API_URL);
+console.log("REP_API_URL", import.meta.env.VITE_REP_API_URL);
 console.log("CALLS_API_URL", import.meta.env.VITE_CALLS_API_URL);
 console.log("DASHBOARD_COMPANY_API_URL", import.meta.env.VITE_DASHBOARD_COMPANY_API_URL);
 
 const API_URL = import.meta.env.VITE_API_URL;
+const REP_API_URL = import.meta.env.VITE_REP_API_URL;
 const CALLS_API_URL = import.meta.env.VITE_CALLS_API_URL;
 const DASHBOARD_COMPANY_API_URL = import.meta.env.VITE_DASHBOARD_COMPANY_API_URL;
+
 // Create axios instances with default config
 const apiClient = axios.create({
   baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Create a separate axios instance for REP API (profiles)
+const repApiClient = axios.create({
+  baseURL: REP_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -52,30 +63,53 @@ const addAuthInterceptor = (axiosInstance: any) => {
         console.log("🔑 token from localStorage:", token);
         console.log("🔑 Verified saved token from localStorage:", token);
       }
-      console.log("token from client.js addAuthInterceptor", token);
+      console.log("🔑 Token from client.js addAuthInterceptor:", token);
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        console.log("✅ Authorization header set:", config.headers.Authorization);
+      } else {
+        console.warn("⚠️ No token found - request will be made without authentication");
       }
+      console.log("🌐 Making request to:", config.baseURL + config.url);
       return config;
     },
     (error: any) => {
+      console.error("❌ Request interceptor error:", error);
       return Promise.reject(error);
     }
   );
 
-  /*   axiosInstance.interceptors.response.use(
-      (response: any) => response,
-      (error: any) => {
-        if (error.response?.status === 401) {
-          localStorage.removeItem('token');
-        }
-        return Promise.reject(error);
+  // Add response interceptor for better error handling
+  axiosInstance.interceptors.response.use(
+    (response: any) => {
+      console.log("✅ API Response successful:", response.config.url, response.status);
+      return response;
+    },
+    (error: any) => {
+      console.error("❌ API Response error:", {
+        url: error.config?.url,
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+        data: error.response?.data
+      });
+      
+      if (error.response?.status === 401) {
+        console.warn("🔐 Unauthorized - token may be expired or invalid");
+        // Optionally clear token and redirect to login
+        // localStorage.removeItem('token');
+        // window.location.href = '/login';
       }
-    ); */
+      
+      return Promise.reject(error);
+    }
+  );
+
+
 };
 
 // Add auth interceptors to all instances
 addAuthInterceptor(apiClient);
+addAuthInterceptor(repApiClient);
 addAuthInterceptor(callsApiClient);
 addAuthInterceptor(dashboardCompanyApiClient);
 
@@ -191,13 +225,13 @@ export const authApi = {
 };
 
 export const profileApi = {
-  get: () => apiClient.get('/api/profiles'),
-  getById: (id: string) => apiClient.get(`/api/profiles/user/${id}`),
-  update: (profileId: string, data: any) => apiClient.put(`/api/profiles/${profileId}`, data),
-  updateBasicInfo: (id: string, basicInfo: any) => apiClient.put(`/api/profiles/${id}/basic-info`, basicInfo),
-  updateExperience: (id: string, experience: any) => apiClient.put(`/api/profiles/${id}/experience`, { experience }),
-  updateSkills: (id: string, skills: any) => apiClient.put(`/api/profiles/${id}/skills`, { skills }),
-  getPlan: (profileId: string) => apiClient.get(`/api/profiles/${profileId}/plan`),
+  get: () => repApiClient.get('/api/profiles'),
+  getById: (id: string) => repApiClient.get(`/api/profiles/${id}`),
+  update: (profileId: string, data: any) => repApiClient.put(`/api/profiles/${profileId}`, data),
+  updateBasicInfo: (id: string, basicInfo: any) => repApiClient.put(`/api/profiles/${id}/basic-info`, basicInfo),
+  updateExperience: (id: string, experience: any) => repApiClient.put(`/api/profiles/${id}/experience`, { experience }),
+  updateSkills: (id: string, skills: any) => repApiClient.put(`/api/profiles/${id}/skills`, { skills }),
+  getPlan: (profileId: string) => repApiClient.get(`/api/profiles/${profileId}/plan`),
 };
 
 // Default export with all APIs
