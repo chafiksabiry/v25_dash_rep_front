@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { updateProfileData, updateBasicInfo, updateExperience, updateSkills } from '../utils/profileUtils';
 import { getLanguageCodeFromAI } from '../utils/languageUtils';
+import { repWizardApi, Timezone } from '../services/api/repWizard';
 import OpenAI from 'openai';
 
 // Add CSS styles for error highlighting
@@ -111,7 +112,7 @@ interface ScheduleDay {
 
 interface Availability {
   schedule: ScheduleDay[];
-  timeZone: string;
+  timeZone: string | Timezone;
   flexibility: string[];
 }
 
@@ -282,12 +283,87 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   // Add new state for tracking photo deletion
   const [isPhotoMarkedForDeletion, setIsPhotoMarkedForDeletion] = useState(false);
 
+  // States for timezone and country data
+  const [countries, setCountries] = useState<Timezone[]>([]);
+  const [timezones, setTimezones] = useState<Timezone[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<string>('');
+  const [loadingTimezones, setLoadingTimezones] = useState(false);
+  
+  // States for searchable country dropdown
+  const [countrySearchTerm, setCountrySearchTerm] = useState('');
+  const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
+  const [filteredCountries, setFilteredCountries] = useState<Timezone[]>([]);
+  const [selectedCountryIndex, setSelectedCountryIndex] = useState(-1);
+
   useEffect(() => {
     if (initialProfile) {
       setProfile(initialProfile);
       setTempProfileDescription(initialProfile.professionalSummary?.profileDescription || '');
+      
+      // Set initial country search term if country is already selected
+      if (initialProfile.personalInfo?.country) {
+        if (typeof initialProfile.personalInfo.country === 'object') {
+          setCountrySearchTerm(initialProfile.personalInfo.country.countryName || '');
+          setSelectedCountry(initialProfile.personalInfo.country.countryCode || '');
+        }
+      }
     }
   }, [initialProfile]);
+
+  // Load countries on component mount
+  useEffect(() => {
+    const loadCountries = async () => {
+      try {
+        console.log('🌍 Loading countries...');
+        const countriesData = await repWizardApi.getCountries();
+        setCountries(countriesData);
+        console.log('✅ Countries loaded:', countriesData.length);
+      } catch (error) {
+        console.error('❌ Error loading countries:', error);
+        showToast('Failed to load countries', 'error');
+      }
+    };
+
+    loadCountries();
+  }, []);
+
+  // Load timezones when country is selected
+  useEffect(() => {
+    const loadTimezones = async () => {
+      if (!selectedCountry) {
+        setTimezones([]);
+        return;
+      }
+
+      try {
+        setLoadingTimezones(true);
+        console.log(`🌐 Loading timezones for country: ${selectedCountry}`);
+        const timezonesData = await repWizardApi.getTimezonesByCountry(selectedCountry);
+        setTimezones(timezonesData);
+        console.log('✅ Timezones loaded:', timezonesData.length);
+      } catch (error) {
+        console.error('❌ Error loading timezones:', error);
+        showToast('Failed to load timezones', 'error');
+      } finally {
+        setLoadingTimezones(false);
+      }
+    };
+
+    loadTimezones();
+  }, [selectedCountry]);
+
+  // Filter countries based on search term
+  useEffect(() => {
+    if (!countrySearchTerm) {
+      setFilteredCountries(countries);
+    } else {
+      const filtered = countries.filter(country =>
+        country.countryName.toLowerCase().includes(countrySearchTerm.toLowerCase()) ||
+        country.countryCode.toLowerCase().includes(countrySearchTerm.toLowerCase())
+      );
+      setFilteredCountries(filtered);
+    }
+  }, [countries, countrySearchTerm]);
 
   // Show toast message
   const showToast = (message: string, type = 'success') => {
@@ -315,9 +391,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       errors.name = 'Name is required';
     }
 
-    // Validate location
-    if (!profile.personalInfo?.location?.trim()) {
-      errors.location = 'Location is required';
+    // Validate country
+    if (!profile.personalInfo?.country) {
+      errors.country = 'Country is required';
     }
 
     // Validate email
@@ -1097,20 +1173,123 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               />
             </div>
             
-            {/* Location Field */}
+            {/* Country Field - Searchable Dropdown */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                 <MapPin className="w-4 h-4 mr-1" />
-                Location
+                Country
               </label>
-              <input
-                type="text"
-                value={profile.personalInfo?.location || ''}
-                onChange={(e) => handleProfileChange('location', e.target.value)}
-                className="w-full p-2 border rounded-md"
-                placeholder="Your location"
-              />
-              {renderError(validationErrors.location, 'location')}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={countrySearchTerm || (profile.personalInfo?.country?.countryName || '')}
+                  onChange={(e) => {
+                    setCountrySearchTerm(e.target.value);
+                    setIsCountryDropdownOpen(true);
+                    setSelectedCountryIndex(-1); // Reset selection when typing
+                    
+                    // If user clears the field, reset the country selection
+                    if (e.target.value === '') {
+                      setSelectedCountry('');
+                      handleProfileChange('country', '');
+                    }
+                  }}
+                  onFocus={() => {
+                    setIsCountryDropdownOpen(true);
+                    setSelectedCountryIndex(-1); // Reset keyboard selection
+                  }}
+                  onBlur={() => {
+                    // Delay closing to allow for selection
+                    setTimeout(() => {
+                      setIsCountryDropdownOpen(false);
+                      
+                      // Check if what the user typed matches any country exactly
+                      if (countrySearchTerm && !selectedCountry) {
+                        const exactMatch = countries.find(c => 
+                          c.countryName.toLowerCase() === countrySearchTerm.toLowerCase()
+                        );
+                        if (exactMatch) {
+                          setSelectedCountry(exactMatch.countryCode);
+                          handleProfileChange('country', exactMatch._id);
+                        }
+                      }
+                    }, 200);
+                  }}
+                  onKeyDown={(e) => {
+                    if (!isCountryDropdownOpen) return;
+                    
+                    switch (e.key) {
+                      case 'ArrowDown':
+                        e.preventDefault();
+                        setSelectedCountryIndex(prev => 
+                          prev < filteredCountries.length - 1 ? prev + 1 : 0
+                        );
+                        break;
+                      case 'ArrowUp':
+                        e.preventDefault();
+                        setSelectedCountryIndex(prev => 
+                          prev > 0 ? prev - 1 : filteredCountries.length - 1
+                        );
+                        break;
+                      case 'Enter':
+                        e.preventDefault();
+                        if (selectedCountryIndex >= 0 && filteredCountries[selectedCountryIndex]) {
+                          const selectedCountry = filteredCountries[selectedCountryIndex];
+                          setSelectedCountry(selectedCountry.countryCode);
+                          setCountrySearchTerm(selectedCountry.countryName);
+                          setIsCountryDropdownOpen(false);
+                          handleProfileChange('country', selectedCountry._id);
+                        }
+                        break;
+                      case 'Escape':
+                        setIsCountryDropdownOpen(false);
+                        break;
+                    }
+                  }}
+                  placeholder="Search for your country... (use ↑↓ arrows to navigate)"
+                  className="w-full p-2 border rounded-md"
+                />
+                
+                {/* Search Icon */}
+                <div className="absolute right-2 top-2.5 text-gray-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+
+                {/* Dropdown List */}
+                {isCountryDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                         {filteredCountries.length > 0 ? (
+                       filteredCountries.map((country, index) => (
+                         <button
+                           key={country.countryCode}
+                           type="button"
+                           onClick={() => {
+                             setSelectedCountry(country.countryCode);
+                             setCountrySearchTerm(country.countryName);
+                             setIsCountryDropdownOpen(false);
+                             handleProfileChange('country', country._id);
+                           }}
+                           className={`w-full text-left px-3 py-2 flex items-center justify-between ${
+                             index === selectedCountryIndex 
+                               ? 'bg-blue-100 text-blue-700' 
+                               : 'hover:bg-blue-50 hover:text-blue-600'
+                           }`}
+                         >
+                           <span>{country.countryName}</span>
+                           <span className="text-sm text-gray-500">{country.countryCode}</span>
+                         </button>
+                       ))
+                     ) : (
+                      <div className="px-3 py-2 text-gray-500 text-center">
+                        No countries found matching "{countrySearchTerm}"
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {renderError(validationErrors.country, 'country')}
             </div>
             
             {/* Contact Fields */}
@@ -1954,7 +2133,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           <div className="mb-6">
             <h3 className="text-lg font-medium text-gray-800 mb-2">Time Zone</h3>
             <select
-              value={profile.availability.timeZone || ''}
+              value={typeof profile.availability.timeZone === 'object' && profile.availability.timeZone?._id 
+                ? String(profile.availability.timeZone._id)
+                : String(profile.availability.timeZone || '')}
               onChange={(e) => {
                 setProfile((prev: Profile) => ({
                   ...prev,
@@ -1969,23 +2150,25 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 }));
               }}
               className="w-full p-2 border rounded bg-white"
+              disabled={!selectedCountry || loadingTimezones}
             >
-              <option value="">Select your time zone</option>
-              {[
-                'America/New_York (EST/EDT)',
-                'America/Chicago (CST/CDT)',
-                'America/Denver (MST/MDT)',
-                'America/Los_Angeles (PST/PDT)',
-                'Europe/London (GMT/BST)',
-                'Europe/Paris (CET/CEST)',
-                'Asia/Dubai (GST)',
-                'Asia/Singapore (SGT)',
-                'Asia/Tokyo (JST)',
-                'Australia/Sydney (AEST/AEDT)'
-              ].map((zone) => (
-                <option key={zone} value={zone}>{zone}</option>
+              <option value="">
+                {!selectedCountry 
+                  ? 'Select a country first' 
+                  : loadingTimezones 
+                    ? 'Loading timezones...' 
+                    : 'Select your time zone'
+                }
+              </option>
+              {timezones.map((timezone) => (
+                <option key={timezone._id} value={timezone._id}>
+                  {repWizardApi.formatTimezone(timezone)}
+                </option>
               ))}
             </select>
+            {selectedCountry && timezones.length === 0 && !loadingTimezones && (
+              <p className="text-sm text-gray-500 mt-1">No timezones available for this country</p>
+            )}
           </div>
 
           {/* Schedule Flexibility */}
