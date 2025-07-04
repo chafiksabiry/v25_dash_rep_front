@@ -5,6 +5,7 @@ import {
   Edit, CreditCard, X
 } from 'lucide-react';
 import { getProfilePlan } from '../utils/profileUtils';
+import { repWizardApi, Timezone } from '../services/api/repWizard';
 
 // Type definitions
 interface AssessmentResults {
@@ -69,7 +70,7 @@ interface Profile {
   _id: string;
   personalInfo: {
     name?: string;
-    location?: string;
+    country?: Timezone | string;
     email?: string;
     phone?: string;
     photo?: {
@@ -149,6 +150,8 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [countryData, setCountryData] = useState<Timezone | null>(null);
+  const [timezoneData, setTimezoneData] = useState<Timezone | null>(null);
 
   // Add console logging
   useEffect(() => {
@@ -177,6 +180,41 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
 
     fetchPlanData();
   }, [profile?._id]);
+
+  // Load country and timezone data
+  useEffect(() => {
+    const loadLocationData = async () => {
+      try {
+        // Handle country data - either as string ID or object
+        if (profile?.personalInfo?.country) {
+          if (typeof profile.personalInfo.country === 'string') {
+            // Country is an ID, fetch the country data
+            const country = await repWizardApi.getTimezoneById(profile.personalInfo.country);
+            setCountryData(country);
+          } else if (typeof profile.personalInfo.country === 'object') {
+            // Country is already an object, use it directly
+            setCountryData(profile.personalInfo.country);
+          }
+        }
+
+        // Handle timezone data - either as string ID or object
+        if (profile?.availability?.timeZone) {
+          if (typeof profile.availability.timeZone === 'string') {
+            // Timezone is an ID, fetch the timezone data
+            const timezone = await repWizardApi.getTimezoneById(profile.availability.timeZone);
+            setTimezoneData(timezone);
+          } else if (typeof profile.availability.timeZone === 'object') {
+            // Timezone is already an object, use it directly
+            setTimezoneData(profile.availability.timeZone);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading location data:', error);
+      }
+    };
+
+    loadLocationData();
+  }, [profile?.personalInfo?.country, profile?.availability?.timeZone]);
 
   if (!profile) return null;
 
@@ -321,7 +359,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
             <p className="text-lg text-gray-600 mb-4">{profile.professionalSummary?.currentRole || 'Representative'}</p>
             <div className="flex items-center justify-center gap-2 text-gray-600 mb-4">
               <MapPin className="w-4 h-4" />
-              <span>{profile.personalInfo?.location || 'Location not specified'}</span>
+              <span>{countryData?.countryName || 'Country not specified'}</span>
             </div>
             <div className="flex items-center justify-center gap-4 text-gray-600">
               {profile.personalInfo?.email && (
@@ -525,12 +563,21 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               <Clock className="w-6 h-6 text-blue-600" />
               <h2 className="text-lg font-semibold">Working Hours & Availability</h2>
             </div>
-            {profile.availability?.timeZone && (
+            {(timezoneData || profile.availability?.timeZone) && (
               <div className="mb-4">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Time Zone</h3>
                 <div className="flex items-center gap-2 text-gray-600">
                   <Clock className="w-4 h-4" />
-                  <span>{profile.availability.timeZone}</span>
+                  <span>
+                    {timezoneData 
+                      ? repWizardApi.formatTimezone(timezoneData)
+                      : typeof profile.availability.timeZone === 'string'
+                        ? profile.availability.timeZone
+                        : typeof profile.availability.timeZone === 'object' && profile.availability.timeZone
+                          ? `${profile.availability.timeZone.countryName} - ${profile.availability.timeZone.zoneName} (GMT${profile.availability.timeZone.gmtOffset >= 0 ? '+' : ''}${profile.availability.timeZone.gmtOffset})`
+                          : 'Not specified'
+                    }
+                  </span>
                 </div>
               </div>
             )}
