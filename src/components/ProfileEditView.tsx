@@ -283,6 +283,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   // States for timezone and country data
   const [countries, setCountries] = useState<Timezone[]>([]);
   const [timezones, setTimezones] = useState<Timezone[]>([]);
+  const [allTimezones, setAllTimezones] = useState<Timezone[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [loadingTimezones, setLoadingTimezones] = useState(false);
   
@@ -291,6 +292,12 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [filteredCountries, setFilteredCountries] = useState<Timezone[]>([]);
   const [selectedCountryIndex, setSelectedCountryIndex] = useState(-1);
+  
+  // States for searchable timezone dropdown
+  const [timezoneSearchTerm, setTimezoneSearchTerm] = useState('');
+  const [isTimezoneDropdownOpen, setIsTimezoneDropdownOpen] = useState(false);
+  const [filteredTimezones, setFilteredTimezones] = useState<Timezone[]>([]);
+  const [selectedTimezoneIndex, setSelectedTimezoneIndex] = useState(-1);
 
   // States for skills data
   const [skillsData, setSkillsData] = useState<{
@@ -320,10 +327,17 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           setSelectedCountry(initialProfile.personalInfo.country.countryCode || '');
         }
       }
+      
+      // Set initial timezone search term if timezone is already selected
+      if (initialProfile.availability?.timeZone) {
+        if (typeof initialProfile.availability.timeZone === 'object') {
+          setTimezoneSearchTerm(repWizardApi.formatTimezone(initialProfile.availability.timeZone) || '');
+        }
+      }
     }
   }, [initialProfile]);
 
-  // Load countries on component mount
+  // Load countries and all timezones on component mount
   useEffect(() => {
     const loadCountries = async () => {
       try {
@@ -337,7 +351,20 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       }
     };
 
+    const loadAllTimezones = async () => {
+      try {
+        console.log('🌐 Loading all timezones...');
+        const allTimezonesData = await repWizardApi.getTimezones();
+        setAllTimezones(allTimezonesData);
+        console.log('✅ All timezones loaded:', allTimezonesData.length);
+      } catch (error) {
+        console.error('❌ Error loading all timezones:', error);
+        showToast('Failed to load timezones', 'error');
+      }
+    };
+
     loadCountries();
+    loadAllTimezones();
   }, []);
 
   // Load skills data on component mount
@@ -360,7 +387,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     loadSkills();
   }, []);
 
-  // Load timezones when country is selected
+  // Load timezones when country is selected and auto-suggest main timezone
   useEffect(() => {
     const loadTimezones = async () => {
       if (!selectedCountry) {
@@ -374,6 +401,26 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         const timezonesData = await repWizardApi.getTimezonesByCountry(selectedCountry);
         setTimezones(timezonesData);
         console.log('✅ Timezones loaded:', timezonesData.length);
+        
+        // Auto-suggest main timezone only if no timezone is currently set
+        const currentTimezone = profile.availability.timeZone;
+        if ((!currentTimezone || currentTimezone === '') && timezonesData.length > 0) {
+          // Find the main timezone (usually the first one or one with highest priority)
+          const mainTimezone = timezonesData[0]; // Take the first timezone as main
+          console.log('🎯 Auto-suggesting main timezone:', mainTimezone.zoneName);
+          
+          setProfile((prev: Profile) => ({
+            ...prev,
+            availability: {
+              ...prev.availability,
+              timeZone: mainTimezone._id
+            }
+          }));
+          setModifiedSections(prev => ({
+            ...prev,
+            availability: true
+          }));
+        }
       } catch (error) {
         console.error('❌ Error loading timezones:', error);
         showToast('Failed to load timezones', 'error');
@@ -383,7 +430,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     };
 
     loadTimezones();
-  }, [selectedCountry]);
+  }, [selectedCountry]); // Only depend on selectedCountry to avoid infinite loops
 
   // Filter countries based on search term
   useEffect(() => {
@@ -398,10 +445,56 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }
   }, [countries, countrySearchTerm]);
 
+  // Filter timezones based on search term
+  useEffect(() => {
+    // Combine suggested timezones and all other timezones
+    const allAvailableTimezones = [...timezones, ...allTimezones.filter(tz => !timezones.some(suggestedTz => suggestedTz._id === tz._id))];
+    
+    if (!timezoneSearchTerm) {
+      setFilteredTimezones(allAvailableTimezones);
+    } else {
+      const filtered = allAvailableTimezones.filter(timezone =>
+        timezone.countryName.toLowerCase().includes(timezoneSearchTerm.toLowerCase()) ||
+        timezone.zoneName.toLowerCase().includes(timezoneSearchTerm.toLowerCase()) ||
+        timezone.countryCode.toLowerCase().includes(timezoneSearchTerm.toLowerCase())
+      );
+      setFilteredTimezones(filtered);
+    }
+  }, [timezones, allTimezones, timezoneSearchTerm]);
+
   // Show toast message
   const showToast = (message: string, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  // Get timezone and country mismatch info
+  const getTimezoneMismatchInfo = () => {
+    const currentTimezoneId = typeof profile.availability.timeZone === 'object' 
+      ? profile.availability.timeZone._id 
+      : profile.availability.timeZone;
+    
+    const selectedCountryData = countries.find(c => c.countryCode === selectedCountry);
+    const selectedTimezoneData = allTimezones.find(tz => tz._id === currentTimezoneId);
+    
+    if (!selectedCountryData || !selectedTimezoneData || !currentTimezoneId) {
+      return null;
+    }
+    
+    // Check if timezone belongs to selected country
+    const timezoneCountry = selectedTimezoneData.countryCode;
+    const selectedCountryCode = selectedCountryData.countryCode;
+    
+    if (timezoneCountry !== selectedCountryCode) {
+      const timezoneCountryData = countries.find(c => c.countryCode === timezoneCountry);
+      return {
+        timezoneCountry: timezoneCountryData?.countryName || timezoneCountry,
+        selectedCountry: selectedCountryData.countryName,
+        timezoneName: selectedTimezoneData.zoneName
+      };
+    }
+    
+    return null;
   };
 
   // Validate profile data
@@ -874,18 +967,18 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
   // New skill handlers for skill selector
   const handleSkillsChange = (type: 'technical' | 'professional' | 'soft', skills: Array<{skill: string}>) => {
-    setProfile((prev: Profile) => ({
-      ...prev,
-      skills: {
-        ...prev.skills,
+      setProfile((prev: Profile) => ({
+        ...prev,
+        skills: {
+          ...prev.skills,
         [type]: skills
-      }
-    }));
-    
-    setModifiedSections(prev => ({
-      ...prev,
-      skills: true
-    }));
+        }
+      }));
+      
+      setModifiedSections(prev => ({
+        ...prev,
+        skills: true
+      }));
   };
 
   // Get current skills for each type in the expected format
@@ -1321,8 +1414,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 Country
               </label>
               <div className="relative">
-                <input
-                  type="text"
+              <input
+                type="text"
                   value={countrySearchTerm || (profile.personalInfo?.country?.countryName || '')}
                   onChange={(e) => {
                     setCountrySearchTerm(e.target.value);
@@ -1388,7 +1481,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     }
                   }}
                   placeholder="Search for your country... (use ↑↓ arrows to navigate)"
-                  className="w-full p-2 border rounded-md"
+                className="w-full p-2 border rounded-md"
                 />
                 
                 {/* Search Icon */}
@@ -1670,16 +1763,16 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 return (
                   <div key={idx} className="flex items-center bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
                     <span className="text-blue-800 text-sm font-medium">{skillData?.name || 'Unknown'}</span>
-                    <button
+                  <button
                       onClick={() => {
                         const updatedSkills = getCurrentSkills('technical').filter((_: any, i: number) => i !== idx);
                         handleSkillsChange('technical', updatedSkills);
                       }}
-                      className="ml-2 text-blue-600 hover:text-blue-800"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
+                    className="ml-2 text-blue-600 hover:text-blue-800"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
                 );
               })}
             </div>
@@ -1695,16 +1788,16 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 return (
                   <div key={idx} className="flex items-center bg-green-50 px-3 py-1 rounded-full border border-green-200">
                     <span className="text-green-800 text-sm font-medium">{skillData?.name || 'Unknown'}</span>
-                    <button
+                  <button
                       onClick={() => {
                         const updatedSkills = getCurrentSkills('professional').filter((_: any, i: number) => i !== idx);
                         handleSkillsChange('professional', updatedSkills);
                       }}
-                      className="ml-2 text-green-600 hover:text-green-800"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
+                    className="ml-2 text-green-600 hover:text-green-800"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
                 );
               })}
             </div>
@@ -1720,16 +1813,16 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 return (
                   <div key={idx} className="flex items-center bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
                     <span className="text-purple-800 text-sm font-medium">{skillData?.name || 'Unknown'}</span>
-                    <button
+                  <button
                       onClick={() => {
                         const updatedSkills = getCurrentSkills('soft').filter((_: any, i: number) => i !== idx);
                         handleSkillsChange('soft', updatedSkills);
                       }}
-                      className="ml-2 text-purple-600 hover:text-purple-800"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
+                    className="ml-2 text-purple-600 hover:text-purple-800"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
                 );
               })}
             </div>
@@ -2240,40 +2333,231 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           {/* Time Zone */}
           <div className="mb-6">
             <h3 className="text-lg font-medium text-gray-800 mb-2">Time Zone</h3>
-            <select
-              value={typeof profile.availability.timeZone === 'object' && profile.availability.timeZone?._id 
-                ? String(profile.availability.timeZone._id)
-                : String(profile.availability.timeZone || '')}
-              onChange={(e) => {
-                setProfile((prev: Profile) => ({
-                  ...prev,
-                  availability: {
-                    ...prev.availability,
-                    timeZone: e.target.value
+            <div className="relative">
+              <input
+                type="text"
+                value={timezoneSearchTerm}
+                onChange={(e) => {
+                  setTimezoneSearchTerm(e.target.value);
+                  setIsTimezoneDropdownOpen(true);
+                  setSelectedTimezoneIndex(-1); // Reset selection when typing
+                  
+                  // If user clears the field, reset the timezone selection
+                  if (e.target.value === '') {
+                    setProfile((prev: Profile) => ({
+                      ...prev,
+                      availability: {
+                        ...prev.availability,
+                        timeZone: ''
+                      }
+                    }));
+                    setModifiedSections(prev => ({
+                      ...prev,
+                      availability: true
+                    }));
                   }
-                }));
-                setModifiedSections(prev => ({
-                  ...prev,
-                  availability: true
-                }));
-              }}
-              className="w-full p-2 border rounded bg-white"
-              disabled={!selectedCountry || loadingTimezones}
-            >
-              <option value="">
-                {!selectedCountry 
-                  ? 'Select a country first' 
-                  : loadingTimezones 
-                    ? 'Loading timezones...' 
-                    : 'Select your time zone'
-                }
-              </option>
-              {timezones.map((timezone) => (
-                <option key={timezone._id} value={timezone._id}>
-                  {repWizardApi.formatTimezone(timezone)}
-                </option>
-              ))}
-            </select>
+                }}
+                onFocus={() => {
+                  setIsTimezoneDropdownOpen(true);
+                  setSelectedTimezoneIndex(-1); // Reset keyboard selection
+                }}
+                onBlur={() => {
+                  // Delay closing to allow for selection
+                  setTimeout(() => {
+                    setIsTimezoneDropdownOpen(false);
+                    
+                    // Check if what the user typed matches any timezone exactly
+                    if (timezoneSearchTerm && !profile.availability.timeZone) {
+                      const exactMatch = filteredTimezones.find(tz => 
+                        repWizardApi.formatTimezone(tz).toLowerCase() === timezoneSearchTerm.toLowerCase()
+                      );
+                      if (exactMatch) {
+                        setProfile((prev: Profile) => ({
+                          ...prev,
+                          availability: {
+                            ...prev.availability,
+                            timeZone: exactMatch._id
+                          }
+                        }));
+                        setModifiedSections(prev => ({
+                          ...prev,
+                          availability: true
+                        }));
+                      }
+                    }
+                  }, 200);
+                }}
+                onKeyDown={(e) => {
+                  if (!isTimezoneDropdownOpen) return;
+                  
+                  switch (e.key) {
+                    case 'ArrowDown':
+                      e.preventDefault();
+                      setSelectedTimezoneIndex(prev => 
+                        prev < filteredTimezones.length - 1 ? prev + 1 : 0
+                      );
+                      break;
+                    case 'ArrowUp':
+                      e.preventDefault();
+                      setSelectedTimezoneIndex(prev => 
+                        prev > 0 ? prev - 1 : filteredTimezones.length - 1
+                      );
+                      break;
+                    case 'Enter':
+                      e.preventDefault();
+                      if (selectedTimezoneIndex >= 0 && filteredTimezones[selectedTimezoneIndex]) {
+                        const selectedTimezone = filteredTimezones[selectedTimezoneIndex];
+                        setProfile((prev: Profile) => ({
+                          ...prev,
+                          availability: {
+                            ...prev.availability,
+                            timeZone: selectedTimezone._id
+                          }
+                        }));
+                        setModifiedSections(prev => ({
+                          ...prev,
+                          availability: true
+                        }));
+                        setTimezoneSearchTerm(repWizardApi.formatTimezone(selectedTimezone));
+                        setIsTimezoneDropdownOpen(false);
+                      }
+                      break;
+                    case 'Escape':
+                      setIsTimezoneDropdownOpen(false);
+                      break;
+                  }
+                }}
+                placeholder="Search for your time zone... (use ↑↓ arrows to navigate)"
+                className="w-full p-2 border rounded-md"
+              />
+              
+              {/* Search Icon */}
+              <div className="absolute right-2 top-2.5 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+
+              {/* Dropdown List */}
+              {isTimezoneDropdownOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {/* Show suggested timezones first if country is selected */}
+                  {selectedCountry && timezones.length > 0 && filteredTimezones.some(tz => timezones.some(suggestedTz => suggestedTz._id === tz._id)) && (
+                    <>
+                      <div className="px-3 py-2 text-sm font-medium bg-blue-100 text-blue-700 border-b">
+                        Suggested for {countries.find(c => c.countryCode === selectedCountry)?.countryName || selectedCountry}
+                      </div>
+                      {filteredTimezones
+                        .filter(tz => timezones.some(suggestedTz => suggestedTz._id === tz._id))
+                        .map((timezone, index) => {
+                          const globalIndex = filteredTimezones.indexOf(timezone);
+                          return (
+                            <button
+                              key={timezone._id}
+                              type="button"
+                              onClick={() => {
+                                setProfile((prev: Profile) => ({
+                                  ...prev,
+                                  availability: {
+                                    ...prev.availability,
+                                    timeZone: timezone._id
+                                  }
+                                }));
+                                setModifiedSections(prev => ({
+                                  ...prev,
+                                  availability: true
+                                }));
+                                setTimezoneSearchTerm(repWizardApi.formatTimezone(timezone));
+                                setIsTimezoneDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 flex items-center justify-between ${
+                                globalIndex === selectedTimezoneIndex 
+                                  ? 'bg-blue-100 text-blue-700' 
+                                  : 'hover:bg-blue-50 hover:text-blue-600'
+                              }`}
+                            >
+                              <span>{repWizardApi.formatTimezone(timezone)}</span>
+                            </button>
+                          );
+                        })}
+                    </>
+                  )}
+                  
+                  {/* Show all other matching timezones */}
+                  {filteredTimezones.filter(tz => !timezones.some(suggestedTz => suggestedTz._id === tz._id)).length > 0 && (
+                    <>
+                      <div className="px-3 py-2 text-sm font-medium bg-gray-100 text-gray-700 border-b">
+                        All Time Zones
+                      </div>
+                      {filteredTimezones
+                        .filter(tz => !timezones.some(suggestedTz => suggestedTz._id === tz._id))
+                        .map((timezone) => {
+                          const globalIndex = filteredTimezones.indexOf(timezone);
+                          return (
+                            <button
+                              key={timezone._id}
+                              type="button"
+                              onClick={() => {
+                                setProfile((prev: Profile) => ({
+                                  ...prev,
+                                  availability: {
+                                    ...prev.availability,
+                                    timeZone: timezone._id
+                                  }
+                                }));
+                                setModifiedSections(prev => ({
+                                  ...prev,
+                                  availability: true
+                                }));
+                                setTimezoneSearchTerm(repWizardApi.formatTimezone(timezone));
+                                setIsTimezoneDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 flex items-center justify-between ${
+                                globalIndex === selectedTimezoneIndex 
+                                  ? 'bg-blue-100 text-blue-700' 
+                                  : 'hover:bg-blue-50 hover:text-blue-600'
+                              }`}
+                            >
+                              <span>{repWizardApi.formatTimezone(timezone)}</span>
+                            </button>
+                          );
+                        })}
+                    </>
+                  )}
+
+                  {filteredTimezones.length === 0 && (
+                    <div className="px-3 py-2 text-gray-500 text-center">
+                      No timezones found matching "{timezoneSearchTerm}"
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Timezone mismatch warning */}
+            {(() => {
+              const mismatchInfo = getTimezoneMismatchInfo();
+              if (mismatchInfo) {
+                return (
+                  <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-amber-800">
+                          Your timezone is set to <strong>{mismatchInfo.timezoneCountry}</strong>, but your country is <strong>{mismatchInfo.selectedCountry}</strong>. This is fine if you work across time zones.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+            
             {selectedCountry && timezones.length === 0 && !loadingTimezones && (
               <p className="text-sm text-gray-500 mt-1">No timezones available for this country</p>
             )}
