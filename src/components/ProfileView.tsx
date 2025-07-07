@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { getProfilePlan } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
-
 // Type definitions
 interface AssessmentResults {
   score?: number;
@@ -152,12 +151,34 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
   const [showImageModal, setShowImageModal] = useState(false);
   const [countryData, setCountryData] = useState<Timezone | null>(null);
   const [timezoneData, setTimezoneData] = useState<Timezone | null>(null);
+  const [allTimezones, setAllTimezones] = useState<Timezone[]>([]);
+  const [countries, setCountries] = useState<Timezone[]>([]);
 
   // Add console logging
   useEffect(() => {
     console.log('Profile View - Full Profile Data:', profile);
     console.log('Profile View - Availability Data:', profile.availability);
   }, [profile]);
+
+  // Load countries and all timezones on component mount
+  useEffect(() => {
+    const loadLocationData = async () => {
+      try {
+        console.log('🌍 Loading countries and timezones...');
+        const [countriesData, timezonesData] = await Promise.all([
+          repWizardApi.getCountries(),
+          repWizardApi.getTimezones()
+        ]);
+        setCountries(countriesData);
+        setAllTimezones(timezonesData);
+        console.log('✅ Countries and timezones loaded:', countriesData.length, timezonesData.length);
+      } catch (error) {
+        console.error('❌ Error loading location data:', error);
+      }
+    };
+
+    loadLocationData();
+  }, []);
 
   useEffect(() => {
     const fetchPlanData = async () => {
@@ -217,6 +238,34 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
   }, [profile?.personalInfo?.country, profile?.availability?.timeZone]);
 
   if (!profile) return null;
+
+  // Get timezone and country mismatch info
+  const getTimezoneMismatchInfo = () => {
+    const currentTimezoneId = typeof profile.availability?.timeZone === 'object' 
+      ? profile.availability.timeZone._id 
+      : profile.availability?.timeZone;
+    
+    const selectedTimezoneData = allTimezones.find(tz => tz._id === currentTimezoneId);
+    
+    if (!countryData || !selectedTimezoneData || !currentTimezoneId) {
+      return null;
+    }
+    
+    // Check if timezone belongs to selected country
+    const timezoneCountry = selectedTimezoneData.countryCode;
+    const selectedCountryCode = countryData.countryCode;
+    
+    if (timezoneCountry !== selectedCountryCode) {
+      const timezoneCountryData = countries.find(c => c.countryCode === timezoneCountry);
+      return {
+        timezoneCountry: timezoneCountryData?.countryName || timezoneCountry,
+        selectedCountry: countryData.countryName,
+        timezoneName: selectedTimezoneData.zoneName
+      };
+    }
+    
+    return null;
+  };
 
   // Calculate average score from contact center skills if available
   const calculateOverallScore = () => {
@@ -310,6 +359,52 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
     const assessmentUrl = `${assessmentAppUrl}/contact-center/${formattedSkill}`;
     console.log("assessmentUrl contact center", assessmentUrl);
     window.open(assessmentUrl, '_blank');
+  };
+
+  // Helper function to format skills for display
+  const formatSkillsForDisplay = (skillsData: any) => {
+    // Handle the populated format (array of skills with nested skill objects)
+    if (Array.isArray(skillsData)) {
+      return skillsData.map(skillItem => {
+        // Handle different skill formats
+        if (typeof skillItem === 'string') {
+          // Old format: just a string
+          return {
+            name: skillItem,
+            details: ''
+          };
+        } else if (skillItem.skill && typeof skillItem.skill === 'object') {
+          // New populated format: skill object nested under 'skill' property
+          return {
+            _id: skillItem.skill._id,
+            name: skillItem.skill.name,
+            description: skillItem.skill.description,
+            category: skillItem.skill.category,
+            details: skillItem.details || ''
+          };
+        } else if (skillItem.skill && typeof skillItem.skill === 'string') {
+          // Format with ObjectId reference
+          return {
+            name: skillItem.skill,
+            details: skillItem.details || ''
+          };
+        } else if (skillItem.name) {
+          // Already populated format
+          return {
+            name: skillItem.name,
+            details: skillItem.details || ''
+          };
+        } else {
+          // Unknown format
+          return {
+            name: skillItem._id || 'Unknown',
+            details: skillItem.details || ''
+          };
+        }
+      });
+    }
+    
+    return [];
   };
 
   return (
@@ -579,6 +674,30 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                     }
                   </span>
                 </div>
+                
+                {/* Timezone mismatch warning */}
+                {(() => {
+                  const mismatchInfo = getTimezoneMismatchInfo();
+                  if (mismatchInfo) {
+                    return (
+                      <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm text-amber-800">
+                              Your timezone is set to <strong>{mismatchInfo.timezoneCountry}</strong>, but your country is <strong>{mismatchInfo.selectedCountry}</strong>. This is fine if you work across time zones.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             )}
           </div>
@@ -701,15 +820,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               Technical skills are required. Please add your technical expertise.
             </div>
           )}
-          {profile.skills?.technical?.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {profile.skills.technical.map((skill: any, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                  {typeof skill === 'string' ? skill : skill.skill || ''}
-                </span>
-              ))}
-            </div>
-          ) : (
+          <div className="flex flex-wrap gap-2">
+            {formatSkillsForDisplay(profile.skills?.technical).map((skill: any, idx: number) => (
+              <div key={idx} className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                <span className="font-medium">{skill.name}</span>
+              </div>
+            ))}
+          </div>
+          {formatSkillsForDisplay(profile.skills?.technical).length === 0 && (
             <p className="text-gray-500 italic">No technical skills listed</p>
           )}
         </div>
@@ -725,15 +843,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               Professional skills are required. Please add your professional expertise.
             </div>
           )}
-          {profile.skills?.professional?.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {profile.skills.professional.map((skill: any, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                  {typeof skill === 'string' ? skill : skill.skill || ''}
-                </span>
-              ))}
-            </div>
-          ) : (
+          <div className="flex flex-wrap gap-2">
+            {formatSkillsForDisplay(profile.skills?.professional).map((skill: any, idx: number) => (
+              <div key={idx} className="px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                <span className="font-medium">{skill.name}</span>
+              </div>
+            ))}
+          </div>
+          {formatSkillsForDisplay(profile.skills?.professional).length === 0 && (
             <p className="text-gray-500 italic">No professional skills listed</p>
           )}
         </div>
@@ -749,15 +866,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               Soft skills are required. Please add your interpersonal skills.
             </div>
           )}
-          {profile.skills?.soft?.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {profile.skills.soft.map((skill: any, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
-                  {typeof skill === 'string' ? skill : skill.skill || ''}
-                </span>
-              ))}
-            </div>
-          ) : (
+          <div className="flex flex-wrap gap-2">
+            {formatSkillsForDisplay(profile.skills?.soft).map((skill: any, idx: number) => (
+              <div key={idx} className="px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
+                <span className="font-medium">{skill.name}</span>
+              </div>
+            ))}
+          </div>
+          {formatSkillsForDisplay(profile.skills?.soft).length === 0 && (
             <p className="text-gray-500 italic">No soft skills listed</p>
           )}
         </div>
