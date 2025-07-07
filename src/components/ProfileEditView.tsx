@@ -9,6 +9,7 @@ import {
 import { updateProfileData, updateBasicInfo, updateExperience, updateSkills } from '../utils/profileUtils';
 import { getLanguageCodeFromAI } from '../utils/languageUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
+import { fetchAllSkills, SkillsByCategory, Skill } from '../services/api/skills';
 import OpenAI from 'openai';
 
 // Add CSS styles for error highlighting
@@ -246,11 +247,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [tempExpertise, setTempExpertise] = useState('');
   const [editingExperience, setEditingExperience] = useState<any>(null);
   const [showNewExperienceForm, setShowNewExperienceForm] = useState(false);
-  const [tempSkill, setTempSkill] = useState({
-    technical: '',
-    professional: '',
-    soft: ''
-  });
+
 
   // Initialize form data state
   const [newExperience, setNewExperience] = useState({
@@ -295,6 +292,22 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [filteredCountries, setFilteredCountries] = useState<Timezone[]>([]);
   const [selectedCountryIndex, setSelectedCountryIndex] = useState(-1);
 
+  // States for skills data
+  const [skillsData, setSkillsData] = useState<{
+    technical: SkillsByCategory;
+    professional: SkillsByCategory;
+    soft: SkillsByCategory;
+  }>({
+    technical: {},
+    professional: {},
+    soft: {}
+  });
+  const [loadingSkills, setLoadingSkills] = useState(false);
+  
+  // States for skill selection dropdown
+  const [skillDropdownOpen, setSkillDropdownOpen] = useState<{[key: string]: boolean}>({});
+  const [skillSearchTerm, setSkillSearchTerm] = useState<{[key: string]: string}>({});
+
   useEffect(() => {
     if (initialProfile) {
       setProfile(initialProfile);
@@ -325,6 +338,26 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     };
 
     loadCountries();
+  }, []);
+
+  // Load skills data on component mount
+  useEffect(() => {
+    const loadSkills = async () => {
+      try {
+        setLoadingSkills(true);
+        console.log('🔧 Loading skills...');
+        const skills = await fetchAllSkills();
+        setSkillsData(skills);
+        console.log('✅ Skills loaded:', skills);
+      } catch (error) {
+        console.error('❌ Error loading skills:', error);
+        showToast('Failed to load skills', 'error');
+      } finally {
+        setLoadingSkills(false);
+      }
+    };
+
+    loadSkills();
   }, []);
 
   // Load timezones when country is selected
@@ -538,26 +571,57 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       // Save skills if modified
       if (modifiedSections.skills) {
         console.log('📝 Saving skills...');
+        
+        // Helper function to get full skill object by ID
+        const getFullSkillObject = (skillId: string, skillType: 'technical' | 'professional' | 'soft') => {
+          const skillsForType = skillsData[skillType];
+          for (const category of Object.values(skillsForType)) {
+            const foundSkill = category.find((s: Skill) => s._id === skillId);
+            if (foundSkill) {
+              return foundSkill;
+            }
+          }
+          return null;
+        };
+
         // Format skills as objects with proper structure
         const formattedSkills = {
-          technical: (profile.skills?.technical || []).map((skill: any) => ({
-            skill: typeof skill === 'string' ? skill : skill.skill,
-            proficiency: 'Intermediate',
-            category: 'Technical',
-            level: 1
-          })),
-          professional: (profile.skills?.professional || []).map((skill: any) => ({
-            skill: typeof skill === 'string' ? skill : skill.skill,
-            proficiency: 'Intermediate',
-            category: 'Professional',
-            level: 1
-          })),
-          soft: (profile.skills?.soft || []).map((skill: any) => ({
-            skill: typeof skill === 'string' ? skill : skill.skill,
-            proficiency: 'Intermediate',
-            category: 'Soft',
-            level: 1
-          })),
+          technical: (profile.skills?.technical || []).map((skillRef: any) => {
+            const skillId = typeof skillRef === 'string' ? skillRef : skillRef.skill;
+            const fullSkillObject = getFullSkillObject(skillId, 'technical');
+            if (fullSkillObject) {
+              return {
+                _id: fullSkillObject._id,
+                name: fullSkillObject.name,
+                description: fullSkillObject.description
+              };
+            }
+            return { _id: skillId, name: 'Unknown', description: '' };
+          }),
+          professional: (profile.skills?.professional || []).map((skillRef: any) => {
+            const skillId = typeof skillRef === 'string' ? skillRef : skillRef.skill;
+            const fullSkillObject = getFullSkillObject(skillId, 'professional');
+            if (fullSkillObject) {
+              return {
+                _id: fullSkillObject._id,
+                name: fullSkillObject.name,
+                description: fullSkillObject.description
+              };
+            }
+            return { _id: skillId, name: 'Unknown', description: '' };
+          }),
+          soft: (profile.skills?.soft || []).map((skillRef: any) => {
+            const skillId = typeof skillRef === 'string' ? skillRef : skillRef.skill;
+            const fullSkillObject = getFullSkillObject(skillId, 'soft');
+            if (fullSkillObject) {
+              return {
+                _id: fullSkillObject._id,
+                name: fullSkillObject.name,
+                description: fullSkillObject.description
+              };
+            }
+            return { _id: skillId, name: 'Unknown', description: '' };
+          }),
           // Preserve existing contactCenter skills with their assessment results
           contactCenter: (profile.skills?.contactCenter || []).map((skill: any) => ({
             skill: skill.skill || '',
@@ -806,52 +870,29 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }));
   };
 
-  // Add/update skills with proper object structure
-  const addSkill = (type: 'technical' | 'professional' | 'soft', skillName: string) => {
-    if (skillName.trim()) {
-      const skillObject = {
-        skill: skillName.trim(),
-        proficiency: 'Intermediate',
-        category: type.charAt(0).toUpperCase() + type.slice(1),
-        level: 1
-      };
-      
-      const updatedSkills = [
-        ...(profile.skills?.[type] || []),
-        skillObject
-      ];
-      
-      setProfile((prev: Profile) => ({
-        ...prev,
-        skills: {
-          ...prev.skills,
-          [type]: updatedSkills
-        }
-      }));
-      
-      setModifiedSections(prev => ({
-        ...prev,
-        skills: true
-      }));
-    }
-  };
 
-  // Remove skill with proper object handling
-  const removeSkill = (type: 'technical' | 'professional' | 'soft', index: number) => {
-    const updatedSkills = [...(profile.skills?.[type] || [])];
-    updatedSkills.splice(index, 1);
-    
+
+  // New skill handlers for skill selector
+  const handleSkillsChange = (type: 'technical' | 'professional' | 'soft', skills: Array<{skill: string}>) => {
     setProfile((prev: Profile) => ({
       ...prev,
       skills: {
         ...prev.skills,
-        [type]: updatedSkills
+        [type]: skills
       }
     }));
     
     setModifiedSections(prev => ({
       ...prev,
       skills: true
+    }));
+  };
+
+  // Get current skills for each type in the expected format
+  const getCurrentSkills = (type: 'technical' | 'professional' | 'soft') => {
+    const skills = profile.skills?.[type] || [];
+    return skills.map((skill: any) => ({
+      skill: skill.skill?._id || skill.skill || skill._id || skill
     }));
   };
 
@@ -1056,6 +1097,102 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       ...prev,
       availability: true
     }));
+  };
+
+  // Render skill dropdown for adding new skills
+  const renderSkillDropdown = (skillType: 'technical' | 'professional' | 'soft', placeholder: string, colorScheme: string) => {
+    const skillsForType = skillsData[skillType];
+    const searchTerm = skillSearchTerm[skillType] || '';
+    const isOpen = skillDropdownOpen[skillType] || false;
+
+    // Filter skills based on search term and exclude already selected skills
+    const currentSkills = getCurrentSkills(skillType);
+    const selectedSkillIds = new Set(currentSkills.map((s: any) => s.skill));
+    
+    const filteredSkills: { [category: string]: Skill[] } = {};
+    Object.entries(skillsForType).forEach(([category, skills]) => {
+      const filtered = skills.filter(skill => 
+        !selectedSkillIds.has(skill._id) &&
+        (skill.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+         skill.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      if (filtered.length > 0) {
+        filteredSkills[category] = filtered;
+      }
+    });
+
+    const addSkill = (skill: Skill) => {
+      const newSkill = {
+        skill: skill._id
+      };
+      
+      const updatedSkills = [...currentSkills, newSkill];
+      handleSkillsChange(skillType, updatedSkills);
+      
+      // Reset form
+      setSkillSearchTerm(prev => ({ ...prev, [skillType]: '' }));
+      setSkillDropdownOpen(prev => ({ ...prev, [skillType]: false }));
+    };
+
+    return (
+      <div className="relative">
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSkillSearchTerm(prev => ({ ...prev, [skillType]: e.target.value }));
+                setSkillDropdownOpen(prev => ({ ...prev, [skillType]: true }));
+              }}
+              onFocus={() => setSkillDropdownOpen(prev => ({ ...prev, [skillType]: true }))}
+              onBlur={() => {
+                setTimeout(() => setSkillDropdownOpen(prev => ({ ...prev, [skillType]: false })), 200);
+              }}
+              placeholder={placeholder}
+              className="w-full p-2 border rounded-md"
+            />
+            
+            {/* Search Icon */}
+            <div className="absolute right-2 top-2.5 text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Dropdown List */}
+        {isOpen && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+            {Object.keys(filteredSkills).length > 0 ? (
+              Object.entries(filteredSkills).map(([category, skills]) => (
+                <div key={category}>
+                  <div className={`px-3 py-2 text-sm font-medium bg-gray-100 text-gray-700 border-b`}>
+                    {category}
+                  </div>
+                  {skills.map((skill) => (
+                    <button
+                      key={skill._id}
+                      type="button"
+                      onClick={() => addSkill(skill)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="font-medium text-gray-800">{skill.name}</div>
+                      <div className="text-sm text-gray-600 truncate">{skill.description}</div>
+                    </button>
+                  ))}
+                </div>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-gray-500 text-center">
+                {searchTerm ? `No skills found matching "${searchTerm}"` : 'No skills available'}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -1521,111 +1658,78 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           <h2 className="text-xl font-semibold mb-4">Skills</h2>
           
           {/* Technical Skills */}
-          <div className="mb-6 border-b pb-6">
-            <h3 className="text-lg font-medium text-gray-800 mb-2">Technical Skills</h3>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {profile.skills?.technical?.map((skill: any, index: number) => (
-                <div key={index} className="flex items-center bg-blue-100 px-3 py-1 rounded-full">
-                  <span className="text-blue-800 text-sm">{typeof skill === 'string' ? skill : skill.skill}</span>
-                  <button
-                    onClick={() => removeSkill('technical', index)}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-3 text-blue-700">Technical Skills</h3>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {getCurrentSkills('technical').map((skillRef: any, idx: number) => {
+                const skillData = Object.values(skillsData.technical).flat().find((s: Skill) => s._id === skillRef.skill);
+                return (
+                  <div key={idx} className="flex items-center bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                    <span className="text-blue-800 text-sm font-medium">{skillData?.name || 'Unknown'}</span>
+                    <button
+                      onClick={() => {
+                        const updatedSkills = getCurrentSkills('technical').filter((_: any, i: number) => i !== idx);
+                        handleSkillsChange('technical', updatedSkills);
+                      }}
+                      className="ml-2 text-blue-600 hover:text-blue-800"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                value={tempSkill.technical}
-                onChange={(e) => setTempSkill((prev: any) => ({ ...prev, technical: e.target.value }))}
-                className="w-full p-2 border rounded-md"
-                placeholder="Add technical skill"
-              />
-              <button
-                onClick={() => {
-                  addSkill('technical', tempSkill.technical);
-                  setTempSkill((prev: any) => ({ ...prev, technical: '' }));
-                }}
-                className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg whitespace-nowrap"
-              >
-                Add
-              </button>
-            </div>
+            {renderSkillDropdown('technical', 'Add Technical Skill', 'blue')}
           </div>
           
           {/* Professional Skills */}
-          <div className="mb-6 border-b pb-6">
-            <h3 className="text-lg font-medium text-gray-800 mb-2">Professional Skills</h3>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {profile.skills?.professional?.map((skill: any, index: number) => (
-                <div key={index} className="flex items-center bg-green-100 px-3 py-1 rounded-full">
-                  <span className="text-green-800 text-sm">{typeof skill === 'string' ? skill : skill.skill}</span>
-                  <button
-                    onClick={() => removeSkill('professional', index)}
-                    className="ml-2 text-green-600 hover:text-green-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-3 text-green-700">Professional Skills</h3>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {getCurrentSkills('professional').map((skillRef: any, idx: number) => {
+                const skillData = Object.values(skillsData.professional).flat().find((s: Skill) => s._id === skillRef.skill);
+                return (
+                  <div key={idx} className="flex items-center bg-green-50 px-3 py-1 rounded-full border border-green-200">
+                    <span className="text-green-800 text-sm font-medium">{skillData?.name || 'Unknown'}</span>
+                    <button
+                      onClick={() => {
+                        const updatedSkills = getCurrentSkills('professional').filter((_: any, i: number) => i !== idx);
+                        handleSkillsChange('professional', updatedSkills);
+                      }}
+                      className="ml-2 text-green-600 hover:text-green-800"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                value={tempSkill.professional}
-                onChange={(e) => setTempSkill((prev: any) => ({ ...prev, professional: e.target.value }))}
-                className="w-full p-2 border rounded-md"
-                placeholder="Add professional skill"
-              />
-              <button
-                onClick={() => {
-                  addSkill('professional', tempSkill.professional);
-                  setTempSkill((prev: any) => ({ ...prev, professional: '' }));
-                }}
-                className="px-4 py-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg whitespace-nowrap"
-              >
-                Add
-              </button>
-            </div>
+            {renderSkillDropdown('professional', 'Add Professional Skill', 'green')}
           </div>
           
           {/* Soft Skills */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-800 mb-2">Soft Skills</h3>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {profile.skills?.soft?.map((skill: any, index: number) => (
-                <div key={index} className="flex items-center bg-purple-100 px-3 py-1 rounded-full">
-                  <span className="text-purple-800 text-sm">{typeof skill === 'string' ? skill : skill.skill}</span>
-                  <button
-                    onClick={() => removeSkill('soft', index)}
-                    className="ml-2 text-purple-600 hover:text-purple-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-3 text-purple-700">Soft Skills</h3>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {getCurrentSkills('soft').map((skillRef: any, idx: number) => {
+                const skillData = Object.values(skillsData.soft).flat().find((s: Skill) => s._id === skillRef.skill);
+                return (
+                  <div key={idx} className="flex items-center bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
+                    <span className="text-purple-800 text-sm font-medium">{skillData?.name || 'Unknown'}</span>
+                    <button
+                      onClick={() => {
+                        const updatedSkills = getCurrentSkills('soft').filter((_: any, i: number) => i !== idx);
+                        handleSkillsChange('soft', updatedSkills);
+                      }}
+                      className="ml-2 text-purple-600 hover:text-purple-800"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                value={tempSkill.soft}
-                onChange={(e) => setTempSkill((prev: any) => ({ ...prev, soft: e.target.value }))}
-                className="w-full p-2 border rounded-md"
-                placeholder="Add soft skill"
-              />
-              <button
-                onClick={() => {
-                  addSkill('soft', tempSkill.soft);
-                  setTempSkill((prev: any) => ({ ...prev, soft: '' }));
-                }}
-                className="px-4 py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg whitespace-nowrap"
-              >
-                Add
-              </button>
-            </div>
+            {renderSkillDropdown('soft', 'Add Soft Skill', 'purple')}
           </div>
         </div>
         
