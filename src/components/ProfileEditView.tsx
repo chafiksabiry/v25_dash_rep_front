@@ -1304,6 +1304,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                       currentRole: e.target.value
                     }
                   }));
+                  setModifiedSections(prev => ({
+                    ...prev,
+                    professionalSummary: true
+                  }));
                 }}
                 className="w-full p-2 border rounded-md"
                 placeholder="Your current role"
