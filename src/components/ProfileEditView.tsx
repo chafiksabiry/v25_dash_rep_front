@@ -9,6 +9,7 @@ import {
 import { updateProfileData, updateBasicInfo, updateExperience, updateSkills } from '../utils/profileUtils';
 import { getLanguageCodeFromAI } from '../utils/languageUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
+import { fetchAllSkills, SkillsByCategory, Skill } from '../services/api/skills';
 import OpenAI from 'openai';
 
 // Add CSS styles for error highlighting
@@ -246,11 +247,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [tempExpertise, setTempExpertise] = useState('');
   const [editingExperience, setEditingExperience] = useState<any>(null);
   const [showNewExperienceForm, setShowNewExperienceForm] = useState(false);
-  const [tempSkill, setTempSkill] = useState({
-    technical: '',
-    professional: '',
-    soft: ''
-  });
+
 
   // Initialize form data state
   const [newExperience, setNewExperience] = useState({
@@ -286,6 +283,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   // States for timezone and country data
   const [countries, setCountries] = useState<Timezone[]>([]);
   const [timezones, setTimezones] = useState<Timezone[]>([]);
+  const [allTimezones, setAllTimezones] = useState<Timezone[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [loadingTimezones, setLoadingTimezones] = useState(false);
   
@@ -294,6 +292,28 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [filteredCountries, setFilteredCountries] = useState<Timezone[]>([]);
   const [selectedCountryIndex, setSelectedCountryIndex] = useState(-1);
+  
+  // States for searchable timezone dropdown
+  const [timezoneSearchTerm, setTimezoneSearchTerm] = useState('');
+  const [isTimezoneDropdownOpen, setIsTimezoneDropdownOpen] = useState(false);
+  const [filteredTimezones, setFilteredTimezones] = useState<Timezone[]>([]);
+  const [selectedTimezoneIndex, setSelectedTimezoneIndex] = useState(-1);
+
+  // States for skills data
+  const [skillsData, setSkillsData] = useState<{
+    technical: SkillsByCategory;
+    professional: SkillsByCategory;
+    soft: SkillsByCategory;
+  }>({
+    technical: {},
+    professional: {},
+    soft: {}
+  });
+  const [loadingSkills, setLoadingSkills] = useState(false);
+  
+  // States for skill selection dropdown
+  const [skillDropdownOpen, setSkillDropdownOpen] = useState<{[key: string]: boolean}>({});
+  const [skillSearchTerm, setSkillSearchTerm] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     if (initialProfile) {
@@ -307,10 +327,17 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           setSelectedCountry(initialProfile.personalInfo.country.countryCode || '');
         }
       }
+      
+      // Set initial timezone search term if timezone is already selected
+      if (initialProfile.availability?.timeZone) {
+        if (typeof initialProfile.availability.timeZone === 'object') {
+          setTimezoneSearchTerm(repWizardApi.formatTimezone(initialProfile.availability.timeZone) || '');
+        }
+      }
     }
   }, [initialProfile]);
 
-  // Load countries on component mount
+  // Load countries and all timezones on component mount
   useEffect(() => {
     const loadCountries = async () => {
       try {
@@ -324,10 +351,43 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       }
     };
 
+    const loadAllTimezones = async () => {
+      try {
+        console.log('🌐 Loading all timezones...');
+        const allTimezonesData = await repWizardApi.getTimezones();
+        setAllTimezones(allTimezonesData);
+        console.log('✅ All timezones loaded:', allTimezonesData.length);
+      } catch (error) {
+        console.error('❌ Error loading all timezones:', error);
+        showToast('Failed to load timezones', 'error');
+      }
+    };
+
     loadCountries();
+    loadAllTimezones();
   }, []);
 
-  // Load timezones when country is selected
+  // Load skills data on component mount
+  useEffect(() => {
+    const loadSkills = async () => {
+      try {
+        setLoadingSkills(true);
+        console.log('🔧 Loading skills...');
+        const skills = await fetchAllSkills();
+        setSkillsData(skills);
+        console.log('✅ Skills loaded:', skills);
+      } catch (error) {
+        console.error('❌ Error loading skills:', error);
+        showToast('Failed to load skills', 'error');
+      } finally {
+        setLoadingSkills(false);
+      }
+    };
+
+    loadSkills();
+  }, []);
+
+  // Load timezones when country is selected and auto-suggest main timezone
   useEffect(() => {
     const loadTimezones = async () => {
       if (!selectedCountry) {
@@ -341,6 +401,26 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         const timezonesData = await repWizardApi.getTimezonesByCountry(selectedCountry);
         setTimezones(timezonesData);
         console.log('✅ Timezones loaded:', timezonesData.length);
+        
+        // Auto-suggest main timezone only if no timezone is currently set
+        const currentTimezone = profile.availability.timeZone;
+        if ((!currentTimezone || currentTimezone === '') && timezonesData.length > 0) {
+          // Find the main timezone (usually the first one or one with highest priority)
+          const mainTimezone = timezonesData[0]; // Take the first timezone as main
+          console.log('🎯 Auto-suggesting main timezone:', mainTimezone.zoneName);
+          
+          setProfile((prev: Profile) => ({
+            ...prev,
+            availability: {
+              ...prev.availability,
+              timeZone: mainTimezone._id
+            }
+          }));
+          setModifiedSections(prev => ({
+            ...prev,
+            availability: true
+          }));
+        }
       } catch (error) {
         console.error('❌ Error loading timezones:', error);
         showToast('Failed to load timezones', 'error');
@@ -350,7 +430,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     };
 
     loadTimezones();
-  }, [selectedCountry]);
+  }, [selectedCountry]); // Only depend on selectedCountry to avoid infinite loops
 
   // Filter countries based on search term
   useEffect(() => {
@@ -365,10 +445,56 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }
   }, [countries, countrySearchTerm]);
 
+  // Filter timezones based on search term
+  useEffect(() => {
+    // Combine suggested timezones and all other timezones
+    const allAvailableTimezones = [...timezones, ...allTimezones.filter(tz => !timezones.some(suggestedTz => suggestedTz._id === tz._id))];
+    
+    if (!timezoneSearchTerm) {
+      setFilteredTimezones(allAvailableTimezones);
+    } else {
+      const filtered = allAvailableTimezones.filter(timezone =>
+        timezone.countryName.toLowerCase().includes(timezoneSearchTerm.toLowerCase()) ||
+        timezone.zoneName.toLowerCase().includes(timezoneSearchTerm.toLowerCase()) ||
+        timezone.countryCode.toLowerCase().includes(timezoneSearchTerm.toLowerCase())
+      );
+      setFilteredTimezones(filtered);
+    }
+  }, [timezones, allTimezones, timezoneSearchTerm]);
+
   // Show toast message
   const showToast = (message: string, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  // Get timezone and country mismatch info
+  const getTimezoneMismatchInfo = () => {
+    const currentTimezoneId = typeof profile.availability.timeZone === 'object' 
+      ? profile.availability.timeZone._id 
+      : profile.availability.timeZone;
+    
+    const selectedCountryData = countries.find(c => c.countryCode === selectedCountry);
+    const selectedTimezoneData = allTimezones.find(tz => tz._id === currentTimezoneId);
+    
+    if (!selectedCountryData || !selectedTimezoneData || !currentTimezoneId) {
+      return null;
+    }
+    
+    // Check if timezone belongs to selected country
+    const timezoneCountry = selectedTimezoneData.countryCode;
+    const selectedCountryCode = selectedCountryData.countryCode;
+    
+    if (timezoneCountry !== selectedCountryCode) {
+      const timezoneCountryData = countries.find(c => c.countryCode === timezoneCountry);
+      return {
+        timezoneCountry: timezoneCountryData?.countryName || timezoneCountry,
+        selectedCountry: selectedCountryData.countryName,
+        timezoneName: selectedTimezoneData.zoneName
+      };
+    }
+    
+    return null;
   };
 
   // Validate profile data
@@ -538,26 +664,57 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       // Save skills if modified
       if (modifiedSections.skills) {
         console.log('📝 Saving skills...');
+        
+        // Helper function to get full skill object by ID
+        const getFullSkillObject = (skillId: string, skillType: 'technical' | 'professional' | 'soft') => {
+          const skillsForType = skillsData[skillType];
+          for (const category of Object.values(skillsForType)) {
+            const foundSkill = category.find((s: Skill) => s._id === skillId);
+            if (foundSkill) {
+              return foundSkill;
+            }
+          }
+          return null;
+        };
+
         // Format skills as objects with proper structure
         const formattedSkills = {
-          technical: (profile.skills?.technical || []).map((skill: any) => ({
-            skill: typeof skill === 'string' ? skill : skill.skill,
-            proficiency: 'Intermediate',
-            category: 'Technical',
-            level: 1
-          })),
-          professional: (profile.skills?.professional || []).map((skill: any) => ({
-            skill: typeof skill === 'string' ? skill : skill.skill,
-            proficiency: 'Intermediate',
-            category: 'Professional',
-            level: 1
-          })),
-          soft: (profile.skills?.soft || []).map((skill: any) => ({
-            skill: typeof skill === 'string' ? skill : skill.skill,
-            proficiency: 'Intermediate',
-            category: 'Soft',
-            level: 1
-          })),
+          technical: (profile.skills?.technical || []).map((skillRef: any) => {
+            const skillId = typeof skillRef === 'string' ? skillRef : skillRef.skill;
+            const fullSkillObject = getFullSkillObject(skillId, 'technical');
+            if (fullSkillObject) {
+              return {
+                _id: fullSkillObject._id,
+                name: fullSkillObject.name,
+                description: fullSkillObject.description
+              };
+            }
+            return { _id: skillId, name: 'Unknown', description: '' };
+          }),
+          professional: (profile.skills?.professional || []).map((skillRef: any) => {
+            const skillId = typeof skillRef === 'string' ? skillRef : skillRef.skill;
+            const fullSkillObject = getFullSkillObject(skillId, 'professional');
+            if (fullSkillObject) {
+              return {
+                _id: fullSkillObject._id,
+                name: fullSkillObject.name,
+                description: fullSkillObject.description
+              };
+            }
+            return { _id: skillId, name: 'Unknown', description: '' };
+          }),
+          soft: (profile.skills?.soft || []).map((skillRef: any) => {
+            const skillId = typeof skillRef === 'string' ? skillRef : skillRef.skill;
+            const fullSkillObject = getFullSkillObject(skillId, 'soft');
+            if (fullSkillObject) {
+              return {
+                _id: fullSkillObject._id,
+                name: fullSkillObject.name,
+                description: fullSkillObject.description
+              };
+            }
+            return { _id: skillId, name: 'Unknown', description: '' };
+          }),
           // Preserve existing contactCenter skills with their assessment results
           contactCenter: (profile.skills?.contactCenter || []).map((skill: any) => ({
             skill: skill.skill || '',
@@ -806,26 +963,15 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }));
   };
 
-  // Add/update skills with proper object structure
-  const addSkill = (type: 'technical' | 'professional' | 'soft', skillName: string) => {
-    if (skillName.trim()) {
-      const skillObject = {
-        skill: skillName.trim(),
-        proficiency: 'Intermediate',
-        category: type.charAt(0).toUpperCase() + type.slice(1),
-        level: 1
-      };
-      
-      const updatedSkills = [
-        ...(profile.skills?.[type] || []),
-        skillObject
-      ];
-      
+
+
+  // New skill handlers for skill selector
+  const handleSkillsChange = (type: 'technical' | 'professional' | 'soft', skills: Array<{skill: string}>) => {
       setProfile((prev: Profile) => ({
         ...prev,
         skills: {
           ...prev.skills,
-          [type]: updatedSkills
+        [type]: skills
         }
       }));
       
@@ -833,25 +979,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         ...prev,
         skills: true
       }));
-    }
   };
 
-  // Remove skill with proper object handling
-  const removeSkill = (type: 'technical' | 'professional' | 'soft', index: number) => {
-    const updatedSkills = [...(profile.skills?.[type] || [])];
-    updatedSkills.splice(index, 1);
-    
-    setProfile((prev: Profile) => ({
-      ...prev,
-      skills: {
-        ...prev.skills,
-        [type]: updatedSkills
-      }
-    }));
-    
-    setModifiedSections(prev => ({
-      ...prev,
-      skills: true
+  // Get current skills for each type in the expected format
+  const getCurrentSkills = (type: 'technical' | 'professional' | 'soft') => {
+    const skills = profile.skills?.[type] || [];
+    return skills.map((skill: any) => ({
+      skill: skill.skill?._id || skill.skill || skill._id || skill
     }));
   };
 
@@ -1058,6 +1192,102 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }));
   };
 
+  // Render skill dropdown for adding new skills
+  const renderSkillDropdown = (skillType: 'technical' | 'professional' | 'soft', placeholder: string, colorScheme: string) => {
+    const skillsForType = skillsData[skillType];
+    const searchTerm = skillSearchTerm[skillType] || '';
+    const isOpen = skillDropdownOpen[skillType] || false;
+
+    // Filter skills based on search term and exclude already selected skills
+    const currentSkills = getCurrentSkills(skillType);
+    const selectedSkillIds = new Set(currentSkills.map((s: any) => s.skill));
+    
+    const filteredSkills: { [category: string]: Skill[] } = {};
+    Object.entries(skillsForType).forEach(([category, skills]) => {
+      const filtered = skills.filter(skill => 
+        !selectedSkillIds.has(skill._id) &&
+        (skill.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+         skill.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      if (filtered.length > 0) {
+        filteredSkills[category] = filtered;
+      }
+    });
+
+    const addSkill = (skill: Skill) => {
+      const newSkill = {
+        skill: skill._id
+      };
+      
+      const updatedSkills = [...currentSkills, newSkill];
+      handleSkillsChange(skillType, updatedSkills);
+      
+      // Reset form
+      setSkillSearchTerm(prev => ({ ...prev, [skillType]: '' }));
+      setSkillDropdownOpen(prev => ({ ...prev, [skillType]: false }));
+    };
+
+    return (
+      <div className="relative">
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSkillSearchTerm(prev => ({ ...prev, [skillType]: e.target.value }));
+                setSkillDropdownOpen(prev => ({ ...prev, [skillType]: true }));
+              }}
+              onFocus={() => setSkillDropdownOpen(prev => ({ ...prev, [skillType]: true }))}
+              onBlur={() => {
+                setTimeout(() => setSkillDropdownOpen(prev => ({ ...prev, [skillType]: false })), 200);
+              }}
+              placeholder={placeholder}
+              className="w-full p-2 border rounded-md"
+            />
+            
+            {/* Search Icon */}
+            <div className="absolute right-2 top-2.5 text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Dropdown List */}
+        {isOpen && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+            {Object.keys(filteredSkills).length > 0 ? (
+              Object.entries(filteredSkills).map(([category, skills]) => (
+                <div key={category}>
+                  <div className={`px-3 py-2 text-sm font-medium bg-gray-100 text-gray-700 border-b`}>
+                    {category}
+                  </div>
+                  {skills.map((skill) => (
+                    <button
+                      key={skill._id}
+                      type="button"
+                      onClick={() => addSkill(skill)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="font-medium text-gray-800">{skill.name}</div>
+                      <div className="text-sm text-gray-600 truncate">{skill.description}</div>
+                    </button>
+                  ))}
+                </div>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-gray-500 text-center">
+                {searchTerm ? `No skills found matching "${searchTerm}"` : 'No skills available'}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
       {/* Page Header with Save/Cancel Buttons */}
@@ -1167,6 +1397,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                       currentRole: e.target.value
                     }
                   }));
+                  setModifiedSections(prev => ({
+                    ...prev,
+                    professionalSummary: true
+                  }));
                 }}
                 className="w-full p-2 border rounded-md"
                 placeholder="Your current role"
@@ -1180,8 +1414,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 Country
               </label>
               <div className="relative">
-                <input
-                  type="text"
+              <input
+                type="text"
                   value={countrySearchTerm || (profile.personalInfo?.country?.countryName || '')}
                   onChange={(e) => {
                     setCountrySearchTerm(e.target.value);
@@ -1247,7 +1481,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     }
                   }}
                   placeholder="Search for your country... (use ↑↓ arrows to navigate)"
-                  className="w-full p-2 border rounded-md"
+                className="w-full p-2 border rounded-md"
                 />
                 
                 {/* Search Icon */}
@@ -1521,111 +1755,78 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           <h2 className="text-xl font-semibold mb-4">Skills</h2>
           
           {/* Technical Skills */}
-          <div className="mb-6 border-b pb-6">
-            <h3 className="text-lg font-medium text-gray-800 mb-2">Technical Skills</h3>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {profile.skills?.technical?.map((skill: any, index: number) => (
-                <div key={index} className="flex items-center bg-blue-100 px-3 py-1 rounded-full">
-                  <span className="text-blue-800 text-sm">{typeof skill === 'string' ? skill : skill.skill}</span>
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-3 text-blue-700">Technical Skills</h3>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {getCurrentSkills('technical').map((skillRef: any, idx: number) => {
+                const skillData = Object.values(skillsData.technical).flat().find((s: Skill) => s._id === skillRef.skill);
+                return (
+                  <div key={idx} className="flex items-center bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                    <span className="text-blue-800 text-sm font-medium">{skillData?.name || 'Unknown'}</span>
                   <button
-                    onClick={() => removeSkill('technical', index)}
+                      onClick={() => {
+                        const updatedSkills = getCurrentSkills('technical').filter((_: any, i: number) => i !== idx);
+                        handleSkillsChange('technical', updatedSkills);
+                      }}
                     className="ml-2 text-blue-600 hover:text-blue-800"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                value={tempSkill.technical}
-                onChange={(e) => setTempSkill((prev: any) => ({ ...prev, technical: e.target.value }))}
-                className="w-full p-2 border rounded-md"
-                placeholder="Add technical skill"
-              />
-              <button
-                onClick={() => {
-                  addSkill('technical', tempSkill.technical);
-                  setTempSkill((prev: any) => ({ ...prev, technical: '' }));
-                }}
-                className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg whitespace-nowrap"
-              >
-                Add
-              </button>
-            </div>
+            {renderSkillDropdown('technical', 'Add Technical Skill', 'blue')}
           </div>
           
           {/* Professional Skills */}
-          <div className="mb-6 border-b pb-6">
-            <h3 className="text-lg font-medium text-gray-800 mb-2">Professional Skills</h3>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {profile.skills?.professional?.map((skill: any, index: number) => (
-                <div key={index} className="flex items-center bg-green-100 px-3 py-1 rounded-full">
-                  <span className="text-green-800 text-sm">{typeof skill === 'string' ? skill : skill.skill}</span>
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-3 text-green-700">Professional Skills</h3>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {getCurrentSkills('professional').map((skillRef: any, idx: number) => {
+                const skillData = Object.values(skillsData.professional).flat().find((s: Skill) => s._id === skillRef.skill);
+                return (
+                  <div key={idx} className="flex items-center bg-green-50 px-3 py-1 rounded-full border border-green-200">
+                    <span className="text-green-800 text-sm font-medium">{skillData?.name || 'Unknown'}</span>
                   <button
-                    onClick={() => removeSkill('professional', index)}
+                      onClick={() => {
+                        const updatedSkills = getCurrentSkills('professional').filter((_: any, i: number) => i !== idx);
+                        handleSkillsChange('professional', updatedSkills);
+                      }}
                     className="ml-2 text-green-600 hover:text-green-800"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                value={tempSkill.professional}
-                onChange={(e) => setTempSkill((prev: any) => ({ ...prev, professional: e.target.value }))}
-                className="w-full p-2 border rounded-md"
-                placeholder="Add professional skill"
-              />
-              <button
-                onClick={() => {
-                  addSkill('professional', tempSkill.professional);
-                  setTempSkill((prev: any) => ({ ...prev, professional: '' }));
-                }}
-                className="px-4 py-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg whitespace-nowrap"
-              >
-                Add
-              </button>
-            </div>
+            {renderSkillDropdown('professional', 'Add Professional Skill', 'green')}
           </div>
           
           {/* Soft Skills */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-800 mb-2">Soft Skills</h3>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {profile.skills?.soft?.map((skill: any, index: number) => (
-                <div key={index} className="flex items-center bg-purple-100 px-3 py-1 rounded-full">
-                  <span className="text-purple-800 text-sm">{typeof skill === 'string' ? skill : skill.skill}</span>
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-3 text-purple-700">Soft Skills</h3>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {getCurrentSkills('soft').map((skillRef: any, idx: number) => {
+                const skillData = Object.values(skillsData.soft).flat().find((s: Skill) => s._id === skillRef.skill);
+                return (
+                  <div key={idx} className="flex items-center bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
+                    <span className="text-purple-800 text-sm font-medium">{skillData?.name || 'Unknown'}</span>
                   <button
-                    onClick={() => removeSkill('soft', index)}
+                      onClick={() => {
+                        const updatedSkills = getCurrentSkills('soft').filter((_: any, i: number) => i !== idx);
+                        handleSkillsChange('soft', updatedSkills);
+                      }}
                     className="ml-2 text-purple-600 hover:text-purple-800"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                value={tempSkill.soft}
-                onChange={(e) => setTempSkill((prev: any) => ({ ...prev, soft: e.target.value }))}
-                className="w-full p-2 border rounded-md"
-                placeholder="Add soft skill"
-              />
-              <button
-                onClick={() => {
-                  addSkill('soft', tempSkill.soft);
-                  setTempSkill((prev: any) => ({ ...prev, soft: '' }));
-                }}
-                className="px-4 py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg whitespace-nowrap"
-              >
-                Add
-              </button>
-            </div>
+            {renderSkillDropdown('soft', 'Add Soft Skill', 'purple')}
           </div>
         </div>
         
@@ -2132,40 +2333,231 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           {/* Time Zone */}
           <div className="mb-6">
             <h3 className="text-lg font-medium text-gray-800 mb-2">Time Zone</h3>
-            <select
-              value={typeof profile.availability.timeZone === 'object' && profile.availability.timeZone?._id 
-                ? String(profile.availability.timeZone._id)
-                : String(profile.availability.timeZone || '')}
-              onChange={(e) => {
-                setProfile((prev: Profile) => ({
-                  ...prev,
-                  availability: {
-                    ...prev.availability,
-                    timeZone: e.target.value
+            <div className="relative">
+              <input
+                type="text"
+                value={timezoneSearchTerm}
+                onChange={(e) => {
+                  setTimezoneSearchTerm(e.target.value);
+                  setIsTimezoneDropdownOpen(true);
+                  setSelectedTimezoneIndex(-1); // Reset selection when typing
+                  
+                  // If user clears the field, reset the timezone selection
+                  if (e.target.value === '') {
+                    setProfile((prev: Profile) => ({
+                      ...prev,
+                      availability: {
+                        ...prev.availability,
+                        timeZone: ''
+                      }
+                    }));
+                    setModifiedSections(prev => ({
+                      ...prev,
+                      availability: true
+                    }));
                   }
-                }));
-                setModifiedSections(prev => ({
-                  ...prev,
-                  availability: true
-                }));
-              }}
-              className="w-full p-2 border rounded bg-white"
-              disabled={!selectedCountry || loadingTimezones}
-            >
-              <option value="">
-                {!selectedCountry 
-                  ? 'Select a country first' 
-                  : loadingTimezones 
-                    ? 'Loading timezones...' 
-                    : 'Select your time zone'
-                }
-              </option>
-              {timezones.map((timezone) => (
-                <option key={timezone._id} value={timezone._id}>
-                  {repWizardApi.formatTimezone(timezone)}
-                </option>
-              ))}
-            </select>
+                }}
+                onFocus={() => {
+                  setIsTimezoneDropdownOpen(true);
+                  setSelectedTimezoneIndex(-1); // Reset keyboard selection
+                }}
+                onBlur={() => {
+                  // Delay closing to allow for selection
+                  setTimeout(() => {
+                    setIsTimezoneDropdownOpen(false);
+                    
+                    // Check if what the user typed matches any timezone exactly
+                    if (timezoneSearchTerm && !profile.availability.timeZone) {
+                      const exactMatch = filteredTimezones.find(tz => 
+                        repWizardApi.formatTimezone(tz).toLowerCase() === timezoneSearchTerm.toLowerCase()
+                      );
+                      if (exactMatch) {
+                        setProfile((prev: Profile) => ({
+                          ...prev,
+                          availability: {
+                            ...prev.availability,
+                            timeZone: exactMatch._id
+                          }
+                        }));
+                        setModifiedSections(prev => ({
+                          ...prev,
+                          availability: true
+                        }));
+                      }
+                    }
+                  }, 200);
+                }}
+                onKeyDown={(e) => {
+                  if (!isTimezoneDropdownOpen) return;
+                  
+                  switch (e.key) {
+                    case 'ArrowDown':
+                      e.preventDefault();
+                      setSelectedTimezoneIndex(prev => 
+                        prev < filteredTimezones.length - 1 ? prev + 1 : 0
+                      );
+                      break;
+                    case 'ArrowUp':
+                      e.preventDefault();
+                      setSelectedTimezoneIndex(prev => 
+                        prev > 0 ? prev - 1 : filteredTimezones.length - 1
+                      );
+                      break;
+                    case 'Enter':
+                      e.preventDefault();
+                      if (selectedTimezoneIndex >= 0 && filteredTimezones[selectedTimezoneIndex]) {
+                        const selectedTimezone = filteredTimezones[selectedTimezoneIndex];
+                        setProfile((prev: Profile) => ({
+                          ...prev,
+                          availability: {
+                            ...prev.availability,
+                            timeZone: selectedTimezone._id
+                          }
+                        }));
+                        setModifiedSections(prev => ({
+                          ...prev,
+                          availability: true
+                        }));
+                        setTimezoneSearchTerm(repWizardApi.formatTimezone(selectedTimezone));
+                        setIsTimezoneDropdownOpen(false);
+                      }
+                      break;
+                    case 'Escape':
+                      setIsTimezoneDropdownOpen(false);
+                      break;
+                  }
+                }}
+                placeholder="Search for your time zone... (use ↑↓ arrows to navigate)"
+                className="w-full p-2 border rounded-md"
+              />
+              
+              {/* Search Icon */}
+              <div className="absolute right-2 top-2.5 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+
+              {/* Dropdown List */}
+              {isTimezoneDropdownOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {/* Show suggested timezones first if country is selected */}
+                  {selectedCountry && timezones.length > 0 && filteredTimezones.some(tz => timezones.some(suggestedTz => suggestedTz._id === tz._id)) && (
+                    <>
+                      <div className="px-3 py-2 text-sm font-medium bg-blue-100 text-blue-700 border-b">
+                        Suggested for {countries.find(c => c.countryCode === selectedCountry)?.countryName || selectedCountry}
+                      </div>
+                      {filteredTimezones
+                        .filter(tz => timezones.some(suggestedTz => suggestedTz._id === tz._id))
+                        .map((timezone, index) => {
+                          const globalIndex = filteredTimezones.indexOf(timezone);
+                          return (
+                            <button
+                              key={timezone._id}
+                              type="button"
+                              onClick={() => {
+                                setProfile((prev: Profile) => ({
+                                  ...prev,
+                                  availability: {
+                                    ...prev.availability,
+                                    timeZone: timezone._id
+                                  }
+                                }));
+                                setModifiedSections(prev => ({
+                                  ...prev,
+                                  availability: true
+                                }));
+                                setTimezoneSearchTerm(repWizardApi.formatTimezone(timezone));
+                                setIsTimezoneDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 flex items-center justify-between ${
+                                globalIndex === selectedTimezoneIndex 
+                                  ? 'bg-blue-100 text-blue-700' 
+                                  : 'hover:bg-blue-50 hover:text-blue-600'
+                              }`}
+                            >
+                              <span>{repWizardApi.formatTimezone(timezone)}</span>
+                            </button>
+                          );
+                        })}
+                    </>
+                  )}
+                  
+                  {/* Show all other matching timezones */}
+                  {filteredTimezones.filter(tz => !timezones.some(suggestedTz => suggestedTz._id === tz._id)).length > 0 && (
+                    <>
+                      <div className="px-3 py-2 text-sm font-medium bg-gray-100 text-gray-700 border-b">
+                        All Time Zones
+                      </div>
+                      {filteredTimezones
+                        .filter(tz => !timezones.some(suggestedTz => suggestedTz._id === tz._id))
+                        .map((timezone) => {
+                          const globalIndex = filteredTimezones.indexOf(timezone);
+                          return (
+                            <button
+                              key={timezone._id}
+                              type="button"
+                              onClick={() => {
+                                setProfile((prev: Profile) => ({
+                                  ...prev,
+                                  availability: {
+                                    ...prev.availability,
+                                    timeZone: timezone._id
+                                  }
+                                }));
+                                setModifiedSections(prev => ({
+                                  ...prev,
+                                  availability: true
+                                }));
+                                setTimezoneSearchTerm(repWizardApi.formatTimezone(timezone));
+                                setIsTimezoneDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 flex items-center justify-between ${
+                                globalIndex === selectedTimezoneIndex 
+                                  ? 'bg-blue-100 text-blue-700' 
+                                  : 'hover:bg-blue-50 hover:text-blue-600'
+                              }`}
+                            >
+                              <span>{repWizardApi.formatTimezone(timezone)}</span>
+                            </button>
+                          );
+                        })}
+                    </>
+                  )}
+
+                  {filteredTimezones.length === 0 && (
+                    <div className="px-3 py-2 text-gray-500 text-center">
+                      No timezones found matching "{timezoneSearchTerm}"
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Timezone mismatch warning */}
+            {(() => {
+              const mismatchInfo = getTimezoneMismatchInfo();
+              if (mismatchInfo) {
+                return (
+                  <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-amber-800">
+                          Your timezone is set to <strong>{mismatchInfo.timezoneCountry}</strong>, but your country is <strong>{mismatchInfo.selectedCountry}</strong>. This is fine if you work across time zones.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+            
             {selectedCountry && timezones.length === 0 && !loadingTimezones && (
               <p className="text-sm text-gray-500 mt-1">No timezones available for this country</p>
             )}
