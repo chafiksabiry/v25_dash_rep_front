@@ -234,6 +234,9 @@ export const profileApi = {
   getPlan: (profileId: string) => repApiClient.get(`/api/profiles/${profileId}/plan`),
 };
 
+// Export the API client for direct use
+export { repApiClient };
+
 // Default export with all APIs
 export default {
   calls: callsApi,

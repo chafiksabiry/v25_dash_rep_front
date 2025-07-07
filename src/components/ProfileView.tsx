@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { getProfilePlan } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
-
 // Type definitions
 interface AssessmentResults {
   score?: number;
@@ -310,6 +309,52 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
     const assessmentUrl = `${assessmentAppUrl}/contact-center/${formattedSkill}`;
     console.log("assessmentUrl contact center", assessmentUrl);
     window.open(assessmentUrl, '_blank');
+  };
+
+  // Helper function to format skills for display
+  const formatSkillsForDisplay = (skillsData: any) => {
+    // Handle the populated format (array of skills with nested skill objects)
+    if (Array.isArray(skillsData)) {
+      return skillsData.map(skillItem => {
+        // Handle different skill formats
+        if (typeof skillItem === 'string') {
+          // Old format: just a string
+          return {
+            name: skillItem,
+            details: ''
+          };
+        } else if (skillItem.skill && typeof skillItem.skill === 'object') {
+          // New populated format: skill object nested under 'skill' property
+          return {
+            _id: skillItem.skill._id,
+            name: skillItem.skill.name,
+            description: skillItem.skill.description,
+            category: skillItem.skill.category,
+            details: skillItem.details || ''
+          };
+        } else if (skillItem.skill && typeof skillItem.skill === 'string') {
+          // Format with ObjectId reference
+          return {
+            name: skillItem.skill,
+            details: skillItem.details || ''
+          };
+        } else if (skillItem.name) {
+          // Already populated format
+          return {
+            name: skillItem.name,
+            details: skillItem.details || ''
+          };
+        } else {
+          // Unknown format
+          return {
+            name: skillItem._id || 'Unknown',
+            details: skillItem.details || ''
+          };
+        }
+      });
+    }
+    
+    return [];
   };
 
   return (
@@ -701,15 +746,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               Technical skills are required. Please add your technical expertise.
             </div>
           )}
-          {profile.skills?.technical?.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {profile.skills.technical.map((skill: any, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                  {typeof skill === 'string' ? skill : skill.skill || ''}
-                </span>
-              ))}
-            </div>
-          ) : (
+          <div className="flex flex-wrap gap-2">
+            {formatSkillsForDisplay(profile.skills?.technical).map((skill: any, idx: number) => (
+              <div key={idx} className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                <span className="font-medium">{skill.name}</span>
+              </div>
+            ))}
+          </div>
+          {formatSkillsForDisplay(profile.skills?.technical).length === 0 && (
             <p className="text-gray-500 italic">No technical skills listed</p>
           )}
         </div>
@@ -725,15 +769,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               Professional skills are required. Please add your professional expertise.
             </div>
           )}
-          {profile.skills?.professional?.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {profile.skills.professional.map((skill: any, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                  {typeof skill === 'string' ? skill : skill.skill || ''}
-                </span>
-              ))}
-            </div>
-          ) : (
+          <div className="flex flex-wrap gap-2">
+            {formatSkillsForDisplay(profile.skills?.professional).map((skill: any, idx: number) => (
+              <div key={idx} className="px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                <span className="font-medium">{skill.name}</span>
+              </div>
+            ))}
+          </div>
+          {formatSkillsForDisplay(profile.skills?.professional).length === 0 && (
             <p className="text-gray-500 italic">No professional skills listed</p>
           )}
         </div>
@@ -749,15 +792,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               Soft skills are required. Please add your interpersonal skills.
             </div>
           )}
-          {profile.skills?.soft?.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {profile.skills.soft.map((skill: any, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
-                  {typeof skill === 'string' ? skill : skill.skill || ''}
-                </span>
-              ))}
-            </div>
-          ) : (
+          <div className="flex flex-wrap gap-2">
+            {formatSkillsForDisplay(profile.skills?.soft).map((skill: any, idx: number) => (
+              <div key={idx} className="px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
+                <span className="font-medium">{skill.name}</span>
+              </div>
+            ))}
+          </div>
+          {formatSkillsForDisplay(profile.skills?.soft).length === 0 && (
             <p className="text-gray-500 italic">No soft skills listed</p>
           )}
         </div>
