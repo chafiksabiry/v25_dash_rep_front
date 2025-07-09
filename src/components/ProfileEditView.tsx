@@ -10,6 +10,8 @@ import { updateProfileData, updateBasicInfo, updateExperience, updateSkills } fr
 import { getLanguageCodeFromAI } from '../utils/languageUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 import { fetchAllSkills, SkillsByCategory, Skill } from '../services/api/skills';
+import { ipLocationApi } from '../services/api/ipLocation';
+import { CountryMismatchWarning } from './CountryMismatchWarning';
 import OpenAI from 'openai';
 
 // Add CSS styles for error highlighting
@@ -119,6 +121,7 @@ interface Availability {
 
 interface Profile {
   _id: string;
+  userId?: string;  // Add userId property
   personalInfo: {
     profileImage?: string;
     photo?: {
@@ -194,7 +197,12 @@ const PROFILE_UPDATE_EVENT = 'PROFILE_UPDATED';
 
 export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initialProfile, onSave }) => {
   // Add console.log statements
-  console.log('Initial Profile Data:', initialProfile);
+  console.log('🔍 ProfileEditView - Initial Profile Data:', initialProfile);
+  console.log('🔍 ProfileEditView - Profile keys:', Object.keys(initialProfile || {}));
+  console.log('🔍 ProfileEditView - Profile._id:', initialProfile?._id);
+  console.log('🔍 ProfileEditView - Profile.userId:', initialProfile?.userId);
+  console.log('🔍 ProfileEditView - Profile.personalInfo:', initialProfile?.personalInfo);
+  console.log('🔍 ProfileEditView - Profile.personalInfo.country:', initialProfile?.personalInfo?.country);
   console.log('Initial Availability Data:', initialProfile.availability);
 
   // Initialize profile state with proper default values for availability
@@ -314,6 +322,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   // States for skill selection dropdown
   const [skillDropdownOpen, setSkillDropdownOpen] = useState<{[key: string]: boolean}>({});
   const [skillSearchTerm, setSkillSearchTerm] = useState<{[key: string]: string}>({});
+
+  // IP location detection state
+  const [detectedCountryCode, setDetectedCountryCode] = useState<string | null>(null);
+  const [ipLocationError, setIpLocationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialProfile) {
@@ -462,6 +474,48 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }
   }, [timezones, allTimezones, timezoneSearchTerm]);
 
+  // IP location detection useEffect
+  useEffect(() => {
+    const fetchIpLocation = async () => {
+      try {
+        console.log('🌍 Starting IP location fetch...');
+        console.log('profile object:', profile);
+        console.log('profile.userId:', profile?.userId);
+        
+        if (!profile?.userId) {
+          console.log('❌ No userId found, skipping IP location fetch');
+          return;
+        }
+        
+        console.log('🌍 Fetching IP location for user:', profile.userId);
+        const ipLocationData = await ipLocationApi.getUserLatestIpLocation(profile.userId);
+        console.log('📡 IP location API response:', ipLocationData);
+        
+        if (ipLocationData.success && ipLocationData.locationInfo) {
+          console.log('✅ IP location data received:', ipLocationData.locationInfo);
+          setDetectedCountryCode(ipLocationData.locationInfo.countryCode);
+          console.log('✅ Detected country code set to:', ipLocationData.locationInfo.countryCode);
+        } else {
+          console.log('❌ IP location API returned unsuccessful response or no locationInfo');
+        }
+      } catch (error) {
+        console.error('❌ Error fetching IP location:', error);
+        setIpLocationError(error instanceof Error ? error.message : 'Failed to fetch IP location');
+      }
+    };
+
+    fetchIpLocation();
+  }, [profile?.userId]);
+
+  // Debug useEffect to track country changes
+  useEffect(() => {
+    console.log('🔄 Country selection changed:');
+    console.log('selectedCountry:', selectedCountry);
+    console.log('profile.personalInfo.country:', profile?.personalInfo?.country);
+    console.log('detectedCountryCode:', detectedCountryCode);
+    console.log('hasCountryMismatch():', hasCountryMismatch());
+  }, [selectedCountry, profile?.personalInfo?.country, detectedCountryCode]);
+
   // Show toast message
   const showToast = (message: string, type = 'success') => {
     setToast({ show: true, message, type });
@@ -495,6 +549,34 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }
     
     return null;
+  };
+
+  // Function to check country mismatch
+  const hasCountryMismatch = (): boolean => {
+    console.log('🔍 Checking country mismatch...');
+    console.log('detectedCountryCode:', detectedCountryCode);
+    console.log('profile.personalInfo.country:', profile?.personalInfo?.country);
+    
+    if (!detectedCountryCode || !profile?.personalInfo?.country) {
+      console.log('❌ Missing data for country mismatch check');
+      return false;
+    }
+    
+    const profileCountryCode = typeof profile.personalInfo.country === 'object' 
+      ? profile.personalInfo.country.countryCode 
+      : profile.personalInfo.country;
+    
+    console.log('profileCountryCode:', profileCountryCode);
+    console.log('detectedCountryCode:', detectedCountryCode);
+    
+    // Also check the selectedCountry state for real-time updates
+    const currentCountryCode = selectedCountry || profileCountryCode;
+    console.log('currentCountryCode (including selectedCountry):', currentCountryCode);
+    
+    const hasMismatch = currentCountryCode !== detectedCountryCode;
+    console.log('hasMismatch:', hasMismatch);
+    
+    return hasMismatch;
   };
 
   // Validate profile data
@@ -1524,6 +1606,19 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 )}
               </div>
               {renderError(validationErrors.country, 'country')}
+              
+              {/* Country Mismatch Warning */}
+              {hasCountryMismatch() && detectedCountryCode && (() => {
+                console.log('🚨 Rendering CountryMismatchWarning with:', { detectedCountryCode, countries: countries.length });
+                return (
+                  <div className="mt-2">
+                    <CountryMismatchWarning
+                      detectedCountryCode={detectedCountryCode}
+                      countries={countries}
+                    />
+                  </div>
+                );
+              })()}
             </div>
             
             {/* Contact Fields */}
