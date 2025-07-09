@@ -15,7 +15,7 @@ export const CountryMismatchWarning: React.FC<CountryMismatchWarningProps> = ({
   const detectedCountryName = detectedCountry?.countryName || detectedCountryCode;
 
   return (
-    <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
+    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
       <div className="flex items-start">
         <div className="flex-shrink-0">
           <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
