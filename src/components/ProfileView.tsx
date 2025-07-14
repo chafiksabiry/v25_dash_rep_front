@@ -4,7 +4,7 @@ import {
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
   Edit, CreditCard, X
 } from 'lucide-react';
-import { getProfilePlan } from '../utils/profileUtils';
+import { getProfilePlan, checkCountryMismatch } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 // Type definitions
 interface AssessmentResults {
@@ -153,6 +153,16 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
   const [timezoneData, setTimezoneData] = useState<Timezone | null>(null);
   const [allTimezones, setAllTimezones] = useState<Timezone[]>([]);
   const [countries, setCountries] = useState<Timezone[]>([]);
+  
+  // Add state for country mismatch checking
+  const [countryMismatch, setCountryMismatch] = useState<{
+    hasMismatch: boolean;
+    firstLoginCountry?: string;
+    selectedCountry?: string;
+    firstLoginCountryCode?: string;
+  } | null>(null);
+  const [checkingCountryMismatch, setCheckingCountryMismatch] = useState(false);
+  const [showLoadingSpinner, setShowLoadingSpinner] = useState(false);
 
   // Add console logging
   useEffect(() => {
@@ -236,6 +246,50 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
 
     loadLocationData();
   }, [profile?.personalInfo?.country, profile?.availability?.timeZone]);
+
+  // Add useEffect to check country mismatch
+  useEffect(() => {
+    const checkMismatch = async () => {
+      if (!countryData || countries.length === 0) {
+        return;
+      }
+
+      try {
+        setCheckingCountryMismatch(true);
+        
+        // Only show spinner if check takes longer than 800ms
+        const spinnerTimer = setTimeout(() => {
+          setShowLoadingSpinner(true);
+        }, 800);
+        
+        console.log('🔍 Checking country mismatch for selected country:', countryData.countryCode);
+        
+        const mismatchResult = await checkCountryMismatch(
+          countryData.countryCode, 
+          countries
+        );
+        
+        // Clear the spinner timer since we got a result
+        clearTimeout(spinnerTimer);
+        
+        if (mismatchResult) {
+          setCountryMismatch(mismatchResult);
+          if (mismatchResult.hasMismatch) {
+            console.log('⚠️ Country mismatch detected:', mismatchResult);
+          } else {
+            console.log('✅ No country mismatch found');
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error checking country mismatch:', error);
+      } finally {
+        setCheckingCountryMismatch(false);
+        setShowLoadingSpinner(false);
+      }
+    };
+
+    checkMismatch();
+  }, [countryData, countries]);
 
   if (!profile) return null;
 
@@ -456,6 +510,40 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               <MapPin className="w-4 h-4" />
               <span>{countryData?.countryName || 'Country not specified'}</span>
             </div>
+            
+            {/* Country mismatch warning */}
+            {countryMismatch?.hasMismatch && (
+              <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-orange-800">
+                      <strong>Location Notice:</strong> Your profile shows <strong>{countryMismatch.selectedCountry}</strong>, but your first login was from <strong>{countryMismatch.firstLoginCountry}</strong>. Please verify your location settings.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {checkingCountryMismatch && showLoadingSpinner && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-blue-800">Validating profile information...</p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-center gap-4 text-gray-600">
               {profile.personalInfo?.email && (
                 <a href={`mailto:${profile.personalInfo.email}`} className="hover:text-blue-600">

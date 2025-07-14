@@ -28,6 +28,7 @@ ENV VITE_WS_URL=wss://api-calls.harx.ai/speech-to-text
 ENV VITE_API_URL_AI_MESSAGES=https://api-messages-service.harx.ai/api
 ENV VITE_API_URL_CALL=https://api-calls.harx.ai
 ENV VITE_REP_API_URL=https://api-repcreationwizard.harx.ai
+ENV VITE_AUTH_API_URL=https://api-registration.harx.ai/api
 # Install dependencies
 RUN npm install
 
