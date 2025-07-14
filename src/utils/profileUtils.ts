@@ -20,6 +20,34 @@ interface PlanResponse {
   plan: Plan;
 }
 
+// Add interface for IP history
+interface IpHistoryEntry {
+  _id: string;
+  ip: string;
+  timestamp: string;
+  action: string;
+  locationInfo: {
+    location: {
+      _id: string;
+      countryCode: string;
+      countryName: string;
+      zoneName: string;
+      gmtOffset: number;
+    };
+    region: string;
+    city: string;
+    isp: string;
+    postal: string;
+    coordinates: string;
+  };
+}
+
+interface IpHistoryResponse {
+  success: boolean;
+  data: IpHistoryEntry[];
+  message: string;
+}
+
 /**
  * Get profile data from localStorage or API if necessary
  */
@@ -288,5 +316,125 @@ export const getProfilePlan = async (profileId: string): Promise<PlanResponse> =
   } catch (error) {
     console.error('❌ Error fetching plan data:', error);
     throw error;
+  }
+}; 
+
+// Function to fetch user's IP history
+export const fetchUserIpHistory = async (userId: string): Promise<IpHistoryResponse> => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${import.meta.env.VITE_AUTH_API_URL}/users/${userId}/ip-history`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching IP history:', error);
+    throw error;
+  }
+};
+
+// Function to get the first login country code
+export const getFirstLoginCountryCode = (ipHistory: IpHistoryEntry[]): string | null => {
+  // Filter only login actions and sort by timestamp (oldest first)
+  const loginEntries = ipHistory
+    .filter(entry => entry.action === 'login')
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+  if (loginEntries.length === 0) {
+    return null;
+  }
+
+  // Return the country code of the first login
+  return loginEntries[0].locationInfo.location.countryCode;
+};
+
+// Helper function to get userId based on run mode
+export const getUserId = (): string => {
+  const runMode = import.meta.env.VITE_RUN_MODE || 'in-app';
+  let userId: string;
+  
+  // Determine userId based on run mode
+  if (runMode === 'standalone') {
+    console.log("🔑 Running in standalone mode");
+    // Use static userId from environment variable in standalone mode
+    userId = import.meta.env.VITE_STANDALONE_USER_ID;
+    console.log("🔑 Using static userID from env:", userId);
+  } else {
+    console.log("🔑 Running in in-app mode");
+    // Use userId from cookies in in-app mode
+    userId = Cookies.get('userId') || '';
+    console.log("🔑 userId cookie:", userId);
+    console.log("🔑 Verified saved user ID from cookie:", userId);
+  }
+  
+  if (!userId) {
+    console.error('❌ No userId found based on run mode:', runMode);
+    throw new Error('User ID not found');
+  }
+  
+  console.log(`👤 Using userId: ${userId}`);
+  return userId;
+};
+
+// Function to check country mismatch - now with automatic userId retrieval
+export const checkCountryMismatch = async (
+  selectedCountryCode: string,
+  countries: any[]
+): Promise<{
+  hasMismatch: boolean;
+  firstLoginCountry?: string;
+  selectedCountry?: string;
+  firstLoginCountryCode?: string;
+} | null> => {
+  try {
+    // Get userId automatically
+    const userId = getUserId();
+    
+    const ipHistoryResponse = await fetchUserIpHistory(userId);
+    
+    if (!ipHistoryResponse.success) {
+      console.error('Failed to fetch IP history:', ipHistoryResponse.message);
+      return null;
+    }
+
+    const firstLoginCountryCode = getFirstLoginCountryCode(ipHistoryResponse.data);
+    
+    if (!firstLoginCountryCode) {
+      console.log('No login history found');
+      return null;
+    }
+
+    // Check if there's a mismatch
+    const hasMismatch = firstLoginCountryCode !== selectedCountryCode;
+    
+    if (hasMismatch) {
+      // Find country names for display
+      const firstLoginCountryData = countries.find(c => c.countryCode === firstLoginCountryCode);
+      const selectedCountryData = countries.find(c => c.countryCode === selectedCountryCode);
+      
+      return {
+        hasMismatch: true,
+        firstLoginCountry: firstLoginCountryData?.countryName || firstLoginCountryCode,
+        selectedCountry: selectedCountryData?.countryName || selectedCountryCode,
+        firstLoginCountryCode
+      };
+    }
+
+    return { hasMismatch: false };
+  } catch (error) {
+    console.error('Error checking country mismatch:', error);
+    return null;
   }
 }; 
