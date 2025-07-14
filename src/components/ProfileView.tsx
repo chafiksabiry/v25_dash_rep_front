@@ -6,8 +6,6 @@ import {
 } from 'lucide-react';
 import { getProfilePlan } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
-import { ipLocationApi, IpLocationResponse } from '../services/api/ipLocation';
-import { CountryMismatchWarning } from './CountryMismatchWarning';
 // Type definitions
 interface AssessmentResults {
   score?: number;
@@ -155,8 +153,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
   const [timezoneData, setTimezoneData] = useState<Timezone | null>(null);
   const [allTimezones, setAllTimezones] = useState<Timezone[]>([]);
   const [countries, setCountries] = useState<Timezone[]>([]);
-  const [detectedCountryCode, setDetectedCountryCode] = useState<string | null>(null);
-  const [ipLocationError, setIpLocationError] = useState<string | null>(null);
 
   // Add console logging
   useEffect(() => {
@@ -183,37 +179,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
 
     loadLocationData();
   }, []);
-
-  // Add IP location detection useEffect
-  useEffect(() => {
-    const fetchIpLocation = async () => {
-      try {
-        if (!profile?.userId) return;
-        
-        console.log('🌍 Fetching IP location for user:', profile.userId);
-        const ipLocationData = await ipLocationApi.getUserLatestIpLocation(profile.userId);
-        
-        if (ipLocationData.success && ipLocationData.locationInfo) {
-          setDetectedCountryCode(ipLocationData.locationInfo.countryCode);
-          console.log('✅ Detected country code:', ipLocationData.locationInfo.countryCode);
-        }
-      } catch (error) {
-        console.error('❌ Error fetching IP location:', error);
-        setIpLocationError(error instanceof Error ? error.message : 'Failed to fetch IP location');
-      }
-    };
-
-    fetchIpLocation();
-  }, [profile?.userId]);
-
-  // Debug useEffect to track country changes
-  useEffect(() => {
-    console.log('🔄 ProfileView - Country data changed:');
-    console.log('countryData:', countryData);
-    console.log('profile.personalInfo.country:', profile?.personalInfo?.country);
-    console.log('detectedCountryCode:', detectedCountryCode);
-    console.log('hasCountryMismatch():', hasCountryMismatch());
-  }, [countryData, profile?.personalInfo?.country, detectedCountryCode]);
 
   useEffect(() => {
     const fetchPlanData = async () => {
@@ -442,17 +407,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
     return [];
   };
 
-  // Add function to check country mismatch
-  const hasCountryMismatch = (): boolean => {
-    if (!detectedCountryCode || !profile?.personalInfo?.country) return false;
-    
-    const profileCountryCode = typeof profile.personalInfo.country === 'object' 
-      ? profile.personalInfo.country.countryCode 
-      : profile.personalInfo.country;
-    
-    return profileCountryCode !== detectedCountryCode;
-  };
-
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
       {/* Page Header with Edit Button */}
@@ -502,17 +456,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               <MapPin className="w-4 h-4" />
               <span>{countryData?.countryName || 'Country not specified'}</span>
             </div>
-            
-            {/* Country Mismatch Warning */}
-            {hasCountryMismatch() && detectedCountryCode && (
-              <div className="mb-4">
-                <CountryMismatchWarning
-                  detectedCountryCode={detectedCountryCode}
-                  countries={countries}
-                />
-              </div>
-            )}
-            
             <div className="flex items-center justify-center gap-4 text-gray-600">
               {profile.personalInfo?.email && (
                 <a href={`mailto:${profile.personalInfo.email}`} className="hover:text-blue-600">
