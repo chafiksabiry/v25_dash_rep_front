@@ -6,7 +6,7 @@ import {
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
   Edit, Check, X, Save, RefreshCw, Plus, Trash2, Camera, Upload
 } from 'lucide-react';
-import { updateProfileData, updateBasicInfo, updateExperience, updateSkills } from '../utils/profileUtils';
+import { updateProfileData, updateBasicInfo, updateExperience, updateSkills, checkCountryMismatch } from '../utils/profileUtils';
 import { getLanguageCodeFromAI } from '../utils/languageUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 import { fetchAllSkills, SkillsByCategory, Skill } from '../services/api/skills';
@@ -314,6 +314,15 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   // States for skill selection dropdown
   const [skillDropdownOpen, setSkillDropdownOpen] = useState<{[key: string]: boolean}>({});
   const [skillSearchTerm, setSkillSearchTerm] = useState<{[key: string]: string}>({});
+
+  // Add state for country mismatch checking
+  const [countryMismatch, setCountryMismatch] = useState<{
+    hasMismatch: boolean;
+    firstLoginCountry?: string;
+    selectedCountry?: string;
+    firstLoginCountryCode?: string;
+  } | null>(null);
+  const [checkingCountryMismatch, setCheckingCountryMismatch] = useState(false);
 
   useEffect(() => {
     if (initialProfile) {
@@ -1288,6 +1297,40 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     );
   };
 
+  // Add useEffect to check country mismatch
+  useEffect(() => {
+    const checkMismatch = async () => {
+      if (!selectedCountry || countries.length === 0) {
+        return;
+      }
+
+      try {
+        setCheckingCountryMismatch(true);
+        console.log('🔍 Checking country mismatch for selected country:', selectedCountry);
+        
+        const mismatchResult = await checkCountryMismatch(
+          selectedCountry, 
+          countries
+        );
+        
+        if (mismatchResult) {
+          setCountryMismatch(mismatchResult);
+          if (mismatchResult.hasMismatch) {
+            console.log('⚠️ Country mismatch detected:', mismatchResult);
+          } else {
+            console.log('✅ No country mismatch found');
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error checking country mismatch:', error);
+      } finally {
+        setCheckingCountryMismatch(false);
+      }
+    };
+
+    checkMismatch();
+  }, [selectedCountry, countries]);
+
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
       {/* Page Header with Save/Cancel Buttons */}
@@ -1524,6 +1567,40 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 )}
               </div>
               {renderError(validationErrors.country, 'country')}
+              
+              {/* Country mismatch warning */}
+              {countryMismatch?.hasMismatch && (
+                <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-md">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-orange-800">
+                        <strong>Location Notice:</strong> You've selected <strong>{countryMismatch.selectedCountry}</strong>, but your first login was from <strong>{countryMismatch.firstLoginCountry}</strong>. Please verify your location is correct.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {checkingCountryMismatch && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-blue-800">Verifying location information...</p>
+                    </div>
+                  </div>
+                                 </div>
+               )}
             </div>
             
             {/* Contact Fields */}
