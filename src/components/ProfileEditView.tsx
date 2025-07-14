@@ -323,6 +323,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     firstLoginCountryCode?: string;
   } | null>(null);
   const [checkingCountryMismatch, setCheckingCountryMismatch] = useState(false);
+  const [showLoadingSpinner, setShowLoadingSpinner] = useState(false);
 
   useEffect(() => {
     if (initialProfile) {
@@ -1306,12 +1307,21 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       try {
         setCheckingCountryMismatch(true);
+        
+        // Only show spinner if check takes longer than 800ms
+        const spinnerTimer = setTimeout(() => {
+          setShowLoadingSpinner(true);
+        }, 800);
+        
         console.log('🔍 Checking country mismatch for selected country:', selectedCountry);
         
         const mismatchResult = await checkCountryMismatch(
           selectedCountry, 
           countries
         );
+        
+        // Clear the spinner timer since we got a result
+        clearTimeout(spinnerTimer);
         
         if (mismatchResult) {
           setCountryMismatch(mismatchResult);
@@ -1325,6 +1335,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         console.error('❌ Error checking country mismatch:', error);
       } finally {
         setCheckingCountryMismatch(false);
+        setShowLoadingSpinner(false);
       }
     };
 
@@ -1586,7 +1597,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 </div>
               )}
               
-              {checkingCountryMismatch && (
+              {checkingCountryMismatch && showLoadingSpinner && (
                 <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
@@ -1596,11 +1607,11 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                       </svg>
                     </div>
                     <div className="ml-3">
-                      <p className="text-sm text-blue-800">Verifying location information...</p>
+                      <p className="text-sm text-blue-800">Validating profile information...</p>
                     </div>
                   </div>
-                                 </div>
-               )}
+                </div>
+              )}
             </div>
             
             {/* Contact Fields */}
