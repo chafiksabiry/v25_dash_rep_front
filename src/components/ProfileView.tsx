@@ -391,7 +391,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
     
     const assessmentUrl = `${assessmentAppUrl}/language/${langParameter}`;
     console.log("assessmentUrl language", assessmentUrl);
-    window.open(assessmentUrl, '_blank');
+    window.location.href = assessmentUrl;
   };
 
   // Format skill name for URL (e.g., "Active Listening" -> "active-listening")
@@ -412,7 +412,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
     
     const assessmentUrl = `${assessmentAppUrl}/contact-center/${formattedSkill}`;
     console.log("assessmentUrl contact center", assessmentUrl);
-    window.open(assessmentUrl, '_blank');
+    window.location.href = assessmentUrl;
   };
 
   // Helper function to format skills for display
