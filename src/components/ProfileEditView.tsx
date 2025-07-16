@@ -216,6 +216,11 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       timeZone: initialProfile.availability?.timeZone || ''
     };
 
+    // Ensure timeZone is never null
+    if (mergedAvailability.timeZone === null || mergedAvailability.timeZone === undefined) {
+      mergedAvailability.timeZone = '';
+    }
+
     return {
       ...initialProfile,
       availability: mergedAvailability
@@ -340,7 +345,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       
       // Set initial timezone search term if timezone is already selected
       if (initialProfile.availability?.timeZone) {
-        if (typeof initialProfile.availability.timeZone === 'object') {
+        if (typeof initialProfile.availability.timeZone === 'object' && initialProfile.availability.timeZone !== null) {
           setTimezoneSearchTerm(repWizardApi.formatTimezone(initialProfile.availability.timeZone) || '');
         }
       }
@@ -414,7 +419,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         
         // Auto-suggest main timezone only if no timezone is currently set
         const currentTimezone = profile.availability.timeZone;
-        if ((!currentTimezone || currentTimezone === '') && timezonesData.length > 0) {
+        if ((!currentTimezone || currentTimezone === '' || currentTimezone === null) && timezonesData.length > 0) {
           // Find the main timezone (usually the first one or one with highest priority)
           const mainTimezone = timezonesData[0]; // Take the first timezone as main
           console.log('🎯 Auto-suggesting main timezone:', mainTimezone.zoneName);
@@ -480,6 +485,11 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
   // Get timezone and country mismatch info
   const getTimezoneMismatchInfo = () => {
+    // Check if timeZone exists and is not null
+    if (!profile.availability.timeZone) {
+      return null;
+    }
+    
     const currentTimezoneId = typeof profile.availability.timeZone === 'object' 
       ? profile.availability.timeZone._id 
       : profile.availability.timeZone;
@@ -2455,7 +2465,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     setIsTimezoneDropdownOpen(false);
                     
                     // Check if what the user typed matches any timezone exactly
-                    if (timezoneSearchTerm && !profile.availability.timeZone) {
+                    if (timezoneSearchTerm && (!profile.availability.timeZone || profile.availability.timeZone === '' || profile.availability.timeZone === null)) {
                       const exactMatch = filteredTimezones.find(tz => 
                         repWizardApi.formatTimezone(tz).toLowerCase() === timezoneSearchTerm.toLowerCase()
                       );
