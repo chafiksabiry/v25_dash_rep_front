@@ -1079,10 +1079,22 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               {profile.personalInfo.languages.map((lang: any, index: number) => {
                 const stars = getProficiencyStars(lang.proficiency);
                 
+                // Get language name and code based on whether it's populated or not
+                const languageName = typeof lang.language === 'object' && lang.language 
+                  ? lang.language.name 
+                  : (typeof lang.language === 'string' ? 'Unknown Language' : 'Unknown Language');
+                
+                const languageCode = typeof lang.language === 'object' && lang.language 
+                  ? lang.language.code 
+                  : (typeof lang.language === 'string' ? '' : '');
+                
                 return (
                   <div key={index} className="bg-gray-50 rounded-lg p-4">
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-medium text-gray-800">{lang.language}</h3>
+                      <h3 className="font-medium text-gray-800">
+                        {languageName}
+                        {languageCode && <span className="text-gray-500 ml-1">({languageCode})</span>}
+                      </h3>
                       <div className="flex items-center">
                         {[...Array(6)].map((_, i) => (
                           <Star
@@ -1101,7 +1113,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                         {lang.proficiency}
                       </span>
                       <button 
-                        onClick={() => takeLanguageAssessment(lang.language, lang.iso639_1)}
+                        onClick={() => takeLanguageAssessment(languageName, languageCode)}
                         className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
                       >
                         {lang.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
