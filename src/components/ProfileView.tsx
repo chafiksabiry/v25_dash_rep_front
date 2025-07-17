@@ -379,9 +379,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
   
   // Function to take a language assessment
   const takeLanguageAssessment = (language: string, iso639_1Code?: string) => {
-    // If iso639_1 is not provided, just use the language name directly
-    const langParameter = iso639_1Code || language;
-    
     // Check if we're in standalone mode
     const isStandaloneMode = import.meta.env.VITE_RUN_MODE === 'standalone';
     // Use the appropriate assessment app URL based on the mode
@@ -389,7 +386,9 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
       ? import.meta.env.VITE_ASSESSMENT_APP_STANDALONE 
       : import.meta.env.VITE_ASSESSMENT_APP;
     
-    const assessmentUrl = `${assessmentAppUrl}/language/${langParameter}`;
+    //const assessmentUrl = `${assessmentAppUrl}/language/${langParameter}`;
+    const assessmentUrl = `${assessmentAppUrl}/language?lang=${language}&code=${iso639_1Code}`;
+
     console.log("assessmentUrl language", assessmentUrl);
     window.location.href = assessmentUrl;
   };
