@@ -2187,7 +2187,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   {/* Existing Video Player */}
                   <video
                     controls
-                    className="w-80 h-60 bg-black rounded-lg object-cover"
+                    className="w-full aspect-video bg-black rounded-lg object-cover"
                   >
                     <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
                     <source src={profile.personalInfo.presentationVideo.url} type="video/webm" />
@@ -2246,7 +2246,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                        muted
                        playsInline
                        webkit-playsinline="true"
-                       className="w-80 h-60 bg-black rounded-lg object-cover"
+                       className="w-full aspect-video bg-black rounded-lg object-cover"
                      />
                                          {isRecording && (
                        <div className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
@@ -2291,7 +2291,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
                                      {/* Recording Progress Bar */}
                    {recordingTime > 0 && (
-                     <div className="w-80">
+                     <div className="w-full">
                        <div className="bg-gray-200 rounded-full h-2">
                          <div 
                            className={`h-2 rounded-full transition-all duration-1000 ${
@@ -2327,37 +2327,26 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             {/* Recorded Video Preview */}
             {recordedVideo && (
               <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex flex-col items-center space-y-4">
+                <div className="flex flex-col space-y-4">
                   <div className="flex items-center justify-between w-full">
                     <h4 className="text-md font-medium text-gray-800">New Video Recording</h4>
-                    <div className="flex gap-2">
-                      <button
-                         onClick={async () => {
-                           deleteVideo();
-                           await startCamera();
-                         }}
-                         className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 text-sm transition-colors"
-                       >
-                         <RotateCcw className="w-4 h-4" />
-                         Retake
-                       </button>
-                      <button
-                        onClick={() => {
-                          showToast('Video ready to save!', 'success');
-                        }}
-                        className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm transition-colors"
-                      >
-                        <Check className="w-4 h-4" />
-                        Use This Video
-                      </button>
-                    </div>
+                    <button
+                       onClick={async () => {
+                         deleteVideo();
+                         await startCamera();
+                       }}
+                       className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 text-sm transition-colors"
+                     >
+                       <RotateCcw className="w-4 h-4" />
+                       Retake
+                     </button>
                   </div>
                   
                   <video
                     ref={previewVideoRef}
                     src={recordedVideo}
                     controls
-                    className="w-80 h-60 bg-black rounded-lg object-cover"
+                    className="w-full aspect-video bg-black rounded-lg object-cover"
                   />
                   
                                      <div className="text-sm text-gray-600 text-center">
@@ -2385,14 +2374,24 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                        </div>
                      )}
                      
-                     <p className="text-gray-500">
-                       {uploadingVideo 
-                         ? 'Uploading your video...' 
-                         : videoUploaded 
-                         ? 'Your video has been saved successfully.' 
-                         : 'Your video will be saved when you save your profile changes.'
-                       }
-                     </p>
+                     {!uploadingVideo && !videoUploaded && (
+                       <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                         <div className="flex items-center justify-center gap-2">
+                           <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                           <p className="text-blue-700 font-medium text-sm">
+                             📋 Your video will be saved when you save your profile changes
+                           </p>
+                         </div>
+                       </div>
+                     )}
+                     
+                     {uploadingVideo && (
+                       <p className="text-blue-600 font-medium">Uploading your video...</p>
+                     )}
+                     
+                     {videoUploaded && (
+                       <p className="text-green-600 font-medium">Your video has been saved successfully.</p>
+                     )}
                    </div>
                 </div>
               </div>
