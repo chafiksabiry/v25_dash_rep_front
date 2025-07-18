@@ -835,7 +835,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       }
 
       // Continue with other profile updates
-      // Save personal info if modified
+      // Save personal info if modified (including video deletion)
       if (modifiedSections.personalInfo) {
         console.log('📝 Saving personal info...', {
           endpoint: `/api/profiles/${profile._id}/basic-info`,
@@ -1522,6 +1522,49 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     showToast('Video deleted successfully', 'success');
   };
 
+  // Function to delete existing video from server
+  const deleteExistingVideo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${profile._id}/video`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete video');
+      }
+
+      // Update profile to remove video
+      setProfile((prev: Profile) => ({
+        ...prev,
+        personalInfo: {
+          ...prev.personalInfo,
+          presentationVideo: undefined
+        }
+      }));
+
+      // Mark as modified
+      setModifiedSections(prev => ({
+        ...prev,
+        personalInfo: true
+      }));
+
+      showToast('Video deleted successfully', 'success');
+      return response.json();
+    } catch (error) {
+      console.error('Error deleting video:', error);
+      showToast('Failed to delete video', 'error');
+      throw error;
+    }
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -2051,9 +2094,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             />
           </div>
 
-          {/* Video Introduction Section */}
+                    {/* Video Introduction Section */}
           <div className="border-t pt-6">
-                        <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-medium text-gray-800">Video Introduction</h3>
                 <p className="text-sm text-gray-600">Record a 1-minute video to introduce yourself</p>
@@ -2062,7 +2105,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   <span className="text-red-600 font-medium">Maximum duration: 1 minute (recording will stop automatically)</span>
                 </div>
               </div>
-              {!showVideoRecorder && !recordedVideo && (
+              {!showVideoRecorder && !recordedVideo && !profile.personalInfo?.presentationVideo && (
                 <button
                   onClick={startCamera}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
@@ -2072,6 +2115,66 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 </button>
               )}
             </div>
+
+            {/* Existing Video Display */}
+            {profile.personalInfo?.presentationVideo && !showVideoRecorder && !recordedVideo && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="flex items-center justify-between w-full">
+                    <h4 className="text-md font-medium text-gray-800">Current Video Introduction</h4>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={async () => {
+                          await startCamera();
+                        }}
+                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center gap-1 text-sm transition-colors"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        Re-record
+                      </button>
+                      <button
+                        onClick={deleteExistingVideo}
+                        className="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center gap-1 text-sm transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Existing Video Player */}
+                  <video
+                    controls
+                    className="w-80 h-60 bg-black rounded-lg object-cover"
+                  >
+                    <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
+                    <source src={profile.personalInfo.presentationVideo.url} type="video/webm" />
+                    Your browser does not support the video tag.
+                  </video>
+                  
+                  {/* Video Information */}
+                  <div className="text-sm text-gray-600 text-center space-y-1">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="font-medium text-green-700">
+                        Video uploaded successfully
+                        {profile.personalInfo.presentationVideo.duration && 
+                          ` (${Math.floor(profile.personalInfo.presentationVideo.duration)}s)`
+                        }
+                      </span>
+                    </div>
+                    {profile.personalInfo.presentationVideo.recordedAt && (
+                      <div className="flex items-center justify-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          Recorded: {new Date(profile.personalInfo.presentationVideo.recordedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Camera Permission Denied Message */}
             {cameraPermission === 'denied' && (
@@ -2259,7 +2362,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             )}
 
             {/* No Video State */}
-            {!showVideoRecorder && !recordedVideo && cameraPermission !== 'denied' && (
+            {!showVideoRecorder && !recordedVideo && !profile.personalInfo?.presentationVideo && cameraPermission !== 'denied' && (
               <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
                 <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-2">No video introduction yet</p>
