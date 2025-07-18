@@ -842,10 +842,54 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         {/* About Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-4">About</h2>
-          {profile.professionalSummary?.profileDescription ? (
-            <p className="text-gray-700 whitespace-pre-wrap">{profile.professionalSummary.profileDescription}</p>
-          ) : (
-            <p className="text-gray-500 italic">No profile description available</p>
+          
+          {/* Profile Description */}
+          <div className="mb-6">
+            {profile.professionalSummary?.profileDescription ? (
+              <p className="text-gray-700 whitespace-pre-wrap">{profile.professionalSummary.profileDescription}</p>
+            ) : (
+              <p className="text-gray-500 italic">No profile description available</p>
+            )}
+          </div>
+
+          {/* Video Introduction Section */}
+          {profile.personalInfo?.presentationVideo && (
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-medium text-gray-800 mb-4">Video Introduction</h3>
+              
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex flex-col items-center space-y-4">
+                  {/* Video Player */}
+                  <video
+                    controls
+                    className="w-full max-w-md h-auto bg-black rounded-lg object-cover"
+                    poster="" // You can add a poster image if needed
+                  >
+                    <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
+                    <source src={profile.personalInfo.presentationVideo.url} type="video/webm" />
+                    Your browser does not support the video tag.
+                  </video>
+                  
+                  {/* Video Information */}
+                  <div className="text-sm text-gray-600 text-center space-y-1">
+                    {profile.personalInfo.presentationVideo.duration && (
+                      <div className="flex items-center justify-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span>Duration: {Math.floor(profile.personalInfo.presentationVideo.duration)}s</span>
+                      </div>
+                    )}
+                    {profile.personalInfo.presentationVideo.recordedAt && (
+                      <div className="flex items-center justify-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          Recorded: {new Date(profile.personalInfo.presentationVideo.recordedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
 
