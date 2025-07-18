@@ -379,9 +379,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
   
   // Function to take a language assessment
   const takeLanguageAssessment = (language: string, iso639_1Code?: string) => {
-    // If iso639_1 is not provided, just use the language name directly
-    const langParameter = iso639_1Code || language;
-    
     // Check if we're in standalone mode
     const isStandaloneMode = import.meta.env.VITE_RUN_MODE === 'standalone';
     // Use the appropriate assessment app URL based on the mode
@@ -389,9 +386,11 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
       ? import.meta.env.VITE_ASSESSMENT_APP_STANDALONE 
       : import.meta.env.VITE_ASSESSMENT_APP;
     
-    const assessmentUrl = `${assessmentAppUrl}/language/${langParameter}`;
+    //const assessmentUrl = `${assessmentAppUrl}/language/${langParameter}`;
+    const assessmentUrl = `${assessmentAppUrl}/language?lang=${language}&code=${iso639_1Code}`;
+
     console.log("assessmentUrl language", assessmentUrl);
-    window.open(assessmentUrl, '_blank');
+    window.location.href = assessmentUrl;
   };
 
   // Format skill name for URL (e.g., "Active Listening" -> "active-listening")
@@ -412,7 +411,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
     
     const assessmentUrl = `${assessmentAppUrl}/contact-center/${formattedSkill}`;
     console.log("assessmentUrl contact center", assessmentUrl);
-    window.open(assessmentUrl, '_blank');
+    window.location.href = assessmentUrl;
   };
 
   // Helper function to format skills for display
@@ -1079,10 +1078,22 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               {profile.personalInfo.languages.map((lang: any, index: number) => {
                 const stars = getProficiencyStars(lang.proficiency);
                 
+                // Get language name and code based on whether it's populated or not
+                const languageName = typeof lang.language === 'object' && lang.language 
+                  ? lang.language.name 
+                  : (typeof lang.language === 'string' ? 'Unknown Language' : 'Unknown Language');
+                
+                const languageCode = typeof lang.language === 'object' && lang.language 
+                  ? lang.language.code 
+                  : (typeof lang.language === 'string' ? '' : '');
+                
                 return (
                   <div key={index} className="bg-gray-50 rounded-lg p-4">
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-medium text-gray-800">{lang.language}</h3>
+                      <h3 className="font-medium text-gray-800">
+                        {languageName}
+                        {languageCode && <span className="text-gray-500 ml-1">({languageCode})</span>}
+                      </h3>
                       <div className="flex items-center">
                         {[...Array(6)].map((_, i) => (
                           <Star
@@ -1101,7 +1112,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                         {lang.proficiency}
                       </span>
                       <button 
-                        onClick={() => takeLanguageAssessment(lang.language, lang.iso639_1)}
+                        onClick={() => takeLanguageAssessment(languageName, languageCode)}
                         className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
                       >
                         {lang.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
