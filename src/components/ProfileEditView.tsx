@@ -1279,7 +1279,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   // Video recording functions
   const startCamera = async () => {
     try {
-      console.log('Requesting camera access...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           width: { ideal: 640 },
@@ -1288,10 +1287,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         },
         audio: true 
       });
-      
-      console.log('Camera access granted, stream:', mediaStream);
-      console.log('Video tracks:', mediaStream.getVideoTracks());
-      console.log('Audio tracks:', mediaStream.getAudioTracks());
       
       setStream(mediaStream);
       setCameraPermission('granted');
@@ -1336,6 +1331,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         ...prev,
         professionalSummary: true
       }));
+      
+      // Show success message
+      showToast('Video recorded successfully!', 'success');
     };
 
     recorder.start();
@@ -1347,7 +1345,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     recordingTimerRef.current = setInterval(() => {
       setRecordingTime(prev => {
         if (prev >= 59) { // Stop at 59 seconds to prevent going over 1 minute
-          stopRecording();
+          // Stop recording and close camera automatically when time limit reached
+          stopRecordingAndHideCamera();
           return 60;
         }
         return prev + 1;
@@ -1355,7 +1354,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }, 1000);
   };
 
-  const stopRecording = () => {
+  const stopRecordingAndHideCamera = () => {
     if (mediaRecorder && isRecording) {
       mediaRecorder.stop();
       setIsRecording(false);
@@ -1364,6 +1363,26 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         clearInterval(recordingTimerRef.current);
         recordingTimerRef.current = null;
       }
+    }
+    
+    // Hide camera interface immediately to avoid visual flash
+    setShowVideoRecorder(false);
+    
+    // Stop camera stream after a small delay to ensure recording is processed
+    setTimeout(() => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    }, 1000);
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      stopRecordingAndHideCamera();
     }
   };
 
@@ -1393,18 +1412,12 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   useEffect(() => {
     if (stream && videoRef.current && showVideoRecorder) {
       const videoElement = videoRef.current;
-      console.log('Setting up video stream:', stream);
       videoElement.srcObject = stream;
       
       const handleLoadedMetadata = () => {
-        console.log('Video metadata loaded, starting playback');
         videoElement.play().catch((error) => {
           console.error('Error playing video:', error);
         });
-      };
-
-      const handleCanPlay = () => {
-        console.log('Video can play');
       };
 
       const handleError = (error: any) => {
@@ -1412,7 +1425,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       };
       
       videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
-      videoElement.addEventListener('canplay', handleCanPlay);
       videoElement.addEventListener('error', handleError);
       
       // Force load if metadata is already available
@@ -1422,7 +1434,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       
       return () => {
         videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        videoElement.removeEventListener('canplay', handleCanPlay);
         videoElement.removeEventListener('error', handleError);
       };
     }
@@ -1928,39 +1939,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 <p className="text-sm text-gray-600">Record a 1-minute video to introduce yourself</p>
               </div>
                              {!showVideoRecorder && !recordedVideo && (
-                 <div className="flex gap-2">
-                   <button
-                     onClick={startCamera}
-                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
-                   >
-                     <Video className="w-4 h-4" />
-                     Record Video
-                   </button>
-                   <button
-                     onClick={async () => {
-                       try {
-                         console.log('Testing video only...');
-                         const testStream = await navigator.mediaDevices.getUserMedia({ 
-                           video: { 
-                             width: { ideal: 640 },
-                             height: { ideal: 480 },
-                             facingMode: 'user'
-                           },
-                           audio: false 
-                         });
-                         console.log('Video-only test successful:', testStream);
-                         testStream.getTracks().forEach(track => track.stop());
-                         showToast('Camera test successful!', 'success');
-                       } catch (error) {
-                         console.error('Video test failed:', error);
-                         showToast('Camera test failed: ' + error.message, 'error');
-                       }
-                     }}
-                     className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm"
-                   >
-                     Test Camera
-                   </button>
-                 </div>
+                 <button
+                   onClick={startCamera}
+                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
+                 >
+                   <Video className="w-4 h-4" />
+                   Record Video
+                 </button>
                )}
             </div>
 
@@ -2000,21 +1985,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                          REC
                        </div>
                      )}
-                     
-                     {/* Stream Status Debug */}
-                     <div className="absolute bottom-2 left-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">
-                       {stream ? (
-                         <div className="flex items-center gap-1">
-                           <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                           Stream Active
-                         </div>
-                       ) : (
-                         <div className="flex items-center gap-1">
-                           <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                           No Stream
-                         </div>
-                       )}
-                     </div>
                      
                      {/* Timer */}
                      <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm font-mono">
@@ -2071,16 +2041,16 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   <div className="flex items-center justify-between w-full">
                     <h4 className="text-md font-medium text-gray-800">Your Video Introduction</h4>
                     <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          deleteVideo();
-                          startCamera();
-                        }}
-                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center gap-1 text-sm transition-colors"
-                      >
-                        <RotateCcw className="w-3 h-3" />
-                        Re-record
-                      </button>
+                                             <button
+                         onClick={async () => {
+                           deleteVideo();
+                           await startCamera();
+                         }}
+                         className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center gap-1 text-sm transition-colors"
+                       >
+                         <RotateCcw className="w-3 h-3" />
+                         Re-record
+                       </button>
                       <button
                         onClick={deleteVideo}
                         className="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center gap-1 text-sm transition-colors"
@@ -2098,13 +2068,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     className="w-80 h-60 bg-black rounded-lg object-cover"
                   />
                   
-                  <div className="text-sm text-gray-600 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      Video recorded successfully ({formatTime(recordingTime)})
-                    </div>
-                    <p className="mt-1">Your video will be saved when you save your profile changes.</p>
-                  </div>
+                                     <div className="text-sm text-gray-600 text-center">
+                     <div className="flex items-center justify-center gap-2 mb-2">
+                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                       <span className="font-medium text-green-700">Video recorded successfully ({formatTime(recordingTime)})</span>
+                     </div>
+                     <p className="text-gray-500">Your video will be saved when you save your profile changes.</p>
+                   </div>
                 </div>
               </div>
             )}
