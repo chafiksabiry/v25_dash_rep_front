@@ -856,19 +856,21 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
           <div className="border-t pt-6">
             <h3 className="text-lg font-medium text-gray-800 mb-4">Video Introduction</h3>
             
-            {profile.personalInfo?.presentationVideo ? (
+            {profile.personalInfo?.presentationVideo && profile.personalInfo.presentationVideo.url ? (
               <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex flex-col items-center space-y-4">
-                  {/* Video Player */}
-                  <video
-                    controls
-                    className="w-full max-w-md h-auto bg-black rounded-lg object-cover"
-                    poster="" // You can add a poster image if needed
-                  >
-                    <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
-                    <source src={profile.personalInfo.presentationVideo.url} type="video/webm" />
-                    Your browser does not support the video tag.
-                  </video>
+                <div className="space-y-4">
+                  {/* Video Player - Full width responsive */}
+                  <div className="w-full">
+                    <video
+                      controls
+                      className="w-full h-auto rounded-lg shadow-md"
+                      style={{ maxHeight: '400px' }}
+                    >
+                      <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
+                      <source src={profile.personalInfo.presentationVideo.url} type="video/webm" />
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
                   
                   {/* Video Information */}
                   <div className="text-sm text-gray-600 text-center space-y-1">
