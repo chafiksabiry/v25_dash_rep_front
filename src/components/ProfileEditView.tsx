@@ -394,6 +394,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [showLoadingSpinner, setShowLoadingSpinner] = useState(false);
 
   // Video recording states
+  // New Flow: Has Video → Delete (show confirmation) → Either cancel or confirm deletion
+  // After confirmation: Show "Record Video" → Record → Show "Retake" or "Use This Video"
+  // No delete button on new recordings (original was already deleted)
   const [isRecording, setIsRecording] = useState(false);
   const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -408,6 +411,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [recordedVideoBlob, setRecordedVideoBlob] = useState<Blob | null>(null);
   const [videoUploaded, setVideoUploaded] = useState(false);
   const [isExistingVideoMarkedForDeletion, setIsExistingVideoMarkedForDeletion] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [existingVideoDeleted, setExistingVideoDeleted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -1041,6 +1046,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       setUploadProgress(0);
       setUploadingVideo(false);
       setIsExistingVideoMarkedForDeletion(false);
+      setExistingVideoDeleted(false);
+      setShowDeleteConfirmation(false);
 
       console.log('✅ All changes saved successfully');
       showToast('Profile saved successfully', 'success');
@@ -1460,9 +1467,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const startRecording = () => {
     if (!stream) return;
 
-    // Reset deletion state since user is recording new video
-    setIsExistingVideoMarkedForDeletion(false);
-
     const recorder = new MediaRecorder(stream);
     const chunks: BlobPart[] = [];
 
@@ -1578,19 +1582,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     showToast('Video deleted successfully', 'success');
   };
 
-  // Function to mark existing video for deletion (no API call yet)
-  const deleteExistingVideo = () => {
-    // Just mark for deletion - actual deletion happens on save
-    setIsExistingVideoMarkedForDeletion(true);
-    
-    // Mark as modified so save is triggered
-    setModifiedSections(prev => ({
-      ...prev,
-      personalInfo: true
-    }));
 
-    showToast('Video will be deleted when you save changes', 'success');
-  };
 
   // Function to actually delete video from server (called during save)
   const deleteVideoFromServer = async () => {
@@ -2150,74 +2142,44 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
                     {/* Video Introduction Section */}
           <div className="border-t pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-medium text-gray-800">Video Introduction</h3>
-                <p className="text-sm text-gray-600">Record a 1-minute video to introduce yourself</p>
-                <div className="mt-2 flex items-center gap-2 text-xs">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  <span className="text-red-600 font-medium">Maximum duration: 1 minute (recording will stop automatically)</span>
-                </div>
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xl font-semibold text-gray-800">Video Introduction</h3>
+                {!showVideoRecorder && !recordedVideo && profile.personalInfo?.presentationVideo?.url && !existingVideoDeleted && (
+                  <span className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full font-medium">
+                    ✓ Video Added
+                  </span>
+                )}
               </div>
-              {!showVideoRecorder && !recordedVideo && (!profile.personalInfo?.presentationVideo?.url || isExistingVideoMarkedForDeletion) && (
-                <button
-                  onClick={startCamera}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
-                >
-                  <Video className="w-4 h-4" />
-                  Record Video
-                </button>
-              )}
+              <p className="text-gray-600 mb-3">Record a 1-minute video to introduce yourself and showcase your personality</p>
+              <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg w-fit">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <span className="font-medium">Maximum duration: 1 minute (recording will stop automatically)</span>
+              </div>
             </div>
 
-                          {/* Video Marked for Deletion Display */}
-            {isExistingVideoMarkedForDeletion && profile.personalInfo?.presentationVideo?.url && !recordedVideo && (
-              <div className="bg-red-50 rounded-lg p-4 mb-4 border border-red-200">
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-red-800 mb-2">Video Marked for Deletion</h3>
-                    <p className="text-red-600 text-sm mb-4">This video will be permanently deleted when you save changes.</p>
-                    <button
-                      onClick={() => {
-                        setIsExistingVideoMarkedForDeletion(false);
-                        showToast('Video deletion cancelled', 'success');
-                      }}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
-                    >
-                      Cancel Deletion
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            
 
               {/* Existing Video Display */}
-            {profile.personalInfo?.presentationVideo?.url && !showVideoRecorder && !recordedVideo && !isExistingVideoMarkedForDeletion && (
+            {profile.personalInfo?.presentationVideo?.url && !showVideoRecorder && !recordedVideo && !existingVideoDeleted && (
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <div className="flex flex-col items-center space-y-4">
                   <div className="flex items-center justify-between w-full">
-                    <h4 className="text-md font-medium text-gray-800">Current Video Introduction</h4>
+                    <h4 className="text-md font-medium text-gray-800">Your Video Introduction</h4>
                     <div className="flex gap-2">
                       <button
-                        onClick={async () => {
-                          await startCamera();
-                        }}
-                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center gap-1 text-sm transition-colors"
+                        onClick={startCamera}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm transition-colors"
                       >
-                        <RotateCcw className="w-3 h-3" />
-                        Re-record
+                        <Video className="w-4 h-4" />
+                        Re-record Video
                       </button>
                       <button
-                        onClick={deleteExistingVideo}
-                        className="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center gap-1 text-sm transition-colors"
+                        onClick={() => setShowDeleteConfirmation(true)}
+                        className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2 text-sm transition-colors"
                       >
-                        <Trash2 className="w-3 h-3" />
-                        Delete
+                        <Trash2 className="w-4 h-4" />
+                        Delete Video
                       </button>
                     </div>
                   </div>
@@ -2306,7 +2268,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   </div>
 
                   {/* Recording Controls */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center">
                     {!isRecording ? (
                       <button
                         onClick={startRecording}
@@ -2325,13 +2287,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                         Stop Recording
                       </button>
                     )}
-                    
-                    <button
-                      onClick={stopCamera}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
-                    >
-                      Cancel
-                    </button>
                   </div>
 
                                      {/* Recording Progress Bar */}
@@ -2374,24 +2329,26 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex flex-col items-center space-y-4">
                   <div className="flex items-center justify-between w-full">
-                    <h4 className="text-md font-medium text-gray-800">Your Video Introduction</h4>
+                    <h4 className="text-md font-medium text-gray-800">New Video Recording</h4>
                     <div className="flex gap-2">
-                                             <button
+                      <button
                          onClick={async () => {
                            deleteVideo();
                            await startCamera();
                          }}
-                         className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center gap-1 text-sm transition-colors"
+                         className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 text-sm transition-colors"
                        >
-                         <RotateCcw className="w-3 h-3" />
-                         Re-record
+                         <RotateCcw className="w-4 h-4" />
+                         Retake
                        </button>
                       <button
-                        onClick={deleteVideo}
-                        className="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center gap-1 text-sm transition-colors"
+                        onClick={() => {
+                          showToast('Video ready to save!', 'success');
+                        }}
+                        className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm transition-colors"
                       >
-                        <Trash2 className="w-3 h-3" />
-                        Delete
+                        <Check className="w-4 h-4" />
+                        Use This Video
                       </button>
                     </div>
                   </div>
@@ -2442,11 +2399,20 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             )}
 
             {/* No Video State */}
-            {!showVideoRecorder && !recordedVideo && (!profile.personalInfo?.presentationVideo?.url || isExistingVideoMarkedForDeletion) && cameraPermission !== 'denied' && (
+            {!showVideoRecorder && !recordedVideo && (!profile.personalInfo?.presentationVideo?.url || existingVideoDeleted) && cameraPermission !== 'denied' && (
               <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-                <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-2">No video introduction yet</p>
-                <p className="text-sm text-gray-500">Record a 1-minute video to help others get to know you better</p>
+                <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">No video recorded yet</h3>
+                <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
+                  Record a 1-minute video to introduce yourself and help others get to know you better
+                </p>
+                <button
+                  onClick={startCamera}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto transition-colors"
+                >
+                  <Video className="w-5 h-5" />
+                  Record Video
+                </button>
               </div>
             )}
           </div>
@@ -3683,6 +3649,51 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Delete Video</h3>
+                <p className="text-gray-600 text-sm">This action cannot be undone</p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete your current video introduction?
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirmation(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setExistingVideoDeleted(true);
+                  setIsExistingVideoMarkedForDeletion(true);
+                  setShowDeleteConfirmation(false);
+                  setModifiedSections(prev => ({
+                    ...prev,
+                    personalInfo: true
+                  }));
+                  showToast('Video deleted', 'success');
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
