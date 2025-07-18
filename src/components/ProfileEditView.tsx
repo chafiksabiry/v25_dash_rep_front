@@ -348,6 +348,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [recordingTime, setRecordingTime] = useState(0);
   const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
   const [showVideoRecorder, setShowVideoRecorder] = useState(false);
+  const [showTimeWarning, setShowTimeWarning] = useState(false);
+  const [hasShownCompletionToast, setHasShownCompletionToast] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -1304,6 +1306,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       setStream(null);
     }
     setShowVideoRecorder(false);
+    setHasShownCompletionToast(false); // Reset completion toast state when stopping camera
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
@@ -1340,16 +1343,32 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     setMediaRecorder(recorder);
     setIsRecording(true);
     setRecordingTime(0);
+    setShowTimeWarning(false); // Reset warning state
+    setHasShownCompletionToast(false); // Reset completion toast state
 
     // Start timer (max 60 seconds)
     recordingTimerRef.current = setInterval(() => {
       setRecordingTime(prev => {
-        if (prev >= 59) { // Stop at 59 seconds to prevent going over 1 minute
-          // Stop recording and close camera automatically when time limit reached
+        const newTime = prev + 1;
+        
+        // Show warning at 45 seconds (15 seconds left)
+        if (newTime === 45) {
+          setShowTimeWarning(true);
+        }
+        
+        // Stop at exactly 60 seconds - 1 minute limit reached
+        if (newTime === 60) {
           stopRecordingAndHideCamera();
+          showToast('✅ Recording complete! 1-minute limit reached.', 'success');
           return 60;
         }
-        return prev + 1;
+        
+        // Prevent going over 60 seconds
+        if (newTime > 60) {
+          return 60;
+        }
+        
+        return newTime;
       });
     }, 1000);
   };
@@ -1364,6 +1383,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         recordingTimerRef.current = null;
       }
     }
+    
+    // Reset warning state
+    setShowTimeWarning(false);
     
     // Hide camera interface immediately to avoid visual flash
     setShowVideoRecorder(false);
@@ -1392,6 +1414,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }
     setRecordedVideo(null);
     setRecordingTime(0);
+    setHasShownCompletionToast(false); // Reset completion toast state when deleting video
     
     // Mark as modified to update backend
     setModifiedSections(prev => ({
@@ -1933,20 +1956,24 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
           {/* Video Introduction Section */}
           <div className="border-t pt-6">
-            <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-medium text-gray-800">Video Introduction</h3>
                 <p className="text-sm text-gray-600">Record a 1-minute video to introduce yourself</p>
+                <div className="mt-2 flex items-center gap-2 text-xs">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="text-red-600 font-medium">Maximum duration: 1 minute (recording will stop automatically)</span>
+                </div>
               </div>
-                             {!showVideoRecorder && !recordedVideo && (
-                 <button
-                   onClick={startCamera}
-                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
-                 >
-                   <Video className="w-4 h-4" />
-                   Record Video
-                 </button>
-               )}
+              {!showVideoRecorder && !recordedVideo && (
+                <button
+                  onClick={startCamera}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
+                >
+                  <Video className="w-4 h-4" />
+                  Record Video
+                </button>
+              )}
             </div>
 
             {/* Camera Permission Denied Message */}
@@ -1987,7 +2014,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                      )}
                      
                      {/* Timer */}
-                     <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm font-mono">
+                     <div className={`absolute top-2 right-2 px-2 py-1 rounded text-sm font-mono transition-colors ${
+                       recordingTime >= 55 
+                         ? 'bg-red-600 text-white animate-pulse' 
+                         : recordingTime >= 45 
+                         ? 'bg-orange-600 text-white' 
+                         : 'bg-black bg-opacity-75 text-white'
+                     }`}>
                        {formatTime(recordingTime)} / 1:00
                      </div>
                   </div>
@@ -2021,15 +2054,37 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     </button>
                   </div>
 
-                  {/* Recording Progress Bar */}
-                  {recordingTime > 0 && (
-                    <div className="w-80 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-red-600 h-2 rounded-full transition-all duration-1000"
-                        style={{ width: `${(recordingTime / 60) * 100}%` }}
-                      ></div>
-                    </div>
-                  )}
+                                     {/* Recording Progress Bar */}
+                   {recordingTime > 0 && (
+                     <div className="w-80">
+                       <div className="bg-gray-200 rounded-full h-2">
+                         <div 
+                           className={`h-2 rounded-full transition-all duration-1000 ${
+                             recordingTime >= 55 
+                               ? 'bg-red-600 animate-pulse' 
+                               : recordingTime >= 45 
+                               ? 'bg-orange-500' 
+                               : 'bg-blue-600'
+                           }`}
+                           style={{ width: `${(recordingTime / 60) * 100}%` }}
+                         ></div>
+                       </div>
+                       
+                       {/* Time Warning Message */}
+                       {showTimeWarning && (
+                         <div className={`mt-2 text-center font-medium ${
+                           recordingTime >= 55 
+                             ? 'text-red-600 animate-pulse' 
+                             : 'text-orange-600'
+                         }`}>
+                           {recordingTime >= 55 
+                             ? '⚠️ Recording will stop in 5 seconds!' 
+                             : '⚠️ Approaching 1-minute limit!'
+                           }
+                         </div>
+                       )}
+                     </div>
+                   )}
                 </div>
               </div>
             )}
@@ -2071,7 +2126,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                                      <div className="text-sm text-gray-600 text-center">
                      <div className="flex items-center justify-center gap-2 mb-2">
                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                       <span className="font-medium text-green-700">Video recorded successfully ({formatTime(recordingTime)})</span>
+                       <span className="font-medium text-green-700">
+                         Video recorded successfully ({formatTime(recordingTime)})
+                         {recordingTime >= 60 && " - Max duration reached"}
+                       </span>
                      </div>
                      <p className="text-gray-500">Your video will be saved when you save your profile changes.</p>
                    </div>
