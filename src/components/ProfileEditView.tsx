@@ -4,7 +4,8 @@ import 'react-image-crop/dist/ReactCrop.css';
 import { 
   MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase, 
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
-  Edit, Check, X, Save, RefreshCw, Plus, Trash2, Camera, Upload
+  Edit, Check, X, Save, RefreshCw, Plus, Trash2, Camera, Upload, Video,
+  Play, Pause, Square, RotateCcw
 } from 'lucide-react';
 import { updateProfileData, updateBasicInfo, updateExperience, updateSkills, checkCountryMismatch } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
@@ -338,6 +339,18 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   } | null>(null);
   const [checkingCountryMismatch, setCheckingCountryMismatch] = useState(false);
   const [showLoadingSpinner, setShowLoadingSpinner] = useState(false);
+
+  // Video recording states
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
+  const [showVideoRecorder, setShowVideoRecorder] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (initialProfile) {
@@ -1263,6 +1276,173 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }));
   };
 
+  // Video recording functions
+  const startCamera = async () => {
+    try {
+      console.log('Requesting camera access...');
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user'
+        },
+        audio: true 
+      });
+      
+      console.log('Camera access granted, stream:', mediaStream);
+      console.log('Video tracks:', mediaStream.getVideoTracks());
+      console.log('Audio tracks:', mediaStream.getAudioTracks());
+      
+      setStream(mediaStream);
+      setCameraPermission('granted');
+      setShowVideoRecorder(true);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setCameraPermission('denied');
+      showToast('Camera access denied. Please enable camera permissions.', 'error');
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowVideoRecorder(false);
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const startRecording = () => {
+    if (!stream) return;
+
+    const recorder = new MediaRecorder(stream);
+    const chunks: BlobPart[] = [];
+
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        chunks.push(event.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const videoUrl = URL.createObjectURL(blob);
+      setRecordedVideo(videoUrl);
+      
+      // Mark video as modified
+      setModifiedSections(prev => ({
+        ...prev,
+        professionalSummary: true
+      }));
+    };
+
+    recorder.start();
+    setMediaRecorder(recorder);
+    setIsRecording(true);
+    setRecordingTime(0);
+
+    // Start timer (max 60 seconds)
+    recordingTimerRef.current = setInterval(() => {
+      setRecordingTime(prev => {
+        if (prev >= 59) { // Stop at 59 seconds to prevent going over 1 minute
+          stopRecording();
+          return 60;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }
+  };
+
+  const deleteVideo = () => {
+    if (recordedVideo) {
+      URL.revokeObjectURL(recordedVideo);
+    }
+    setRecordedVideo(null);
+    setRecordingTime(0);
+    
+    // Mark as modified to update backend
+    setModifiedSections(prev => ({
+      ...prev,
+      professionalSummary: true
+    }));
+    
+    showToast('Video deleted successfully', 'success');
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Effect to handle video stream updates
+  useEffect(() => {
+    if (stream && videoRef.current && showVideoRecorder) {
+      const videoElement = videoRef.current;
+      console.log('Setting up video stream:', stream);
+      videoElement.srcObject = stream;
+      
+      const handleLoadedMetadata = () => {
+        console.log('Video metadata loaded, starting playback');
+        videoElement.play().catch((error) => {
+          console.error('Error playing video:', error);
+        });
+      };
+
+      const handleCanPlay = () => {
+        console.log('Video can play');
+      };
+
+      const handleError = (error: any) => {
+        console.error('Video element error:', error);
+      };
+      
+      videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+      videoElement.addEventListener('canplay', handleCanPlay);
+      videoElement.addEventListener('error', handleError);
+      
+      // Force load if metadata is already available
+      if (videoElement.readyState >= 1) {
+        handleLoadedMetadata();
+      }
+      
+      return () => {
+        videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        videoElement.removeEventListener('canplay', handleCanPlay);
+        videoElement.removeEventListener('error', handleError);
+      };
+    }
+  }, [stream, showVideoRecorder]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      if (recordedVideo) {
+        URL.revokeObjectURL(recordedVideo);
+      }
+    };
+  }, []);
+
   // Render skill dropdown for adding new skills
   const renderSkillDropdown = (skillType: 'technical' | 'professional' | 'soft', placeholder: string, colorScheme: string) => {
     const skillsForType = skillsData[skillType];
@@ -1718,7 +1898,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           <h2 className="text-xl font-semibold mb-4">About</h2>
           
           {/* Profile Description */}
-          <div className="mb-4">
+          <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
             <textarea
               value={profile.professionalSummary?.profileDescription || ''}
@@ -1738,6 +1918,205 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               className="w-full p-2 border rounded-md min-h-[120px]"
               placeholder="Tell us about yourself, your background, and your expertise..."
             />
+          </div>
+
+          {/* Video Introduction Section */}
+          <div className="border-t pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-medium text-gray-800">Video Introduction</h3>
+                <p className="text-sm text-gray-600">Record a 1-minute video to introduce yourself</p>
+              </div>
+                             {!showVideoRecorder && !recordedVideo && (
+                 <div className="flex gap-2">
+                   <button
+                     onClick={startCamera}
+                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
+                   >
+                     <Video className="w-4 h-4" />
+                     Record Video
+                   </button>
+                   <button
+                     onClick={async () => {
+                       try {
+                         console.log('Testing video only...');
+                         const testStream = await navigator.mediaDevices.getUserMedia({ 
+                           video: { 
+                             width: { ideal: 640 },
+                             height: { ideal: 480 },
+                             facingMode: 'user'
+                           },
+                           audio: false 
+                         });
+                         console.log('Video-only test successful:', testStream);
+                         testStream.getTracks().forEach(track => track.stop());
+                         showToast('Camera test successful!', 'success');
+                       } catch (error) {
+                         console.error('Video test failed:', error);
+                         showToast('Camera test failed: ' + error.message, 'error');
+                       }
+                     }}
+                     className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm"
+                   >
+                     Test Camera
+                   </button>
+                 </div>
+               )}
+            </div>
+
+            {/* Camera Permission Denied Message */}
+            {cameraPermission === 'denied' && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <X className="h-5 w-5 text-red-400" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-800">
+                      Camera access is required to record a video introduction. Please enable camera permissions in your browser settings and try again.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Video Recorder Interface */}
+            {showVideoRecorder && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="flex flex-col items-center space-y-4">
+                                     {/* Camera Preview */}
+                   <div className="relative">
+                     <video
+                       ref={videoRef}
+                       autoPlay
+                       muted
+                       playsInline
+                       webkit-playsinline="true"
+                       className="w-80 h-60 bg-black rounded-lg object-cover"
+                     />
+                                         {isRecording && (
+                       <div className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                         <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                         REC
+                       </div>
+                     )}
+                     
+                     {/* Stream Status Debug */}
+                     <div className="absolute bottom-2 left-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">
+                       {stream ? (
+                         <div className="flex items-center gap-1">
+                           <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                           Stream Active
+                         </div>
+                       ) : (
+                         <div className="flex items-center gap-1">
+                           <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                           No Stream
+                         </div>
+                       )}
+                     </div>
+                     
+                     {/* Timer */}
+                     <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm font-mono">
+                       {formatTime(recordingTime)} / 1:00
+                     </div>
+                  </div>
+
+                  {/* Recording Controls */}
+                  <div className="flex items-center gap-4">
+                    {!isRecording ? (
+                      <button
+                        onClick={startRecording}
+                        disabled={!stream}
+                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Play className="w-4 h-4" />
+                        Start Recording
+                      </button>
+                    ) : (
+                      <button
+                        onClick={stopRecording}
+                        className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 transition-colors"
+                      >
+                        <Square className="w-4 h-4" />
+                        Stop Recording
+                      </button>
+                    )}
+                    
+                    <button
+                      onClick={stopCamera}
+                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  {/* Recording Progress Bar */}
+                  {recordingTime > 0 && (
+                    <div className="w-80 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-red-600 h-2 rounded-full transition-all duration-1000"
+                        style={{ width: `${(recordingTime / 60) * 100}%` }}
+                      ></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Recorded Video Preview */}
+            {recordedVideo && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="flex items-center justify-between w-full">
+                    <h4 className="text-md font-medium text-gray-800">Your Video Introduction</h4>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          deleteVideo();
+                          startCamera();
+                        }}
+                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center gap-1 text-sm transition-colors"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        Re-record
+                      </button>
+                      <button
+                        onClick={deleteVideo}
+                        className="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center gap-1 text-sm transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <video
+                    ref={previewVideoRef}
+                    src={recordedVideo}
+                    controls
+                    className="w-80 h-60 bg-black rounded-lg object-cover"
+                  />
+                  
+                  <div className="text-sm text-gray-600 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      Video recorded successfully ({formatTime(recordingTime)})
+                    </div>
+                    <p className="mt-1">Your video will be saved when you save your profile changes.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* No Video State */}
+            {!showVideoRecorder && !recordedVideo && cameraPermission !== 'denied' && (
+              <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-2">No video introduction yet</p>
+                <p className="text-sm text-gray-500">Record a 1-minute video to help others get to know you better</p>
+              </div>
+            )}
           </div>
         </div>
 
