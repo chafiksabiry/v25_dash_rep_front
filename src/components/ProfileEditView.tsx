@@ -189,6 +189,59 @@ const base64ToBlob = async (base64String: string): Promise<Blob> => {
   return new Blob([ab], { type: 'image/jpeg' });
 };
 
+// Function to upload presentation video with progress
+const uploadPresentationVideo = async (
+  agentId: string, 
+  videoBlob: Blob, 
+  onProgress?: (progress: number) => void
+): Promise<any> => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const formData = new FormData();
+  // Convert blob to file for proper upload
+  const videoFile = new File([videoBlob], 'presentation-video.webm', { 
+    type: 'video/webm' 
+  });
+  formData.append('video', videoFile);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    // Track upload progress
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onProgress) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
+        onProgress(percentComplete);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const result = JSON.parse(xhr.responseText);
+          console.log('Video uploaded successfully:', result);
+          resolve(result);
+        } catch (error) {
+          reject(new Error('Invalid JSON response'));
+        }
+      } else {
+        reject(new Error(`HTTP error! status: ${xhr.status}`));
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Network error occurred'));
+    });
+
+    xhr.open('PUT', `${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}/video`);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.send(formData);
+  });
+};
+
 // Add this near the top of the file with other imports
 const PROFILE_UPDATE_EVENT = 'PROFILE_UPDATED';
 
@@ -350,6 +403,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [showVideoRecorder, setShowVideoRecorder] = useState(false);
   const [showTimeWarning, setShowTimeWarning] = useState(false);
   const [hasShownCompletionToast, setHasShownCompletionToast] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [recordedVideoBlob, setRecordedVideoBlob] = useState<Blob | null>(null);
+  const [videoUploaded, setVideoUploaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -747,6 +804,36 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         }
       }
 
+      // Handle video upload if modified
+      if (modifiedSections.professionalSummary && recordedVideoBlob) {
+        try {
+          setUploadingVideo(true);
+          setUploadProgress(0);
+          console.log('🎥 Uploading presentation video...');
+          
+          const videoResult = await uploadPresentationVideo(
+            profile._id, 
+            recordedVideoBlob,
+            (progress) => setUploadProgress(progress)
+          );
+          
+          console.log('✅ Video uploaded successfully');
+          setVideoUploaded(true);
+          showToast('Video uploaded successfully!', 'success');
+        } catch (error) {
+          console.error('❌ Error uploading video:', error);
+          if (error instanceof Error && error.message === 'No authentication token found') {
+            showToast('Please log in again to upload video', 'error');
+          } else {
+            showToast('Failed to upload presentation video', 'error');
+          }
+          return;
+        } finally {
+          setUploadingVideo(false);
+          setUploadProgress(0);
+        }
+      }
+
       // Continue with other profile updates
       // Save personal info if modified
       if (modifiedSections.personalInfo) {
@@ -897,6 +984,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       // Reset photo deletion state after successful save
       setIsPhotoMarkedForDeletion(false);
+      
+      // Reset video states after successful save (but keep recorded video)
+      setUploadProgress(0);
+      setUploadingVideo(false);
 
       console.log('✅ All changes saved successfully');
       showToast('Profile saved successfully', 'success');
@@ -1307,6 +1398,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }
     setShowVideoRecorder(false);
     setHasShownCompletionToast(false); // Reset completion toast state when stopping camera
+    setUploadProgress(0); // Reset upload progress
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
@@ -1328,6 +1420,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       const blob = new Blob(chunks, { type: 'video/webm' });
       const videoUrl = URL.createObjectURL(blob);
       setRecordedVideo(videoUrl);
+      setRecordedVideoBlob(blob); // Store the blob for upload
       
       // Mark video as modified
       setModifiedSections(prev => ({
@@ -1345,6 +1438,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     setRecordingTime(0);
     setShowTimeWarning(false); // Reset warning state
     setHasShownCompletionToast(false); // Reset completion toast state
+    setVideoUploaded(false); // Reset upload status for new recording
 
     // Start timer (max 60 seconds)
     recordingTimerRef.current = setInterval(() => {
@@ -1413,8 +1507,11 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       URL.revokeObjectURL(recordedVideo);
     }
     setRecordedVideo(null);
+    setRecordedVideoBlob(null); // Clear the blob too
     setRecordingTime(0);
     setHasShownCompletionToast(false); // Reset completion toast state when deleting video
+    setUploadProgress(0); // Reset upload progress
+    setVideoUploaded(false); // Reset upload status
     
     // Mark as modified to update backend
     setModifiedSections(prev => ({
@@ -1632,13 +1729,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           </button>
           <button
             onClick={handleSave}
-            disabled={loading || uploadingPhoto}
+            disabled={loading || uploadingPhoto || uploadingVideo}
             className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading || uploadingPhoto ? (
+            {loading || uploadingPhoto || uploadingVideo ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                {uploadingPhoto ? 'Uploading Photo...' : 'Saving...'}
+                {uploadingVideo ? 'Uploading Video...' : uploadingPhoto ? 'Uploading Photo...' : 'Saving...'}
               </>
             ) : (
               <>
@@ -2125,13 +2222,37 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   
                                      <div className="text-sm text-gray-600 text-center">
                      <div className="flex items-center justify-center gap-2 mb-2">
-                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                       <span className="font-medium text-green-700">
-                         Video recorded successfully ({formatTime(recordingTime)})
+                       <div className={`w-2 h-2 rounded-full ${videoUploaded ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                       <span className={`font-medium ${videoUploaded ? 'text-blue-700' : 'text-green-700'}`}>
+                         {videoUploaded 
+                           ? `Video uploaded successfully (${formatTime(recordingTime)})` 
+                           : `Video recorded successfully (${formatTime(recordingTime)})`
+                         }
                          {recordingTime >= 60 && " - Max duration reached"}
                        </span>
                      </div>
-                     <p className="text-gray-500">Your video will be saved when you save your profile changes.</p>
+                     
+                     {/* Upload Progress */}
+                     {uploadingVideo && (
+                       <div className="mb-2">
+                         <div className="w-full bg-gray-200 rounded-full h-2">
+                           <div 
+                             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                             style={{ width: `${uploadProgress}%` }}
+                           ></div>
+                         </div>
+                         <p className="text-blue-600 font-medium mt-1">Uploading video... {uploadProgress}%</p>
+                       </div>
+                     )}
+                     
+                     <p className="text-gray-500">
+                       {uploadingVideo 
+                         ? 'Uploading your video...' 
+                         : videoUploaded 
+                         ? 'Your video has been saved successfully.' 
+                         : 'Your video will be saved when you save your profile changes.'
+                       }
+                     </p>
                    </div>
                 </div>
               </div>
