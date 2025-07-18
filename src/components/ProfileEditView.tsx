@@ -7,10 +7,9 @@ import {
   Edit, Check, X, Save, RefreshCw, Plus, Trash2, Camera, Upload
 } from 'lucide-react';
 import { updateProfileData, updateBasicInfo, updateExperience, updateSkills, checkCountryMismatch } from '../utils/profileUtils';
-import { getLanguageCodeFromAI } from '../utils/languageUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 import { fetchAllSkills, SkillsByCategory, Skill } from '../services/api/skills';
-import OpenAI from 'openai';
+import { fetchAllLanguages, Language } from '../services/api/languages';
 
 // Add CSS styles for error highlighting
 const styles = `
@@ -216,6 +215,11 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       timeZone: initialProfile.availability?.timeZone || ''
     };
 
+    // Ensure timeZone is never null
+    if (mergedAvailability.timeZone === null || mergedAvailability.timeZone === undefined) {
+      mergedAvailability.timeZone = '';
+    }
+
     return {
       ...initialProfile,
       availability: mergedAvailability
@@ -240,7 +244,17 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   });
   
   // Additional state for editing
-  const [tempLanguage, setTempLanguage] = useState({ language: '', proficiency: 'B1', iso639_1: '' });
+  const [tempLanguage, setTempLanguage] = useState({ language: '', proficiency: 'B1' });
+  
+  // States for languages data
+  const [availableLanguages, setAvailableLanguages] = useState<Language[]>([]);
+  const [loadingLanguages, setLoadingLanguages] = useState(false);
+  
+  // States for language dropdown
+  const [languageSearchTerm, setLanguageSearchTerm] = useState('');
+  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  const [filteredLanguages, setFilteredLanguages] = useState<Language[]>([]);
+  const [selectedLanguageIndex, setSelectedLanguageIndex] = useState(-1);
   const [tempIndustry, setTempIndustry] = useState('');
   const [tempCompany, setTempCompany] = useState('');
   const [tempFlexibility, setTempFlexibility] = useState('');
@@ -340,7 +354,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       
       // Set initial timezone search term if timezone is already selected
       if (initialProfile.availability?.timeZone) {
-        if (typeof initialProfile.availability.timeZone === 'object') {
+        if (typeof initialProfile.availability.timeZone === 'object' && initialProfile.availability.timeZone !== null) {
           setTimezoneSearchTerm(repWizardApi.formatTimezone(initialProfile.availability.timeZone) || '');
         }
       }
@@ -397,6 +411,40 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     loadSkills();
   }, []);
 
+  // Load languages data on component mount
+  useEffect(() => {
+    const loadLanguages = async () => {
+      try {
+        setLoadingLanguages(true);
+        console.log('🌐 Loading languages...');
+        const languages = await fetchAllLanguages();
+        setAvailableLanguages(languages);
+        console.log('✅ Languages loaded:', languages.length);
+      } catch (error) {
+        console.error('❌ Error loading languages:', error);
+        showToast('Failed to load languages', 'error');
+      } finally {
+        setLoadingLanguages(false);
+      }
+    };
+
+    loadLanguages();
+  }, []);
+
+  // Filter languages based on search term
+  useEffect(() => {
+    if (!languageSearchTerm) {
+      setFilteredLanguages(availableLanguages);
+    } else {
+      const filtered = availableLanguages.filter(language =>
+        language.name.toLowerCase().includes(languageSearchTerm.toLowerCase()) ||
+        language.code.toLowerCase().includes(languageSearchTerm.toLowerCase()) ||
+        language.nativeName.toLowerCase().includes(languageSearchTerm.toLowerCase())
+      );
+      setFilteredLanguages(filtered);
+    }
+  }, [availableLanguages, languageSearchTerm]);
+
   // Load timezones when country is selected and auto-suggest main timezone
   useEffect(() => {
     const loadTimezones = async () => {
@@ -414,7 +462,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         
         // Auto-suggest main timezone only if no timezone is currently set
         const currentTimezone = profile.availability.timeZone;
-        if ((!currentTimezone || currentTimezone === '') && timezonesData.length > 0) {
+        if ((!currentTimezone || currentTimezone === '' || currentTimezone === null) && timezonesData.length > 0) {
           // Find the main timezone (usually the first one or one with highest priority)
           const mainTimezone = timezonesData[0]; // Take the first timezone as main
           console.log('🎯 Auto-suggesting main timezone:', mainTimezone.zoneName);
@@ -478,8 +526,40 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
 
+  // Helper function to get language data by ID
+  const getLanguageById = (languageId: string): Language | null => {
+    return availableLanguages.find(lang => lang._id === languageId) || null;
+  };
+
+  // Helper function to get language display name
+  const getLanguageDisplayName = (lang: any): string => {
+    if (typeof lang.language === 'object' && lang.language) {
+      return lang.language.name || 'Unknown Language';
+    } else if (typeof lang.language === 'string') {
+      const languageData = getLanguageById(lang.language);
+      return languageData ? languageData.name : 'Unknown Language';
+    }
+    return 'Unknown Language';
+  };
+
+  // Helper function to get language code
+  const getLanguageCode = (lang: any): string => {
+    if (typeof lang.language === 'object' && lang.language) {
+      return lang.language.code || '';
+    } else if (typeof lang.language === 'string') {
+      const languageData = getLanguageById(lang.language);
+      return languageData ? languageData.code : '';
+    }
+    return '';
+  };
+
   // Get timezone and country mismatch info
   const getTimezoneMismatchInfo = () => {
+    // Check if timeZone exists and is not null
+    if (!profile.availability.timeZone) {
+      return null;
+    }
+    
     const currentTimezoneId = typeof profile.availability.timeZone === 'object' 
       ? profile.availability.timeZone._id 
       : profile.availability.timeZone;
@@ -853,74 +933,55 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   };
   
   // Add language to profile
-  const addLanguage = async () => {
-    if (!tempLanguage.language.trim()) {
-      setValidationErrors((prev: Record<string, string>) => ({
-        ...prev,
-        languages: 'Language name is required'
-      }));
+  const addLanguage = (selectedLanguage: Language) => {
+    // Check if language is already added
+    const isAlreadyAdded = profile.personalInfo?.languages?.some((lang: any) => {
+      const langId = typeof lang.language === 'object' ? lang.language._id : lang.language;
+      return langId === selectedLanguage._id;
+    });
+
+    if (isAlreadyAdded) {
+      showToast('This language is already added', 'error');
       return;
     }
 
-    try {
-      setLoading(true);
-      
-      // Get the OpenAI API key from environment variables
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-      if (!apiKey) {
-        throw new Error('OpenAI API key is required');
+    const newLanguageEntry = {
+      language: selectedLanguage._id,
+      proficiency: tempLanguage.proficiency
+    };
+    
+    const updatedLanguages = [
+      ...(profile.personalInfo?.languages || []),
+      newLanguageEntry
+    ];
+    
+    // Update local state
+    setProfile((prev: Profile) => ({
+      ...prev,
+      personalInfo: {
+        ...prev.personalInfo,
+        languages: updatedLanguages
       }
-
-      // Create OpenAI client
-      const openai = new OpenAI({
-        apiKey: apiKey,
-        dangerouslyAllowBrowser: true
-      });
-
-      // Get language code using AI
-      const iso639_1 = await getLanguageCodeFromAI(tempLanguage.language, openai);
-      
-      const languageWithCode = {
-        ...tempLanguage,
-        iso639_1: iso639_1
-      };
-      
-      const updatedLanguages = [
-        ...(profile.personalInfo.languages || []),
-        languageWithCode
-      ];
-      
-      // Update local state
-      setProfile((prev: Profile) => ({
-        ...prev,
-        personalInfo: {
-          ...prev.personalInfo,
-          languages: updatedLanguages
-        }
-      }));
-      
-      // Mark languages section as modified
-      setModifiedSections(prev => ({
-        ...prev,
-        languages: true
-      }));
-      
-      // Clear any language-related validation errors
-      setValidationErrors((prev: Record<string, string>) => ({
-        ...prev,
-        languages: ''
-      }));
-      
-      // Reset form
-      setTempLanguage({ language: '', proficiency: 'B1', iso639_1: '' });
-      
-      showToast('Language added successfully', 'success');
-    } catch (error) {
-      console.error('Error adding language:', error);
-      showToast('Failed to add language', 'error');
-    } finally {
-      setLoading(false);
-    }
+    }));
+    
+    // Mark languages section as modified
+    setModifiedSections(prev => ({
+      ...prev,
+      languages: true
+    }));
+    
+    // Clear any language-related validation errors
+    setValidationErrors((prev: Record<string, string>) => ({
+      ...prev,
+      languages: ''
+    }));
+    
+    // Reset form
+    setTempLanguage({ language: '', proficiency: 'B1' });
+    setLanguageSearchTerm('');
+    setIsLanguageDropdownOpen(false);
+    
+    showToast('Language added successfully', 'success');
   };
   
   // Remove language from profile
@@ -2189,8 +2250,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                 <div>
                   <span className="font-medium">
-                    {lang.language}
-                    {lang.iso639_1 && <span className="text-gray-500 ml-1">({lang.iso639_1})</span>}
+                    {getLanguageDisplayName(lang)}
+                    {getLanguageCode(lang) && <span className="text-gray-500 ml-1">({getLanguageCode(lang)})</span>}
                   </span>
                   <span className="ml-2 text-sm text-blue-600">({lang.proficiency})</span>
                 </div>
@@ -2233,18 +2294,103 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           {/* Add Language Form */}
           <div className="mt-4">
             <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={tempLanguage.language}
-                onChange={(e) => setTempLanguage((prev: any) => ({ ...prev, language: e.target.value }))}
-                className="w-full p-2 border rounded-md"
-                placeholder="Add language"
-              />
+              {/* Language Dropdown with Search */}
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={languageSearchTerm}
+                  onChange={(e) => {
+                    setLanguageSearchTerm(e.target.value);
+                    setIsLanguageDropdownOpen(true);
+                    setSelectedLanguageIndex(-1);
+                  }}
+                  onFocus={() => {
+                    setIsLanguageDropdownOpen(true);
+                    setSelectedLanguageIndex(-1);
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => setIsLanguageDropdownOpen(false), 200);
+                  }}
+                  onKeyDown={(e) => {
+                    if (!isLanguageDropdownOpen) return;
+                    
+                    switch (e.key) {
+                      case 'ArrowDown':
+                        e.preventDefault();
+                        setSelectedLanguageIndex(prev => 
+                          prev < filteredLanguages.length - 1 ? prev + 1 : 0
+                        );
+                        break;
+                      case 'ArrowUp':
+                        e.preventDefault();
+                        setSelectedLanguageIndex(prev => 
+                          prev > 0 ? prev - 1 : filteredLanguages.length - 1
+                        );
+                        break;
+                      case 'Enter':
+                        e.preventDefault();
+                        if (selectedLanguageIndex >= 0 && filteredLanguages[selectedLanguageIndex]) {
+                          addLanguage(filteredLanguages[selectedLanguageIndex]);
+                        }
+                        break;
+                      case 'Escape':
+                        setIsLanguageDropdownOpen(false);
+                        break;
+                    }
+                  }}
+                  placeholder="Search for a language... (use ↑↓ arrows to navigate)"
+                  className="w-full p-2 border rounded-md"
+                  disabled={loadingLanguages}
+                />
+                
+                {/* Search Icon */}
+                <div className="absolute right-2 top-2.5 text-gray-400">
+                  {loadingLanguages ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  )}
+                </div>
+
+                {/* Language Dropdown List */}
+                {isLanguageDropdownOpen && !loadingLanguages && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                    {filteredLanguages.length > 0 ? (
+                      filteredLanguages.map((language, index) => (
+                        <button
+                          key={language._id}
+                          type="button"
+                          onClick={() => addLanguage(language)}
+                          className={`w-full text-left px-3 py-2 flex items-center justify-between ${
+                            index === selectedLanguageIndex 
+                              ? 'bg-blue-100 text-blue-700' 
+                              : 'hover:bg-blue-50 hover:text-blue-600'
+                          }`}
+                        >
+                          <div>
+                            <span className="font-medium">{language.name}</span>
+                            <div className="text-sm text-gray-500">{language.nativeName}</div>
+                          </div>
+                          <span className="text-sm text-gray-500 font-mono">{language.code}</span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-gray-500 text-center">
+                        {languageSearchTerm ? `No languages found matching "${languageSearchTerm}"` : 'No languages available'}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               
+              {/* Proficiency Level Selector */}
               <select
                 value={tempLanguage.proficiency}
                 onChange={(e) => setTempLanguage((prev: any) => ({ ...prev, proficiency: e.target.value }))}
                 className="w-24 p-2 border rounded-md"
+                disabled={loadingLanguages}
               >
                 {proficiencyLevels.map(level => (
                   <option key={level.value} value={level.value}>
@@ -2253,14 +2399,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 ))}
               </select>
             </div>
-            
-            <button
-              onClick={addLanguage}
-              className="w-full py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg flex items-center justify-center gap-1 transition-colors mb-4"
-            >
-              <Plus className="w-4 h-4" />
-              Add Language
-            </button>
             
             {renderError(validationErrors.languages, 'languages')}
           </div>
@@ -2455,7 +2593,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                     setIsTimezoneDropdownOpen(false);
                     
                     // Check if what the user typed matches any timezone exactly
-                    if (timezoneSearchTerm && !profile.availability.timeZone) {
+                    if (timezoneSearchTerm && (!profile.availability.timeZone || profile.availability.timeZone === '' || profile.availability.timeZone === null)) {
                       const exactMatch = filteredTimezones.find(tz => 
                         repWizardApi.formatTimezone(tz).toLowerCase() === timezoneSearchTerm.toLowerCase()
                       );
