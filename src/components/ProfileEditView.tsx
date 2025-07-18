@@ -407,6 +407,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [uploadProgress, setUploadProgress] = useState(0);
   const [recordedVideoBlob, setRecordedVideoBlob] = useState<Blob | null>(null);
   const [videoUploaded, setVideoUploaded] = useState(false);
+  const [isExistingVideoMarkedForDeletion, setIsExistingVideoMarkedForDeletion] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -804,44 +805,92 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         }
       }
 
-      // Handle video upload if modified
-      if (modifiedSections.professionalSummary && recordedVideoBlob) {
-        try {
-          setUploadingVideo(true);
-          setUploadProgress(0);
-          console.log('🎥 Uploading presentation video...');
-          
-          const videoResult = await uploadPresentationVideo(
-            profile._id, 
-            recordedVideoBlob,
-            (progress) => setUploadProgress(progress)
-          );
-          
-          console.log('✅ Video uploaded successfully');
-          setVideoUploaded(true);
-          showToast('Video uploaded successfully!', 'success');
-        } catch (error) {
-          console.error('❌ Error uploading video:', error);
-          if (error instanceof Error && error.message === 'No authentication token found') {
-            showToast('Please log in again to upload video', 'error');
-          } else {
-            showToast('Failed to upload presentation video', 'error');
+      // Handle video operations if modified
+      if (modifiedSections.personalInfo || modifiedSections.professionalSummary) {
+        // Case 1: Existing video marked for deletion + new video recorded → Just upload new video (replace)
+        if (isExistingVideoMarkedForDeletion && recordedVideoBlob) {
+          try {
+            setUploadingVideo(true);
+            setUploadProgress(0);
+            console.log('🎥 Replacing video with new recording...');
+            
+            const videoResult = await uploadPresentationVideo(
+              profile._id, 
+              recordedVideoBlob,
+              (progress) => setUploadProgress(progress)
+            );
+            
+            console.log('✅ Video replaced successfully', videoResult);
+            setVideoUploaded(true);
+            setIsExistingVideoMarkedForDeletion(false); // Reset deletion flag
+            showToast('Video replaced successfully!', 'success');
+          } catch (error) {
+            console.error('❌ Error replacing video:', error);
+            showToast('Failed to replace video', 'error');
+            return;
+          } finally {
+            setUploadingVideo(false);
+            setUploadProgress(0);
           }
-          return;
-        } finally {
-          setUploadingVideo(false);
-          setUploadProgress(0);
+        }
+        // Case 2: Existing video marked for deletion + no new video → Delete existing video
+        else if (isExistingVideoMarkedForDeletion && !recordedVideoBlob) {
+          try {
+            console.log('🗑️ Deleting existing video...');
+            
+            await deleteVideoFromServer();
+            
+            console.log('✅ Video deleted successfully');
+            setIsExistingVideoMarkedForDeletion(false); // Reset deletion flag
+            showToast('Video deleted successfully!', 'success');
+          } catch (error) {
+            console.error('❌ Error deleting video:', error);
+            showToast('Failed to delete video', 'error');
+            return;
+          }
+        }
+        // Case 3: No existing video + new video recorded → Upload new video
+        else if (!isExistingVideoMarkedForDeletion && recordedVideoBlob) {
+          try {
+            setUploadingVideo(true);
+            setUploadProgress(0);
+            console.log('🎥 Uploading new presentation video...');
+            
+            const videoResult = await uploadPresentationVideo(
+              profile._id, 
+              recordedVideoBlob,
+              (progress) => setUploadProgress(progress)
+            );
+            
+            console.log('✅ Video uploaded successfully', videoResult);
+            setVideoUploaded(true);
+            showToast('Video uploaded successfully!', 'success');
+          } catch (error) {
+            console.error('❌ Error uploading video:', error);
+            if (error instanceof Error && error.message === 'No authentication token found') {
+              showToast('Please log in again to upload video', 'error');
+            } else {
+              showToast('Failed to upload presentation video', 'error');
+            }
+            return;
+          } finally {
+            setUploadingVideo(false);
+            setUploadProgress(0);
+          }
         }
       }
 
       // Continue with other profile updates
-      // Save personal info if modified (including video deletion)
+      // Save personal info if modified (excluding video data which is handled separately)
       if (modifiedSections.personalInfo) {
+        // Create a copy of personalInfo without video data for the basic-info endpoint
+        const { presentationVideo, ...personalInfoWithoutVideo } = profile.personalInfo;
+        
         console.log('📝 Saving personal info...', {
           endpoint: `/api/profiles/${profile._id}/basic-info`,
-          data: profile.personalInfo
+          data: personalInfoWithoutVideo
         });
-        await updateBasicInfo(profile._id, profile.personalInfo);
+        await updateBasicInfo(profile._id, personalInfoWithoutVideo);
       }
 
       // Save professional summary if modified
@@ -946,15 +995,18 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       // Save languages if modified
       if (modifiedSections.languages) {
+        // Create a copy of personalInfo without video data for the basic-info endpoint
+        const { presentationVideo, ...personalInfoWithoutVideo } = profile.personalInfo;
+        
         console.log('📝 Saving languages...', {
           endpoint: `/api/profiles/${profile._id}/basic-info`,
           data: {
-            ...profile.personalInfo,
+            ...personalInfoWithoutVideo,
             languages: profile.personalInfo?.languages || []
           }
         });
         await updateBasicInfo(profile._id, {
-          ...profile.personalInfo,
+          ...personalInfoWithoutVideo,
           languages: profile.personalInfo?.languages || []
         });
       }
@@ -985,9 +1037,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       // Reset photo deletion state after successful save
       setIsPhotoMarkedForDeletion(false);
       
-      // Reset video states after successful save (but keep recorded video)
+      // Reset video states after successful save
       setUploadProgress(0);
       setUploadingVideo(false);
+      setIsExistingVideoMarkedForDeletion(false);
 
       console.log('✅ All changes saved successfully');
       showToast('Profile saved successfully', 'success');
@@ -1407,6 +1460,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const startRecording = () => {
     if (!stream) return;
 
+    // Reset deletion state since user is recording new video
+    setIsExistingVideoMarkedForDeletion(false);
+
     const recorder = new MediaRecorder(stream);
     const chunks: BlobPart[] = [];
 
@@ -1425,7 +1481,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       // Mark video as modified
       setModifiedSections(prev => ({
         ...prev,
-        professionalSummary: true
+        personalInfo: true
       }));
       
       // Show success message
@@ -1516,14 +1572,28 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     // Mark as modified to update backend
     setModifiedSections(prev => ({
       ...prev,
-      professionalSummary: true
+      personalInfo: true
     }));
     
     showToast('Video deleted successfully', 'success');
   };
 
-  // Function to delete existing video from server
-  const deleteExistingVideo = async () => {
+  // Function to mark existing video for deletion (no API call yet)
+  const deleteExistingVideo = () => {
+    // Just mark for deletion - actual deletion happens on save
+    setIsExistingVideoMarkedForDeletion(true);
+    
+    // Mark as modified so save is triggered
+    setModifiedSections(prev => ({
+      ...prev,
+      personalInfo: true
+    }));
+
+    showToast('Video will be deleted when you save changes', 'success');
+  };
+
+  // Function to actually delete video from server (called during save)
+  const deleteVideoFromServer = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -1541,26 +1611,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         throw new Error('Failed to delete video');
       }
 
-      // Update profile to remove video
-      setProfile((prev: Profile) => ({
-        ...prev,
-        personalInfo: {
-          ...prev.personalInfo,
-          presentationVideo: undefined
-        }
-      }));
-
-      // Mark as modified
-      setModifiedSections(prev => ({
-        ...prev,
-        personalInfo: true
-      }));
-
-      showToast('Video deleted successfully', 'success');
+      console.log('✅ Video deleted from server successfully');
       return response.json();
     } catch (error) {
-      console.error('Error deleting video:', error);
-      showToast('Failed to delete video', 'error');
+      console.error('❌ Error deleting video from server:', error);
       throw error;
     }
   };
@@ -2105,7 +2159,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   <span className="text-red-600 font-medium">Maximum duration: 1 minute (recording will stop automatically)</span>
                 </div>
               </div>
-              {!showVideoRecorder && !recordedVideo && !profile.personalInfo?.presentationVideo && (
+              {!showVideoRecorder && !recordedVideo && (!profile.personalInfo?.presentationVideo?.url || isExistingVideoMarkedForDeletion) && (
                 <button
                   onClick={startCamera}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
@@ -2116,8 +2170,34 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               )}
             </div>
 
-            {/* Existing Video Display */}
-            {profile.personalInfo?.presentationVideo && !showVideoRecorder && !recordedVideo && (
+                          {/* Video Marked for Deletion Display */}
+            {isExistingVideoMarkedForDeletion && profile.personalInfo?.presentationVideo?.url && !recordedVideo && (
+              <div className="bg-red-50 rounded-lg p-4 mb-4 border border-red-200">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-red-800 mb-2">Video Marked for Deletion</h3>
+                    <p className="text-red-600 text-sm mb-4">This video will be permanently deleted when you save changes.</p>
+                    <button
+                      onClick={() => {
+                        setIsExistingVideoMarkedForDeletion(false);
+                        showToast('Video deletion cancelled', 'success');
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                    >
+                      Cancel Deletion
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+              {/* Existing Video Display */}
+            {profile.personalInfo?.presentationVideo?.url && !showVideoRecorder && !recordedVideo && !isExistingVideoMarkedForDeletion && (
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <div className="flex flex-col items-center space-y-4">
                   <div className="flex items-center justify-between w-full">
@@ -2362,7 +2442,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             )}
 
             {/* No Video State */}
-            {!showVideoRecorder && !recordedVideo && !profile.personalInfo?.presentationVideo && cameraPermission !== 'denied' && (
+            {!showVideoRecorder && !recordedVideo && (!profile.personalInfo?.presentationVideo?.url || isExistingVideoMarkedForDeletion) && cameraPermission !== 'denied' && (
               <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
                 <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-2">No video introduction yet</p>
