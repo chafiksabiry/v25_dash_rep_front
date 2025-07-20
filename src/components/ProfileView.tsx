@@ -928,16 +928,48 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         {/* Industries Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-4">Industries</h2>
+          {(!profile.professionalSummary?.industries || profile.professionalSummary.industries.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Industries are required. Please add the industries you work in.
+            </div>
+          )}
           {profile.professionalSummary?.industries?.length > 0 ? (
             <div className="flex flex-wrap gap-3">
-              {profile.professionalSummary.industries.map((industry: string, idx: number) => (
+              {profile.professionalSummary.industries.map((industry: any, idx: number) => (
                 <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm">
-                  {industry}
+                  {typeof industry === 'string' ? industry : industry.name || industry._id}
                 </span>
               ))}
             </div>
           ) : (
             <p className="text-gray-500 italic">No industries listed</p>
+          )}
+        </div>
+
+        {/* Activities Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Activities</h2>
+          {(!profile.professionalSummary?.activities || profile.professionalSummary.activities.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Activities are required. Please add the activities you can perform.
+            </div>
+          )}
+          {profile.professionalSummary?.activities && profile.professionalSummary.activities.length > 0 ? (
+            <div className="flex flex-wrap gap-3">
+              {profile.professionalSummary.activities.map((activity: any, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-green-100 text-green-800 rounded-lg text-sm">
+                  {typeof activity === 'string' ? activity : activity.name || activity._id}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No activities listed</p>
           )}
         </div>
 

@@ -138,6 +138,26 @@ interface PhotoUploadResponse {
   [key: string]: any;
 }
 
+// Define interfaces for Industry and Activity
+interface Industry {
+  _id: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Activity {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Modified uploadPhoto function with token
 const uploadPhoto = async (agentId: string, photoFile: Blob): Promise<PhotoUploadResponse> => {
   const token = localStorage.getItem('token');
@@ -309,7 +329,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const [filteredLanguages, setFilteredLanguages] = useState<Language[]>([]);
   const [selectedLanguageIndex, setSelectedLanguageIndex] = useState(-1);
-  const [tempIndustry, setTempIndustry] = useState('');
+
   const [tempCompany, setTempCompany] = useState('');
   const [tempFlexibility, setTempFlexibility] = useState('');
   const [tempExpertise, setTempExpertise] = useState('');
@@ -382,6 +402,18 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   // States for skill selection dropdown
   const [skillDropdownOpen, setSkillDropdownOpen] = useState<{[key: string]: boolean}>({});
   const [skillSearchTerm, setSkillSearchTerm] = useState<{[key: string]: string}>({});
+
+  // States for industries data
+  const [industriesData, setIndustriesData] = useState<Industry[]>([]);
+  const [loadingIndustries, setLoadingIndustries] = useState(false);
+  const [industryDropdownOpen, setIndustryDropdownOpen] = useState(false);
+  const [industrySearchTerm, setIndustrySearchTerm] = useState('');
+
+  // States for activities data
+  const [activitiesData, setActivitiesData] = useState<Activity[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [activityDropdownOpen, setActivityDropdownOpen] = useState(false);
+  const [activitySearchTerm, setActivitySearchTerm] = useState('');
 
   // Add state for country mismatch checking
   const [countryMismatch, setCountryMismatch] = useState<{
@@ -507,6 +539,62 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     };
 
     loadLanguages();
+  }, []);
+
+  // Load industries data on component mount
+  useEffect(() => {
+    const loadIndustries = async () => {
+      try {
+        setLoadingIndustries(true);
+        console.log('🏭 Loading industries...');
+        const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/industries`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.success) {
+          setIndustriesData(data.data);
+          console.log('✅ Industries loaded:', data.data.length);
+        } else {
+          throw new Error(data.message || 'Failed to load industries');
+        }
+      } catch (error) {
+        console.error('❌ Error loading industries:', error);
+        showToast('Failed to load industries', 'error');
+      } finally {
+        setLoadingIndustries(false);
+      }
+    };
+
+    loadIndustries();
+  }, []);
+
+  // Load activities data on component mount
+  useEffect(() => {
+    const loadActivities = async () => {
+      try {
+        setLoadingActivities(true);
+        console.log('🎯 Loading activities...');
+        const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/activities`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.success) {
+          setActivitiesData(data.data);
+          console.log('✅ Activities loaded:', data.data.length);
+        } else {
+          throw new Error(data.message || 'Failed to load activities');
+        }
+      } catch (error) {
+        console.error('❌ Error loading activities:', error);
+        showToast('Failed to load activities', 'error');
+      } finally {
+        setLoadingActivities(false);
+      }
+    };
+
+    loadActivities();
   }, []);
 
   // Filter languages based on search term
@@ -1759,6 +1847,190 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     );
   };
 
+  // Render industry dropdown for adding new industries
+  const renderIndustryDropdown = () => {
+    // Extract IDs from industries (handle both string IDs and object format)
+    const selectedIndustryIds = new Set(
+      (profile.professionalSummary?.industries || []).map((industry: any) => 
+        typeof industry === 'string' ? industry : industry._id
+      )
+    );
+    
+    const filteredIndustries = industriesData.filter(industry => 
+      industry.isActive &&
+      !selectedIndustryIds.has(industry._id) &&
+      industry.name.toLowerCase().includes(industrySearchTerm.toLowerCase())
+    );
+
+    const addIndustry = (industry: Industry) => {
+      const updatedIndustries = [
+        ...(profile.professionalSummary?.industries || []),
+        industry._id
+      ];
+      setProfile((prev: Profile) => ({
+        ...prev,
+        professionalSummary: {
+          ...prev.professionalSummary,
+          industries: updatedIndustries
+        }
+      }));
+      setModifiedSections(prev => ({
+        ...prev,
+        professionalSummary: true
+      }));
+      
+      // Reset form
+      setIndustrySearchTerm('');
+      setIndustryDropdownOpen(false);
+    };
+
+    return (
+      <div className="relative">
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={industrySearchTerm}
+              onChange={(e) => {
+                setIndustrySearchTerm(e.target.value);
+                setIndustryDropdownOpen(true);
+              }}
+              onFocus={() => setIndustryDropdownOpen(true)}
+              onBlur={() => {
+                setTimeout(() => setIndustryDropdownOpen(false), 200);
+              }}
+              placeholder="Search and select industry"
+              className="w-full p-2 border rounded-md"
+            />
+            
+            {/* Search Icon */}
+            <div className="absolute right-2 top-2.5 text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Dropdown List */}
+        {industryDropdownOpen && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+            {filteredIndustries.length > 0 ? (
+              filteredIndustries.map((industry) => (
+                <button
+                  key={industry._id}
+                  type="button"
+                  onClick={() => addIndustry(industry)}
+                  className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
+                >
+                  <div className="font-medium text-gray-800">{industry.name}</div>
+                  <div className="text-sm text-gray-600 truncate">{industry.description}</div>
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-gray-500 text-center">
+                {industrySearchTerm ? `No industries found matching "${industrySearchTerm}"` : 'No industries available'}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render activity dropdown for adding new activities
+  const renderActivityDropdown = () => {
+    // Extract IDs from activities (handle both string IDs and object format)
+    const selectedActivityIds = new Set(
+      (profile.professionalSummary?.activities || []).map((activity: any) => 
+        typeof activity === 'string' ? activity : activity._id
+      )
+    );
+    
+    const filteredActivities = activitiesData.filter(activity => 
+      activity.isActive &&
+      !selectedActivityIds.has(activity._id) &&
+      activity.name.toLowerCase().includes(activitySearchTerm.toLowerCase())
+    );
+
+    const addActivity = (activity: Activity) => {
+      const updatedActivities = [
+        ...(profile.professionalSummary?.activities || []),
+        activity._id
+      ];
+      setProfile((prev: Profile) => ({
+        ...prev,
+        professionalSummary: {
+          ...prev.professionalSummary,
+          activities: updatedActivities
+        }
+      }));
+      setModifiedSections(prev => ({
+        ...prev,
+        professionalSummary: true
+      }));
+      
+      // Reset form
+      setActivitySearchTerm('');
+      setActivityDropdownOpen(false);
+    };
+
+    return (
+      <div className="relative">
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={activitySearchTerm}
+              onChange={(e) => {
+                setActivitySearchTerm(e.target.value);
+                setActivityDropdownOpen(true);
+              }}
+              onFocus={() => setActivityDropdownOpen(true)}
+              onBlur={() => {
+                setTimeout(() => setActivityDropdownOpen(false), 200);
+              }}
+              placeholder="Search and select activity"
+              className="w-full p-2 border rounded-md"
+            />
+            
+            {/* Search Icon */}
+            <div className="absolute right-2 top-2.5 text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Dropdown List */}
+        {activityDropdownOpen && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+            {filteredActivities.length > 0 ? (
+              filteredActivities.map((activity) => (
+                <button
+                  key={activity._id}
+                  type="button"
+                  onClick={() => addActivity(activity)}
+                  className="w-full text-left px-3 py-2 hover:bg-green-50 border-b border-gray-100 last:border-b-0"
+                >
+                  <div className="font-medium text-gray-800">{activity.name}</div>
+                  <div className="text-sm text-gray-600 truncate">
+                    <span className="font-medium">{activity.category}</span> - {activity.description}
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-gray-500 text-center">
+                {activitySearchTerm ? `No activities found matching "${activitySearchTerm}"` : 'No activities available'}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Add useEffect to check country mismatch
   useEffect(() => {
     const checkMismatch = async () => {
@@ -2446,67 +2718,87 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         {/* Industries Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Industries</h2>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {profile.professionalSummary?.industries?.map((industry: string, index: number) => (
-              <div key={index} className="flex items-center bg-blue-50 px-3 py-1 rounded-full">
-                <span className="text-blue-800 text-sm">{industry}</span>
-                <button
-                  onClick={() => {
-                    const updatedIndustries = [...(profile.professionalSummary?.industries || [])];
-                    updatedIndustries.splice(index, 1);
-                    setProfile((prev: Profile) => ({
-                      ...prev,
-                      professionalSummary: {
-                        ...prev.professionalSummary,
-                        industries: updatedIndustries
-                      }
-                    }));
-                    setModifiedSections(prev => ({
-                      ...prev,
-                      professionalSummary: true
-                    }));
-                  }}
-                  className="ml-2 text-blue-600 hover:text-blue-800"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {profile.professionalSummary?.industries?.map((industryItem: any, index: number) => {
+              // Handle both string IDs and object format
+              const industryId = typeof industryItem === 'string' ? industryItem : industryItem._id;
+              const industryName = typeof industryItem === 'string' 
+                ? (industriesData.find(ind => ind._id === industryItem)?.name || industryItem)
+                : (industryItem.name || industryId);
+              
+              return (
+                <div key={index} className="flex items-center bg-blue-50 px-3 py-1 rounded-full">
+                  <span className="text-blue-800 text-sm">
+                    {industryName}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const updatedIndustries = [...(profile.professionalSummary?.industries || [])];
+                      updatedIndustries.splice(index, 1);
+                      setProfile((prev: Profile) => ({
+                        ...prev,
+                        professionalSummary: {
+                          ...prev.professionalSummary,
+                          industries: updatedIndustries
+                        }
+                      }));
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        professionalSummary: true
+                      }));
+                    }}
+                    className="ml-2 text-blue-600 hover:text-blue-800"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={tempIndustry}
-              onChange={(e) => setTempIndustry(e.target.value)}
-              className="w-full p-2 border rounded-md"
-              placeholder="Add industry"
-            />
-            <button
-              onClick={() => {
-                if (tempIndustry.trim()) {
-                  const updatedIndustries = [
-                    ...(profile.professionalSummary?.industries || []),
-                    tempIndustry.trim()
-                  ];
-                  setProfile((prev: Profile) => ({
-                    ...prev,
-                    professionalSummary: {
-                      ...prev.professionalSummary,
-                      industries: updatedIndustries
-                    }
-                  }));
-                  setModifiedSections(prev => ({
-                    ...prev,
-                    professionalSummary: true
-                  }));
-                  setTempIndustry('');
-                }
-              }}
-              className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg"
-            >
-              Add
-            </button>
+          {renderIndustryDropdown()}
+        </div>
+
+        {/* Activities Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">Activities</h2>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {profile.professionalSummary?.activities?.map((activityItem: any, index: number) => {
+              // Handle both string IDs and object format
+              const activityId = typeof activityItem === 'string' ? activityItem : activityItem._id;
+              const activityName = typeof activityItem === 'string' 
+                ? (activitiesData.find(act => act._id === activityItem)?.name || activityItem)
+                : (activityItem.name || activityId);
+              
+              return (
+                <div key={index} className="flex items-center bg-green-50 px-3 py-1 rounded-full">
+                  <span className="text-green-800 text-sm">
+                    {activityName}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const updatedActivities = [...(profile.professionalSummary?.activities || [])];
+                      updatedActivities.splice(index, 1);
+                      setProfile((prev: Profile) => ({
+                        ...prev,
+                        professionalSummary: {
+                          ...prev.professionalSummary,
+                          activities: updatedActivities
+                        }
+                      }));
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        professionalSummary: true
+                      }));
+                    }}
+                    className="ml-2 text-green-600 hover:text-green-800"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
+          {renderActivityDropdown()}
         </div>
 
         {/* Notable Companies Section */}
