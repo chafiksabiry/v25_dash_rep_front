@@ -2140,11 +2140,11 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             />
           </div>
 
-                    {/* Video Introduction Section */}
+                    {/* Introduction Video Section */}
           <div className="border-t pt-6">
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xl font-semibold text-gray-800">Video Introduction</h3>
+                <h3 className="text-xl font-semibold text-gray-800">Introduction Video</h3>
                 {!showVideoRecorder && !recordedVideo && profile.personalInfo?.presentationVideo?.url && !existingVideoDeleted && (
                   <span className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full font-medium">
                     ✓ Video Added
@@ -2165,7 +2165,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <div className="flex flex-col items-center space-y-4">
                   <div className="flex items-center justify-between w-full">
-                    <h4 className="text-md font-medium text-gray-800">Your Video Introduction</h4>
+                    <h4 className="text-md font-medium text-gray-800">Your Introduction Video</h4>
                     <div className="flex gap-2">
                       <button
                         onClick={startCamera}
