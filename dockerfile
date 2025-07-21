@@ -29,6 +29,7 @@ ENV VITE_API_URL_AI_MESSAGES=https://api-messages-service.harx.ai/api
 ENV VITE_API_URL_CALL=https://api-calls.harx.ai
 ENV VITE_REP_API_URL=https://api-repcreationwizard.harx.ai
 ENV VITE_AUTH_API_URL=https://api-registration.harx.ai/api
+ENV VITE_FRONT_URL=https://rep-dashboard.harx.ai/
 # Install dependencies
 RUN npm install
 

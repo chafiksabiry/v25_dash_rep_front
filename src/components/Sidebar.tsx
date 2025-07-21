@@ -97,7 +97,7 @@ export function Sidebar({ phases }: SidebarProps) {
     <div className="w-64 bg-white border-r border-gray-200">
       <div className="h-16 flex items-center justify-center border-b border-gray-200">
         <img 
-          src={'https://rep-dashboard.harx.ai/logo_harx.jpg'}
+          src={`${import.meta.env.VITE_FRONT_URL}logo_harx.jpg`}
           alt="HARX.AI Logo" 
           className="h-8 w-auto object-contain"
         />
