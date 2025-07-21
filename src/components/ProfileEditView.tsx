@@ -4,7 +4,8 @@ import 'react-image-crop/dist/ReactCrop.css';
 import { 
   MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase, 
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
-  Edit, Check, X, Save, RefreshCw, Plus, Trash2, Camera, Upload
+  Edit, Check, X, Save, RefreshCw, Plus, Trash2, Camera, Upload, Video,
+  Play, Pause, Square, RotateCcw
 } from 'lucide-react';
 import { updateProfileData, updateBasicInfo, updateExperience, updateSkills, checkCountryMismatch } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
@@ -137,6 +138,26 @@ interface PhotoUploadResponse {
   [key: string]: any;
 }
 
+// Define interfaces for Industry and Activity
+interface Industry {
+  _id: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Activity {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Modified uploadPhoto function with token
 const uploadPhoto = async (agentId: string, photoFile: Blob): Promise<PhotoUploadResponse> => {
   const token = localStorage.getItem('token');
@@ -186,6 +207,59 @@ const base64ToBlob = async (base64String: string): Promise<Blob> => {
   
   // Create blob from array buffer
   return new Blob([ab], { type: 'image/jpeg' });
+};
+
+// Function to upload presentation video with progress
+const uploadPresentationVideo = async (
+  agentId: string, 
+  videoBlob: Blob, 
+  onProgress?: (progress: number) => void
+): Promise<any> => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const formData = new FormData();
+  // Convert blob to file for proper upload
+  const videoFile = new File([videoBlob], 'presentation-video.webm', { 
+    type: 'video/webm' 
+  });
+  formData.append('video', videoFile);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    // Track upload progress
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onProgress) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
+        onProgress(percentComplete);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const result = JSON.parse(xhr.responseText);
+          console.log('Video uploaded successfully:', result);
+          resolve(result);
+        } catch (error) {
+          reject(new Error('Invalid JSON response'));
+        }
+      } else {
+        reject(new Error(`HTTP error! status: ${xhr.status}`));
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Network error occurred'));
+    });
+
+    xhr.open('PUT', `${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}/video`);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.send(formData);
+  });
 };
 
 // Add this near the top of the file with other imports
@@ -255,7 +329,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const [filteredLanguages, setFilteredLanguages] = useState<Language[]>([]);
   const [selectedLanguageIndex, setSelectedLanguageIndex] = useState(-1);
-  const [tempIndustry, setTempIndustry] = useState('');
+
   const [tempCompany, setTempCompany] = useState('');
   const [tempFlexibility, setTempFlexibility] = useState('');
   const [tempExpertise, setTempExpertise] = useState('');
@@ -329,6 +403,18 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [skillDropdownOpen, setSkillDropdownOpen] = useState<{[key: string]: boolean}>({});
   const [skillSearchTerm, setSkillSearchTerm] = useState<{[key: string]: string}>({});
 
+  // States for industries data
+  const [industriesData, setIndustriesData] = useState<Industry[]>([]);
+  const [loadingIndustries, setLoadingIndustries] = useState(false);
+  const [industryDropdownOpen, setIndustryDropdownOpen] = useState(false);
+  const [industrySearchTerm, setIndustrySearchTerm] = useState('');
+
+  // States for activities data
+  const [activitiesData, setActivitiesData] = useState<Activity[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [activityDropdownOpen, setActivityDropdownOpen] = useState(false);
+  const [activitySearchTerm, setActivitySearchTerm] = useState('');
+
   // Add state for country mismatch checking
   const [countryMismatch, setCountryMismatch] = useState<{
     hasMismatch: boolean;
@@ -338,6 +424,30 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   } | null>(null);
   const [checkingCountryMismatch, setCheckingCountryMismatch] = useState(false);
   const [showLoadingSpinner, setShowLoadingSpinner] = useState(false);
+
+  // Video recording states
+  // New Flow: Has Video → Delete (show confirmation) → Either cancel or confirm deletion
+  // After confirmation: Show "Record Video" → Record → Show "Retake" or "Use This Video"
+  // No delete button on new recordings (original was already deleted)
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
+  const [showVideoRecorder, setShowVideoRecorder] = useState(false);
+  const [showTimeWarning, setShowTimeWarning] = useState(false);
+  const [hasShownCompletionToast, setHasShownCompletionToast] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [recordedVideoBlob, setRecordedVideoBlob] = useState<Blob | null>(null);
+  const [videoUploaded, setVideoUploaded] = useState(false);
+  const [isExistingVideoMarkedForDeletion, setIsExistingVideoMarkedForDeletion] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [existingVideoDeleted, setExistingVideoDeleted] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (initialProfile) {
@@ -429,6 +539,62 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     };
 
     loadLanguages();
+  }, []);
+
+  // Load industries data on component mount
+  useEffect(() => {
+    const loadIndustries = async () => {
+      try {
+        setLoadingIndustries(true);
+        console.log('🏭 Loading industries...');
+        const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/industries`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.success) {
+          setIndustriesData(data.data);
+          console.log('✅ Industries loaded:', data.data.length);
+        } else {
+          throw new Error(data.message || 'Failed to load industries');
+        }
+      } catch (error) {
+        console.error('❌ Error loading industries:', error);
+        showToast('Failed to load industries', 'error');
+      } finally {
+        setLoadingIndustries(false);
+      }
+    };
+
+    loadIndustries();
+  }, []);
+
+  // Load activities data on component mount
+  useEffect(() => {
+    const loadActivities = async () => {
+      try {
+        setLoadingActivities(true);
+        console.log('🎯 Loading activities...');
+        const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/activities`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.success) {
+          setActivitiesData(data.data);
+          console.log('✅ Activities loaded:', data.data.length);
+        } else {
+          throw new Error(data.message || 'Failed to load activities');
+        }
+      } catch (error) {
+        console.error('❌ Error loading activities:', error);
+        showToast('Failed to load activities', 'error');
+      } finally {
+        setLoadingActivities(false);
+      }
+    };
+
+    loadActivities();
   }, []);
 
   // Filter languages based on search term
@@ -732,14 +898,92 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         }
       }
 
+      // Handle video operations if modified
+      if (modifiedSections.personalInfo || modifiedSections.professionalSummary) {
+        // Case 1: Existing video marked for deletion + new video recorded → Just upload new video (replace)
+        if (isExistingVideoMarkedForDeletion && recordedVideoBlob) {
+          try {
+            setUploadingVideo(true);
+            setUploadProgress(0);
+            console.log('🎥 Replacing video with new recording...');
+            
+            const videoResult = await uploadPresentationVideo(
+              profile._id, 
+              recordedVideoBlob,
+              (progress) => setUploadProgress(progress)
+            );
+            
+            console.log('✅ Video replaced successfully', videoResult);
+            setVideoUploaded(true);
+            setIsExistingVideoMarkedForDeletion(false); // Reset deletion flag
+            showToast('Video replaced successfully!', 'success');
+          } catch (error) {
+            console.error('❌ Error replacing video:', error);
+            showToast('Failed to replace video', 'error');
+            return;
+          } finally {
+            setUploadingVideo(false);
+            setUploadProgress(0);
+          }
+        }
+        // Case 2: Existing video marked for deletion + no new video → Delete existing video
+        else if (isExistingVideoMarkedForDeletion && !recordedVideoBlob) {
+          try {
+            console.log('🗑️ Deleting existing video...');
+            
+            await deleteVideoFromServer();
+            
+            console.log('✅ Video deleted successfully');
+            setIsExistingVideoMarkedForDeletion(false); // Reset deletion flag
+            showToast('Video deleted successfully!', 'success');
+          } catch (error) {
+            console.error('❌ Error deleting video:', error);
+            showToast('Failed to delete video', 'error');
+            return;
+          }
+        }
+        // Case 3: No existing video + new video recorded → Upload new video
+        else if (!isExistingVideoMarkedForDeletion && recordedVideoBlob) {
+          try {
+            setUploadingVideo(true);
+            setUploadProgress(0);
+            console.log('🎥 Uploading new presentation video...');
+            
+            const videoResult = await uploadPresentationVideo(
+              profile._id, 
+              recordedVideoBlob,
+              (progress) => setUploadProgress(progress)
+            );
+            
+            console.log('✅ Video uploaded successfully', videoResult);
+            setVideoUploaded(true);
+            showToast('Video uploaded successfully!', 'success');
+          } catch (error) {
+            console.error('❌ Error uploading video:', error);
+            if (error instanceof Error && error.message === 'No authentication token found') {
+              showToast('Please log in again to upload video', 'error');
+            } else {
+              showToast('Failed to upload presentation video', 'error');
+            }
+            return;
+          } finally {
+            setUploadingVideo(false);
+            setUploadProgress(0);
+          }
+        }
+      }
+
       // Continue with other profile updates
-      // Save personal info if modified
+      // Save personal info if modified (excluding video data which is handled separately)
       if (modifiedSections.personalInfo) {
+        // Create a copy of personalInfo without video data for the basic-info endpoint
+        const { presentationVideo, ...personalInfoWithoutVideo } = profile.personalInfo;
+        
         console.log('📝 Saving personal info...', {
           endpoint: `/api/profiles/${profile._id}/basic-info`,
-          data: profile.personalInfo
+          data: personalInfoWithoutVideo
         });
-        await updateBasicInfo(profile._id, profile.personalInfo);
+        await updateBasicInfo(profile._id, personalInfoWithoutVideo);
       }
 
       // Save professional summary if modified
@@ -844,15 +1088,18 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       // Save languages if modified
       if (modifiedSections.languages) {
+        // Create a copy of personalInfo without video data for the basic-info endpoint
+        const { presentationVideo, ...personalInfoWithoutVideo } = profile.personalInfo;
+        
         console.log('📝 Saving languages...', {
           endpoint: `/api/profiles/${profile._id}/basic-info`,
           data: {
-            ...profile.personalInfo,
+            ...personalInfoWithoutVideo,
             languages: profile.personalInfo?.languages || []
           }
         });
         await updateBasicInfo(profile._id, {
-          ...profile.personalInfo,
+          ...personalInfoWithoutVideo,
           languages: profile.personalInfo?.languages || []
         });
       }
@@ -882,6 +1129,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       // Reset photo deletion state after successful save
       setIsPhotoMarkedForDeletion(false);
+      
+      // Reset video states after successful save
+      setUploadProgress(0);
+      setUploadingVideo(false);
+      setIsExistingVideoMarkedForDeletion(false);
+      setExistingVideoDeleted(false);
+      setShowDeleteConfirmation(false);
 
       console.log('✅ All changes saved successfully');
       showToast('Profile saved successfully', 'success');
@@ -1263,6 +1517,240 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }));
   };
 
+  // Video recording functions
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user'
+        },
+        audio: true 
+      });
+      
+      setStream(mediaStream);
+      setCameraPermission('granted');
+      setShowVideoRecorder(true);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setCameraPermission('denied');
+      showToast('Camera access denied. Please enable camera permissions.', 'error');
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowVideoRecorder(false);
+    setHasShownCompletionToast(false); // Reset completion toast state when stopping camera
+    setUploadProgress(0); // Reset upload progress
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const startRecording = () => {
+    if (!stream) return;
+
+    const recorder = new MediaRecorder(stream);
+    const chunks: BlobPart[] = [];
+
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        chunks.push(event.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const videoUrl = URL.createObjectURL(blob);
+      setRecordedVideo(videoUrl);
+      setRecordedVideoBlob(blob); // Store the blob for upload
+      
+      // Mark video as modified
+      setModifiedSections(prev => ({
+        ...prev,
+        personalInfo: true
+      }));
+      
+      // Show success message
+      showToast('Video recorded successfully!', 'success');
+    };
+
+    recorder.start();
+    setMediaRecorder(recorder);
+    setIsRecording(true);
+    setRecordingTime(0);
+    setShowTimeWarning(false); // Reset warning state
+    setHasShownCompletionToast(false); // Reset completion toast state
+    setVideoUploaded(false); // Reset upload status for new recording
+
+    // Start timer (max 60 seconds)
+    recordingTimerRef.current = setInterval(() => {
+      setRecordingTime(prev => {
+        const newTime = prev + 1;
+        
+        // Show warning at 45 seconds (15 seconds left)
+        if (newTime === 45) {
+          setShowTimeWarning(true);
+        }
+        
+        // Stop at exactly 60 seconds - 1 minute limit reached
+        if (newTime === 60) {
+          stopRecordingAndHideCamera();
+          showToast('✅ Recording complete! 1-minute limit reached.', 'success');
+          return 60;
+        }
+        
+        // Prevent going over 60 seconds
+        if (newTime > 60) {
+          return 60;
+        }
+        
+        return newTime;
+      });
+    }, 1000);
+  };
+
+  const stopRecordingAndHideCamera = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }
+    
+    // Reset warning state
+    setShowTimeWarning(false);
+    
+    // Hide camera interface immediately to avoid visual flash
+    setShowVideoRecorder(false);
+    
+    // Stop camera stream after a small delay to ensure recording is processed
+    setTimeout(() => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    }, 1000);
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      stopRecordingAndHideCamera();
+    }
+  };
+
+  const deleteVideo = () => {
+    if (recordedVideo) {
+      URL.revokeObjectURL(recordedVideo);
+    }
+    setRecordedVideo(null);
+    setRecordedVideoBlob(null); // Clear the blob too
+    setRecordingTime(0);
+    setHasShownCompletionToast(false); // Reset completion toast state when deleting video
+    setUploadProgress(0); // Reset upload progress
+    setVideoUploaded(false); // Reset upload status
+    
+    // Mark as modified to update backend
+    setModifiedSections(prev => ({
+      ...prev,
+      personalInfo: true
+    }));
+    
+    showToast('Video deleted successfully', 'success');
+  };
+
+
+
+  // Function to actually delete video from server (called during save)
+  const deleteVideoFromServer = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${profile._id}/video`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete video');
+      }
+
+      console.log('✅ Video deleted from server successfully');
+      return response.json();
+    } catch (error) {
+      console.error('❌ Error deleting video from server:', error);
+      throw error;
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Effect to handle video stream updates
+  useEffect(() => {
+    if (stream && videoRef.current && showVideoRecorder) {
+      const videoElement = videoRef.current;
+      videoElement.srcObject = stream;
+      
+      const handleLoadedMetadata = () => {
+        videoElement.play().catch((error) => {
+          console.error('Error playing video:', error);
+        });
+      };
+
+      const handleError = (error: any) => {
+        console.error('Video element error:', error);
+      };
+      
+      videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+      videoElement.addEventListener('error', handleError);
+      
+      // Force load if metadata is already available
+      if (videoElement.readyState >= 1) {
+        handleLoadedMetadata();
+      }
+      
+      return () => {
+        videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        videoElement.removeEventListener('error', handleError);
+      };
+    }
+  }, [stream, showVideoRecorder]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      if (recordedVideo) {
+        URL.revokeObjectURL(recordedVideo);
+      }
+    };
+  }, []);
+
   // Render skill dropdown for adding new skills
   const renderSkillDropdown = (skillType: 'technical' | 'professional' | 'soft', placeholder: string, colorScheme: string) => {
     const skillsForType = skillsData[skillType];
@@ -1359,6 +1847,190 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     );
   };
 
+  // Render industry dropdown for adding new industries
+  const renderIndustryDropdown = () => {
+    // Extract IDs from industries (handle both string IDs and object format)
+    const selectedIndustryIds = new Set(
+      (profile.professionalSummary?.industries || []).map((industry: any) => 
+        typeof industry === 'string' ? industry : industry._id
+      )
+    );
+    
+    const filteredIndustries = industriesData.filter(industry => 
+      industry.isActive &&
+      !selectedIndustryIds.has(industry._id) &&
+      industry.name.toLowerCase().includes(industrySearchTerm.toLowerCase())
+    );
+
+    const addIndustry = (industry: Industry) => {
+      const updatedIndustries = [
+        ...(profile.professionalSummary?.industries || []),
+        industry._id
+      ];
+      setProfile((prev: Profile) => ({
+        ...prev,
+        professionalSummary: {
+          ...prev.professionalSummary,
+          industries: updatedIndustries
+        }
+      }));
+      setModifiedSections(prev => ({
+        ...prev,
+        professionalSummary: true
+      }));
+      
+      // Reset form
+      setIndustrySearchTerm('');
+      setIndustryDropdownOpen(false);
+    };
+
+    return (
+      <div className="relative">
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={industrySearchTerm}
+              onChange={(e) => {
+                setIndustrySearchTerm(e.target.value);
+                setIndustryDropdownOpen(true);
+              }}
+              onFocus={() => setIndustryDropdownOpen(true)}
+              onBlur={() => {
+                setTimeout(() => setIndustryDropdownOpen(false), 200);
+              }}
+              placeholder="Search and select industry"
+              className="w-full p-2 border rounded-md"
+            />
+            
+            {/* Search Icon */}
+            <div className="absolute right-2 top-2.5 text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Dropdown List */}
+        {industryDropdownOpen && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+            {filteredIndustries.length > 0 ? (
+              filteredIndustries.map((industry) => (
+                <button
+                  key={industry._id}
+                  type="button"
+                  onClick={() => addIndustry(industry)}
+                  className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
+                >
+                  <div className="font-medium text-gray-800">{industry.name}</div>
+                  <div className="text-sm text-gray-600 truncate">{industry.description}</div>
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-gray-500 text-center">
+                {industrySearchTerm ? `No industries found matching "${industrySearchTerm}"` : 'No industries available'}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render activity dropdown for adding new activities
+  const renderActivityDropdown = () => {
+    // Extract IDs from activities (handle both string IDs and object format)
+    const selectedActivityIds = new Set(
+      (profile.professionalSummary?.activities || []).map((activity: any) => 
+        typeof activity === 'string' ? activity : activity._id
+      )
+    );
+    
+    const filteredActivities = activitiesData.filter(activity => 
+      activity.isActive &&
+      !selectedActivityIds.has(activity._id) &&
+      activity.name.toLowerCase().includes(activitySearchTerm.toLowerCase())
+    );
+
+    const addActivity = (activity: Activity) => {
+      const updatedActivities = [
+        ...(profile.professionalSummary?.activities || []),
+        activity._id
+      ];
+      setProfile((prev: Profile) => ({
+        ...prev,
+        professionalSummary: {
+          ...prev.professionalSummary,
+          activities: updatedActivities
+        }
+      }));
+      setModifiedSections(prev => ({
+        ...prev,
+        professionalSummary: true
+      }));
+      
+      // Reset form
+      setActivitySearchTerm('');
+      setActivityDropdownOpen(false);
+    };
+
+    return (
+      <div className="relative">
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={activitySearchTerm}
+              onChange={(e) => {
+                setActivitySearchTerm(e.target.value);
+                setActivityDropdownOpen(true);
+              }}
+              onFocus={() => setActivityDropdownOpen(true)}
+              onBlur={() => {
+                setTimeout(() => setActivityDropdownOpen(false), 200);
+              }}
+              placeholder="Search and select activity"
+              className="w-full p-2 border rounded-md"
+            />
+            
+            {/* Search Icon */}
+            <div className="absolute right-2 top-2.5 text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Dropdown List */}
+        {activityDropdownOpen && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+            {filteredActivities.length > 0 ? (
+              filteredActivities.map((activity) => (
+                <button
+                  key={activity._id}
+                  type="button"
+                  onClick={() => addActivity(activity)}
+                  className="w-full text-left px-3 py-2 hover:bg-green-50 border-b border-gray-100 last:border-b-0"
+                >
+                  <div className="font-medium text-gray-800">{activity.name}</div>
+                  <div className="text-sm text-gray-600 truncate">
+                    <span className="font-medium">{activity.category}</span> - {activity.description}
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-gray-500 text-center">
+                {activitySearchTerm ? `No activities found matching "${activitySearchTerm}"` : 'No activities available'}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Add useEffect to check country mismatch
   useEffect(() => {
     const checkMismatch = async () => {
@@ -1418,13 +2090,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           </button>
           <button
             onClick={handleSave}
-            disabled={loading || uploadingPhoto}
+            disabled={loading || uploadingPhoto || uploadingVideo}
             className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading || uploadingPhoto ? (
+            {loading || uploadingPhoto || uploadingVideo ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                {uploadingPhoto ? 'Uploading Photo...' : 'Saving...'}
+                {uploadingVideo ? 'Uploading Video...' : uploadingPhoto ? 'Uploading Photo...' : 'Saving...'}
               </>
             ) : (
               <>
@@ -1718,7 +2390,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           <h2 className="text-xl font-semibold mb-4">About</h2>
           
           {/* Profile Description */}
-          <div className="mb-4">
+          <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
             <textarea
               value={profile.professionalSummary?.profileDescription || ''}
@@ -1738,6 +2410,282 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               className="w-full p-2 border rounded-md min-h-[120px]"
               placeholder="Tell us about yourself, your background, and your expertise..."
             />
+          </div>
+
+                    {/* Introduction Video Section */}
+          <div className="border-t pt-6">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xl font-semibold text-gray-800">Introduction Video</h3>
+                {!showVideoRecorder && !recordedVideo && profile.personalInfo?.presentationVideo?.url && !existingVideoDeleted && (
+                  <span className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full font-medium">
+                    ✓ Video Added
+                  </span>
+                )}
+              </div>
+              <p className="text-gray-600 mb-3">Record a 1-minute video to introduce yourself and showcase your personality</p>
+              <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg w-fit">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <span className="font-medium">Maximum duration: 1 minute (recording will stop automatically)</span>
+              </div>
+            </div>
+
+            
+
+              {/* Existing Video Display */}
+            {profile.personalInfo?.presentationVideo?.url && !showVideoRecorder && !recordedVideo && !existingVideoDeleted && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="flex items-center justify-between w-full">
+                    <h4 className="text-md font-medium text-gray-800">Your Introduction Video</h4>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={startCamera}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm transition-colors"
+                      >
+                        <Video className="w-4 h-4" />
+                        Re-record Video
+                      </button>
+                      <button
+                        onClick={() => setShowDeleteConfirmation(true)}
+                        className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2 text-sm transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Video
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Existing Video Player */}
+                  <video
+                    controls
+                    className="w-full aspect-video bg-black rounded-lg object-cover"
+                  >
+                    <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
+                    <source src={profile.personalInfo.presentationVideo.url} type="video/webm" />
+                    Your browser does not support the video tag.
+                  </video>
+                  
+                  {/* Video Information */}
+                  <div className="text-sm text-gray-600 text-center space-y-1">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="font-medium text-green-700">
+                        Video uploaded successfully
+                        {profile.personalInfo.presentationVideo.duration && 
+                          ` (${Math.floor(profile.personalInfo.presentationVideo.duration)}s)`
+                        }
+                      </span>
+                    </div>
+                    {profile.personalInfo.presentationVideo.recordedAt && (
+                      <div className="flex items-center justify-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          Recorded: {new Date(profile.personalInfo.presentationVideo.recordedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Camera Permission Denied Message */}
+            {cameraPermission === 'denied' && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <X className="h-5 w-5 text-red-400" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-800">
+                      Camera access is required to record a video introduction. Please enable camera permissions in your browser settings and try again.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Video Recorder Interface */}
+            {showVideoRecorder && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="flex flex-col items-center space-y-4">
+                                     {/* Camera Preview */}
+                   <div className="relative">
+                     <video
+                       ref={videoRef}
+                       autoPlay
+                       muted
+                       playsInline
+                       webkit-playsinline="true"
+                       className="w-full aspect-video bg-black rounded-lg object-cover"
+                     />
+                                         {isRecording && (
+                       <div className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                         <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                         REC
+                       </div>
+                     )}
+                     
+                     {/* Timer */}
+                     <div className={`absolute top-2 right-2 px-2 py-1 rounded text-sm font-mono transition-colors ${
+                       recordingTime >= 55 
+                         ? 'bg-red-600 text-white animate-pulse' 
+                         : recordingTime >= 45 
+                         ? 'bg-orange-600 text-white' 
+                         : 'bg-black bg-opacity-75 text-white'
+                     }`}>
+                       {formatTime(recordingTime)} / 1:00
+                     </div>
+                  </div>
+
+                  {/* Recording Controls */}
+                  <div className="flex items-center justify-center">
+                    {!isRecording ? (
+                      <button
+                        onClick={startRecording}
+                        disabled={!stream}
+                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Play className="w-4 h-4" />
+                        Start Recording
+                      </button>
+                    ) : (
+                      <button
+                        onClick={stopRecording}
+                        className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 transition-colors"
+                      >
+                        <Square className="w-4 h-4" />
+                        Stop Recording
+                      </button>
+                    )}
+                  </div>
+
+                                     {/* Recording Progress Bar */}
+                   {recordingTime > 0 && (
+                     <div className="w-full">
+                       <div className="bg-gray-200 rounded-full h-2">
+                         <div 
+                           className={`h-2 rounded-full transition-all duration-1000 ${
+                             recordingTime >= 55 
+                               ? 'bg-red-600 animate-pulse' 
+                               : recordingTime >= 45 
+                               ? 'bg-orange-500' 
+                               : 'bg-blue-600'
+                           }`}
+                           style={{ width: `${(recordingTime / 60) * 100}%` }}
+                         ></div>
+                       </div>
+                       
+                       {/* Time Warning Message */}
+                       {showTimeWarning && (
+                         <div className={`mt-2 text-center font-medium ${
+                           recordingTime >= 55 
+                             ? 'text-red-600 animate-pulse' 
+                             : 'text-orange-600'
+                         }`}>
+                           {recordingTime >= 55 
+                             ? '⚠️ Recording will stop in 5 seconds!' 
+                             : '⚠️ Approaching 1-minute limit!'
+                           }
+                         </div>
+                       )}
+                     </div>
+                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Recorded Video Preview */}
+            {recordedVideo && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between w-full">
+                    <h4 className="text-md font-medium text-gray-800">New Video Recording</h4>
+                    <button
+                       onClick={async () => {
+                         deleteVideo();
+                         await startCamera();
+                       }}
+                       className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 text-sm transition-colors"
+                     >
+                       <RotateCcw className="w-4 h-4" />
+                       Retake
+                     </button>
+                  </div>
+                  
+                  <video
+                    ref={previewVideoRef}
+                    src={recordedVideo}
+                    controls
+                    className="w-full aspect-video bg-black rounded-lg object-cover"
+                  />
+                  
+                                     <div className="text-sm text-gray-600 text-center">
+                     <div className="flex items-center justify-center gap-2 mb-2">
+                       <div className={`w-2 h-2 rounded-full ${videoUploaded ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                       <span className={`font-medium ${videoUploaded ? 'text-blue-700' : 'text-green-700'}`}>
+                         {videoUploaded 
+                           ? `Video uploaded successfully (${formatTime(recordingTime)})` 
+                           : `Video recorded successfully (${formatTime(recordingTime)})`
+                         }
+                         {recordingTime >= 60 && " - Max duration reached"}
+                       </span>
+                     </div>
+                     
+                     {/* Upload Progress */}
+                     {uploadingVideo && (
+                       <div className="mb-2">
+                         <div className="w-full bg-gray-200 rounded-full h-2">
+                           <div 
+                             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                             style={{ width: `${uploadProgress}%` }}
+                           ></div>
+                         </div>
+                         <p className="text-blue-600 font-medium mt-1">Uploading video... {uploadProgress}%</p>
+                       </div>
+                     )}
+                     
+                     {!uploadingVideo && !videoUploaded && (
+                       <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                         <div className="flex items-center justify-center gap-2">
+                           <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                           <p className="text-blue-700 font-medium text-sm">
+                             📋 Your video will be saved when you save your profile changes
+                           </p>
+                         </div>
+                       </div>
+                     )}
+                     
+                     {uploadingVideo && (
+                       <p className="text-blue-600 font-medium">Uploading your video...</p>
+                     )}
+                     
+                     {videoUploaded && (
+                       <p className="text-green-600 font-medium">Your video has been saved successfully.</p>
+                     )}
+                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* No Video State */}
+            {!showVideoRecorder && !recordedVideo && (!profile.personalInfo?.presentationVideo?.url || existingVideoDeleted) && cameraPermission !== 'denied' && (
+              <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">No video recorded yet</h3>
+                <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
+                  Record a 1-minute video to introduce yourself and help others get to know you better
+                </p>
+                <button
+                  onClick={startCamera}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto transition-colors"
+                >
+                  <Video className="w-5 h-5" />
+                  Record Video
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1770,67 +2718,87 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         {/* Industries Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Industries</h2>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {profile.professionalSummary?.industries?.map((industry: string, index: number) => (
-              <div key={index} className="flex items-center bg-blue-50 px-3 py-1 rounded-full">
-                <span className="text-blue-800 text-sm">{industry}</span>
-                <button
-                  onClick={() => {
-                    const updatedIndustries = [...(profile.professionalSummary?.industries || [])];
-                    updatedIndustries.splice(index, 1);
-                    setProfile((prev: Profile) => ({
-                      ...prev,
-                      professionalSummary: {
-                        ...prev.professionalSummary,
-                        industries: updatedIndustries
-                      }
-                    }));
-                    setModifiedSections(prev => ({
-                      ...prev,
-                      professionalSummary: true
-                    }));
-                  }}
-                  className="ml-2 text-blue-600 hover:text-blue-800"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {profile.professionalSummary?.industries?.map((industryItem: any, index: number) => {
+              // Handle both string IDs and object format
+              const industryId = typeof industryItem === 'string' ? industryItem : industryItem._id;
+              const industryName = typeof industryItem === 'string' 
+                ? (industriesData.find(ind => ind._id === industryItem)?.name || industryItem)
+                : (industryItem.name || industryId);
+              
+              return (
+                <div key={index} className="flex items-center bg-blue-50 px-3 py-1 rounded-full">
+                  <span className="text-blue-800 text-sm">
+                    {industryName}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const updatedIndustries = [...(profile.professionalSummary?.industries || [])];
+                      updatedIndustries.splice(index, 1);
+                      setProfile((prev: Profile) => ({
+                        ...prev,
+                        professionalSummary: {
+                          ...prev.professionalSummary,
+                          industries: updatedIndustries
+                        }
+                      }));
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        professionalSummary: true
+                      }));
+                    }}
+                    className="ml-2 text-blue-600 hover:text-blue-800"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={tempIndustry}
-              onChange={(e) => setTempIndustry(e.target.value)}
-              className="w-full p-2 border rounded-md"
-              placeholder="Add industry"
-            />
-            <button
-              onClick={() => {
-                if (tempIndustry.trim()) {
-                  const updatedIndustries = [
-                    ...(profile.professionalSummary?.industries || []),
-                    tempIndustry.trim()
-                  ];
-                  setProfile((prev: Profile) => ({
-                    ...prev,
-                    professionalSummary: {
-                      ...prev.professionalSummary,
-                      industries: updatedIndustries
-                    }
-                  }));
-                  setModifiedSections(prev => ({
-                    ...prev,
-                    professionalSummary: true
-                  }));
-                  setTempIndustry('');
-                }
-              }}
-              className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg"
-            >
-              Add
-            </button>
+          {renderIndustryDropdown()}
+        </div>
+
+        {/* Activities Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">Activities</h2>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {profile.professionalSummary?.activities?.map((activityItem: any, index: number) => {
+              // Handle both string IDs and object format
+              const activityId = typeof activityItem === 'string' ? activityItem : activityItem._id;
+              const activityName = typeof activityItem === 'string' 
+                ? (activitiesData.find(act => act._id === activityItem)?.name || activityItem)
+                : (activityItem.name || activityId);
+              
+              return (
+                <div key={index} className="flex items-center bg-green-50 px-3 py-1 rounded-full">
+                  <span className="text-green-800 text-sm">
+                    {activityName}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const updatedActivities = [...(profile.professionalSummary?.activities || [])];
+                      updatedActivities.splice(index, 1);
+                      setProfile((prev: Profile) => ({
+                        ...prev,
+                        professionalSummary: {
+                          ...prev.professionalSummary,
+                          activities: updatedActivities
+                        }
+                      }));
+                      setModifiedSections(prev => ({
+                        ...prev,
+                        professionalSummary: true
+                      }));
+                    }}
+                    className="ml-2 text-green-600 hover:text-green-800"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
+          {renderActivityDropdown()}
         </div>
 
         {/* Notable Companies Section */}
@@ -2972,6 +3940,51 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Delete Video</h3>
+                <p className="text-gray-600 text-sm">This action cannot be undone</p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete your current video introduction?
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirmation(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setExistingVideoDeleted(true);
+                  setIsExistingVideoMarkedForDeletion(true);
+                  setShowDeleteConfirmation(false);
+                  setModifiedSections(prev => ({
+                    ...prev,
+                    personalInfo: true
+                  }));
+                  showToast('Video deleted', 'success');
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
