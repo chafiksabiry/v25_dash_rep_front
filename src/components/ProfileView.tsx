@@ -842,11 +842,72 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         {/* About Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-4">About</h2>
-          {profile.professionalSummary?.profileDescription ? (
-            <p className="text-gray-700 whitespace-pre-wrap">{profile.professionalSummary.profileDescription}</p>
-          ) : (
-            <p className="text-gray-500 italic">No profile description available</p>
-          )}
+          
+          {/* Profile Description */}
+          <div className="mb-6">
+            {profile.professionalSummary?.profileDescription ? (
+              <p className="text-gray-700 whitespace-pre-wrap">{profile.professionalSummary.profileDescription}</p>
+            ) : (
+              <p className="text-gray-500 italic">No profile description available</p>
+            )}
+          </div>
+
+          {/* Introduction Video Section */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Introduction Video</h3>
+            
+            {profile.personalInfo?.presentationVideo && profile.personalInfo.presentationVideo.url ? (
+              <div className="space-y-4">
+                {/* Video Player - Responsive with proper aspect ratio */}
+                <div className="w-full">
+                  <video
+                    controls
+                    className="w-full aspect-video bg-black rounded-lg object-cover"
+                    onLoadedMetadata={(e) => {
+                      console.log("🎥 EXISTING Video Properties:", {
+                        duration: e.currentTarget.duration,
+                        videoWidth: e.currentTarget.videoWidth,
+                        videoHeight: e.currentTarget.videoHeight,
+                        seekable: e.currentTarget.seekable.length > 0,
+                        src: e.currentTarget.currentSrc
+                      });
+                    }}
+                  >
+                    <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
+                    <source src={profile.personalInfo.presentationVideo.url} type="video/webm" />
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+                
+                {/* Video Information */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="text-sm text-gray-600 space-y-2">
+                    {profile.personalInfo.presentationVideo.duration && (
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span>Duration: {Math.floor(profile.personalInfo.presentationVideo.duration)}s</span>
+                      </div>
+                    )}
+                    {profile.personalInfo.presentationVideo.recordedAt && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          Recorded: {new Date(profile.personalInfo.presentationVideo.recordedAt).toLocaleDateString()}
+                                                </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+                Presentation video is required. Please record a video introduction to complete your profile.
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Years of Experience Section */}
@@ -867,16 +928,48 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         {/* Industries Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-4">Industries</h2>
+          {(!profile.professionalSummary?.industries || profile.professionalSummary.industries.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Industries are required. Please add the industries you work in.
+            </div>
+          )}
           {profile.professionalSummary?.industries?.length > 0 ? (
             <div className="flex flex-wrap gap-3">
-              {profile.professionalSummary.industries.map((industry: string, idx: number) => (
+              {profile.professionalSummary.industries.map((industry: any, idx: number) => (
                 <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm">
-                  {industry}
+                  {typeof industry === 'string' ? industry : industry.name || industry._id}
                 </span>
               ))}
             </div>
           ) : (
             <p className="text-gray-500 italic">No industries listed</p>
+          )}
+        </div>
+
+        {/* Activities Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Activities</h2>
+          {(!profile.professionalSummary?.activities || profile.professionalSummary.activities.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Activities are required. Please add the activities you can perform.
+            </div>
+          )}
+          {profile.professionalSummary?.activities && profile.professionalSummary.activities.length > 0 ? (
+            <div className="flex flex-wrap gap-3">
+              {profile.professionalSummary.activities.map((activity: any, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-green-100 text-green-800 rounded-lg text-sm">
+                  {typeof activity === 'string' ? activity : activity.name || activity._id}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No activities listed</p>
           )}
         </div>
 
