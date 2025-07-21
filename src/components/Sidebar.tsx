@@ -4,6 +4,14 @@ import { LayoutDashboard, Briefcase, UserCircle, LogOut, Wallet, BookOpen, Setti
 import Cookies from 'js-cookie';
 import { clearProfileData } from '../utils/profileUtils';
 
+// Declare qiankun global variables
+declare global {
+  interface Window {
+    __POWERED_BY_QIANKUN__?: boolean;
+    __INJECTED_PUBLIC_PATH_BY_QIANKUN__?: string;
+  }
+}
+
 interface Phase {
   status: string;
   completedAt?: string;
@@ -88,7 +96,11 @@ export function Sidebar({ phases }: SidebarProps) {
   return (
     <div className="w-64 bg-white border-r border-gray-200">
       <div className="h-16 flex items-center justify-center border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-blue-600">HARX.AI</h1>
+        <img 
+          src={'https://rep-dashboard.harx.ai/logo_harx.jpg'}
+          alt="HARX.AI Logo" 
+          className="h-8 w-auto object-contain"
+        />
       </div>
       <nav className="mt-6">
         {filteredNavItems.map((item) => (
