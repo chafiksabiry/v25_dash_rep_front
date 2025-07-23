@@ -55,7 +55,7 @@ export function Sidebar({ phases }: SidebarProps) {
       icon: Monitor, 
       label: 'Workspace', 
       path: '/workspace', 
-      isAccessible: () => isPhaseCompleted(4)
+      isAccessible: () => isPhaseCompleted(5)
     },
     { 
       icon: UserCircle, 
