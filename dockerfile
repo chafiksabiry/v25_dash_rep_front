@@ -28,6 +28,7 @@ ENV VITE_API_URL_AI_MESSAGES=https://preprod-api-messages-service.harx.ai/api
 ENV VITE_API_URL_CALL=https://preprod-api-dash-calls.harx.ai
 ENV VITE_REP_API_URL=https://preprod-api-repcreationwizard.harx.ai
 ENV VITE_AUTH_API_URL=https://preprod-api-registration.harx.ai/api
+ENV VITE_FRONT_URL=https://preprod-rep-dashboard.harx.ai/
 # Install dependencies
 RUN npm install
 

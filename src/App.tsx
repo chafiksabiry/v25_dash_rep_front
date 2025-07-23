@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { Dashboard } from './pages/Dashboard';
@@ -14,7 +15,7 @@ import { Community } from './pages/Community';
 import { WalletPage } from './pages/Wallet';
 import CallReportCard from './components/CallReport';
 import { fetchProfileFromAPI, isProfileDataValid } from './utils/profileUtils';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import ProtectedRoute, { PhaseProtectedRoute } from './components/ProtectedRoute';
 
 interface UserProfile {
   onboardingProgress: {
@@ -55,7 +56,7 @@ interface UserProfile {
   // Add other profile fields as needed
 }
 
-function App() {
+function AppContent() {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
@@ -164,71 +165,82 @@ function App() {
   console.log('🖥️ Rendering main application interface');
   const isStandaloneMode = import.meta.env.VITE_RUN_MODE === 'standalone';
   const basename = isStandaloneMode ? '/' : '/repdashboard';
+  
   return (
     <Router basename={basename}>
-      <div className="flex h-screen bg-gray-50">
-        <Sidebar phases={userProfile?.onboardingProgress?.phases} />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <TopBar />
-          <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
-            <Routes>
-              <Route path="/" element={
-                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/dashboard" element={
-                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/gigs-marketplace" element={
-                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <GigsMarketplace />
-                </ProtectedRoute>
-              } />
-              <Route path="/payouts" element={
-                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <Payouts />
-                </ProtectedRoute>
-              } />
-              <Route path="/learning" element={
-                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <Learning />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/operations" element={
-                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <Operations />
-                </ProtectedRoute>
-              } />
-              <Route path="/workspace" element={
-                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
-                  <Workspace />
-                </ProtectedRoute>
-              } />
-              <Route path="/community" element={
-                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <Community />
-                </ProtectedRoute>
-              } />
-              <Route path="/call-report" element={
-                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <CallReportCard />
-                </ProtectedRoute>
-              } />
-              <Route path="/wallet" element={
-                <ProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <WalletPage />
-                </ProtectedRoute>
-              } />
-              <Route path="*" element={<Navigate to="/profile" replace />} />
-            </Routes>
-          </main>
+      <ProtectedRoute>
+        <div className="flex h-screen bg-gray-50">
+          <Sidebar phases={userProfile?.onboardingProgress?.phases} />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <TopBar />
+            <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
+              <Routes>
+                <Route path="/" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                    <Dashboard />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="/dashboard" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                    <Dashboard />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="/gigs-marketplace" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                    <GigsMarketplace />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="/payouts" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                    <Payouts />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="/learning" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                    <Learning />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/operations" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                    <Operations />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="/workspace" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                    <Workspace />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="/community" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                    <Community />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="/call-report" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                    <CallReportCard />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="/wallet" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                    <WalletPage />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="*" element={<Navigate to="/profile" replace />} />
+              </Routes>
+            </main>
+          </div>
         </div>
-      </div>
+      </ProtectedRoute>
     </Router>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

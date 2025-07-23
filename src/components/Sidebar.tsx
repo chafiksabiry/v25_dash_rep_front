@@ -1,8 +1,15 @@
 import React, { useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, UserCircle, LogOut, Wallet, BookOpen, Settings, Monitor, Users } from 'lucide-react';
-import Cookies from 'js-cookie';
-import { clearProfileData } from '../utils/profileUtils';
+import { NavLink } from 'react-router-dom';
+import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+
+// Declare qiankun global variables
+declare global {
+  interface Window {
+    __POWERED_BY_QIANKUN__?: boolean;
+    __INJECTED_PUBLIC_PATH_BY_QIANKUN__?: string;
+  }
+}
 
 interface Phase {
   status: string;
@@ -24,16 +31,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ phases }: SidebarProps) {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.clear();
-    const cookies = Cookies.get();
-    Object.keys(cookies).forEach(cookieName => {
-      Cookies.remove(cookieName);
-    });
-    window.location.replace('/auth');
-  };
+  const { logout } = useAuth();
 
   const isPhaseCompleted = (phaseNumber: number): boolean => {
     if (!phases) return false;
@@ -57,7 +55,7 @@ export function Sidebar({ phases }: SidebarProps) {
       icon: Monitor, 
       label: 'Workspace', 
       path: '/workspace', 
-      isAccessible: () => isPhaseCompleted(4)
+      isAccessible: () => isPhaseCompleted(5)
     },
     { 
       icon: UserCircle, 
@@ -88,7 +86,11 @@ export function Sidebar({ phases }: SidebarProps) {
   return (
     <div className="w-64 bg-white border-r border-gray-200">
       <div className="h-16 flex items-center justify-center border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-blue-600">HARX.AI</h1>
+        <img 
+          src={`${import.meta.env.VITE_FRONT_URL}logo_harx.jpg`}
+          alt="HARX.AI Logo" 
+          className="h-8 w-auto object-contain"
+        />
       </div>
       <nav className="mt-6">
         {filteredNavItems.map((item) => (
@@ -106,7 +108,7 @@ export function Sidebar({ phases }: SidebarProps) {
           </NavLink>
         ))}
         <button 
-          onClick={handleLogout}
+          onClick={logout}
           className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors mt-auto"
         >
           <LogOut className="w-5 h-5 mr-3" />
