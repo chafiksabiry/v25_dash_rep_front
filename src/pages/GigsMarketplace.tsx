@@ -285,18 +285,12 @@ export function GigsMarketplace() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Gigs</h1>
-        <div className="flex space-x-3">
-          <select 
-            className="border border-gray-200 rounded-lg px-4 py-2 bg-white"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'latest' | 'salary' | 'experience')}
-          >
-            <option value="latest">Sort by: Latest</option>
-            <option value="salary">Sort by: Base Salary</option>
-            <option value="experience">Sort by: Experience</option>
-          </select>
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Marketplace</h1>
+          <p className="mt-2 text-gray-600 max-w-3xl">
+            Explore exciting opportunities posted by companies worldwide. Find projects that match your skills and interests, and take control of your professional journey. Browse through available gigs and bookmark your favorites for future reference.
+          </p>
         </div>
       </div>
 
