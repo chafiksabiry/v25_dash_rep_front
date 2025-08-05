@@ -40,6 +40,12 @@ export function Sidebar({ phases }: SidebarProps) {
 
   const navItems = [
     { 
+      icon: UserCircle, 
+      label: 'Profile', 
+      path: '/profile', 
+      isAccessible: () => true // Always accessible
+    },
+    { 
       icon: LayoutDashboard, 
       label: 'Dashboard', 
       path: '/dashboard', 
@@ -47,21 +53,15 @@ export function Sidebar({ phases }: SidebarProps) {
     },
     { 
       icon: Briefcase, 
-      label: 'Gigs', 
+      label: 'Marketplace', 
       path: '/gigs-marketplace', 
-      isAccessible: () => isPhaseCompleted(5)
+      isAccessible: () => isPhaseCompleted(4)
     },
     { 
       icon: Monitor, 
       label: 'Workspace', 
       path: '/workspace', 
       isAccessible: () => isPhaseCompleted(5)
-    },
-    { 
-      icon: UserCircle, 
-      label: 'Profile', 
-      path: '/profile', 
-      isAccessible: () => true // Always accessible
     },
     { 
       icon: Settings, 

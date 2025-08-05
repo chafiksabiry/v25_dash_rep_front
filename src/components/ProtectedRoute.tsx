@@ -14,7 +14,7 @@ const LoadingScreen = () => (
 
 // ProtectedRoute pour l'authentification
 const ProtectedRoute = ({ children, fallback }: { children: React.ReactNode; fallback?: string }) => {
-  const { isAuthenticated, isLoading, checkAuthStatus } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
   
   // Construire l'URL complète pour l'app principale
@@ -44,7 +44,7 @@ const ProtectedRoute = ({ children, fallback }: { children: React.ReactNode; fal
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const handlePopState = (event) => {
+    const handlePopState = (event: PopStateEvent) => {
       // Si l'utilisateur essaie de revenir en arrière depuis une page protégée
       if (event.state?.protected) {
         console.log('Tentative de navigation arrière détectée sur page protégée');
@@ -138,11 +138,11 @@ interface PhaseProtectedRouteProps {
 }
 
 // PhaseProtectedRoute pour la logique des phases d'onboarding
-export const PhaseProtectedRoute: React.FC<PhaseProtectedRouteProps> = ({ 
-  phases, 
-  children, 
-  requiredPhase = 5 
-}) => {
+export const PhaseProtectedRoute = ({
+  phases,
+  children,
+  requiredPhase = 5
+}: PhaseProtectedRouteProps) => {
   const isPhaseCompleted = (phaseNumber: number): boolean => {
     if (!phases) return false;
     return phases[`phase${phaseNumber}` as keyof Phases]?.status === 'completed';
