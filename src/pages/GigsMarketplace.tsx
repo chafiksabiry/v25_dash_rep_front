@@ -117,12 +117,12 @@ export function GigsMarketplace() {
       // Assurons-nous que nous avons un tableau de favoris
       if (Array.isArray(data)) {
         // Si la réponse est un tableau direct
-        const favoriteIds = data.map((fav: FavoriteGig) => fav.gig._id);
+        const favoriteIds = data.map((fav: { _id: string }) => fav._id);
         console.log('Favorite IDs:', favoriteIds);
         setFavoriteGigs(favoriteIds);
       } else if (data.data && Array.isArray(data.data)) {
         // Si la réponse a une propriété data qui est un tableau
-        const favoriteIds = data.data.map((fav: FavoriteGig) => fav.gig._id);
+        const favoriteIds = data.data.map((fav: { _id: string }) => fav._id);
         console.log('Favorite IDs:', favoriteIds);
         setFavoriteGigs(favoriteIds);
       } else {
