@@ -49,7 +49,7 @@ export function Sidebar({ phases }: SidebarProps) {
       icon: Briefcase, 
       label: 'Gigs', 
       path: '/gigs-marketplace', 
-      isAccessible: () => isPhaseCompleted(5)
+      isAccessible: () => isPhaseCompleted(1)
     },
     { 
       icon: Monitor, 

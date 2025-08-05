@@ -186,7 +186,7 @@ function AppContent() {
                   </PhaseProtectedRoute>
                 } />
                 <Route path="/gigs-marketplace" element={
-                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={1}>
                     <GigsMarketplace />
                   </PhaseProtectedRoute>
                 } />
