@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import Cookies from 'js-cookie';
 import { repApiClient } from '../utils/client';
+import { getAgentId, getAuthToken } from '../utils/authUtils';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -32,19 +33,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Fonction pour vérifier si l'utilisateur est authentifié (utilisée uniquement si nécessaire)
   const checkAuthStatus = useCallback(() => {
-    const userId = Cookies.get('userId');
-    const token = localStorage.getItem('token');
+    const agentId = getAgentId();
+    const token = getAuthToken();
     
     // Ne pas logger à chaque fois pour éviter le spam de console
-    const isAuth = !!(userId && token);
+    const isAuth = !!(agentId && token);
     
     // Seulement mettre à jour si l'état a changé
     if (isAuthenticated !== isAuth) {
-      console.log('Auth status changed:', { userId: !!userId, token: !!token });
+      console.log('Auth status changed:', { agentId: !!agentId, token: !!token });
       setIsAuthenticated(isAuth);
       
       if (isAuth) {
-        setUser({ userId, token });
+        setUser({ agentId, token });
       } else {
         setUser(null);
       }
@@ -86,16 +87,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     setIsLoading(true);
     
-    const userId = Cookies.get('userId');
-    const token = localStorage.getItem('token');
+    const agentId = getAgentId();
+    const token = getAuthToken();
     
-    console.log('Initial auth check:', { userId: !!userId, token: !!token });
+    console.log('Initial auth check:', { agentId: !!agentId, token: !!token });
     
-    const isAuth = !!(userId && token);
+    const isAuth = !!(agentId && token);
     setIsAuthenticated(isAuth);
     
     if (isAuth) {
-      setUser({ userId, token });
+      setUser({ agentId, token });
     } else {
       setUser(null);
     }

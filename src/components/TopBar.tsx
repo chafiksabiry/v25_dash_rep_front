@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, Search, User } from 'lucide-react';
+import { getUserInfo } from '../utils/authUtils';
 
 interface ProfileData {
   personalInfo?: {
@@ -26,17 +27,28 @@ export function TopBar() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   
   const loadProfileData = () => {
-    console.log('🔄 TopBar component: Loading profile data from localStorage');
+    console.log('🔄 TopBar component: Loading profile data');
     try {
-      const storedProfile = localStorage.getItem('profileData');
-      if (storedProfile) {
-        const parsedProfile = JSON.parse(storedProfile);
-        console.log('✅ TopBar component: Profile data loaded successfully');
-        console.log('📸 Profile photo URL:', parsedProfile.personalInfo?.photo?.url);
+      const userInfo = getUserInfo();
+      if (userInfo) {
+        // Convertir les données utilisateur au format attendu par le TopBar
+        const adaptedProfileData: ProfileData = {
+          personalInfo: {
+            name: userInfo.name,
+            email: userInfo.email,
+            photo: userInfo.photo ? { url: userInfo.photo, publicId: '' } : undefined
+          },
+          professionalSummary: {
+            currentRole: userInfo.currentRole
+          }
+        };
         
-        setProfileData(parsedProfile);
+        console.log('✅ TopBar component: Profile data loaded successfully');
+        console.log('📸 Profile photo URL:', userInfo.photo);
+        
+        setProfileData(adaptedProfileData);
       } else {
-        console.log('⚠️ TopBar component: No profile data in localStorage');
+        console.log('⚠️ TopBar component: No profile data available');
       }
     } catch (error) {
       console.error('❌ TopBar component: Error loading profile data:', error);
