@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Users, Globe, Calendar, Heart } from 'lucide-react';
+import { getAgentId, getAuthToken } from '../utils/authUtils';
 
 export function GigsMarketplace() {
   interface Skill {
@@ -32,10 +33,7 @@ export function GigsMarketplace() {
     structure?: string;
   }
 
-  interface FavoriteGig {
-    _id: string;
-    gig: Gig;
-  }
+
 
   interface Gig {
     _id: string;
@@ -77,25 +75,15 @@ export function GigsMarketplace() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [gigsPerPage] = useState(9);
-  const [sortBy, setSortBy] = useState<'latest' | 'salary' | 'experience'>('latest');
+  const [sortBy] = useState<'latest' | 'salary' | 'experience'>('latest');
   const [favoriteGigs, setFavoriteGigs] = useState<string[]>([]);
 
-  // Fonction pour récupérer l'agentId des cookies
-  const getAgentId = () => {
-    const cookies = document.cookie.split(';');
-    const agentIdCookie = cookies.find(cookie => cookie.trim().startsWith('agentId='));
-    return agentIdCookie ? agentIdCookie.split('=')[1].trim() : null;
-  };
 
-  // Fonction pour récupérer le token du localStorage
-  const getToken = () => {
-    return localStorage.getItem('token');
-  };
 
   // Fonction pour récupérer les favoris
   const fetchFavorites = async () => {
     const agentId = getAgentId();
-    const token = getToken();
+    const token = getAuthToken();
     if (!agentId || !token) {
       console.error('Agent ID or token not found');
       return;
@@ -136,7 +124,7 @@ export function GigsMarketplace() {
   // Fonction pour ajouter aux favoris
   const addToFavorites = async (gigId: string) => {
     const agentId = getAgentId();
-    const token = getToken();
+    const token = getAuthToken();
     if (!agentId || !token) {
       console.error('Agent ID or token not found');
       return;
@@ -163,7 +151,7 @@ export function GigsMarketplace() {
   // Fonction pour supprimer des favoris
   const removeFromFavorites = async (gigId: string) => {
     const agentId = getAgentId();
-    const token = getToken();
+    const token = getAuthToken();
     if (!agentId || !token) {
       console.error('Agent ID or token not found');
       return;
