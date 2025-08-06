@@ -318,7 +318,7 @@ export function GigsMarketplace() {
       {activeTab === 'available' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {currentGigs.map((gig) => (
-          <div key={gig._id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div key={gig._id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">{gig.title}</h3>
@@ -374,25 +374,27 @@ export function GigsMarketplace() {
               </div>
             </div>
 
-            <div className="mt-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Technical Skills:</p>
-              <div className="flex flex-wrap gap-2">
-                {gig.skills.technical.map((skill, i) => (
-                  <span key={i} className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                    {skill.details} (Level {skill.level})
-                  </span>
-                ))}
+            <div className="mt-4 flex-grow">
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Technical Skills:</p>
+                <div className="flex flex-wrap gap-2">
+                  {gig.skills.technical.map((skill, i) => (
+                    <span key={i} className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                      {skill.details} (Level {skill.level})
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="mt-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Languages:</p>
-              <div className="flex flex-wrap gap-2">
-                {gig.skills.languages.map((lang, i) => (
-                  <span key={i} className="px-2 py-1 bg-blue-50 rounded-full text-xs text-blue-600">
-                    {lang.iso639_1.toUpperCase()} ({lang.proficiency})
-                  </span>
-                ))}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Languages:</p>
+                <div className="flex flex-wrap gap-2">
+                  {gig.skills.languages.map((lang, i) => (
+                    <span key={i} className="px-2 py-1 bg-blue-50 rounded-full text-xs text-blue-600">
+                      {lang.iso639_1.toUpperCase()} ({lang.proficiency})
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -423,7 +425,7 @@ export function GigsMarketplace() {
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {currentGigs.map((gig) => (
-                  <div key={gig._id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                  <div key={gig._id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">{gig.title}</h3>
@@ -467,25 +469,27 @@ export function GigsMarketplace() {
                       </div>
                     </div>
 
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Technical Skills:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {gig.skills.technical.map((skill, i) => (
-                          <span key={i} className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                            {skill.details} (Level {skill.level})
-                          </span>
-                        ))}
+                    <div className="mt-4 flex-grow">
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Technical Skills:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {gig.skills.technical.map((skill, i) => (
+                            <span key={i} className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                              {skill.details} (Level {skill.level})
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Languages:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {gig.skills.languages.map((lang, i) => (
-                          <span key={i} className="px-2 py-1 bg-blue-50 rounded-full text-xs text-blue-600">
-                            {lang.iso639_1.toUpperCase()} ({lang.proficiency})
-                          </span>
-                        ))}
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">Languages:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {gig.skills.languages.map((lang, i) => (
+                            <span key={i} className="px-2 py-1 bg-blue-50 rounded-full text-xs text-blue-600">
+                              {lang.iso639_1.toUpperCase()} ({lang.proficiency})
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
