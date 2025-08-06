@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, DollarSign, Users, Globe, Calendar, User, Building, MapPin, Clock, Target, Star } from 'lucide-react';
-import { getAgentId, getAuthToken } from '../utils/authUtils';
+import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target } from 'lucide-react';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
 interface PopulatedGig {
@@ -158,10 +157,15 @@ interface PopulatedGig {
     }>;
     time_zone: {
       _id: string;
-      name: string;
-      offset: string;
-      abbreviation: string;
+      name?: string;
+      offset?: string;
+      abbreviation?: string;
       description?: string;
+      countryCode?: string;
+      countryName?: string;
+      zoneName?: string;
+      gmtOffset?: number;
+      lastUpdated?: Date;
       createdAt: Date;
       updatedAt: Date;
     };
@@ -247,7 +251,7 @@ export function GigDetails() {
 
       try {
         console.log('🔍 Fetching gig details for ID:', gigId);
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${gigId}`);
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${gigId}/details`);
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -263,10 +267,35 @@ export function GigDetails() {
         console.log('✅ Received gig details:', data);
         
         if (data.success && data.data) {
+          console.log('🔍 Gig data structure:', {
+            skills: data.data.skills,
+            activities: data.data.activities,
+            industries: data.data.industries,
+            companyId: data.data.companyId,
+            fullData: data.data
+          });
           setGig(data.data);
         } else if (data.data) {
+          console.log('🔍 Gig data structure (no success flag):', {
+            skills: data.data.skills,
+            activities: data.data.activities,
+            industries: data.data.industries,
+            companyId: data.data.companyId,
+            fullData: data.data
+          });
           setGig(data.data);
+        } else if (data._id) {
+          // Sometimes the API returns the gig data directly without wrapping
+          console.log('🔍 Direct gig data structure:', {
+            skills: data.skills,
+            activities: data.activities,
+            industries: data.industries,
+            companyId: data.companyId,
+            fullData: data
+          });
+          setGig(data);
         } else {
+          console.error('❌ Unexpected data structure:', data);
           throw new Error('Invalid response structure');
         }
       } catch (err) {
@@ -307,7 +336,7 @@ export function GigDetails() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header avec bouton retour */}
         <div className="mb-6">
           <button
@@ -318,25 +347,31 @@ export function GigDetails() {
             Back to Marketplace
           </button>
           
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex justify-between items-start mb-4">
-              <div>
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">{gig.title}</h1>
-                <p className="text-lg text-gray-600">{gig.category}</p>
-                <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700 mt-2">
-                  {gig.seniority.level}
-                </span>
+                <p className="text-lg text-gray-600 mb-2">{gig.category}</p>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                    {gig.seniority.level}
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    at <span className="font-medium text-gray-900">{gig.companyId?.name || 'Unknown Company'}</span>
+                  </span>
+                </div>
               </div>
-              {gig.companyId?.logo && (
-                <img 
-                  src={gig.companyId.logo} 
-                  alt={gig.companyId.name}
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
-              )}
+              <div className="ml-6">
+                <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium text-lg shadow-md">
+                  Apply Now
+                </button>
+                <p className="text-xs text-gray-500 mt-2 text-center max-w-[160px]">
+                  Join this opportunity and start earning immediately
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mt-6">
               <div className="flex items-center text-gray-600">
                 <DollarSign className="w-5 h-5 mr-2" />
                 <div>
@@ -357,7 +392,9 @@ export function GigDetails() {
                 <Globe className="w-5 h-5 mr-2" />
                 <div>
                   <p className="text-sm font-medium">{gig.destination_zone}</p>
-                  <p className="text-xs">{gig.availability?.time_zone?.abbreviation || 'Timezone'}</p>
+                  <p className="text-xs">
+                    {gig.availability?.time_zone?.countryCode || gig.availability?.time_zone?.abbreviation || 'Timezone'}
+                  </p>
                 </div>
               </div>
 
@@ -372,11 +409,11 @@ export function GigDetails() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
           {/* Colonne principale */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="xl:col-span-3 space-y-8">
             {/* Description */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Job Description</h2>
               <p className="text-gray-700 whitespace-pre-wrap">{gig.description}</p>
             </div>
@@ -390,11 +427,16 @@ export function GigDetails() {
                   <div className="mb-4">
                     <h3 className="text-lg font-medium text-gray-800 mb-2">Technical Skills</h3>
                     <div className="flex flex-wrap gap-2">
-                      {gig.skills.technical.map((skill, i) => (
-                        <span key={i} className="px-3 py-1 bg-blue-100 rounded-full text-sm text-blue-800">
-                          {skill.skill?.name || skill.details} {skill.level > 0 && `(Level ${skill.level})`}
-                        </span>
-                      ))}
+                      {gig.skills.technical.map((skill, i) => {
+                        console.log('Technical skill item:', skill);
+                        const skillName = skill.skill?.name || skill.details || 'Skill';
+                        const skillLevel = skill.level > 0 ? ` (Level ${skill.level})` : '';
+                        return (
+                          <span key={i} className="px-3 py-1 bg-blue-100 rounded-full text-sm text-blue-800">
+                            {skillName}{skillLevel}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -403,11 +445,16 @@ export function GigDetails() {
                   <div className="mb-4">
                     <h3 className="text-lg font-medium text-gray-800 mb-2">Professional Skills</h3>
                     <div className="flex flex-wrap gap-2">
-                      {gig.skills.professional.map((skill, i) => (
-                        <span key={i} className="px-3 py-1 bg-green-100 rounded-full text-sm text-green-800">
-                          {skill.skill?.name || skill.details} {skill.level > 0 && `(Level ${skill.level})`}
-                        </span>
-                      ))}
+                      {gig.skills.professional.map((skill, i) => {
+                        console.log('Professional skill item:', skill);
+                        const skillName = skill.skill?.name || skill.details || 'Skill';
+                        const skillLevel = skill.level > 0 ? ` (Level ${skill.level})` : '';
+                        return (
+                          <span key={i} className="px-3 py-1 bg-green-100 rounded-full text-sm text-green-800">
+                            {skillName}{skillLevel}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -416,11 +463,16 @@ export function GigDetails() {
                   <div className="mb-4">
                     <h3 className="text-lg font-medium text-gray-800 mb-2">Soft Skills</h3>
                     <div className="flex flex-wrap gap-2">
-                      {gig.skills.soft.map((skill, i) => (
-                        <span key={i} className="px-3 py-1 bg-purple-100 rounded-full text-sm text-purple-800">
-                          {skill.skill?.name || skill.details} {skill.level > 0 && `(Level ${skill.level})`}
-                        </span>
-                      ))}
+                      {gig.skills.soft.map((skill, i) => {
+                        console.log('Soft skill item:', skill);
+                        const skillName = skill.skill?.name || skill.details || 'Skill';
+                        const skillLevel = skill.level > 0 ? ` (Level ${skill.level})` : '';
+                        return (
+                          <span key={i} className="px-3 py-1 bg-purple-100 rounded-full text-sm text-purple-800">
+                            {skillName}{skillLevel}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -429,13 +481,42 @@ export function GigDetails() {
                   <div>
                     <h3 className="text-lg font-medium text-gray-800 mb-2">Languages</h3>
                     <div className="flex flex-wrap gap-2">
-                      {gig.skills.languages.map((lang, i) => (
-                        <span key={i} className="px-3 py-1 bg-yellow-100 rounded-full text-sm text-yellow-800">
-                          {lang.language?.name || lang.iso639_1?.toUpperCase()} ({lang.proficiency})
-                        </span>
-                      ))}
+                      {gig.skills.languages.map((lang, i) => {
+                        console.log('Language item:', lang);
+                        const langName = lang.language?.name || lang.iso639_1?.toUpperCase() || 'Language';
+                        const proficiency = lang.proficiency || 'N/A';
+                        return (
+                          <span key={i} className="px-3 py-1 bg-yellow-100 rounded-full text-sm text-yellow-800">
+                            {langName} ({proficiency})
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Industries */}
+            {gig.industries?.length > 0 && (
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Industries</h2>
+                <div className="flex flex-wrap gap-2">
+                  {gig.industries.map((industry, index) => {
+                    console.log('Industry item:', industry);
+                    const industryName = industry.name || 'Industry';
+                    const industryId = industry._id || index;
+                    return (
+                      <span key={industryId} className="px-3 py-1 bg-purple-100 rounded-full text-sm text-purple-800">
+                        {industryName}
+                      </span>
+                    );
+                  })}
+                </div>
+                {gig.industries.length > 3 && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    Working across {gig.industries.length} different industries
+                  </p>
                 )}
               </div>
             )}
@@ -445,12 +526,31 @@ export function GigDetails() {
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Key Activities</h2>
                 <div className="flex flex-wrap gap-2">
-                  {gig.activities.map((activity) => (
-                    <span key={activity._id} className="px-3 py-1 bg-orange-100 rounded-full text-sm text-orange-800">
-                      {activity.name}
-                    </span>
-                  ))}
+                  {gig.activities.map((activity, index) => {
+                    console.log('Activity item:', activity);
+                    const activityName = activity.name || 'Activity';
+                    const activityId = activity._id || index;
+                    return (
+                      <span key={activityId} className="px-3 py-1 bg-green-100 rounded-full text-sm text-green-800">
+                        {activityName}
+                      </span>
+                    );
+                  })}
                 </div>
+                {gig.activities.some(activity => activity.description) && (
+                  <div className="mt-4 space-y-2">
+                    {gig.activities.filter(activity => activity.description).map((activity, index) => {
+                      const activityId = activity._id || index;
+                      const activityName = activity.name || 'Activity';
+                      return (
+                        <div key={`desc-${activityId}`} className="text-sm">
+                          <span className="font-medium text-gray-700">{activityName}:</span>
+                          <span className="text-gray-600 ml-1">{activity.description}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -474,19 +574,176 @@ export function GigDetails() {
                     <span className="font-medium">{gig.commission.structure}</span>
                   </div>
                 )}
+                {gig.commission.minimumVolume && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Minimum Volume:</span>
+                    <span className="font-medium">{gig.commission.minimumVolume.amount} {gig.commission.minimumVolume.unit}/{gig.commission.minimumVolume.period}</span>
+                  </div>
+                )}
+                {gig.commission.transactionCommission && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Transaction Commission:</span>
+                    <span className="font-medium">{gig.commission.transactionCommission.amount} ({gig.commission.transactionCommission.type})</span>
+                  </div>
+                )}
+                {gig.commission.additionalDetails && (
+                  <div className="mt-4 pt-3 border-t border-gray-200">
+                    <p className="text-sm text-gray-600">{gig.commission.additionalDetails}</p>
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Leads Information */}
+            {gig.leads?.types?.length > 0 && (
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Lead Types</h2>
+                <div className="space-y-3">
+                  {gig.leads.types.map((leadType, index) => (
+                    <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          leadType.type === 'hot' ? 'bg-red-100 text-red-700' :
+                          leadType.type === 'warm' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {leadType.type.charAt(0).toUpperCase() + leadType.type.slice(1)}
+                        </span>
+                        <p className="text-sm text-gray-600 mt-1">{leadType.description}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">{leadType.percentage}%</p>
+                        {leadType.conversionRate && (
+                          <p className="text-xs text-gray-500">{leadType.conversionRate}% conversion</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {gig.leads.sources?.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="font-medium text-gray-800 mb-2">Lead Sources:</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {gig.leads.sources.map((source, index) => (
+                        <span key={index} className="px-2 py-1 bg-indigo-100 rounded-full text-xs text-indigo-700">
+                          {source}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Team Structure */}
+            {gig.team && (gig.team.size || gig.team.territories?.length > 0 || gig.team.structure?.length > 0) && (
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Team Structure</h2>
+                <div className="space-y-3">
+                  {gig.team.size && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Team Size:</span>
+                      <span className="font-medium">{gig.team.size}</span>
+                    </div>
+                  )}
+                  {gig.team.territories?.length > 0 && (
+                    <div>
+                      <span className="text-gray-600">Territories:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {gig.team.territories.map((territory, index) => (
+                          <span key={index} className="px-2 py-1 bg-blue-100 rounded-full text-xs text-blue-700">
+                            {territory}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {gig.team.structure?.length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="font-medium text-gray-800 mb-2">Team Composition:</h3>
+                      <div className="space-y-2">
+                        {gig.team.structure.map((role, index) => (
+                          <div key={index} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
+                            <span>{role.count}x {role.seniority.level}</span>
+                            <span className="text-gray-600">{role.seniority.yearsExperience} years exp.</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Career Growth & Benefits */}
+            {((gig.companyId?.opportunities && (gig.companyId.opportunities.roles?.length > 0 || gig.companyId.opportunities.growthPotential || gig.companyId.opportunities.training)) || 
+             (gig.companyId?.culture && (gig.companyId.culture.benefits?.length > 0 || gig.companyId.culture.workEnvironment))) && (
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Career Growth & Benefits</h2>
+                
+                {gig.companyId?.opportunities?.roles?.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="font-medium text-gray-800 mb-2">Career Progression:</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {gig.companyId.opportunities.roles.map((role, index) => (
+                        <span key={index} className="px-3 py-1 bg-green-100 rounded-full text-sm text-green-800">
+                          {role}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {gig.companyId?.opportunities?.growthPotential && (
+                  <div className="mb-3">
+                    <h3 className="font-medium text-gray-800 mb-1">Growth Potential:</h3>
+                    <p className="text-sm text-gray-600">{gig.companyId.opportunities.growthPotential}</p>
+                  </div>
+                )}
+
+                {gig.companyId?.opportunities?.training && (
+                  <div className="mb-4">
+                    <h3 className="font-medium text-gray-800 mb-1">Training & Development:</h3>
+                    <p className="text-sm text-gray-600">{gig.companyId.opportunities.training}</p>
+                  </div>
+                )}
+
+                {gig.companyId?.culture?.benefits?.length > 0 && (
+                  <div className="mb-3">
+                    <h3 className="font-medium text-gray-800 mb-2">Benefits Package:</h3>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      {gig.companyId.culture.benefits.map((benefit, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          {benefit}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {gig.companyId?.culture?.workEnvironment && (
+                  <div>
+                    <h3 className="font-medium text-gray-800 mb-1">Work Environment:</h3>
+                    <p className="text-sm text-gray-600">{gig.companyId.culture.workEnvironment}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="xl:col-span-2 space-y-8">
             {/* Company Info */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Company</h2>
               <div className="space-y-3">
                 <div className="flex items-center">
                   <Building className="w-5 h-5 mr-2 text-gray-400" />
-                  <span className="font-medium">{gig.companyId?.name || 'Unknown'}</span>
+                  <span className="font-medium">{(() => {
+                    console.log('Company data:', gig.companyId);
+                    return gig.companyId?.name || 'Unknown';
+                  })()}</span>
                 </div>
                 {gig.companyId?.industry && (
                   <div className="flex items-center">
@@ -500,12 +757,6 @@ export function GigDetails() {
                     <span>{gig.companyId.headquarters}</span>
                   </div>
                 )}
-                {gig.companyId?.founded && (
-                  <div className="flex items-center">
-                    <Calendar className="w-5 h-5 mr-2 text-gray-400" />
-                    <span>Founded {gig.companyId.founded}</span>
-                  </div>
-                )}
               </div>
               
               {gig.companyId?.overview && (
@@ -514,32 +765,179 @@ export function GigDetails() {
                   <p className="text-sm text-gray-600">{gig.companyId.overview}</p>
                 </div>
               )}
+
+
+
+              {/* Contact Information */}
+              {(gig.companyId?.contact?.website || gig.companyId?.contact?.email || gig.companyId?.contact?.phone || gig.companyId?.contact?.address) && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h3 className="font-medium text-gray-900 mb-2">Contact</h3>
+                  <div className="space-y-1">
+                    {gig.companyId.contact.website && (
+                      <p className="text-xs">
+                        <span className="text-gray-600">Website:</span>
+                        <a href={gig.companyId.contact.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
+                          {gig.companyId.contact.website}
+                        </a>
+                      </p>
+                    )}
+                    {gig.companyId.contact.email && (
+                      <p className="text-xs">
+                        <span className="text-gray-600">Email:</span>
+                        <a href={`mailto:${gig.companyId.contact.email}`} className="text-blue-600 hover:underline ml-1">
+                          {gig.companyId.contact.email}
+                        </a>
+                      </p>
+                    )}
+                    {gig.companyId.contact.phone && (
+                      <p className="text-xs">
+                        <span className="text-gray-600">Phone:</span>
+                        <span className="ml-1">{gig.companyId.contact.phone}</span>
+                      </p>
+                    )}
+                    {gig.companyId.contact.address && (
+                      <p className="text-xs">
+                        <span className="text-gray-600">Address:</span>
+                        <span className="ml-1">{gig.companyId.contact.address}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+
             </div>
 
-            {/* Schedule */}
-            {gig.availability?.schedule?.length > 0 && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Schedule</h2>
-                <div className="space-y-2">
-                  {gig.availability.schedule.map((schedule, i) => (
-                    <div key={i} className="flex justify-between text-sm">
-                      <span className="font-medium">{schedule.day}</span>
-                      <span className="text-gray-600">{schedule.hours.start} - {schedule.hours.end}</span>
-                    </div>
-                  ))}
+            {/* Schedule & Availability */}
+            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Availability</h2>
+              
+              {/* Timezone */}
+              {gig.availability?.time_zone && (
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-blue-900">
+                      {gig.availability.time_zone.zoneName || gig.availability.time_zone.name}
+                    </span>
+                    <span className="text-sm text-blue-700">
+                      {gig.availability.time_zone.countryCode || gig.availability.time_zone.abbreviation}
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-1">
+                    GMT{gig.availability.time_zone.gmtOffset 
+                      ? (gig.availability.time_zone.gmtOffset >= 0 ? '+' : '') + (gig.availability.time_zone.gmtOffset / 3600)
+                      : gig.availability.time_zone.offset}
+                  </p>
                 </div>
+              )}
+
+              {/* Minimum Hours */}
+              {gig.availability?.minimumHours && (
+                <div className="mb-4">
+                  <h3 className="font-medium text-gray-800 mb-2">Minimum Hours:</h3>
+                  <div className="space-y-1 text-sm">
+                    {gig.availability.minimumHours.daily && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Daily:</span>
+                        <span>{gig.availability.minimumHours.daily}h</span>
+                      </div>
+                    )}
+                    {gig.availability.minimumHours.weekly && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Weekly:</span>
+                        <span>{gig.availability.minimumHours.weekly}h</span>
+                      </div>
+                    )}
+                    {gig.availability.minimumHours.monthly && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Monthly:</span>
+                        <span>{gig.availability.minimumHours.monthly}h</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Schedule */}
+              {gig.availability?.schedule?.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="font-medium text-gray-800 mb-2">Schedule:</h3>
+                  <div className="space-y-2">
+                    {gig.availability.schedule.map((schedule, i) => (
+                      <div key={i} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
+                        <span className="font-medium">{schedule.day}</span>
+                        <span className="text-gray-600">{schedule.hours.start} - {schedule.hours.end}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Flexibility */}
+              {gig.availability?.flexibility?.length > 0 && (
+                <div>
+                  <h3 className="font-medium text-gray-800 mb-2">Flexibility:</h3>
+                  <div className="flex flex-wrap gap-1">
+                    {gig.availability.flexibility.map((flex, index) => (
+                      <span key={index} className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                        {flex}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Documentation */}
+            {((gig.documentation?.product?.length ?? 0) > 0 || (gig.documentation?.process?.length ?? 0) > 0 || (gig.documentation?.training?.length ?? 0) > 0) && (
+              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Documentation & Resources</h2>
+                
+                {(gig.documentation?.product?.length ?? 0) > 0 && (
+                  <div className="mb-4">
+                    <h3 className="font-medium text-gray-800 mb-2">Product Documentation:</h3>
+                    <div className="space-y-1">
+                      {gig.documentation?.product?.map((doc, index) => (
+                        <a key={index} href={doc.url} target="_blank" rel="noopener noreferrer" 
+                           className="block text-sm text-blue-600 hover:underline">
+                          📄 {doc.name}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(gig.documentation?.process?.length ?? 0) > 0 && (
+                  <div className="mb-4">
+                    <h3 className="font-medium text-gray-800 mb-2">Process Documentation:</h3>
+                    <div className="space-y-1">
+                      {gig.documentation?.process?.map((doc, index) => (
+                        <a key={index} href={doc.url} target="_blank" rel="noopener noreferrer" 
+                           className="block text-sm text-blue-600 hover:underline">
+                          📋 {doc.name}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(gig.documentation?.training?.length ?? 0) > 0 && (
+                  <div>
+                    <h3 className="font-medium text-gray-800 mb-2">Training Materials:</h3>
+                    <div className="space-y-1">
+                      {gig.documentation?.training?.map((doc, index) => (
+                        <a key={index} href={doc.url} target="_blank" rel="noopener noreferrer" 
+                           className="block text-sm text-blue-600 hover:underline">
+                          🎓 {doc.name}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Apply Button */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                Apply Now
-              </button>
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                Click to submit your application for this position
-              </p>
-            </div>
+
           </div>
         </div>
       </div>
