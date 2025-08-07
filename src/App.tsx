@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -6,6 +6,7 @@ import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { Dashboard } from './pages/Dashboard';
 import { GigsMarketplace } from './pages/GigsMarketplace';
+import { GigDetails } from './pages/GigDetails';
 import { Profile } from './pages/Profile';
 import { Payouts } from './pages/Payouts';
 import { Learning } from './pages/Learning';
@@ -14,7 +15,7 @@ import { Workspace } from './pages/Workspace';
 import { Community } from './pages/Community';
 import { WalletPage } from './pages/Wallet';
 import CallReportCard from './components/CallReport';
-import { fetchProfileFromAPI, isProfileDataValid } from './utils/profileUtils';
+import { fetchProfileFromAPI } from './utils/profileUtils';
 import ProtectedRoute, { PhaseProtectedRoute } from './components/ProtectedRoute';
 
 interface UserProfile {
@@ -188,6 +189,11 @@ function AppContent() {
                 <Route path="/gigs-marketplace" element={
                   <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
                     <GigsMarketplace />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="/gig/:gigId" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
+                    <GigDetails />
                   </PhaseProtectedRoute>
                 } />
                 <Route path="/payouts" element={
