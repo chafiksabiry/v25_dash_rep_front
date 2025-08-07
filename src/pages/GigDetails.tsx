@@ -362,10 +362,10 @@ export function GigDetails() {
                 </div>
               </div>
               <div className="ml-6">
-                <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium text-lg shadow-md">
+                <button className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm shadow-md">
                   Apply Now
                 </button>
-                <p className="text-xs text-gray-500 mt-2 text-center max-w-[160px]">
+                <p className="text-xs text-gray-500 mt-2 text-center max-w-[140px]">
                   Join this opportunity and start earning immediately
                 </p>
               </div>
