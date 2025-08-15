@@ -1149,8 +1149,20 @@ export function GigDetails() {
                               <td className="py-3 px-4" style={{ width: '15%' }}>
                                 <button
                                   onClick={() => {
-                                    // TODO: Navigation vers la page d'appel
-                                    console.log('Call lead:', lead);
+                                    console.log('Redirecting to copilot for lead:', lead);
+                                    const copilotUrl = import.meta.env.VITE_COPILOT_URL;
+                                    if (copilotUrl) {
+                                      // Construire l'URL avec l'ID du lead comme paramètre
+                                      const leadId = lead._id || lead.id;
+                                      const fullUrl = leadId 
+                                        ? `${copilotUrl}?leadId=${leadId}`
+                                        : copilotUrl;
+                                      
+                                      console.log('Navigating to copilot with lead ID:', leadId);
+                                      window.location.href = fullUrl;
+                                    } else {
+                                      console.error('VITE_COPILOT_URL not configured');
+                                    }
                                   }}
                                   className="flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
                                   title="Call this lead"
