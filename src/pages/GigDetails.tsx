@@ -282,7 +282,7 @@ export function GigDetails() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalLeads, setTotalLeads] = useState(0);
-  const limit = 10; // Nombre de leads par page
+  const limit = 50; // Nombre de leads par page (maximum supporté par le backend)
 
   useEffect(() => {
     const fetchGigDetails = async () => {
@@ -1075,86 +1075,95 @@ export function GigDetails() {
               ) : (
                 <>
                   {/* Leads Table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Lead Name</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Email</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Phone</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {leads.map((lead, index) => (
-                          <tr
-                            key={lead._id || index}
-                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                          >
-                            {/* Lead Name */}
-                            <td className="py-3 px-4">
-                              <div>
-                                <div className="font-medium text-gray-900">
-                                  {lead.Deal_Name || lead.assignedTo?.name || `Lead #${index + 1}`}
-                                </div>
-                                {lead.Activity_Tag && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {lead.Activity_Tag}
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Email */}
-                            <td className="py-3 px-4">
-                              {lead.Email_1 ? (
-                                <div className="flex items-center">
-                                  <Mail className="w-4 h-4 mr-2 text-gray-400" />
-                                  <a
-                                    href={`mailto:${lead.Email_1}`}
-                                    className="text-blue-600 hover:text-blue-700 hover:underline text-sm"
-                                    title={lead.Email_1}
-                                  >
-                                    {lead.Email_1.length > 25 ? `${lead.Email_1.substring(0, 25)}...` : lead.Email_1}
-                                  </a>
-                                </div>
-                              ) : (
-                                <span className="text-gray-400 text-sm">-</span>
-                              )}
-                            </td>
-
-                            {/* Phone */}
-                            <td className="py-3 px-4">
-                              {lead.Phone ? (
-                                <div className="flex items-center">
-                                  <Phone className="w-4 h-4 mr-2 text-gray-400" />
-                                  <span className="text-gray-900 text-sm">
-                                    {lead.Phone}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-gray-400 text-sm">-</span>
-                              )}
-                            </td>
-
-                            {/* Actions */}
-                            <td className="py-3 px-4">
-                              <button
-                                onClick={() => {
-                                  // TODO: Navigation vers la page d'appel
-                                  console.log('Call lead:', lead);
-                                }}
-                                className="flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
-                                title="Call this lead"
-                              >
-                                <Phone className="w-4 h-4 mr-1" />
-                                Call
-                              </button>
-                            </td>
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    {/* Table Header - Fixed */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead className="bg-gray-50 sticky top-0 z-10">
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-3 px-4 font-medium text-gray-900">Lead Name</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-900">Email</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-900">Phone</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                      </table>
+                    </div>
+                    
+                    {/* Table Body - Scrollable */}
+                    <div className="overflow-y-auto overflow-x-auto max-h-96" style={{ maxHeight: '480px' }}>
+                      <table className="w-full border-collapse">
+                        <tbody>
+                          {leads.map((lead, index) => (
+                            <tr
+                              key={lead._id || index}
+                              className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                            >
+                              {/* Lead Name */}
+                              <td className="py-3 px-4" style={{ width: '25%' }}>
+                                <div>
+                                  <div className="font-medium text-gray-900">
+                                    {lead.Deal_Name || lead.assignedTo?.name || `Lead #${index + 1}`}
+                                  </div>
+                                  {lead.Activity_Tag && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      {lead.Activity_Tag}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Email */}
+                              <td className="py-3 px-4" style={{ width: '35%' }}>
+                                {lead.Email_1 ? (
+                                  <div className="flex items-center">
+                                    <Mail className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                                    <a
+                                      href={`mailto:${lead.Email_1}`}
+                                      className="text-blue-600 hover:text-blue-700 hover:underline text-sm truncate"
+                                      title={lead.Email_1}
+                                    >
+                                      {lead.Email_1.length > 25 ? `${lead.Email_1.substring(0, 25)}...` : lead.Email_1}
+                                    </a>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400 text-sm">-</span>
+                                )}
+                              </td>
+
+                              {/* Phone */}
+                              <td className="py-3 px-4" style={{ width: '25%' }}>
+                                {lead.Phone ? (
+                                  <div className="flex items-center">
+                                    <Phone className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                                    <span className="text-gray-900 text-sm">
+                                      {lead.Phone}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400 text-sm">-</span>
+                                )}
+                              </td>
+
+                              {/* Actions */}
+                              <td className="py-3 px-4" style={{ width: '15%' }}>
+                                <button
+                                  onClick={() => {
+                                    // TODO: Navigation vers la page d'appel
+                                    console.log('Call lead:', lead);
+                                  }}
+                                  className="flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
+                                  title="Call this lead"
+                                >
+                                  <Phone className="w-4 h-4 mr-1" />
+                                  Call
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   {/* Pagination */}
