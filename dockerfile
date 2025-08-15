@@ -29,6 +29,8 @@ ENV VITE_API_URL_CALL=https://preprod-api-dash-calls.harx.ai
 ENV VITE_REP_API_URL=https://preprod-api-repcreationwizard.harx.ai
 ENV VITE_AUTH_API_URL=https://preprod-api-registration.harx.ai/api
 ENV VITE_FRONT_URL=https://preprod-rep-dashboard.harx.ai/
+ENV VITE_DASH_COMPANY_BACKEND=https://preprod-api-dashboard.harx.ai/api
+ENV VITE_COPILOT_URL=/copilot
 # Install dependencies
 RUN npm install
 
