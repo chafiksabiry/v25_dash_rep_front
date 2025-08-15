@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
+import Cookies from 'js-cookie';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
 interface PopulatedGig {
@@ -291,6 +292,10 @@ export function GigDetails() {
         setLoading(false);
         return;
       }
+
+      // Mettre à jour le cookie gigId dès qu'on charge les détails d'un gig
+      console.log('🍪 Setting gigId cookie:', gigId);
+      Cookies.set('currentGigId', gigId, { expires: 7 }); // Expire dans 7 jours
 
       try {
         console.log('🔍 Fetching gig details for ID:', gigId);
@@ -1158,7 +1163,10 @@ export function GigDetails() {
                                         ? `${copilotUrl}?leadId=${leadId}`
                                         : copilotUrl;
                                       
+                                      // Le cookie gigId est déjà mis à jour lors du chargement de la page
+                                      // La page copilot peut maintenant récupérer à la fois le leadId (URL) et le gigId (cookie)
                                       console.log('Navigating to copilot with lead ID:', leadId);
+                                      console.log('Current gigId available in cookie:', Cookies.get('currentGigId'));
                                       window.location.href = fullUrl;
                                     } else {
                                       console.error('VITE_COPILOT_URL not configured');
