@@ -1082,8 +1082,6 @@ export function GigDetails() {
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Lead Name</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Email</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Phone</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Stage</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Last Activity</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
                         </tr>
                       </thead>
@@ -1130,35 +1128,9 @@ export function GigDetails() {
                               {lead.Phone ? (
                                 <div className="flex items-center">
                                   <Phone className="w-4 h-4 mr-2 text-gray-400" />
-                                  <a
-                                    href={`tel:${lead.Phone}`}
-                                    className="text-green-600 hover:text-green-700 hover:underline text-sm"
-                                    title="Click to call"
-                                  >
+                                  <span className="text-gray-900 text-sm">
                                     {lead.Phone}
-                                  </a>
-                                </div>
-                              ) : (
-                                <span className="text-gray-400 text-sm">-</span>
-                              )}
-                            </td>
-
-                            {/* Stage */}
-                            <td className="py-3 px-4">
-                              {lead.Stage ? (
-                                <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
-                                  {lead.Stage}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400 text-sm">-</span>
-                              )}
-                            </td>
-
-                            {/* Last Activity */}
-                            <td className="py-3 px-4">
-                              {lead.Last_Activity_Time ? (
-                                <div className="text-sm text-gray-600">
-                                  {new Date(lead.Last_Activity_Time).toLocaleDateString()}
+                                  </span>
                                 </div>
                               ) : (
                                 <span className="text-gray-400 text-sm">-</span>
