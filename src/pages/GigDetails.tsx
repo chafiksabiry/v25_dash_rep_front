@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target } from 'lucide-react';
+import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
 interface PopulatedGig {
@@ -234,12 +234,55 @@ interface PopulatedGig {
   updatedAt: Date;
 }
 
+// Interface pour les leads
+interface Lead {
+  _id: string;
+  userId?: string;
+  companyId?: string;
+  assignedTo?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  gigId?: string;
+  refreshToken?: string;
+  id?: string;
+  Last_Activity_Time?: Date;
+  Activity_Tag?: string;
+  Deal_Name?: string;
+  Stage?: string;
+  Email_1?: string;
+  Phone?: string;
+  Telephony?: string;
+  Pipeline?: string;
+  updatedAt: Date;
+}
+
+// Interface pour la réponse de l'API des leads
+interface LeadsResponse {
+  success: boolean;
+  count: number;  // Number of leads in current page
+  total: number;  // Total number of leads for this gig
+  totalPages: number;  
+  currentPage: number;  // Current page number
+  data: Lead[];
+}
+
 export function GigDetails() {
   const { gigId } = useParams<{ gigId: string }>();
   const navigate = useNavigate();
   const [gig, setGig] = useState<PopulatedGig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // États pour les leads
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+  const [leadsError, setLeadsError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalLeads, setTotalLeads] = useState(0);
+  const limit = 10; // Nombre de leads par page
 
   useEffect(() => {
     const fetchGigDetails = async () => {
@@ -308,6 +351,63 @@ export function GigDetails() {
 
     fetchGigDetails();
   }, [gigId]);
+
+  // Fonction pour récupérer les leads
+  const fetchLeads = async (page: number = 1) => {
+    if (!gigId) return;
+    
+    setLeadsLoading(true);
+    setLeadsError(null);
+    
+    try {
+      console.log('🔍 Fetching leads for gig ID:', gigId, 'page:', page);
+      const response = await fetch(
+        `${import.meta.env.VITE_DASH_COMPANY_BACKEND}/leads/gig/${gigId}?page=${page}&limit=${limit}`
+      );
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Leads API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`Failed to fetch leads: ${response.status}`);
+      }
+
+      const data: LeadsResponse = await response.json();
+      console.log('✅ Received leads data:', data);
+      
+      if (data.success) {
+        setLeads(data.data);
+        setCurrentPage(data.currentPage);
+        setTotalPages(data.totalPages);
+        setTotalLeads(data.total);
+      } else {
+        throw new Error('Failed to fetch leads');
+      }
+    } catch (err) {
+      console.error('❌ Error fetching leads:', err);
+      setLeadsError(err instanceof Error ? err.message : 'Failed to load leads');
+    } finally {
+      setLeadsLoading(false);
+    }
+  };
+
+  // Charger les leads quand le gigId change
+  useEffect(() => {
+    if (gigId) {
+      fetchLeads(1);
+    }
+  }, [gigId]);
+
+  // Fonction pour changer de page
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      fetchLeads(newPage);
+    }
+  };
 
   if (loading) {
     return (
@@ -730,6 +830,7 @@ export function GigDetails() {
                 )}
               </div>
             )}
+
           </div>
 
           {/* Sidebar */}
@@ -940,7 +1041,191 @@ export function GigDetails() {
 
           </div>
         </div>
+
+        {/* Leads Section - Full Width */}
+        <div className="mt-8">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Available Leads</h2>
+                {totalLeads > 0 && (
+                  <span className="text-sm text-gray-600">
+                    Total: {totalLeads} leads
+                  </span>
+                )}
+              </div>
+
+              {leadsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : leadsError ? (
+                <div className="text-center py-8">
+                  <p className="text-red-600 mb-2">❌ {leadsError}</p>
+                  <button
+                    onClick={() => fetchLeads(currentPage)}
+                    className="text-blue-600 hover:text-blue-700 text-sm"
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : leads.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No leads available for this gig yet.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Leads Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Lead Name</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Email</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Phone</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Stage</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Last Activity</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leads.map((lead, index) => (
+                          <tr
+                            key={lead._id || index}
+                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                          >
+                            {/* Lead Name */}
+                            <td className="py-3 px-4">
+                              <div>
+                                <div className="font-medium text-gray-900">
+                                  {lead.Deal_Name || lead.assignedTo?.name || `Lead #${index + 1}`}
+                                </div>
+                                {lead.Activity_Tag && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {lead.Activity_Tag}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Email */}
+                            <td className="py-3 px-4">
+                              {lead.Email_1 ? (
+                                <div className="flex items-center">
+                                  <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                                  <a
+                                    href={`mailto:${lead.Email_1}`}
+                                    className="text-blue-600 hover:text-blue-700 hover:underline text-sm"
+                                    title={lead.Email_1}
+                                  >
+                                    {lead.Email_1.length > 25 ? `${lead.Email_1.substring(0, 25)}...` : lead.Email_1}
+                                  </a>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 text-sm">-</span>
+                              )}
+                            </td>
+
+                            {/* Phone */}
+                            <td className="py-3 px-4">
+                              {lead.Phone ? (
+                                <div className="flex items-center">
+                                  <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                                  <a
+                                    href={`tel:${lead.Phone}`}
+                                    className="text-green-600 hover:text-green-700 hover:underline text-sm"
+                                    title="Click to call"
+                                  >
+                                    {lead.Phone}
+                                  </a>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 text-sm">-</span>
+                              )}
+                            </td>
+
+                            {/* Stage */}
+                            <td className="py-3 px-4">
+                              {lead.Stage ? (
+                                <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+                                  {lead.Stage}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 text-sm">-</span>
+                              )}
+                            </td>
+
+                            {/* Last Activity */}
+                            <td className="py-3 px-4">
+                              {lead.Last_Activity_Time ? (
+                                <div className="text-sm text-gray-600">
+                                  {new Date(lead.Last_Activity_Time).toLocaleDateString()}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 text-sm">-</span>
+                              )}
+                            </td>
+
+                            {/* Actions */}
+                            <td className="py-3 px-4">
+                              <button
+                                onClick={() => {
+                                  // TODO: Navigation vers la page d'appel
+                                  console.log('Call lead:', lead);
+                                }}
+                                className="flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
+                                title="Call this lead"
+                              >
+                                <Phone className="w-4 h-4 mr-1" />
+                                Call
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+                      <div className="text-sm text-gray-600">
+                        Page {currentPage} of {totalPages}
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className={`flex items-center px-3 py-1 rounded-md text-sm ${
+                            currentPage === 1
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <ChevronLeft className="w-4 h-4 mr-1" />
+                          Previous
+                        </button>
+                        
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className={`flex items-center px-3 py-1 rounded-md text-sm ${
+                            currentPage === totalPages
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          Next
+                          <ChevronRight className="w-4 h-4 ml-1" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
   );
 }
