@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, UserCircle, LogOut, Wallet, BookOpen, Settings, Monitor, Users } from 'lucide-react';
-import Cookies from 'js-cookie';
-import { clearProfileData } from '../utils/profileUtils';
+import { NavLink } from 'react-router-dom';
+import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 // Declare qiankun global variables
 declare global {
@@ -32,16 +31,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ phases }: SidebarProps) {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.clear();
-    const cookies = Cookies.get();
-    Object.keys(cookies).forEach(cookieName => {
-      Cookies.remove(cookieName);
-    });
-    window.location.replace('/auth');
-  };
+  const { logout } = useAuth();
 
   const isPhaseCompleted = (phaseNumber: number): boolean => {
     if (!phases) return false;
@@ -50,6 +40,12 @@ export function Sidebar({ phases }: SidebarProps) {
 
   const navItems = [
     { 
+      icon: UserCircle, 
+      label: 'Profile', 
+      path: '/profile', 
+      isAccessible: () => true // Always accessible
+    },
+    { 
       icon: LayoutDashboard, 
       label: 'Dashboard', 
       path: '/dashboard', 
@@ -57,21 +53,15 @@ export function Sidebar({ phases }: SidebarProps) {
     },
     { 
       icon: Briefcase, 
-      label: 'Gigs', 
+      label: 'Marketplace', 
       path: '/gigs-marketplace', 
-      isAccessible: () => isPhaseCompleted(5)
+      isAccessible: () => isPhaseCompleted(4)
     },
     { 
       icon: Monitor, 
       label: 'Workspace', 
       path: '/workspace', 
-      isAccessible: () => isPhaseCompleted(4)
-    },
-    { 
-      icon: UserCircle, 
-      label: 'Profile', 
-      path: '/profile', 
-      isAccessible: () => true // Always accessible
+      isAccessible: () => isPhaseCompleted(5)
     },
     { 
       icon: Settings, 
@@ -97,7 +87,7 @@ export function Sidebar({ phases }: SidebarProps) {
     <div className="w-64 bg-white border-r border-gray-200">
       <div className="h-16 flex items-center justify-center border-b border-gray-200">
         <img 
-          src={'https://rep-dashboard.harx.ai/logo_harx.jpg'}
+          src={`${import.meta.env.VITE_FRONT_URL}logo_harx.jpg`}
           alt="HARX.AI Logo" 
           className="h-8 w-auto object-contain"
         />
@@ -118,7 +108,7 @@ export function Sidebar({ phases }: SidebarProps) {
           </NavLink>
         ))}
         <button 
-          onClick={handleLogout}
+          onClick={logout}
           className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors mt-auto"
         >
           <LogOut className="w-5 h-5 mr-3" />
