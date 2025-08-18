@@ -468,7 +468,7 @@ export function GigsMarketplace() {
     }
   };
 
-  // Fonction pour récupérer les gigs inscrits
+  // Fonction pour récupérer les gigs inscrits avec données complètes
   const fetchEnrolledGigs = async () => {
     const agentId = getAgentId();
     const token = getAuthToken();
@@ -497,7 +497,58 @@ export function GigsMarketplace() {
       if (data.enrollments && Array.isArray(data.enrollments)) {
         console.log('Found enrollments:', data.enrollments);
         console.log('First enrollment structure:', data.enrollments[0]);
-        setEnrolledGigs(data.enrollments);
+        
+        // Récupérer les données complètes des gigs depuis l'API des gigs
+        const enrichedEnrollments = await Promise.all(
+          data.enrollments.map(async (enrollment: EnrolledGig) => {
+            try {
+              const gigResponse = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${enrollment.gig._id}/details`
+              );
+              
+              if (!gigResponse.ok) {
+                const errorText = await gigResponse.text();
+                console.warn(`Failed to fetch details for enrolled gig ${enrollment.gig._id}:`, {
+                  status: gigResponse.status,
+                  statusText: gigResponse.statusText,
+                  body: errorText
+                });
+                return enrollment;
+              }
+
+              const gigData = await gigResponse.json();
+              console.log(`Full enrolled gig data for ${enrollment.gig._id}:`, gigData);
+              
+              // Utiliser la même logique que GigDetails pour extraire les données
+              let fullGigData;
+              if (gigData.success && gigData.data) {
+                fullGigData = gigData.data;
+              } else if (gigData.data) {
+                fullGigData = gigData.data;
+              } else if (gigData._id) {
+                fullGigData = gigData;
+              } else {
+                console.warn(`Unexpected enrolled gig data structure for ${enrollment.gig._id}:`, gigData);
+                return enrollment;
+              }
+              
+              return {
+                ...enrollment,
+                gig: {
+                  ...enrollment.gig,
+                  // Remplacer les données basiques par les données complètes
+                  ...fullGigData
+                }
+              };
+            } catch (error) {
+              console.error(`Error fetching details for enrolled gig ${enrollment.gig._id}:`, error);
+              return enrollment;
+            }
+          })
+        );
+        
+        console.log('Enriched enrolled gigs with full data:', enrichedEnrollments);
+        setEnrolledGigs(enrichedEnrollments);
       } else {
         console.error('Invalid enrolled gigs data structure:', data);
         setEnrolledGigs([]);
@@ -537,7 +588,6 @@ export function GigsMarketplace() {
       
       if (enrollmentData.enrollments && Array.isArray(enrollmentData.enrollments)) {
         // Récupérer les IDs des gigs invités
-        const gigIds = enrollmentData.enrollments.map((enrollment: InvitedEnrollment) => enrollment.gig._id);
         
         // Récupérer les données complètes des gigs depuis l'API des gigs
         const enrichedEnrollments = await Promise.all(
@@ -547,22 +597,40 @@ export function GigsMarketplace() {
                 `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${enrollment.gig._id}/details`
               );
               
-              if (gigResponse.ok) {
-                const gigData = await gigResponse.json();
-                console.log(`Full gig data for ${enrollment.gig._id}:`, gigData);
-                
-                return {
-                  ...enrollment,
-                  gig: {
-                    ...enrollment.gig,
-                    // Remplacer les données basiques par les données complètes
-                    ...gigData
-                  }
-                };
-              } else {
-                console.warn(`Failed to fetch details for gig ${enrollment.gig._id}`);
+              if (!gigResponse.ok) {
+                const errorText = await gigResponse.text();
+                console.warn(`Failed to fetch details for gig ${enrollment.gig._id}:`, {
+                  status: gigResponse.status,
+                  statusText: gigResponse.statusText,
+                  body: errorText
+                });
                 return enrollment;
               }
+
+              const gigData = await gigResponse.json();
+              console.log(`Full gig data for ${enrollment.gig._id}:`, gigData);
+              
+              // Utiliser la même logique que GigDetails pour extraire les données
+              let fullGigData;
+              if (gigData.success && gigData.data) {
+                fullGigData = gigData.data;
+              } else if (gigData.data) {
+                fullGigData = gigData.data;
+              } else if (gigData._id) {
+                fullGigData = gigData;
+              } else {
+                console.warn(`Unexpected gig data structure for ${enrollment.gig._id}:`, gigData);
+                return enrollment;
+              }
+              
+              return {
+                ...enrollment,
+                gig: {
+                  ...enrollment.gig,
+                  // Remplacer les données basiques par les données complètes
+                  ...fullGigData
+                }
+              };
             } catch (error) {
               console.error(`Error fetching details for gig ${enrollment.gig._id}:`, error);
               return enrollment;
