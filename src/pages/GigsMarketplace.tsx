@@ -478,7 +478,8 @@ export function GigsMarketplace() {
     }
 
     try {
-      const response = await fetch(
+      // Récupérer d'abord les enrollments
+      const enrollmentResponse = await fetch(
         `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/agent/${agentId}/gigs`,
         {
           headers: {
@@ -487,28 +488,39 @@ export function GigsMarketplace() {
         }
       );
       
-      if (!response.ok) {
+      if (!enrollmentResponse.ok) {
         throw new Error('Failed to fetch enrolled gigs');
       }
       
-      const data = await response.json();
-      console.log('Enrolled gigs response:', data);
+      const enrollmentData = await enrollmentResponse.json();
+      console.log('Enrolled gigs response:', enrollmentData);
       
-      if (data.enrollments && Array.isArray(data.enrollments)) {
-        console.log('Found enrollments:', data.enrollments);
-        console.log('First enrollment structure:', data.enrollments[0]);
+      if (enrollmentData.enrollments && Array.isArray(enrollmentData.enrollments)) {
+        console.log('Found enrollments:', enrollmentData.enrollments);
+        console.log('First enrollment structure:', enrollmentData.enrollments[0]);
+        
+        // Récupérer les IDs des gigs inscrits
+        const gigIds = enrollmentData.enrollments.map((enrollment: EnrolledGig) => enrollment.gig._id);
+        console.log('Gig IDs to fetch:', gigIds);
         
         // Récupérer les données complètes des gigs depuis l'API des gigs
         const enrichedEnrollments = await Promise.all(
-          data.enrollments.map(async (enrollment: EnrolledGig) => {
+          enrollmentData.enrollments.map(async (enrollment: EnrolledGig) => {
             try {
-              const gigResponse = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${enrollment.gig._id}/details`
+              // Essayer d'abord l'endpoint /gigs/active
+              let gigResponse = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/active`
               );
               
               if (!gigResponse.ok) {
+                // Fallback vers l'endpoint /gigs
+                console.log('⚠️ /gigs/active failed, trying fallback to /gigs endpoint...');
+                gigResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs`);
+              }
+              
+              if (!gigResponse.ok) {
                 const errorText = await gigResponse.text();
-                console.warn(`Failed to fetch details for enrolled gig ${enrollment.gig._id}:`, {
+                console.warn(`Failed to fetch gigs data:`, {
                   status: gigResponse.status,
                   statusText: gigResponse.statusText,
                   body: errorText
@@ -516,21 +528,23 @@ export function GigsMarketplace() {
                 return enrollment;
               }
 
-              const gigData = await gigResponse.json();
-              console.log(`Full enrolled gig data for ${enrollment.gig._id}:`, gigData);
+              const gigsData = await gigResponse.json();
+              console.log('Gigs data response:', gigsData);
               
-              // Utiliser la même logique que GigDetails pour extraire les données
+              // Trouver le gig correspondant dans la liste
               let fullGigData;
-              if (gigData.success && gigData.data) {
-                fullGigData = gigData.data;
-              } else if (gigData.data) {
-                fullGigData = gigData.data;
-              } else if (gigData._id) {
-                fullGigData = gigData;
-              } else {
-                console.warn(`Unexpected enrolled gig data structure for ${enrollment.gig._id}:`, gigData);
+              if (gigsData.data && Array.isArray(gigsData.data)) {
+                fullGigData = gigsData.data.find((gig: PopulatedGig) => gig._id === enrollment.gig._id);
+              } else if (Array.isArray(gigsData)) {
+                fullGigData = gigsData.find((gig: PopulatedGig) => gig._id === enrollment.gig._id);
+              }
+              
+              if (!fullGigData) {
+                console.warn(`Gig ${enrollment.gig._id} not found in gigs data`);
                 return enrollment;
               }
+              
+              console.log(`Full enrolled gig data for ${enrollment.gig._id}:`, fullGigData);
               
               return {
                 ...enrollment,
@@ -550,7 +564,7 @@ export function GigsMarketplace() {
         console.log('Enriched enrolled gigs with full data:', enrichedEnrollments);
         setEnrolledGigs(enrichedEnrollments);
       } else {
-        console.error('Invalid enrolled gigs data structure:', data);
+        console.error('Invalid enrolled gigs data structure:', enrollmentData);
         setEnrolledGigs([]);
       }
     } catch (error) {
@@ -588,18 +602,27 @@ export function GigsMarketplace() {
       
       if (enrollmentData.enrollments && Array.isArray(enrollmentData.enrollments)) {
         // Récupérer les IDs des gigs invités
+        const gigIds = enrollmentData.enrollments.map((enrollment: InvitedEnrollment) => enrollment.gig._id);
+        console.log('Invited gig IDs to fetch:', gigIds);
         
         // Récupérer les données complètes des gigs depuis l'API des gigs
         const enrichedEnrollments = await Promise.all(
           enrollmentData.enrollments.map(async (enrollment: InvitedEnrollment) => {
             try {
-              const gigResponse = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${enrollment.gig._id}/details`
+              // Essayer d'abord l'endpoint /gigs/active
+              let gigResponse = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/active`
               );
               
               if (!gigResponse.ok) {
+                // Fallback vers l'endpoint /gigs
+                console.log('⚠️ /gigs/active failed, trying fallback to /gigs endpoint...');
+                gigResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs`);
+              }
+              
+              if (!gigResponse.ok) {
                 const errorText = await gigResponse.text();
-                console.warn(`Failed to fetch details for gig ${enrollment.gig._id}:`, {
+                console.warn(`Failed to fetch gigs data:`, {
                   status: gigResponse.status,
                   statusText: gigResponse.statusText,
                   body: errorText
@@ -607,21 +630,23 @@ export function GigsMarketplace() {
                 return enrollment;
               }
 
-              const gigData = await gigResponse.json();
-              console.log(`Full gig data for ${enrollment.gig._id}:`, gigData);
+              const gigsData = await gigResponse.json();
+              console.log('Gigs data response:', gigsData);
               
-              // Utiliser la même logique que GigDetails pour extraire les données
+              // Trouver le gig correspondant dans la liste
               let fullGigData;
-              if (gigData.success && gigData.data) {
-                fullGigData = gigData.data;
-              } else if (gigData.data) {
-                fullGigData = gigData.data;
-              } else if (gigData._id) {
-                fullGigData = gigData;
-              } else {
-                console.warn(`Unexpected gig data structure for ${enrollment.gig._id}:`, gigData);
+              if (gigsData.data && Array.isArray(gigsData.data)) {
+                fullGigData = gigsData.data.find((gig: PopulatedGig) => gig._id === enrollment.gig._id);
+              } else if (Array.isArray(gigsData)) {
+                fullGigData = gigsData.find((gig: PopulatedGig) => gig._id === enrollment.gig._id);
+              }
+              
+              if (!fullGigData) {
+                console.warn(`Gig ${enrollment.gig._id} not found in gigs data`);
                 return enrollment;
               }
+              
+              console.log(`Full gig data for ${enrollment.gig._id}:`, fullGigData);
               
               return {
                 ...enrollment,
@@ -640,11 +665,6 @@ export function GigsMarketplace() {
         
         console.log('Enriched enrollments with full gig data:', enrichedEnrollments);
         setInvitedEnrollments(enrichedEnrollments);
-        return;
-        
-        // Fallback: utiliser les données de base si l'API des gigs échoue
-        console.log('Using fallback enrollment data');
-        setInvitedEnrollments(enrollmentData.enrollments);
       } else {
         console.error('Invalid invited enrollments data structure:', enrollmentData);
         setInvitedEnrollments([]);
@@ -1229,6 +1249,11 @@ export function GigsMarketplace() {
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                           Invited
                         </span>
+                        {('seniority' in enrollment.gig && enrollment.gig.seniority?.level) && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            {enrollment.gig.seniority.level}
+                          </span>
+                        )}
                         <button
                           onClick={(e) => {
                             e.preventDefault();
@@ -1401,6 +1426,11 @@ export function GigsMarketplace() {
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                           Enrolled
                         </span>
+                        {('seniority' in enrolledGig.gig && enrolledGig.gig.seniority?.level) && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            {enrolledGig.gig.seniority.level}
+                          </span>
+                        )}
                         <button
                           onClick={(e) => {
                             e.preventDefault();
@@ -1431,35 +1461,85 @@ export function GigsMarketplace() {
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{enrolledGig.gig.compensation || 'N/A'}</span>
+                        <span>{('commission' in enrolledGig.gig && enrolledGig.gig.commission?.baseAmount) ? `${enrolledGig.gig.commission.baseAmount} ${enrolledGig.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
+                        {('commission' in enrolledGig.gig && enrolledGig.gig.commission?.bonus) && (
+                          <span className="ml-1 text-xs text-green-600">+ bonus</span>
+                        )}
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Users className="w-4 h-4 mr-2" />
-                        <span>{enrolledGig.gig.experience || 'N/A'}</span>
+                        <span>{('seniority' in enrolledGig.gig && enrolledGig.gig.seniority?.yearsExperience) ? `${enrolledGig.gig.seniority.yearsExperience} years experience` : 'N/A years experience'}</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{enrolledGig.gig.destination_zone || 'N/A'}</span>
+                        <span>{enrolledGig.gig.destination_zone} ({('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.abbreviation) ? enrolledGig.gig.availability.time_zone.abbreviation : ('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.name) ? enrolledGig.gig.availability.time_zone.name : 'N/A'})</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
-                        <span>{enrolledGig.gig.workHours || 'N/A'}</span>
+                        <span>{('availability' in enrolledGig.gig && enrolledGig.gig.availability?.minimumHours?.weekly) ? `${enrolledGig.gig.availability.minimumHours.weekly}h/week` : 'N/A h/week'}</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <User className="w-4 h-4 mr-2" />
-                        <span>{enrolledGig.gig.company || 'N/A'}</span>
+                        <span>{('companyId' in enrolledGig.gig && enrolledGig.gig.companyId?.name) ? enrolledGig.gig.companyId.name : 'Unknown'}</span>
                       </div>
                     </div>
 
                     <div className="mt-4 flex-grow">
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Match Score:</p>
-                        <div className="flex flex-wrap gap-1">
-                          <span className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
-                            {Math.round(enrolledGig.matchScore * 100)}%
-                          </span>
+                      {/* Industries */}
+                      {('industries' in enrolledGig.gig && enrolledGig.gig.industries && enrolledGig.gig.industries.length > 0) ? (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {enrolledGig.gig.industries.slice(0, 3).map((industry) => (
+                              <span key={industry._id} className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
+                                {industry.name}
+                              </span>
+                            ))}
+                            {enrolledGig.gig.industries.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                                +{enrolledGig.gig.industries.length - 3} more
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
+                              N/A
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Activities */}
+                      {('activities' in enrolledGig.gig && enrolledGig.gig.activities && enrolledGig.gig.activities.length > 0) ? (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {enrolledGig.gig.activities.slice(0, 3).map((activity) => (
+                              <span key={activity._id} className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                                {activity.name}
+                              </span>
+                            ))}
+                            {enrolledGig.gig.activities.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                                +{enrolledGig.gig.activities.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                              N/A
+                            </span>
+                          </div>
+                        </div>
+                      )}
 
                       {enrolledGig.enrollmentNotes && (
                         <div>
