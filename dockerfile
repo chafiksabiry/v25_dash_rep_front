@@ -14,7 +14,6 @@ ENV VITE_API_URL=https://api-rep-dashboard.harx.ai
 ENV VITE_CALLS_API_URL=https://api-calls.harx.ai 
 ENV VITE_DASHBOARD_COMPANY_API_URL=https://api-dashboard.harx.ai/api
 ENV VITE_BACKEND_URL_GIGS=https://api-gigsmanual.harx.ai/api
-ENV VITE_MATCH_API_URL=https://api-match.harx.ai/api
 #ENV VITE_RUN_MODE=standalone
 ENV VITE_RUN_MODE=in-app
 ENV VITE_STANDALONE_USER_ID=6814d30f2c1ca099fe2b16b6
