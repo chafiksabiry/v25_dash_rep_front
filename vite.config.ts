@@ -22,9 +22,7 @@ export default defineConfig(({ mode }) => {
   return {
     base: 'https://rep-dashboard.harx.ai/',
     plugins: [
-      react({
-        jsxRuntime: 'classic',
-      }),
+      react(),
       qiankun('repdashboard', {
         useDevMode: true,
       }),
