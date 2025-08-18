@@ -1067,29 +1067,47 @@ export function GigsMarketplace() {
 
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
+                        <DollarSign className="w-4 h-4 mr-2" />
+                        <span>N/A EUR/yr base</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Users className="w-4 h-4 mr-2" />
+                        <span>N/A years experience</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{enrollment.gig.destination_zone}</span>
+                        <span>{enrollment.gig.destination_zone} (N/A)</span>
                       </div>
-                      
                       <div className="flex items-center text-sm text-gray-500">
-                        <Mail className="w-4 h-4 mr-2" />
-                        <span>Invited on {new Date(enrollment.invitationSentAt).toLocaleDateString()}</span>
+                        <Calendar className="w-4 h-4 mr-2" />
+                        <span>N/A h/week</span>
                       </div>
-                      
                       <div className="flex items-center text-sm text-gray-500">
-                        <Clock className="w-4 h-4 mr-2" />
-                        <span>Expires on {new Date(enrollment.invitationExpiresAt).toLocaleDateString()}</span>
+                        <User className="w-4 h-4 mr-2" />
+                        <span>Unknown</span>
                       </div>
+                    </div>
 
-
-
-                      {enrollment.matchScore && (
-                        <div className="flex items-center text-sm text-gray-500">
+                    <div className="mt-4 flex-grow">
+                      {/* Industries */}
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                        <div className="flex flex-wrap gap-1">
                           <span className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
-                            Match Score: {enrollment.matchScore}%
+                            N/A
                           </span>
                         </div>
-                      )}
+                      </div>
+
+                      {/* Activities */}
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                        <div className="flex flex-wrap gap-1">
+                          <span className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                            N/A
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="mt-6 flex space-x-3">
