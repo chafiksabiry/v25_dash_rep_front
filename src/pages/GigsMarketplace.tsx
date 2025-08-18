@@ -482,34 +482,39 @@ export function GigsMarketplace() {
         const gigIds = enrollmentData.enrollments.map((enrollment: InvitedEnrollment) => enrollment.gig._id);
         
         // Récupérer les données complètes des gigs depuis l'API des gigs
-        const gigsResponse = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/active`
-        );
-        
-        if (gigsResponse.ok) {
-          const gigsData = await gigsResponse.json();
-          if (gigsData.data && Array.isArray(gigsData.data)) {
-            // Fusionner les enrollments avec les données complètes des gigs
-            const enrichedEnrollments = enrollmentData.enrollments.map((enrollment: InvitedEnrollment) => {
-              const fullGig = gigsData.data.find((gig: PopulatedGig) => gig._id === enrollment.gig._id);
-              if (fullGig) {
+        const enrichedEnrollments = await Promise.all(
+          enrollmentData.enrollments.map(async (enrollment: InvitedEnrollment) => {
+            try {
+              const gigResponse = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${enrollment.gig._id}/details`
+              );
+              
+              if (gigResponse.ok) {
+                const gigData = await gigResponse.json();
+                console.log(`Full gig data for ${enrollment.gig._id}:`, gigData);
+                
                 return {
                   ...enrollment,
                   gig: {
                     ...enrollment.gig,
                     // Remplacer les données basiques par les données complètes
-                    ...fullGig
+                    ...gigData
                   }
                 };
+              } else {
+                console.warn(`Failed to fetch details for gig ${enrollment.gig._id}`);
+                return enrollment;
               }
+            } catch (error) {
+              console.error(`Error fetching details for gig ${enrollment.gig._id}:`, error);
               return enrollment;
-            });
-            
-            console.log('Enriched enrollments with full gig data:', enrichedEnrollments);
-            setInvitedEnrollments(enrichedEnrollments);
-            return;
-          }
-        }
+            }
+          })
+        );
+        
+        console.log('Enriched enrollments with full gig data:', enrichedEnrollments);
+        setInvitedEnrollments(enrichedEnrollments);
+        return;
         
         // Fallback: utiliser les données de base si l'API des gigs échoue
         console.log('Using fallback enrollment data');
