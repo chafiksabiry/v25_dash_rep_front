@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, Users, Globe, Calendar, Heart, User } from 'lucide-react';
+import { DollarSign, Users, Globe, Calendar, Heart, User, Mail, Clock } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 
 export function GigsMarketplace() {
@@ -252,8 +252,29 @@ export function GigsMarketplace() {
     updatedAt: Date;
   }
 
-  const [activeTab, setActiveTab] = useState<'available' | 'enrolled' | 'favorite'>('available');
+  // Interface pour les enrollments invités
+  interface InvitedEnrollment {
+    id: string;
+    gig: {
+      _id: string;
+      title: string;
+      description: string;
+      category: string;
+      destination_zone: string;
+    };
+    enrollmentStatus: string;
+    invitationSentAt: string;
+    invitationExpiresAt: string;
+    isExpired: boolean;
+    canEnroll: boolean;
+    notes?: string;
+    matchScore?: number | null;
+    matchStatus?: string | null;
+  }
+
+  const [activeTab, setActiveTab] = useState<'available' | 'enrolled' | 'favorite' | 'invited'>('available');
   const [gigs, setGigs] = useState<PopulatedGig[]>([]);
+  const [invitedEnrollments, setInvitedEnrollments] = useState<InvitedEnrollment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -354,6 +375,44 @@ export function GigsMarketplace() {
       setFavoriteGigs(prev => prev.filter(id => id !== gigId));
     } catch (error) {
       console.error('Error removing from favorites:', error);
+    }
+  };
+
+  // Fonction pour récupérer les enrollments invités
+  const fetchInvitedEnrollments = async () => {
+    const agentId = getAgentId();
+    const token = getAuthToken();
+    if (!agentId || !token) {
+      console.error('Agent ID or token not found');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/agent/${agentId}?status=invited`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch invited enrollments');
+      }
+      
+      const data = await response.json();
+      console.log('Invited enrollments response:', data);
+      
+      if (data.enrollments && Array.isArray(data.enrollments)) {
+        setInvitedEnrollments(data.enrollments);
+      } else {
+        console.error('Invalid invited enrollments data structure:', data);
+        setInvitedEnrollments([]);
+      }
+    } catch (error) {
+      console.error('Error fetching invited enrollments:', error);
+      setInvitedEnrollments([]);
     }
   };
 
@@ -502,10 +561,11 @@ export function GigsMarketplace() {
 
     fetchGigs();
     
-    // Fetch favorites when component mounts
+    // Fetch favorites and invited enrollments when component mounts
     const agentId = getAgentId();
     if (agentId) {
       fetchFavorites();
+      fetchInvitedEnrollments();
     }
   }, []);
 
@@ -623,6 +683,16 @@ export function GigsMarketplace() {
           }`}
         >
           Favorite Gigs
+        </button>
+        <button
+          onClick={() => setActiveTab('invited')}
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'invited'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Invited Gigs
         </button>
       </div>
 
@@ -859,6 +929,111 @@ export function GigsMarketplace() {
                     >
                       View Details
                     </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'invited' ? (
+        <div>
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : invitedEnrollments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-4">
+              <div className="bg-blue-50 rounded-xl p-8 max-w-md w-full text-center">
+                <h3 className="text-xl font-semibold text-blue-900 mb-2">
+                  No Invitations Yet
+                </h3>
+                <p className="text-blue-600">
+                  You haven't received any gig invitations yet. Keep your profile updated to increase your chances of being invited to exciting opportunities.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {invitedEnrollments.map((enrollment) => (
+                  <div key={enrollment.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{enrollment.gig.title}</h3>
+                        <p className="text-xs text-gray-500">{enrollment.gig.category}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                          Invited
+                        </span>
+                        {enrollment.isExpired && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                            Expired
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">{enrollment.gig.description}</p>
+
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Globe className="w-4 h-4 mr-2" />
+                        <span>{enrollment.gig.destination_zone}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Mail className="w-4 h-4 mr-2" />
+                        <span>Invited on {new Date(enrollment.invitationSentAt).toLocaleDateString()}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Clock className="w-4 h-4 mr-2" />
+                        <span>Expires on {new Date(enrollment.invitationExpiresAt).toLocaleDateString()}</span>
+                      </div>
+
+                      {enrollment.notes && (
+                        <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                          <p className="text-sm text-blue-800">
+                            <strong>Note:</strong> {enrollment.notes}
+                          </p>
+                        </div>
+                      )}
+
+                      {enrollment.matchScore && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          <span className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
+                            Match Score: {enrollment.matchScore}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-6 flex space-x-3">
+                      {enrollment.canEnroll && !enrollment.isExpired ? (
+                        <button 
+                          onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
+                          className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                          Accept Invitation
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
+                          className="flex-1 bg-gray-400 text-white py-2 px-4 rounded-lg cursor-not-allowed"
+                          disabled
+                        >
+                          {enrollment.isExpired ? 'Invitation Expired' : 'Cannot Enroll'}
+                        </button>
+                      )}
+                      
+                      <button 
+                        onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
+                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        View Details
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
