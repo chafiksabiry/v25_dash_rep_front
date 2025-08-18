@@ -378,6 +378,78 @@ export function GigsMarketplace() {
     }
   };
 
+  // Fonction pour accepter une invitation
+  const acceptInvitation = async (enrollmentId: string) => {
+    const token = getAuthToken();
+    if (!token) {
+      console.error('Token not found');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/${enrollmentId}/accept`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to accept invitation');
+      }
+      
+      console.log('Invitation accepted successfully');
+      // Retirer l'enrollment de la liste des invitations
+      setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
+      
+      // Optionnel : Afficher un message de succès
+      alert('Invitation acceptée avec succès !');
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      alert('Erreur lors de l\'acceptation de l\'invitation');
+    }
+  };
+
+  // Fonction pour rejeter une invitation
+  const rejectInvitation = async (enrollmentId: string) => {
+    const token = getAuthToken();
+    if (!token) {
+      console.error('Token not found');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/${enrollmentId}/reject`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to reject invitation');
+      }
+      
+      console.log('Invitation rejected successfully');
+      // Retirer l'enrollment de la liste des invitations
+      setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
+      
+      // Optionnel : Afficher un message de succès
+      alert('Invitation rejetée avec succès !');
+    } catch (error) {
+      console.error('Error rejecting invitation:', error);
+      alert('Erreur lors du rejet de l\'invitation');
+    }
+  };
+
   // Fonction pour récupérer les enrollments invités
   const fetchInvitedEnrollments = async () => {
     const agentId = getAgentId();
@@ -963,14 +1035,31 @@ export function GigsMarketplace() {
                         <p className="text-xs text-gray-500">{enrollment.gig.category}</p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                           Invited
                         </span>
-                        {enrollment.isExpired && (
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                            Expired
-                          </span>
-                        )}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            favoriteGigs.includes(enrollment.gig._id)
+                              ? removeFromFavorites(enrollment.gig._id)
+                              : addToFavorites(enrollment.gig._id);
+                          }}
+                          className={`p-1 rounded-full transition-colors ${
+                            favoriteGigs.includes(enrollment.gig._id)
+                              ? 'hover:bg-red-50'
+                              : 'hover:bg-gray-100'
+                          }`}
+                          title={favoriteGigs.includes(enrollment.gig._id) ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <Heart 
+                            className={`w-5 h-5 ${
+                              favoriteGigs.includes(enrollment.gig._id)
+                                ? 'text-red-500 fill-current'
+                                : 'text-gray-400'
+                            }`}
+                          />
+                        </button>
                       </div>
                     </div>
 
@@ -992,13 +1081,7 @@ export function GigsMarketplace() {
                         <span>Expires on {new Date(enrollment.invitationExpiresAt).toLocaleDateString()}</span>
                       </div>
 
-                      {enrollment.notes && (
-                        <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                          <p className="text-sm text-blue-800">
-                            <strong>Note:</strong> {enrollment.notes}
-                          </p>
-                        </div>
-                      )}
+
 
                       {enrollment.matchScore && (
                         <div className="flex items-center text-sm text-gray-500">
@@ -1010,22 +1093,21 @@ export function GigsMarketplace() {
                     </div>
 
                     <div className="mt-6 flex space-x-3">
-                      {enrollment.canEnroll && !enrollment.isExpired ? (
-                        <button 
-                          onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
-                          className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-                        >
-                          Accept Invitation
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
-                          className="flex-1 bg-gray-400 text-white py-2 px-4 rounded-lg cursor-not-allowed"
-                          disabled
-                        >
-                          {enrollment.isExpired ? 'Invitation Expired' : 'Cannot Enroll'}
-                        </button>
-                      )}
+                      <button 
+                        onClick={() => acceptInvitation(enrollment.id)}
+                        className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                        disabled={!enrollment.canEnroll || enrollment.isExpired}
+                      >
+                        Accept
+                      </button>
+                      
+                      <button 
+                        onClick={() => rejectInvitation(enrollment.id)}
+                        className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+                        disabled={!enrollment.canEnroll || enrollment.isExpired}
+                      >
+                        Reject
+                      </button>
                       
                       <button 
                         onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
