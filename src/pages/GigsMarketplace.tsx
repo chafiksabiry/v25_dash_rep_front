@@ -255,7 +255,7 @@ export function GigsMarketplace() {
   // Interface pour les enrollments invités
   interface InvitedEnrollment {
     id: string;
-    gig: {
+    gig: PopulatedGig | {
       _id: string;
       title: string;
       description: string;
@@ -450,7 +450,7 @@ export function GigsMarketplace() {
     }
   };
 
-  // Fonction pour récupérer les enrollments invités
+  // Fonction pour récupérer les enrollments invités avec données complètes des gigs
   const fetchInvitedEnrollments = async () => {
     const agentId = getAgentId();
     const token = getAuthToken();
@@ -460,7 +460,8 @@ export function GigsMarketplace() {
     }
 
     try {
-      const response = await fetch(
+      // Récupérer les enrollments invités
+      const enrollmentResponse = await fetch(
         `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/agent/${agentId}?status=invited`,
         {
           headers: {
@@ -469,17 +470,52 @@ export function GigsMarketplace() {
         }
       );
       
-      if (!response.ok) {
+      if (!enrollmentResponse.ok) {
         throw new Error('Failed to fetch invited enrollments');
       }
       
-      const data = await response.json();
-      console.log('Invited enrollments response:', data);
+      const enrollmentData = await enrollmentResponse.json();
+      console.log('Invited enrollments response:', enrollmentData);
       
-      if (data.enrollments && Array.isArray(data.enrollments)) {
-        setInvitedEnrollments(data.enrollments);
+      if (enrollmentData.enrollments && Array.isArray(enrollmentData.enrollments)) {
+        // Récupérer les IDs des gigs invités
+        const gigIds = enrollmentData.enrollments.map((enrollment: InvitedEnrollment) => enrollment.gig._id);
+        
+        // Récupérer les données complètes des gigs depuis l'API des gigs
+        const gigsResponse = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/active`
+        );
+        
+        if (gigsResponse.ok) {
+          const gigsData = await gigsResponse.json();
+          if (gigsData.data && Array.isArray(gigsData.data)) {
+            // Fusionner les enrollments avec les données complètes des gigs
+            const enrichedEnrollments = enrollmentData.enrollments.map((enrollment: InvitedEnrollment) => {
+              const fullGig = gigsData.data.find((gig: PopulatedGig) => gig._id === enrollment.gig._id);
+              if (fullGig) {
+                return {
+                  ...enrollment,
+                  gig: {
+                    ...enrollment.gig,
+                    // Remplacer les données basiques par les données complètes
+                    ...fullGig
+                  }
+                };
+              }
+              return enrollment;
+            });
+            
+            console.log('Enriched enrollments with full gig data:', enrichedEnrollments);
+            setInvitedEnrollments(enrichedEnrollments);
+            return;
+          }
+        }
+        
+        // Fallback: utiliser les données de base si l'API des gigs échoue
+        console.log('Using fallback enrollment data');
+        setInvitedEnrollments(enrollmentData.enrollments);
       } else {
-        console.error('Invalid invited enrollments data structure:', data);
+        console.error('Invalid invited enrollments data structure:', enrollmentData);
         setInvitedEnrollments([]);
       }
     } catch (error) {
@@ -1068,46 +1104,85 @@ export function GigsMarketplace() {
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>N/A EUR/yr base</span>
+                        <span>{('commission' in enrollment.gig && enrollment.gig.commission?.baseAmount) ? `${enrollment.gig.commission.baseAmount} ${enrollment.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
+                        {('commission' in enrollment.gig && enrollment.gig.commission?.bonus) && (
+                          <span className="ml-1 text-xs text-green-600">+ bonus</span>
+                        )}
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Users className="w-4 h-4 mr-2" />
-                        <span>N/A years experience</span>
+                        <span>{('seniority' in enrollment.gig && enrollment.gig.seniority?.yearsExperience) ? `${enrollment.gig.seniority.yearsExperience} years experience` : 'N/A years experience'}</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{enrollment.gig.destination_zone} (N/A)</span>
+                        <span>{enrollment.gig.destination_zone} ({('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.abbreviation) ? enrollment.gig.availability.time_zone.abbreviation : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.name) ? enrollment.gig.availability.time_zone.name : 'N/A'})</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
-                        <span>N/A h/week</span>
+                        <span>{('availability' in enrollment.gig && enrollment.gig.availability?.minimumHours?.weekly) ? `${enrollment.gig.availability.minimumHours.weekly}h/week` : 'N/A h/week'}</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <User className="w-4 h-4 mr-2" />
-                        <span>Unknown</span>
+                        <span>{('companyId' in enrollment.gig && enrollment.gig.companyId?.name) ? enrollment.gig.companyId.name : 'Unknown'}</span>
                       </div>
                     </div>
 
                     <div className="mt-4 flex-grow">
                       {/* Industries */}
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
-                        <div className="flex flex-wrap gap-1">
-                          <span className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
-                            N/A
-                          </span>
+                      {('industries' in enrollment.gig && enrollment.gig.industries && enrollment.gig.industries.length > 0) ? (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {enrollment.gig.industries.slice(0, 3).map((industry) => (
+                              <span key={industry._id} className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
+                                {industry.name}
+                              </span>
+                            ))}
+                            {enrollment.gig.industries.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                                +{enrollment.gig.industries.length - 3} more
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
+                              N/A
+                            </span>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Activities */}
-                      <div>
-                        <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
-                        <div className="flex flex-wrap gap-1">
-                          <span className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
-                            N/A
-                          </span>
+                      {('activities' in enrollment.gig && enrollment.gig.activities && enrollment.gig.activities.length > 0) ? (
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {enrollment.gig.activities.slice(0, 3).map((activity) => (
+                              <span key={activity._id} className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                                {activity.name}
+                              </span>
+                            ))}
+                            {enrollment.gig.activities.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                                +{enrollment.gig.activities.length - 3} more
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                              N/A
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-6 flex space-x-3">
