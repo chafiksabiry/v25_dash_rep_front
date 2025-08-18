@@ -357,6 +357,10 @@ export function GigsMarketplace() {
       return;
     }
 
+    console.log('🔄 Adding to favorites:', gigId);
+    console.log('📋 Current favoriteGigs:', favoriteGigs);
+    console.log('🔗 API URL:', `${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}/favorites/${gigId}`);
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}/favorites/${gigId}`,
@@ -368,8 +372,18 @@ export function GigsMarketplace() {
           },
         }
       );
-      if (!response.ok) throw new Error('Failed to add to favorites');
+      
+      console.log('📡 Add to favorites response:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Failed to add to favorites:', errorText);
+        throw new Error('Failed to add to favorites');
+      }
+      
+      console.log('✅ Successfully added to favorites');
       setFavoriteGigs(prev => [...prev, gigId]);
+      console.log('📋 Updated favoriteGigs:', [...favoriteGigs, gigId]);
     } catch (error) {
       console.error('Error adding to favorites:', error);
     }
@@ -384,6 +398,10 @@ export function GigsMarketplace() {
       return;
     }
 
+    console.log('🗑️ Removing from favorites:', gigId);
+    console.log('📋 Current favoriteGigs:', favoriteGigs);
+    console.log('🔗 API URL:', `${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}/favorites/${gigId}`);
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}/favorites/${gigId}`,
@@ -394,8 +412,18 @@ export function GigsMarketplace() {
           },
         }
       );
-      if (!response.ok) throw new Error('Failed to remove from favorites');
+      
+      console.log('📡 Remove from favorites response:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Failed to remove from favorites:', errorText);
+        throw new Error('Failed to remove from favorites');
+      }
+      
+      console.log('✅ Successfully removed from favorites');
       setFavoriteGigs(prev => prev.filter(id => id !== gigId));
+      console.log('📋 Updated favoriteGigs:', favoriteGigs.filter(id => id !== gigId));
     } catch (error) {
       console.error('Error removing from favorites:', error);
     }
