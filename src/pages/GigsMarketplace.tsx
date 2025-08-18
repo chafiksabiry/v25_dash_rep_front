@@ -494,8 +494,10 @@ export function GigsMarketplace() {
       const data = await response.json();
       console.log('Enrolled gigs response:', data);
       
-      if (data.enrolledGigs && Array.isArray(data.enrolledGigs)) {
-        setEnrolledGigs(data.enrolledGigs);
+      if (data.enrollments && Array.isArray(data.enrollments)) {
+        console.log('Found enrollments:', data.enrollments);
+        console.log('First enrollment structure:', data.enrollments[0]);
+        setEnrolledGigs(data.enrollments);
       } else {
         console.error('Invalid enrolled gigs data structure:', data);
         setEnrolledGigs([]);
@@ -1338,23 +1340,23 @@ export function GigsMarketplace() {
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{enrolledGig.gig.compensation}</span>
+                        <span>{enrolledGig.gig.compensation || 'N/A'}</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Users className="w-4 h-4 mr-2" />
-                        <span>{enrolledGig.gig.experience}</span>
+                        <span>{enrolledGig.gig.experience || 'N/A'}</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{enrolledGig.gig.destination_zone}</span>
+                        <span>{enrolledGig.gig.destination_zone || 'N/A'}</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
-                        <span>{enrolledGig.gig.workHours}</span>
+                        <span>{enrolledGig.gig.workHours || 'N/A'}</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <User className="w-4 h-4 mr-2" />
-                        <span>{enrolledGig.gig.company}</span>
+                        <span>{enrolledGig.gig.company || 'N/A'}</span>
                       </div>
                     </div>
 
