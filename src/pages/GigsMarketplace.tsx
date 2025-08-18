@@ -272,9 +272,32 @@ export function GigsMarketplace() {
     matchStatus?: string | null;
   }
 
+  // Interface pour les gigs inscrits
+  interface EnrolledGig {
+    id: string;
+    gig: {
+      _id: string;
+      title: string;
+      description: string;
+      category: string;
+      destination_zone: string;
+      company: string;
+      compensation: string;
+      experience: string;
+      workHours: string;
+    };
+    enrollmentStatus: string;
+    enrollmentDate: string;
+    enrollmentNotes?: string;
+    status: string;
+    matchScore: number;
+    matchStatus: string;
+  }
+
   const [activeTab, setActiveTab] = useState<'available' | 'enrolled' | 'favorite' | 'invited'>('available');
   const [gigs, setGigs] = useState<PopulatedGig[]>([]);
   const [invitedEnrollments, setInvitedEnrollments] = useState<InvitedEnrollment[]>([]);
+  const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -406,11 +429,10 @@ export function GigsMarketplace() {
       // Retirer l'enrollment de la liste des invitations
       setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
       
-      // Optionnel : Afficher un message de succès
-      alert('Invitation acceptée avec succès !');
+      // Rafraîchir la liste des gigs inscrits
+      fetchEnrolledGigs();
     } catch (error) {
       console.error('Error accepting invitation:', error);
-      alert('Erreur lors de l\'acceptation de l\'invitation');
     }
   };
 
@@ -441,12 +463,46 @@ export function GigsMarketplace() {
       console.log('Invitation rejected successfully');
       // Retirer l'enrollment de la liste des invitations
       setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
-      
-      // Optionnel : Afficher un message de succès
-      alert('Invitation rejetée avec succès !');
     } catch (error) {
       console.error('Error rejecting invitation:', error);
-      alert('Erreur lors du rejet de l\'invitation');
+    }
+  };
+
+  // Fonction pour récupérer les gigs inscrits
+  const fetchEnrolledGigs = async () => {
+    const agentId = getAgentId();
+    const token = getAuthToken();
+    if (!agentId || !token) {
+      console.error('Agent ID or token not found');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/agent/${agentId}/gigs`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch enrolled gigs');
+      }
+      
+      const data = await response.json();
+      console.log('Enrolled gigs response:', data);
+      
+      if (data.enrolledGigs && Array.isArray(data.enrolledGigs)) {
+        setEnrolledGigs(data.enrolledGigs);
+      } else {
+        console.error('Invalid enrolled gigs data structure:', data);
+        setEnrolledGigs([]);
+      }
+    } catch (error) {
+      console.error('Error fetching enrolled gigs:', error);
+      setEnrolledGigs([]);
     }
   };
 
@@ -674,11 +730,12 @@ export function GigsMarketplace() {
 
     fetchGigs();
     
-    // Fetch favorites and invited enrollments when component mounts
+    // Fetch favorites, invited enrollments and enrolled gigs when component mounts
     const agentId = getAgentId();
     if (agentId) {
       fetchFavorites();
       fetchInvitedEnrollments();
+      fetchEnrolledGigs();
     }
   }, []);
 
@@ -1210,6 +1267,123 @@ export function GigsMarketplace() {
                       <button 
                         onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
                         className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'enrolled' ? (
+        <div>
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : enrolledGigs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-4">
+              <div className="bg-blue-50 rounded-xl p-8 max-w-md w-full text-center">
+                <h3 className="text-xl font-semibold text-blue-900 mb-2">
+                  No Enrolled Gigs Yet
+                </h3>
+                <p className="text-blue-600">
+                  You haven't enrolled in any gigs yet. Accept invitations from the "Invited Gigs" tab to get started!
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {enrolledGigs.map((enrolledGig) => (
+                  <div key={enrolledGig.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{enrolledGig.gig.title}</h3>
+                        <p className="text-xs text-gray-500">{enrolledGig.gig.category}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                          Enrolled
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            favoriteGigs.includes(enrolledGig.gig._id)
+                              ? removeFromFavorites(enrolledGig.gig._id)
+                              : addToFavorites(enrolledGig.gig._id);
+                          }}
+                          className={`p-1 rounded-full transition-colors ${
+                            favoriteGigs.includes(enrolledGig.gig._id)
+                              ? 'hover:bg-red-50'
+                              : 'hover:bg-gray-100'
+                          }`}
+                          title={favoriteGigs.includes(enrolledGig.gig._id) ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <Heart 
+                            className={`w-5 h-5 ${
+                              favoriteGigs.includes(enrolledGig.gig._id)
+                                ? 'text-red-500 fill-current'
+                                : 'text-gray-400'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">{enrolledGig.gig.description}</p>
+
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <DollarSign className="w-4 h-4 mr-2" />
+                        <span>{enrolledGig.gig.compensation}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Users className="w-4 h-4 mr-2" />
+                        <span>{enrolledGig.gig.experience}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Globe className="w-4 h-4 mr-2" />
+                        <span>{enrolledGig.gig.destination_zone}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        <span>{enrolledGig.gig.workHours}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <User className="w-4 h-4 mr-2" />
+                        <span>{enrolledGig.gig.company}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex-grow">
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Match Score:</p>
+                        <div className="flex flex-wrap gap-1">
+                          <span className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
+                            {Math.round(enrolledGig.matchScore * 100)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {enrolledGig.enrollmentNotes && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-2">Notes:</p>
+                          <div className="p-3 bg-blue-50 rounded-lg">
+                            <p className="text-sm text-blue-800">
+                              {enrolledGig.enrollmentNotes}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-6">
+                      <button 
+                        onClick={() => navigate(`/gig/${enrolledGig.gig._id}`)}
+                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
                       >
                         View Details
                       </button>
