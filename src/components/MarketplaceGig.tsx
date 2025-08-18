@@ -1,3 +1,4 @@
+// Marketplace gigs
 import React from 'react';
 import { Briefcase, Clock, DollarSign, Star, Users } from 'lucide-react';
 
