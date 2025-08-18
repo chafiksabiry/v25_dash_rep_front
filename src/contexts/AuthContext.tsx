@@ -1,48 +1,167 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import Cookies from 'js-cookie';
+import { repApiClient } from '../utils/client';
+import { getAgentId, getAuthToken } from '../utils/authUtils';
 
 interface AuthContextType {
-  currentUser: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: any;
+  logout: () => void;
+  checkAuthStatus: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function useAuth() {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>({
-    id: '682b590b4d60b1ff380973c2',
-    name: 'Test User',
-    email: 'test@example.com'
-  });
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-  const login = async (email: string, password: string) => {
-    // Implement your login logic here
-    console.log('Login with:', email, password);
+  // Fonction utilitaire pour construire l'URL de l'app principale
+  const getMainAppUrl = () => {
+    return `${window.location.protocol}//${window.location.host}/app1`;
   };
 
-  const logout = async () => {
-    // Implement your logout logic here
-    setCurrentUser(null);
+  // Fonction pour vérifier si l'utilisateur est authentifié (utilisée uniquement si nécessaire)
+  const checkAuthStatus = useCallback(() => {
+    const agentId = getAgentId();
+    const token = getAuthToken();
+    
+    // Ne pas logger à chaque fois pour éviter le spam de console
+    const isAuth = !!(agentId && token);
+    
+    // Seulement mettre à jour si l'état a changé
+    if (isAuthenticated !== isAuth) {
+      console.log('Auth status changed:', { agentId: !!agentId, token: !!token });
+      setIsAuthenticated(isAuth);
+      
+      if (isAuth) {
+        setUser({ agentId, token });
+      } else {
+        setUser(null);
+      }
+    }
+    
+    return isAuth;
+  }, [isAuthenticated]);
+
+  // Fonction de logout sécurisée
+  const logout = () => {
+    console.log('Performing secure logout...');
+    
+    // 1. Nettoyer le localStorage
+    localStorage.clear();
+    
+    // 2. Nettoyer tous les cookies
+    const cookies = Cookies.get();
+    Object.keys(cookies).forEach(cookieName => {
+      Cookies.remove(cookieName, { path: '/' });
+      // Essayer aussi de supprimer avec différents domaines si nécessaire
+      Cookies.remove(cookieName, { path: '/', domain: window.location.hostname });
+    });
+    
+    // 3. Nettoyer l'état local
+    setIsAuthenticated(false);
+    setUser(null);
+    
+    // 4. Construire l'URL complète pour rediriger vers l'app principale
+    const mainAppUrl = getMainAppUrl();
+    
+    // 5. Nettoyer l'historique du navigateur pour empêcher le retour
+    window.history.replaceState(null, null, mainAppUrl);
+    
+    // 6. Rediriger vers l'application principale (pas la sous-app)
+    window.location.replace(mainAppUrl);
   };
+
+  // Vérification initiale au chargement
+  useEffect(() => {
+    setIsLoading(true);
+    
+    const agentId = getAgentId();
+    const token = getAuthToken();
+    
+    console.log('Initial auth check:', { agentId: !!agentId, token: !!token });
+    
+    const isAuth = !!(agentId && token);
+    setIsAuthenticated(isAuth);
+    
+    if (isAuth) {
+      setUser({ agentId, token });
+    } else {
+      setUser(null);
+    }
+    
+    setIsLoading(false);
+  }, []);
+
+  // Écouter les changements dans localStorage/cookies depuis d'autres onglets
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'token' && !e.newValue && isAuthenticated) {
+        // Token supprimé dans un autre onglet - logout direct
+        console.log('Token removed in another tab, logging out...');
+        setIsAuthenticated(false);
+        setUser(null);
+        window.location.replace(getMainAppUrl());
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [isAuthenticated]);
+
+  // Intercepter les erreurs 401 globalement
+  useEffect(() => {
+    if (!repApiClient?.interceptors?.response) {
+      console.warn('repApiClient interceptors not available');
+      return;
+    }
+    
+    const interceptorId = repApiClient.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401 && isAuthenticated) {
+          console.log('401 error detected, logging out...');
+          // Appel direct du logout pour éviter les boucles
+          localStorage.clear();
+          const cookies = Cookies.get();
+          Object.keys(cookies).forEach(cookieName => {
+            Cookies.remove(cookieName, { path: '/' });
+          });
+          setIsAuthenticated(false);
+          setUser(null);
+          window.location.replace(getMainAppUrl());
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      if (repApiClient?.interceptors?.response?.eject) {
+        repApiClient.interceptors.response.eject(interceptorId);
+      }
+    };
+  }, [isAuthenticated]);
 
   const value = {
-    currentUser,
-    login,
-    logout
+    isAuthenticated,
+    isLoading,
+    user,
+    logout,
+    checkAuthStatus
   };
 
   return (
@@ -50,4 +169,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-} 
+}; 
