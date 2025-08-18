@@ -809,38 +809,73 @@ export function GigsMarketplace() {
     }
   }, []);
 
-  // Filter and sort gigs
-  const filteredAndSortedGigs = gigs
-    .filter(gig => {
-      switch (activeTab) {
-        case 'available':
-          // Tous les gigs sont déjà actifs depuis l'endpoint /gigs/active
-          return true;
-        case 'enrolled':
-          // TODO: Add enrolled gigs logic
-          return false;
-        case 'favorite':
-          console.log('Checking if gig is favorite:', {
-            gigId: gig._id,
-            favoriteGigs,
-            isFavorite: favoriteGigs.includes(gig._id)
+  // Filter and sort gigs based on active tab
+  const getFilteredAndSortedGigs = () => {
+    switch (activeTab) {
+      case 'available':
+        return gigs
+          .sort((a, b) => {
+            switch (sortBy) {
+              case 'salary':
+                return parseInt(b.commission.baseAmount) - parseInt(a.commission.baseAmount);
+              case 'experience':
+                return parseInt(b.seniority.yearsExperience) - parseInt(a.seniority.yearsExperience);
+              case 'latest':
+              default:
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            }
           });
-          return favoriteGigs.includes(gig._id);
-        default:
-          return false;
-      }
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'salary':
-          return parseInt(b.commission.baseAmount) - parseInt(a.commission.baseAmount);
-        case 'experience':
-          return parseInt(b.seniority.yearsExperience) - parseInt(a.seniority.yearsExperience);
-        case 'latest':
-        default:
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-    });
+      
+      case 'enrolled':
+        return enrolledGigs
+          .sort((a, b) => {
+            switch (sortBy) {
+              case 'salary':
+                // Pour les gigs inscrits, utiliser les données de base
+                return 0; // Pas de tri par salaire pour les gigs inscrits
+              case 'experience':
+                return 0; // Pas de tri par expérience pour les gigs inscrits
+              case 'latest':
+              default:
+                return new Date(a.enrollmentDate).getTime() - new Date(b.enrollmentDate).getTime();
+            }
+          });
+      
+      case 'favorite':
+        return gigs
+          .filter(gig => favoriteGigs.includes(gig._id))
+          .sort((a, b) => {
+            switch (sortBy) {
+              case 'salary':
+                return parseInt(b.commission.baseAmount) - parseInt(a.commission.baseAmount);
+              case 'experience':
+                return parseInt(b.seniority.yearsExperience) - parseInt(a.seniority.yearsExperience);
+              case 'latest':
+              default:
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            }
+          });
+      
+      case 'invited':
+        return invitedEnrollments
+          .sort((a, b) => {
+            switch (sortBy) {
+              case 'salary':
+                return 0; // Pas de tri par salaire pour les gigs invités
+              case 'experience':
+                return 0; // Pas de tri par expérience pour les gigs invités
+              case 'latest':
+              default:
+                return new Date(a.invitationSentAt).getTime() - new Date(b.invitationSentAt).getTime();
+            }
+          });
+      
+      default:
+        return [];
+    }
+  };
+
+  const filteredAndSortedGigs = getFilteredAndSortedGigs();
 
   // Pagination logic
   const indexOfLastGig = currentPage * gigsPerPage;
@@ -852,27 +887,15 @@ export function GigsMarketplace() {
   console.log('🎯 GIGS ACTUELLEMENT AFFICHÉS:', {
     activeTab,
     totalGigs: gigs.length,
+    totalEnrolledGigs: enrolledGigs.length,
+    totalInvitedEnrollments: invitedEnrollments.length,
     filteredGigs: filteredAndSortedGigs.length,
     currentGigs: currentGigs.length,
-    currentGigsData: currentGigs.map(gig => ({
-      id: gig._id,
-      title: gig.title,
-      company: gig.companyId?.name,
-      industries: gig.industries?.map(ind => ind.name || ind),
-      technicalSkills: gig.skills?.technical?.map(skill => ({
-        name: skill.skill?.name,
-        details: skill.details,
-        level: skill.level,
-        fullSkill: skill
-      })),
-      languages: gig.skills?.languages?.map(lang => ({
-        name: lang.language?.name,
-        iso: lang.iso639_1,
-        proficiency: lang.proficiency,
-        fullLang: lang
-      }))
-    }))
+    currentPage,
+    totalPages
   });
+
+
 
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading...</div>;
