@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 
@@ -475,10 +475,10 @@ export function GigDetails() {
       setApplicationStatus('success');
       setApplicationMessage(data.message || 'Candidature envoyée avec succès!');
       
-      // Rediriger vers la page des gigs inscrits après un délai
-      setTimeout(() => {
-        navigate('/gigs-marketplace?tab=enrolled');
-      }, 2000);
+      // Ne pas rediriger, juste changer le statut du bouton
+      // setTimeout(() => {
+      //   navigate('/gigs-marketplace?tab=enrolled');
+      // }, 2000);
       
     } catch (err) {
       console.error('❌ Error applying to gig:', err);
@@ -544,9 +544,9 @@ export function GigDetails() {
               <div className="ml-6">
                 {/* Status message */}
                 {applicationStatus === 'success' && (
-                  <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-800 font-medium">
-                      ✅ {applicationMessage}
+                  <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-sm text-orange-800 font-medium">
+                      ⏳ {applicationMessage}
                     </p>
                   </div>
                 )}
@@ -563,8 +563,10 @@ export function GigDetails() {
                   onClick={handleApply}
                   disabled={applying || applicationStatus === 'success'}
                   className={`px-5 py-2 rounded-lg transition-colors font-medium text-sm shadow-md ${
-                    applying || applicationStatus === 'success'
+                    applying
                       ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                      : applicationStatus === 'success'
+                      ? 'bg-orange-500 text-white cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
@@ -574,7 +576,10 @@ export function GigDetails() {
                       En cours...
                     </span>
                   ) : applicationStatus === 'success' ? (
-                    'Candidature envoyée!'
+                    <span className="flex items-center">
+                      <Clock className="w-4 h-4 mr-2" />
+                      Pending
+                    </span>
                   ) : (
                     'Apply Now'
                   )}
@@ -582,7 +587,7 @@ export function GigDetails() {
                 
                 <p className="text-xs text-gray-500 mt-2 text-center max-w-[140px]">
                   {applicationStatus === 'success' 
-                    ? 'Redirection en cours...'
+                    ? 'Votre candidature est en attente de validation'
                     : 'Join this opportunity and start earning immediately'
                   }
                 </p>
