@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import Cookies from 'js-cookie';
+import { getAgentId, getAuthToken } from '../utils/authUtils';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
 interface PopulatedGig {
@@ -285,6 +286,11 @@ export function GigDetails() {
   const [totalLeads, setTotalLeads] = useState(0);
   const limit = 50; // Nombre de leads par page (maximum supporté par le backend)
 
+  // États pour l'application
+  const [applying, setApplying] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [applicationMessage, setApplicationMessage] = useState('');
+
   useEffect(() => {
     const fetchGigDetails = async () => {
       if (!gigId) {
@@ -414,6 +420,75 @@ export function GigDetails() {
     }
   };
 
+  // Fonction pour postuler au gig
+  const handleApply = async () => {
+    const agentId = getAgentId();
+    const token = getAuthToken();
+    
+    if (!agentId || !token) {
+      setApplicationStatus('error');
+      setApplicationMessage('Vous devez être connecté pour postuler');
+      return;
+    }
+
+    if (!gigId) {
+      setApplicationStatus('error');
+      setApplicationMessage('ID du gig non trouvé');
+      return;
+    }
+
+    setApplying(true);
+    setApplicationStatus('idle');
+    setApplicationMessage('');
+
+    try {
+      console.log('🚀 Applying to gig:', gigId);
+      console.log('👤 Agent ID:', agentId);
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/request`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            agentId: agentId,
+            gigId: gigId,
+            notes: "Je suis très intéressé par ce projet et j'ai une expérience pertinente en développement frontend."
+          }),
+        }
+      );
+
+      console.log('📡 Application response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Application failed:', errorText);
+        throw new Error(`Échec de la candidature: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Application successful:', data);
+      
+      setApplicationStatus('success');
+      setApplicationMessage(data.message || 'Candidature envoyée avec succès!');
+      
+      // Rediriger vers la page des gigs inscrits après un délai
+      setTimeout(() => {
+        navigate('/gigs-marketplace?tab=enrolled');
+      }, 2000);
+      
+    } catch (err) {
+      console.error('❌ Error applying to gig:', err);
+      setApplicationStatus('error');
+      setApplicationMessage(err instanceof Error ? err.message : 'Erreur lors de la candidature');
+    } finally {
+      setApplying(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -467,11 +542,49 @@ export function GigDetails() {
                 </div>
               </div>
               <div className="ml-6">
-                <button className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm shadow-md">
-                  Apply Now
+                {/* Status message */}
+                {applicationStatus === 'success' && (
+                  <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800 font-medium">
+                      ✅ {applicationMessage}
+                    </p>
+                  </div>
+                )}
+                
+                {applicationStatus === 'error' && (
+                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-800 font-medium">
+                      ❌ {applicationMessage}
+                    </p>
+                  </div>
+                )}
+
+                <button 
+                  onClick={handleApply}
+                  disabled={applying || applicationStatus === 'success'}
+                  className={`px-5 py-2 rounded-lg transition-colors font-medium text-sm shadow-md ${
+                    applying || applicationStatus === 'success'
+                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {applying ? (
+                    <span className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      En cours...
+                    </span>
+                  ) : applicationStatus === 'success' ? (
+                    'Candidature envoyée!'
+                  ) : (
+                    'Apply Now'
+                  )}
                 </button>
+                
                 <p className="text-xs text-gray-500 mt-2 text-center max-w-[140px]">
-                  Join this opportunity and start earning immediately
+                  {applicationStatus === 'success' 
+                    ? 'Redirection en cours...'
+                    : 'Join this opportunity and start earning immediately'
+                  }
                 </p>
               </div>
             </div>
