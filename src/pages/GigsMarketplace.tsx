@@ -573,13 +573,20 @@ export function GigsMarketplace() {
               }
               
               console.log(`Full enrolled gig data for ${enrollment.gig._id}:`, fullGigData);
+              console.log('🔍 Industries in fullGigData:', fullGigData.industries);
+              console.log('🔍 Activities in fullGigData:', fullGigData.activities);
               
               return {
                 ...enrollment,
                 gig: {
-                  ...enrollment.gig,
-                  // Remplacer les données basiques par les données complètes
-                  ...fullGigData
+                  // Utiliser les données complètes du gig en priorité
+                  ...fullGigData,
+                  // Garder seulement les propriétés spécifiques à l'enrollment si nécessaire
+                  _id: enrollment.gig._id,
+                  title: enrollment.gig.title,
+                  description: enrollment.gig.description,
+                  category: enrollment.gig.category,
+                  destination_zone: enrollment.gig.destination_zone
                 }
               };
             } catch (error) {
@@ -675,13 +682,20 @@ export function GigsMarketplace() {
               }
               
               console.log(`Full gig data for ${enrollment.gig._id}:`, fullGigData);
+              console.log('🔍 Industries in fullGigData:', fullGigData.industries);
+              console.log('🔍 Activities in fullGigData:', fullGigData.activities);
               
               return {
                 ...enrollment,
                 gig: {
-                  ...enrollment.gig,
-                  // Remplacer les données basiques par les données complètes
-                  ...fullGigData
+                  // Utiliser les données complètes du gig en priorité
+                  ...fullGigData,
+                  // Garder seulement les propriétés spécifiques à l'enrollment si nécessaire
+                  _id: enrollment.gig._id,
+                  title: enrollment.gig.title,
+                  description: enrollment.gig.description,
+                  category: enrollment.gig.category,
+                  destination_zone: enrollment.gig.destination_zone
                 }
               };
             } catch (error) {
@@ -1569,16 +1583,7 @@ export function GigsMarketplace() {
                         </div>
                       )}
 
-                      {enrolledGig.enrollmentNotes && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-700 mb-2">Notes:</p>
-                          <div className="p-3 bg-blue-50 rounded-lg">
-                            <p className="text-sm text-blue-800">
-                              {enrolledGig.enrollmentNotes}
-                            </p>
-                          </div>
-                        </div>
-                      )}
+
                     </div>
 
                     <div className="mt-6">

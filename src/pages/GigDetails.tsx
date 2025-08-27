@@ -610,14 +610,6 @@ export function GigDetails() {
               </div>
               <div className="ml-6">
                 {/* Status message */}
-                {applicationStatus === 'success' && (
-                  <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-800 font-medium">
-                      ✅ {applicationMessage}
-                    </p>
-                  </div>
-                )}
-                
                 {applicationStatus === 'error' && (
                   <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-sm text-red-800 font-medium">
@@ -672,7 +664,7 @@ export function GigDetails() {
                     ) : (
                       'Apply Now'
                     )}
-                  </button>
+                </button>
                 )}
                 
                 <p className="text-xs text-gray-500 mt-2 text-center max-w-[140px]">
