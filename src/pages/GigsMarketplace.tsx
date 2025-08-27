@@ -1569,16 +1569,7 @@ export function GigsMarketplace() {
                         </div>
                       )}
 
-                      {enrolledGig.enrollmentNotes && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-700 mb-2">Notes:</p>
-                          <div className="p-3 bg-blue-50 rounded-lg">
-                            <p className="text-sm text-blue-800">
-                              {enrolledGig.enrollmentNotes}
-                            </p>
-                          </div>
-                        </div>
-                      )}
+
                     </div>
 
                     <div className="mt-6">
