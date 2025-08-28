@@ -439,7 +439,7 @@ export function GigsMarketplace() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL_GIGS}/gig-agents/enrollment-requests/${enrollmentId}/accept`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-requests/${enrollmentId}/accept`,
         {
           method: 'POST',
           headers: {
@@ -474,7 +474,7 @@ export function GigsMarketplace() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL_GIGS}/gig-agents/enrollment-requests/${enrollmentId}/reject`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-requests/${enrollmentId}/reject`,
         {
           method: 'POST',
           headers: {
@@ -572,7 +572,7 @@ export function GigsMarketplace() {
     try {
       // Utiliser la nouvelle endpoint gig-agents/enrollment-requests pour récupérer les invitations
       const enrollmentResponse = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL_GIGS}/gig-agents/enrollment-requests/agent/${agentId}?status=invited`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-requests/agent/${agentId}?status=invited`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
