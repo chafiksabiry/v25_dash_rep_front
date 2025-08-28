@@ -552,7 +552,7 @@ export function GigDetails() {
       console.log('👤 Agent ID:', agentId);
       
       const response = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-request/${agentId}/${gigId}`,
         {
           method: 'POST',
           headers: {
@@ -560,8 +560,6 @@ export function GigDetails() {
             'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
-            agentId: agentId,
-            gigId: gigId,
             notes: "I am very interested in this project and have relevant experience in frontend development."
           }),
         }
