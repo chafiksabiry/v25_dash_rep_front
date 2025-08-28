@@ -508,7 +508,7 @@ export function GigsMarketplace() {
     try {
       // Utiliser le nouvel endpoint /gig-agents/enrolled/agent/{agentId}
       const enrollmentResponse = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL_GIGS}/gig-agents/enrolled/agent/${agentId}`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrolled/agent/${agentId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
