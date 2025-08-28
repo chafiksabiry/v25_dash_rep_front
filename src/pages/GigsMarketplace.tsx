@@ -529,24 +529,26 @@ export function GigsMarketplace() {
         console.log('First enrollment structure:', enrollmentData[0]);
         
         // Transformer les données pour correspondre à l'interface EnrolledGig
-        const transformedEnrollments = enrollmentData.map((gigAgent: any) => ({
-          id: gigAgent._id,
-          gig: {
-            _id: gigAgent.gigId._id,
-            title: gigAgent.gigId.title,
-            description: gigAgent.gigId.description,
-            category: gigAgent.gigId.category,
-            destination_zone: gigAgent.gigId.destination_zone,
-            // Copier toutes les autres propriétés du gig
-            ...gigAgent.gigId
-          },
-          enrollmentStatus: gigAgent.status, // 'accepted' pour les gigs inscrits
-          enrollmentDate: gigAgent.enrollmentDate || gigAgent.agentResponseAt,
-          enrollmentNotes: gigAgent.enrollmentNotes,
-          status: gigAgent.status,
-          matchScore: gigAgent.matchScore,
-          matchStatus: gigAgent.matchStatus
-        }));
+        const transformedEnrollments = enrollmentData
+          .filter((gigAgent: any) => gigAgent.gigId) // Filtrer les enrollments sans gigId
+          .map((gigAgent: any) => ({
+            id: gigAgent._id,
+            gig: {
+              _id: gigAgent.gigId._id,
+              title: gigAgent.gigId.title,
+              description: gigAgent.gigId.description,
+              category: gigAgent.gigId.category,
+              destination_zone: gigAgent.gigId.destination_zone,
+              // Copier toutes les autres propriétés du gig
+              ...gigAgent.gigId
+            },
+            enrollmentStatus: gigAgent.status, // 'accepted' pour les gigs inscrits
+            enrollmentDate: gigAgent.enrollmentDate || gigAgent.agentResponseAt,
+            enrollmentNotes: gigAgent.enrollmentNotes,
+            status: gigAgent.status,
+            matchScore: gigAgent.matchScore,
+            matchStatus: gigAgent.matchStatus
+          }));
         
         console.log('Transformed enrolled gigs:', transformedEnrollments);
         setEnrolledGigs(transformedEnrollments);
@@ -593,26 +595,28 @@ export function GigsMarketplace() {
         console.log('First invited enrollment structure:', enrollmentData[0]);
         
         // Transformer les données pour correspondre à l'interface InvitedEnrollment
-        const transformedInvitations = enrollmentData.map((gigAgent: any) => ({
-          id: gigAgent._id,
-                gig: {
-            _id: gigAgent.gigId._id,
-            title: gigAgent.gigId.title,
-            description: gigAgent.gigId.description,
-            category: gigAgent.gigId.category,
-            destination_zone: gigAgent.gigId.destination_zone,
-            // Copier toutes les autres propriétés du gig
-            ...gigAgent.gigId
-          },
-          enrollmentStatus: gigAgent.status, // 'invited' pour les invitations
-          invitationSentAt: gigAgent.invitationSentAt,
-          invitationExpiresAt: gigAgent.invitationExpiresAt,
-          isExpired: new Date(gigAgent.invitationExpiresAt) < new Date(),
-          canEnroll: (gigAgent.status === 'invited' || gigAgent.status === 'pending') && new Date(gigAgent.invitationExpiresAt) > new Date(),
-          notes: gigAgent.notes,
-          matchScore: gigAgent.matchScore,
-          matchStatus: gigAgent.matchStatus
-        }));
+        const transformedInvitations = enrollmentData
+          .filter((gigAgent: any) => gigAgent.gigId) // Filtrer les enrollments sans gigId
+          .map((gigAgent: any) => ({
+            id: gigAgent._id,
+            gig: {
+              _id: gigAgent.gigId._id,
+              title: gigAgent.gigId.title,
+              description: gigAgent.gigId.description,
+              category: gigAgent.gigId.category,
+              destination_zone: gigAgent.gigId.destination_zone,
+              // Copier toutes les autres propriétés du gig
+              ...gigAgent.gigId
+            },
+            enrollmentStatus: gigAgent.status, // 'invited' pour les invitations
+            invitationSentAt: gigAgent.invitationSentAt,
+            invitationExpiresAt: gigAgent.invitationExpiresAt,
+            isExpired: new Date(gigAgent.invitationExpiresAt) < new Date(),
+            canEnroll: (gigAgent.status === 'invited' || gigAgent.status === 'pending') && new Date(gigAgent.invitationExpiresAt) > new Date(),
+            notes: gigAgent.notes,
+            matchScore: gigAgent.matchScore,
+            matchStatus: gigAgent.matchStatus
+          }));
         
         console.log('Transformed invited enrollments:', transformedInvitations);
         setInvitedEnrollments(transformedInvitations);
