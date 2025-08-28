@@ -420,14 +420,13 @@ export function GigDetails() {
           }
         } catch (invitedErr) {
           console.log('ℹ️ Could not check invitation status:', invitedErr);
-          // Continue avec la vérification des demandes d'enrollment
         }
 
-        // Vérifier si l'agent a déjà fait une demande d'enrollment
+        // Vérifier si l'agent a déjà fait une demande d'enrollment en regardant les gigs enrolled
         try {
           console.log('🔍 Checking if agent has pending enrollment request');
-          const enrollmentResponse = await fetch(
-            `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-requests/agent/${agentId}`,
+          const enrolledResponse = await fetch(
+            `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrolled/agent/${agentId}`,
             {
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -435,13 +434,14 @@ export function GigDetails() {
             }
           );
 
-          if (enrollmentResponse.ok) {
-            const enrollmentData = await enrollmentResponse.json();
-            console.log('📝 Enrollment requests data:', enrollmentData);
+          if (enrolledResponse.ok) {
+            const enrolledData = await enrolledResponse.json();
+            console.log('📝 Enrolled gigs data:', enrolledData);
             
-            // Vérifier si il y a une demande en attente pour ce gig
-            const hasPendingRequest = enrollmentData.some((request: any) => 
-              request.gigId === gigId || request.gigId?._id === gigId
+            // Vérifier si il y a une demande en attente pour ce gig (status pending)
+            const hasPendingRequest = enrolledData.some((enrollment: any) => 
+              (enrollment.gigId === gigId || enrollment.gigId?._id === gigId) && 
+              enrollment.status === 'pending'
             );
             
             if (hasPendingRequest) {
@@ -450,8 +450,8 @@ export function GigDetails() {
               return;
             }
           }
-        } catch (enrollmentErr) {
-          console.log('ℹ️ Could not check enrollment requests:', enrollmentErr);
+        } catch (enrolledErr) {
+          console.log('ℹ️ Could not check enrolled gigs:', enrolledErr);
         }
 
         // Si aucune des vérifications n'a trouvé de statut, l'agent n'a pas de relation avec ce gig
@@ -552,7 +552,7 @@ export function GigDetails() {
       console.log('👤 Agent ID:', agentId);
       
       const response = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-requests`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents`,
         {
           method: 'POST',
           headers: {
