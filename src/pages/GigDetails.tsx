@@ -393,7 +393,7 @@ export function GigDetails() {
 
         // Vérifier le statut d'enrollment via la nouvelle API gig-agents
         const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL_GIGS}/gig-agents/enrollment-requests/agent/${agentId}`,
+          `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-requests/agent/${agentId}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -525,7 +525,7 @@ export function GigDetails() {
       console.log('👤 Agent ID:', agentId);
       
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL_GIGS}/gig-agents/enrollment-requests`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-requests`,
         {
           method: 'POST',
           headers: {
