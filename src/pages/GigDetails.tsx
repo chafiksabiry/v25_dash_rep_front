@@ -391,9 +391,9 @@ export function GigDetails() {
           }
         }
 
-        // Vérifier le statut d'enrollment via l'API
+        // Vérifier le statut d'enrollment via la nouvelle API gig-agents
         const response = await fetch(
-          `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/agent/${agentId}/gigs`,
+          `${import.meta.env.VITE_BACKEND_URL_GIGS}/gig-agents/enrollment-requests/agent/${agentId}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -405,23 +405,33 @@ export function GigDetails() {
           const enrollmentData = await response.json();
           console.log('📋 Enrollment data:', enrollmentData);
           
-          if (enrollmentData.enrollments && Array.isArray(enrollmentData.enrollments)) {
-            const currentEnrollment = enrollmentData.enrollments.find(
-              (enrollment: any) => enrollment.gig._id === gigId
+          if (enrollmentData.data && Array.isArray(enrollmentData.data)) {
+            const currentEnrollment = enrollmentData.data.find(
+              (gigAgent: any) => gigAgent.gigId._id === gigId
             );
             
             if (currentEnrollment) {
               console.log('📋 Found enrollment:', currentEnrollment);
-              setEnrollmentStatus(currentEnrollment.enrollmentStatus);
+              setEnrollmentStatus(currentEnrollment.status); // 'accepted', 'invited', 'requested', etc.
               
-                  // Si déjà demandé, mettre à jour le statut
-                  if (currentEnrollment.enrollmentStatus === 'requested') {
-                    setApplicationStatus('success');
-                    setApplicationMessage('Demande d\'enrôlement envoyée avec succès');
-                  }
-                }
+              // Si déjà accepté, marquer comme enrolled
+              if (currentEnrollment.status === 'accepted') {
+                setEnrollmentStatus('enrolled');
+                setApplicationStatus('success');
+                setApplicationMessage('Vous êtes inscrit à ce gig');
+              }
+              // Si déjà demandé, mettre à jour le statut
+              else if (currentEnrollment.status === 'requested') {
+                setApplicationStatus('success');
+                setApplicationMessage('Demande d\'enrôlement envoyée avec succès');
+              }
+              // Si invité
+              else if (currentEnrollment.status === 'invited') {
+                setEnrollmentStatus('invited');
               }
             }
+          }
+        }
           } catch (err) {
             console.error('❌ Error checking enrollment status:', err);
           }
@@ -515,7 +525,7 @@ export function GigDetails() {
       console.log('👤 Agent ID:', agentId);
       
       const response = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/request`,
+        `${import.meta.env.VITE_BACKEND_URL_GIGS}/gig-agents/enrollment-requests`,
         {
           method: 'POST',
           headers: {
