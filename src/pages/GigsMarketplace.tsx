@@ -439,7 +439,7 @@ export function GigsMarketplace() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-requests/${enrollmentId}/accept`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invitations/${enrollmentId}/accept`,
         {
           method: 'POST',
           headers: {
@@ -474,7 +474,7 @@ export function GigsMarketplace() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-requests/${enrollmentId}/reject`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invitations/${enrollmentId}/reject`,
         {
           method: 'POST',
           headers: {
@@ -570,9 +570,9 @@ export function GigsMarketplace() {
     }
 
     try {
-      // Utiliser la nouvelle endpoint gig-agents/enrollment-requests pour récupérer les invitations
+      // Utiliser le nouvel endpoint /gig-agents/invited/agent/{agentId}
       const enrollmentResponse = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-requests/agent/${agentId}?status=invited`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invited/agent/${agentId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -587,13 +587,13 @@ export function GigsMarketplace() {
       const enrollmentData = await enrollmentResponse.json();
       console.log('Invited enrollments response:', enrollmentData);
       
-      // Adapter à la nouvelle structure de données de l'API gig-agents
-      if (enrollmentData.data && Array.isArray(enrollmentData.data)) {
-        console.log('Found invited enrollments:', enrollmentData.data);
-        console.log('First invited enrollment structure:', enrollmentData.data[0]);
+      // La réponse est directement un tableau d'enrollments
+      if (Array.isArray(enrollmentData)) {
+        console.log('Found invited enrollments:', enrollmentData);
+        console.log('First invited enrollment structure:', enrollmentData[0]);
         
         // Transformer les données pour correspondre à l'interface InvitedEnrollment
-        const transformedInvitations = enrollmentData.data.map((gigAgent: any) => ({
+        const transformedInvitations = enrollmentData.map((gigAgent: any) => ({
           id: gigAgent._id,
                 gig: {
             _id: gigAgent.gigId._id,
@@ -863,7 +863,8 @@ export function GigsMarketplace() {
     filteredGigs: filteredAndSortedGigs.length,
     currentGigs: currentGigs.length,
     currentPage,
-    totalPages
+    totalPages,
+    enrolledGigsData: enrolledGigs
   });
 
 
