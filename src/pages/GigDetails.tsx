@@ -420,18 +420,18 @@ export function GigDetails() {
                 setApplicationStatus('success');
                 setApplicationMessage('Vous êtes inscrit à ce gig');
               }
-              // Si déjà demandé, mettre à jour le statut
+                  // Si déjà demandé, mettre à jour le statut
               else if (currentEnrollment.status === 'requested') {
-                setApplicationStatus('success');
-                setApplicationMessage('Demande d\'enrôlement envoyée avec succès');
-              }
+                    setApplicationStatus('success');
+                    setApplicationMessage('Demande d\'enrôlement envoyée avec succès');
+                  }
               // Si invité
               else if (currentEnrollment.status === 'invited') {
                 setEnrollmentStatus('invited');
+                  }
+                }
               }
             }
-          }
-        }
           } catch (err) {
             console.error('❌ Error checking enrollment status:', err);
           }

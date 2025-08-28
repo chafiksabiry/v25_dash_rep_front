@@ -506,9 +506,9 @@ export function GigsMarketplace() {
     }
 
     try {
-      // Utiliser la nouvelle endpoint gig-agents/enrollment-requests pour récupérer les enrollments acceptés
+      // Utiliser le nouvel endpoint /gig-agents/enrolled/agent/{agentId}
       const enrollmentResponse = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL_GIGS}/gig-agents/enrollment-requests/agent/${agentId}?status=accepted`,
+        `${import.meta.env.VITE_BACKEND_URL_GIGS}/gig-agents/enrolled/agent/${agentId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -523,13 +523,13 @@ export function GigsMarketplace() {
       const enrollmentData = await enrollmentResponse.json();
       console.log('Enrolled gigs response:', enrollmentData);
       
-      // Adapter à la nouvelle structure de données de l'API gig-agents
-      if (enrollmentData.data && Array.isArray(enrollmentData.data)) {
-        console.log('Found enrollments:', enrollmentData.data);
-        console.log('First enrollment structure:', enrollmentData.data[0]);
+      // La réponse est directement un tableau d'enrollments
+      if (Array.isArray(enrollmentData)) {
+        console.log('Found enrollments:', enrollmentData);
+        console.log('First enrollment structure:', enrollmentData[0]);
         
         // Transformer les données pour correspondre à l'interface EnrolledGig
-        const transformedEnrollments = enrollmentData.data.map((gigAgent: any) => ({
+        const transformedEnrollments = enrollmentData.map((gigAgent: any) => ({
           id: gigAgent._id,
           gig: {
             _id: gigAgent.gigId._id,
@@ -595,7 +595,7 @@ export function GigsMarketplace() {
         // Transformer les données pour correspondre à l'interface InvitedEnrollment
         const transformedInvitations = enrollmentData.data.map((gigAgent: any) => ({
           id: gigAgent._id,
-          gig: {
+                gig: {
             _id: gigAgent.gigId._id,
             title: gigAgent.gigId.title,
             description: gigAgent.gigId.description,
