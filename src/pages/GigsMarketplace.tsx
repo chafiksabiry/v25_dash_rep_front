@@ -608,7 +608,7 @@ export function GigsMarketplace() {
           invitationSentAt: gigAgent.invitationSentAt,
           invitationExpiresAt: gigAgent.invitationExpiresAt,
           isExpired: new Date(gigAgent.invitationExpiresAt) < new Date(),
-          canEnroll: gigAgent.status === 'invited' && new Date(gigAgent.invitationExpiresAt) > new Date(),
+          canEnroll: (gigAgent.status === 'invited' || gigAgent.status === 'pending') && new Date(gigAgent.invitationExpiresAt) > new Date(),
           notes: gigAgent.notes,
           matchScore: gigAgent.matchScore,
           matchStatus: gigAgent.matchStatus
