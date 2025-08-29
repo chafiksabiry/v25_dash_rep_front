@@ -506,6 +506,7 @@ export function GigsMarketplace() {
     }
 
     try {
+      console.log('🔍 Fetching enrolled gigs for agent:', agentId);
       // Utiliser le nouvel endpoint /gig-agents/enrolled/agent/{agentId}
       const enrollmentResponse = await fetch(
         `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrolled/agent/${agentId}`,
@@ -521,43 +522,51 @@ export function GigsMarketplace() {
       }
       
       const enrollmentData = await enrollmentResponse.json();
-      console.log('Enrolled gigs response:', enrollmentData);
+      console.log('📝 Enrolled gigs raw response:', enrollmentData);
+      console.log('📊 Response length:', enrollmentData.length);
       
       // La réponse est directement un tableau d'enrollments
       if (Array.isArray(enrollmentData)) {
-        console.log('Found enrollments:', enrollmentData);
-        console.log('First enrollment structure:', enrollmentData[0]);
+        console.log('✅ Response is array, processing enrollments...');
+        console.log('🔍 First enrollment structure:', enrollmentData[0]);
         
         // Transformer les données pour correspondre à l'interface EnrolledGig
         const transformedEnrollments = enrollmentData
-          .filter((gigAgent: any) => gigAgent.gigId) // Filtrer les enrollments sans gigId
-          .map((gigAgent: any) => ({
-          id: gigAgent._id,
-          gig: {
-            _id: gigAgent.gigId._id,
-            title: gigAgent.gigId.title,
-            description: gigAgent.gigId.description,
-            category: gigAgent.gigId.category,
-            destination_zone: gigAgent.gigId.destination_zone,
-            // Copier toutes les autres propriétés du gig
-            ...gigAgent.gigId
-          },
-          enrollmentStatus: gigAgent.status, // 'accepted' pour les gigs inscrits
-          enrollmentDate: gigAgent.enrollmentDate || gigAgent.agentResponseAt,
-          enrollmentNotes: gigAgent.enrollmentNotes,
-          status: gigAgent.status,
-          matchScore: gigAgent.matchScore,
-          matchStatus: gigAgent.matchStatus
-        }));
+          .filter((gigAgent: any) => {
+            console.log('🔍 Checking enrollment:', gigAgent._id, 'gigId:', gigAgent.gigId);
+            return gigAgent.gigId; // Filtrer les enrollments sans gigId
+          })
+          .map((gigAgent: any) => {
+            console.log('🔄 Transforming enrollment:', gigAgent._id);
+            return {
+              id: gigAgent._id,
+              gig: {
+                _id: gigAgent.gigId._id,
+                title: gigAgent.gigId.title,
+                description: gigAgent.gigId.description,
+                category: gigAgent.gigId.category,
+                destination_zone: gigAgent.gigId.destination_zone,
+                // Copier toutes les autres propriétés du gig
+                ...gigAgent.gigId
+              },
+              enrollmentStatus: gigAgent.status, // 'accepted' pour les gigs inscrits
+              enrollmentDate: gigAgent.enrollmentDate || gigAgent.agentResponseAt,
+              enrollmentNotes: gigAgent.enrollmentNotes,
+              status: gigAgent.status,
+              matchScore: gigAgent.matchScore,
+              matchStatus: gigAgent.matchStatus
+            };
+          });
         
-        console.log('Transformed enrolled gigs:', transformedEnrollments);
+        console.log('✅ Transformed enrolled gigs:', transformedEnrollments);
+        console.log('📊 Final count:', transformedEnrollments.length);
         setEnrolledGigs(transformedEnrollments);
       } else {
-        console.error('Invalid enrolled gigs data structure:', enrollmentData);
+        console.error('❌ Invalid enrolled gigs data structure:', enrollmentData);
         setEnrolledGigs([]);
       }
     } catch (error) {
-      console.error('Error fetching enrolled gigs:', error);
+      console.error('❌ Error fetching enrolled gigs:', error);
       setEnrolledGigs([]);
     }
   };
