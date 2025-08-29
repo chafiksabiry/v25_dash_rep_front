@@ -439,7 +439,7 @@ export function GigsMarketplace() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/${enrollmentId}/accept`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invitations/${enrollmentId}/accept`,
         {
           method: 'POST',
           headers: {
@@ -474,7 +474,7 @@ export function GigsMarketplace() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/${enrollmentId}/reject`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invitations/${enrollmentId}/reject`,
         {
           method: 'POST',
           headers: {
@@ -506,9 +506,9 @@ export function GigsMarketplace() {
     }
 
     try {
-      // Récupérer d'abord les enrollments
+      // Utiliser le nouvel endpoint /gig-agents/enrolled/agent/{agentId}
       const enrollmentResponse = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/agent/${agentId}/gigs`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrolled/agent/${agentId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -523,81 +523,35 @@ export function GigsMarketplace() {
       const enrollmentData = await enrollmentResponse.json();
       console.log('Enrolled gigs response:', enrollmentData);
       
-      if (enrollmentData.enrollments && Array.isArray(enrollmentData.enrollments)) {
-        console.log('Found enrollments:', enrollmentData.enrollments);
-        console.log('First enrollment structure:', enrollmentData.enrollments[0]);
+      // La réponse est directement un tableau d'enrollments
+      if (Array.isArray(enrollmentData)) {
+        console.log('Found enrollments:', enrollmentData);
+        console.log('First enrollment structure:', enrollmentData[0]);
         
-        // Récupérer les IDs des gigs inscrits
-        const gigIds = enrollmentData.enrollments.map((enrollment: EnrolledGig) => enrollment.gig._id);
-        console.log('Gig IDs to fetch:', gigIds);
+        // Transformer les données pour correspondre à l'interface EnrolledGig
+        const transformedEnrollments = enrollmentData
+          .filter((gigAgent: any) => gigAgent.gigId) // Filtrer les enrollments sans gigId
+          .map((gigAgent: any) => ({
+          id: gigAgent._id,
+          gig: {
+            _id: gigAgent.gigId._id,
+            title: gigAgent.gigId.title,
+            description: gigAgent.gigId.description,
+            category: gigAgent.gigId.category,
+            destination_zone: gigAgent.gigId.destination_zone,
+            // Copier toutes les autres propriétés du gig
+            ...gigAgent.gigId
+          },
+          enrollmentStatus: gigAgent.status, // 'accepted' pour les gigs inscrits
+          enrollmentDate: gigAgent.enrollmentDate || gigAgent.agentResponseAt,
+          enrollmentNotes: gigAgent.enrollmentNotes,
+          status: gigAgent.status,
+          matchScore: gigAgent.matchScore,
+          matchStatus: gigAgent.matchStatus
+        }));
         
-        // Récupérer les données complètes des gigs depuis l'API des gigs
-        const enrichedEnrollments = await Promise.all(
-          enrollmentData.enrollments.map(async (enrollment: EnrolledGig) => {
-            try {
-              // Essayer d'abord l'endpoint /gigs/active
-              let gigResponse = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/active`
-              );
-              
-              if (!gigResponse.ok) {
-                // Fallback vers l'endpoint /gigs
-                console.log('⚠️ /gigs/active failed, trying fallback to /gigs endpoint...');
-                gigResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs`);
-              }
-              
-              if (!gigResponse.ok) {
-                const errorText = await gigResponse.text();
-                console.warn(`Failed to fetch gigs data:`, {
-                  status: gigResponse.status,
-                  statusText: gigResponse.statusText,
-                  body: errorText
-                });
-                return enrollment;
-              }
-
-              const gigsData = await gigResponse.json();
-              console.log('Gigs data response:', gigsData);
-              
-              // Trouver le gig correspondant dans la liste
-              let fullGigData;
-              if (gigsData.data && Array.isArray(gigsData.data)) {
-                fullGigData = gigsData.data.find((gig: PopulatedGig) => gig._id === enrollment.gig._id);
-              } else if (Array.isArray(gigsData)) {
-                fullGigData = gigsData.find((gig: PopulatedGig) => gig._id === enrollment.gig._id);
-              }
-              
-              if (!fullGigData) {
-                console.warn(`Gig ${enrollment.gig._id} not found in gigs data`);
-                return enrollment;
-              }
-              
-              console.log(`Full enrolled gig data for ${enrollment.gig._id}:`, fullGigData);
-              console.log('🔍 Industries in fullGigData:', fullGigData.industries);
-              console.log('🔍 Activities in fullGigData:', fullGigData.activities);
-              
-              return {
-                ...enrollment,
-                gig: {
-                  // Utiliser les données complètes du gig en priorité
-                  ...fullGigData,
-                  // Garder seulement les propriétés spécifiques à l'enrollment si nécessaire
-                  _id: enrollment.gig._id,
-                  title: enrollment.gig.title,
-                  description: enrollment.gig.description,
-                  category: enrollment.gig.category,
-                  destination_zone: enrollment.gig.destination_zone
-                }
-              };
-            } catch (error) {
-              console.error(`Error fetching details for enrolled gig ${enrollment.gig._id}:`, error);
-              return enrollment;
-            }
-          })
-        );
-        
-        console.log('Enriched enrolled gigs with full data:', enrichedEnrollments);
-        setEnrolledGigs(enrichedEnrollments);
+        console.log('Transformed enrolled gigs:', transformedEnrollments);
+        setEnrolledGigs(transformedEnrollments);
       } else {
         console.error('Invalid enrolled gigs data structure:', enrollmentData);
         setEnrolledGigs([]);
@@ -618,9 +572,9 @@ export function GigsMarketplace() {
     }
 
     try {
-      // Récupérer les enrollments invités
+      // Utiliser le nouvel endpoint /gig-agents/invited/agent/{agentId}
       const enrollmentResponse = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/enrollment/agent/${agentId}?status=invited`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invited/agent/${agentId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -635,78 +589,37 @@ export function GigsMarketplace() {
       const enrollmentData = await enrollmentResponse.json();
       console.log('Invited enrollments response:', enrollmentData);
       
-      if (enrollmentData.enrollments && Array.isArray(enrollmentData.enrollments)) {
-        // Récupérer les IDs des gigs invités
-        const gigIds = enrollmentData.enrollments.map((enrollment: InvitedEnrollment) => enrollment.gig._id);
-        console.log('Invited gig IDs to fetch:', gigIds);
+      // La réponse est directement un tableau d'enrollments
+      if (Array.isArray(enrollmentData)) {
+        console.log('Found invited enrollments:', enrollmentData);
+        console.log('First invited enrollment structure:', enrollmentData[0]);
         
-        // Récupérer les données complètes des gigs depuis l'API des gigs
-        const enrichedEnrollments = await Promise.all(
-          enrollmentData.enrollments.map(async (enrollment: InvitedEnrollment) => {
-            try {
-              // Essayer d'abord l'endpoint /gigs/active
-              let gigResponse = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/active`
-              );
-              
-              if (!gigResponse.ok) {
-                // Fallback vers l'endpoint /gigs
-                console.log('⚠️ /gigs/active failed, trying fallback to /gigs endpoint...');
-                gigResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs`);
-              }
-              
-              if (!gigResponse.ok) {
-                const errorText = await gigResponse.text();
-                console.warn(`Failed to fetch gigs data:`, {
-                  status: gigResponse.status,
-                  statusText: gigResponse.statusText,
-                  body: errorText
-                });
-                return enrollment;
-              }
-
-              const gigsData = await gigResponse.json();
-              console.log('Gigs data response:', gigsData);
-              
-              // Trouver le gig correspondant dans la liste
-              let fullGigData;
-              if (gigsData.data && Array.isArray(gigsData.data)) {
-                fullGigData = gigsData.data.find((gig: PopulatedGig) => gig._id === enrollment.gig._id);
-              } else if (Array.isArray(gigsData)) {
-                fullGigData = gigsData.find((gig: PopulatedGig) => gig._id === enrollment.gig._id);
-              }
-              
-              if (!fullGigData) {
-                console.warn(`Gig ${enrollment.gig._id} not found in gigs data`);
-                return enrollment;
-              }
-              
-              console.log(`Full gig data for ${enrollment.gig._id}:`, fullGigData);
-              console.log('🔍 Industries in fullGigData:', fullGigData.industries);
-              console.log('🔍 Activities in fullGigData:', fullGigData.activities);
-              
-              return {
-                ...enrollment,
+        // Transformer les données pour correspondre à l'interface InvitedEnrollment
+        const transformedInvitations = enrollmentData
+          .filter((gigAgent: any) => gigAgent.gigId) // Filtrer les enrollments sans gigId
+          .map((gigAgent: any) => ({
+          id: gigAgent._id,
                 gig: {
-                  // Utiliser les données complètes du gig en priorité
-                  ...fullGigData,
-                  // Garder seulement les propriétés spécifiques à l'enrollment si nécessaire
-                  _id: enrollment.gig._id,
-                  title: enrollment.gig.title,
-                  description: enrollment.gig.description,
-                  category: enrollment.gig.category,
-                  destination_zone: enrollment.gig.destination_zone
-                }
-              };
-            } catch (error) {
-              console.error(`Error fetching details for gig ${enrollment.gig._id}:`, error);
-              return enrollment;
-            }
-          })
-        );
+            _id: gigAgent.gigId._id,
+            title: gigAgent.gigId.title,
+            description: gigAgent.gigId.description,
+            category: gigAgent.gigId.category,
+            destination_zone: gigAgent.gigId.destination_zone,
+            // Copier toutes les autres propriétés du gig
+            ...gigAgent.gigId
+          },
+          enrollmentStatus: gigAgent.status, // 'invited' pour les invitations
+          invitationSentAt: gigAgent.invitationSentAt,
+          invitationExpiresAt: gigAgent.invitationExpiresAt,
+          isExpired: new Date(gigAgent.invitationExpiresAt) < new Date(),
+            canEnroll: (gigAgent.status === 'invited' || gigAgent.status === 'pending') && new Date(gigAgent.invitationExpiresAt) > new Date(),
+          notes: gigAgent.notes,
+          matchScore: gigAgent.matchScore,
+          matchStatus: gigAgent.matchStatus
+        }));
         
-        console.log('Enriched enrollments with full gig data:', enrichedEnrollments);
-        setInvitedEnrollments(enrichedEnrollments);
+        console.log('Transformed invited enrollments:', transformedInvitations);
+        setInvitedEnrollments(transformedInvitations);
       } else {
         console.error('Invalid invited enrollments data structure:', enrollmentData);
         setInvitedEnrollments([]);
@@ -954,7 +867,8 @@ export function GigsMarketplace() {
     filteredGigs: filteredAndSortedGigs.length,
     currentGigs: currentGigs.length,
     currentPage,
-    totalPages
+    totalPages,
+    enrolledGigsData: enrolledGigs
   });
 
 
