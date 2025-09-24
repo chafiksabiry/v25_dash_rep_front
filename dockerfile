@@ -9,10 +9,10 @@ COPY package*.json ./
 RUN apk add --no-cache git
 
 # Set environment variables
-ENV VITE_API_URL=https://preprod-api-rep-dashboard.harx.ai
-ENV VITE_CALLS_API_URL=https://preprod-api-dash-calls.harx.ai
-ENV VITE_DASHBOARD_COMPANY_API_URL=https://preprod-api-dashboard.harx.ai/api
-ENV VITE_BACKEND_URL_GIGS=https://preprod-api-gigsmanual.harx.ai/api
+ENV VITE_API_URL=https://api-rep-dashboard.harx.ai
+ENV VITE_CALLS_API_URL=https://api-dash-calls.harx.ai
+ENV VITE_DASHBOARD_COMPANY_API_URL=https://api-dashboard.harx.ai/api
+ENV VITE_BACKEND_URL_GIGS=https://api-gigsmanual.harx.ai/api
 #ENV VITE_RUN_MODE=standalone
 ENV VITE_RUN_MODE=in-app
 ENV VITE_STANDALONE_USER_ID=6814d30f2c1ca099fe2b16b6
@@ -22,14 +22,14 @@ ENV VITE_ASSESSMENT_APP_STANDALONE=https://rep-assessments.harx.ai/assessment
 #twilio&calls
 ENV VITE_TWILIO_ACCOUNT_SID=AC8a453959a6cb01cbbd1c819b00c5782f
 ENV VITE_TWILIO_AUTH_TOKEN=7ade91a170bff98bc625543287ee62c8
-ENV VITE_WS_URL=wss://preprod-api-dash-calls.harx.ai/speech-to-text
-ENV VITE_API_URL_AI_MESSAGES=https://preprod-api-messages-service.harx.ai/api
-ENV VITE_API_URL_CALL=https://preprod-api-dash-calls.harx.ai
-ENV VITE_REP_API_URL=https://preprod-api-repcreationwizard.harx.ai
-ENV VITE_AUTH_API_URL=https://preprod-api-registration.harx.ai/api
+ENV VITE_WS_URL=wss://api-dash-calls.harx.ai/speech-to-text
+ENV VITE_API_URL_AI_MESSAGES=https://api-messages-service.harx.ai/api
+ENV VITE_API_URL_CALL=https://api-dash-calls.harx.ai
+ENV VITE_REP_API_URL=https://api-repcreationwizard.harx.ai
+ENV VITE_AUTH_API_URL=https://api-registration.harx.ai/api
 ENV VITE_FRONT_URL=https://rep-dashboard.harx.ai/
-ENV VITE_DASH_COMPANY_BACKEND=https://preprod-api-dashboard.harx.ai/api
-ENV VITE_MATCHING_API_URL=https://preprod-api-matching.harx.ai/api
+ENV VITE_DASH_COMPANY_BACKEND=https://api-dashboard.harx.ai/api
+ENV VITE_MATCHING_API_URL=https://api-matching.harx.ai/api
 ENV VITE_COPILOT_URL=/copilot
 # Install dependencies
 RUN npm install
