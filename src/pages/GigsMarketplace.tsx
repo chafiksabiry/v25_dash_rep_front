@@ -987,7 +987,7 @@ export function GigsMarketplace() {
             <div className="mt-4 space-y-3">
               <div className="flex items-center text-sm text-gray-500">
                 <DollarSign className="w-4 h-4 mr-2" />
-                <span>{gig.commission.baseAmount} {gig.commission.currency}/yr base</span>
+                <span>{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr base</span>
                 {gig.commission.bonus && (
                   <span className="ml-1 text-xs text-green-600">+ bonus</span>
                 )}
@@ -1108,7 +1108,7 @@ export function GigsMarketplace() {
                                         <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{gig.commission.baseAmount} {gig.commission.currency}/yr base</span>
+                        <span>{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr base</span>
                         {gig.commission.bonus && (
                           <span className="ml-1 text-xs text-green-600">+ bonus</span>
                         )}
