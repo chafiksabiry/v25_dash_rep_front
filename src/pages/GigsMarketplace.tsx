@@ -92,7 +92,29 @@ export function GigsMarketplace() {
       updatedAt: Date;
     };
 
-    destination_zone: string;
+    destination_zone: {
+      name: {
+        common: string;
+        official: string;
+        nativeName?: {
+          [key: string]: {
+            official: string;
+            common: string;
+            _id: string;
+          };
+        };
+      };
+      flags: {
+        png: string;
+        svg: string;
+        alt: string;
+      };
+      _id: string;
+      cca2: string;
+      __v: number;
+      createdAt: string;
+      updatedAt: string;
+    };
     
     // 🎯 Activities populées
     activities: Array<{
@@ -260,7 +282,29 @@ export function GigsMarketplace() {
       title: string;
       description: string;
       category: string;
-      destination_zone: string;
+      destination_zone: {
+      name: {
+        common: string;
+        official: string;
+        nativeName?: {
+          [key: string]: {
+            official: string;
+            common: string;
+            _id: string;
+          };
+        };
+      };
+      flags: {
+        png: string;
+        svg: string;
+        alt: string;
+      };
+      _id: string;
+      cca2: string;
+      __v: number;
+      createdAt: string;
+      updatedAt: string;
+    };
     };
     enrollmentStatus: string;
     invitationSentAt: string;
@@ -280,7 +324,29 @@ export function GigsMarketplace() {
       title: string;
       description: string;
       category: string;
-      destination_zone: string;
+      destination_zone: {
+      name: {
+        common: string;
+        official: string;
+        nativeName?: {
+          [key: string]: {
+            official: string;
+            common: string;
+            _id: string;
+          };
+        };
+      };
+      flags: {
+        png: string;
+        svg: string;
+        alt: string;
+      };
+      _id: string;
+      cca2: string;
+      __v: number;
+      createdAt: string;
+      updatedAt: string;
+    };
       company: string;
       compensation: string;
       experience: string;
@@ -987,7 +1053,7 @@ export function GigsMarketplace() {
             <div className="mt-4 space-y-3">
               <div className="flex items-center text-sm text-gray-500">
                 <DollarSign className="w-4 h-4 mr-2" />
-                <span>{gig.commission.baseAmount} {gig.commission.currency}/yr base</span>
+                <span>{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr base</span>
                 {gig.commission.bonus && (
                   <span className="ml-1 text-xs text-green-600">+ bonus</span>
                 )}
@@ -998,7 +1064,7 @@ export function GigsMarketplace() {
               </div>
               <div className="flex items-center text-sm text-gray-500">
                 <Globe className="w-4 h-4 mr-2" />
-                <span>{gig.destination_zone} ({gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
+                <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
               </div>
               <div className="flex items-center text-sm text-gray-500">
                 <Calendar className="w-4 h-4 mr-2" />
@@ -1108,7 +1174,7 @@ export function GigsMarketplace() {
                                         <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{gig.commission.baseAmount} {gig.commission.currency}/yr base</span>
+                        <span>{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr base</span>
                         {gig.commission.bonus && (
                           <span className="ml-1 text-xs text-green-600">+ bonus</span>
                         )}
@@ -1119,7 +1185,7 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{gig.destination_zone} ({gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
+                        <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
@@ -1260,7 +1326,7 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{enrollment.gig.destination_zone} ({('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.abbreviation) ? enrollment.gig.availability.time_zone.abbreviation : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.name) ? enrollment.gig.availability.time_zone.name : 'N/A'})</span>
+                        <span>{typeof enrollment.gig.destination_zone === 'object' ? enrollment.gig.destination_zone?.name?.common || enrollment.gig.destination_zone?.cca2 || 'Unknown' : enrollment.gig.destination_zone} ({('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.abbreviation) ? enrollment.gig.availability.time_zone.abbreviation : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.name) ? enrollment.gig.availability.time_zone.name : 'N/A'})</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
@@ -1437,7 +1503,7 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{enrolledGig.gig.destination_zone} ({('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.abbreviation) ? enrolledGig.gig.availability.time_zone.abbreviation : ('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.name) ? enrolledGig.gig.availability.time_zone.name : 'N/A'})</span>
+                        <span>{typeof enrolledGig.gig.destination_zone === 'object' ? enrolledGig.gig.destination_zone?.name?.common || enrolledGig.gig.destination_zone?.cca2 || 'Unknown' : enrolledGig.gig.destination_zone} ({('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.abbreviation) ? enrolledGig.gig.availability.time_zone.abbreviation : ('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.name) ? enrolledGig.gig.availability.time_zone.name : 'N/A'})</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
