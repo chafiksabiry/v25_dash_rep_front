@@ -791,7 +791,7 @@ export function GigDetails() {
               <div className="flex items-center text-gray-600">
                 <DollarSign className="w-5 h-5 mr-2" />
                 <div>
-                  <p className="text-sm font-medium">{gig.commission.baseAmount} {gig.commission.currency}/yr</p>
+                  <p className="text-sm font-medium">{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr</p>
                   <p className="text-xs">Base Salary</p>
                 </div>
               </div>
@@ -976,7 +976,7 @@ export function GigDetails() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Base Salary:</span>
-                  <span className="font-medium">{gig.commission.baseAmount} {gig.commission.currency}/year</span>
+                  <span className="font-medium">{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/year</span>
                 </div>
                 {gig.commission.bonus && (
                   <div className="flex justify-between">
