@@ -71,7 +71,29 @@ interface PopulatedGig {
     updatedAt: Date;
   };
 
-  destination_zone: string;
+  destination_zone: {
+    name: {
+      common: string;
+      official: string;
+      nativeName?: {
+        [key: string]: {
+          official: string;
+          common: string;
+          _id: string;
+        };
+      };
+    };
+    flags: {
+      png: string;
+      svg: string;
+      alt: string;
+    };
+    _id: string;
+    cca2: string;
+    __v: number;
+    createdAt: string;
+    updatedAt: string;
+  };
   
   // 🎯 Activities populées
   activities: Array<{
@@ -807,7 +829,7 @@ export function GigDetails() {
               <div className="flex items-center text-gray-600">
                 <Globe className="w-5 h-5 mr-2" />
                 <div>
-                  <p className="text-sm font-medium">{gig.destination_zone}</p>
+                  <p className="text-sm font-medium">{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone}</p>
                   <p className="text-xs">
                     {gig.availability?.time_zone?.countryCode || gig.availability?.time_zone?.abbreviation || 'Timezone'}
                   </p>
