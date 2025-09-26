@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import Cookies from 'js-cookie';
+import { getAgentId, getAuthToken } from '../utils/authUtils';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
 interface PopulatedGig {
@@ -70,7 +71,29 @@ interface PopulatedGig {
     updatedAt: Date;
   };
 
-  destination_zone: string;
+  destination_zone: {
+    name: {
+      common: string;
+      official: string;
+      nativeName?: {
+        [key: string]: {
+          official: string;
+          common: string;
+          _id: string;
+        };
+      };
+    };
+    flags: {
+      png: string;
+      svg: string;
+      alt: string;
+    };
+    _id: string;
+    cca2: string;
+    __v: number;
+    createdAt: string;
+    updatedAt: string;
+  };
   
   // 🎯 Activities populées
   activities: Array<{
@@ -233,6 +256,7 @@ interface PopulatedGig {
   status: 'to_activate' | 'active' | 'inactive' | 'archived';
   createdAt: Date;
   updatedAt: Date;
+  enrolledAgents?: string[]; // Added for enrollment status
 }
 
 // Interface pour les leads
@@ -284,6 +308,12 @@ export function GigDetails() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalLeads, setTotalLeads] = useState(0);
   const limit = 50; // Nombre de leads par page (maximum supporté par le backend)
+
+  // États pour l'application
+  const [applying, setApplying] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [applicationMessage, setApplicationMessage] = useState('');
+  const [enrollmentStatus, setEnrollmentStatus] = useState<'none' | 'requested' | 'enrolled' | 'invited'>('none');
 
   useEffect(() => {
     const fetchGigDetails = async () => {
@@ -357,6 +387,126 @@ export function GigDetails() {
     fetchGigDetails();
   }, [gigId]);
 
+  // Vérifier le statut d'enrollment de l'agent
+  useEffect(() => {
+    const checkEnrollmentStatus = async () => {
+      const agentId = getAgentId();
+      const token = getAuthToken();
+      
+      if (!agentId || !token || !gigId) {
+        return;
+      }
+
+      try {
+        console.log('🔍 Checking enrollment status for agent:', agentId, 'gig:', gigId);
+        
+        // Vérifier d'abord si l'agent est dans la liste des agents inscrits du gig
+        if (gig && gig.enrolledAgents) {
+          const isEnrolled = gig.enrolledAgents.some((agent: any) => 
+            agent.$oid === agentId || agent === agentId
+          );
+          
+          if (isEnrolled) {
+            console.log('✅ Agent is enrolled in this gig');
+            setEnrollmentStatus('enrolled');
+            return;
+          }
+        }
+
+        // Vérifier si l'agent est invité à ce gig
+        try {
+          console.log('🔍 Checking if agent is invited to this gig');
+          const invitedResponse = await fetch(
+            `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invited/agent/${agentId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (invitedResponse.ok) {
+            const invitedData = await invitedResponse.json();
+            console.log('📧 Invited gigs data:', invitedData);
+            
+            // Vérifier si ce gig est dans la liste des gigs invités
+            const isInvited = invitedData.some((invitation: any) => 
+              invitation.gigId === gigId || invitation.gigId?._id === gigId
+            );
+            
+            if (isInvited) {
+              console.log('📨 Agent is invited to this gig');
+              setEnrollmentStatus('invited');
+              return;
+            }
+          }
+        } catch (invitedErr) {
+          console.log('ℹ️ Could not check invitation status:', invitedErr);
+        }
+
+        // Vérifier si l'agent a déjà fait une demande d'enrollment en regardant les gigs enrolled
+        try {
+          console.log('🔍 Checking if agent has pending enrollment request');
+          
+          // Utiliser l'endpoint des enrollments de l'agent pour vérifier le statut
+          const enrolledResponse = await fetch(
+            `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrolled/agent/${agentId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (enrolledResponse.ok) {
+            const enrolledData = await enrolledResponse.json();
+            console.log('📝 Enrolled gigs data:', enrolledData);
+            
+            // Vérifier si il y a une demande en attente pour ce gig (status pending)
+            const hasPendingRequest = enrolledData.some((enrollment: any) => 
+              (enrollment.gigId === gigId || enrollment.gigId?._id === gigId) && 
+              enrollment.status === 'pending'
+            );
+            
+            if (hasPendingRequest) {
+              console.log('⏳ Agent has pending enrollment request for this gig');
+              setEnrollmentStatus('requested');
+              return;
+            }
+
+            // Vérifier aussi si l'agent est déjà accepté/enrolled
+            const hasAcceptedRequest = enrolledData.some((enrollment: any) => 
+              (enrollment.gigId === gigId || enrollment.gigId?._id === gigId) && 
+              (enrollment.status === 'accepted' || enrollment.status === 'enrolled')
+            );
+            
+            if (hasAcceptedRequest) {
+              console.log('✅ Agent is enrolled in this gig');
+              setEnrollmentStatus('enrolled');
+              return;
+            }
+          } else {
+            console.log('⚠️ Enrolled gigs check failed:', enrolledResponse.status);
+          }
+        } catch (enrolledErr) {
+          console.log('ℹ️ Could not check enrolled gigs:', enrolledErr);
+        }
+
+        // Si aucune des vérifications n'a trouvé de statut, l'agent n'a pas de relation avec ce gig
+        console.log('ℹ️ Agent has no relationship with this gig');
+        setEnrollmentStatus('none');
+        
+      } catch (err) {
+        console.error('❌ Error checking enrollment status:', err);
+        setEnrollmentStatus('none');
+      }
+    };
+
+    if (gig && !loading) {
+      checkEnrollmentStatus();
+    }
+  }, [gig, gigId, loading]);
+
   // Fonction pour récupérer les leads
   const fetchLeads = async (page: number = 1) => {
     if (!gigId) return;
@@ -414,6 +564,136 @@ export function GigDetails() {
     }
   };
 
+  // Fonction pour postuler au gig
+  const handleApply = async () => {
+    const agentId = getAgentId();
+    const token = getAuthToken();
+    
+    if (!agentId || !token) {
+      setApplicationStatus('error');
+             setApplicationMessage('You must be logged in to apply');
+      return;
+    }
+
+    if (!gigId) {
+      setApplicationStatus('error');
+             setApplicationMessage('Gig ID not found');
+      return;
+    }
+
+    setApplying(true);
+    setApplicationStatus('idle');
+    setApplicationMessage('');
+
+    try {
+      console.log('🚀 Applying to gig:', gigId);
+      console.log('👤 Agent ID:', agentId);
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-request/${agentId}/${gigId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            notes: "I am very interested in this project and have relevant experience in frontend development."
+          }),
+        }
+      );
+
+      console.log('📡 Application response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Application failed:', errorText);
+        
+        // Si l'erreur indique que le gig est déjà en attente, rafraîchir le statut
+        if (response.status === 400 && errorText.includes('Cannot request enrollment for this gig at this time')) {
+          console.log('⏳ Gig is already pending, refreshing enrollment status...');
+          setApplicationStatus('info');
+          setApplicationMessage('This gig is already pending. Refreshing status...');
+          
+          // Rafraîchir le statut d'enrollment après un court délai
+          setTimeout(() => {
+            // Appeler la fonction de vérification du statut
+            const checkStatus = async () => {
+              const agentId = getAgentId();
+              const token = getAuthToken();
+              
+              if (!agentId || !token || !gigId) return;
+              
+              try {
+                console.log('🔄 Refreshing enrollment status...');
+                const enrolledResponse = await fetch(
+                  `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrolled/agent/${agentId}`,
+                  {
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                    },
+                  }
+                );
+
+                if (enrolledResponse.ok) {
+                  const enrolledData = await enrolledResponse.json();
+                  console.log('📝 Refreshed enrolled data:', enrolledData);
+                  
+                  // Vérifier le statut de l'enrollment pour ce gig spécifique
+                  const enrollmentForThisGig = enrolledData.find((enrollment: any) => 
+                    enrollment.gigId === gigId || enrollment.gigId?._id === gigId
+                  );
+                  
+                  if (enrollmentForThisGig) {
+                    if (enrollmentForThisGig.status === 'pending') {
+                      console.log('⏳ Found pending enrollment, updating status');
+                      setEnrollmentStatus('requested');
+                      setApplicationStatus('success');
+                      setApplicationMessage('Status updated: This gig is already pending');
+                    } else if (enrollmentForThisGig.status === 'accepted' || enrollmentForThisGig.status === 'enrolled') {
+                      console.log('✅ Found accepted enrollment, updating status');
+                      setEnrollmentStatus('enrolled');
+                      setApplicationStatus('success');
+                      setApplicationMessage('Status updated: You are now enrolled in this gig');
+                    }
+                  } else {
+                    console.log('ℹ️ No enrollment found for this gig');
+                  }
+                } else {
+                  console.log('⚠️ Failed to refresh enrollment status:', enrolledResponse.status);
+                }
+              } catch (err) {
+                console.error('❌ Error refreshing enrollment status:', err);
+              }
+            };
+            
+            checkStatus();
+          }, 1000);
+          
+          return;
+        }
+        
+        throw new Error(`Échec de la candidature: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Application successful:', data);
+      
+      setApplicationStatus('success');
+             setApplicationMessage(data.message || 'Application sent successfully!');
+      setEnrollmentStatus('requested');
+      
+      // Ne pas rediriger, juste mettre à jour le statut local
+      
+    } catch (err) {
+      console.error('❌ Error applying to gig:', err);
+      setApplicationStatus('error');
+             setApplicationMessage(err instanceof Error ? err.message : 'Error during application');
+    } finally {
+      setApplying(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -467,11 +747,64 @@ export function GigDetails() {
                 </div>
               </div>
               <div className="ml-6">
-                <button className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm shadow-md">
-                  Apply Now
+                {/* Status message */}
+                {applicationStatus === 'error' && (
+                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-800 font-medium">
+                      ❌ {applicationMessage}
+                    </p>
+                  </div>
+                )}
+
+                {/* Bouton selon le statut d'enrollment */}
+                {enrollmentStatus === 'enrolled' ? (
+                  <div className="text-center">
+                    <span className="inline-block px-5 py-2 bg-green-100 text-green-800 rounded-lg font-medium text-sm">
+                      ✅ Enrolled
+                    </span>
+                  </div>
+                ) : enrollmentStatus === 'requested' ? (
+                  <div className="text-center">
+                    <span className="inline-block px-5 py-2 bg-yellow-100 text-yellow-800 rounded-lg font-medium text-sm">
+                      ⏳ Pending
+                    </span>
+                  </div>
+                ) : enrollmentStatus === 'invited' ? (
+                  <div className="text-center">
+                    <span className="inline-block px-5 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium text-sm">
+                      📨 Invited
+                    </span>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={handleApply}
+                    disabled={applying}
+                    className={`px-5 py-2 rounded-lg transition-colors font-medium text-sm shadow-md ${
+                      applying
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {applying ? (
+                      <span className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Processing...
+                      </span>
+                    ) : (
+                      'Apply Now'
+                    )}
                 </button>
+                )}
+                
                 <p className="text-xs text-gray-500 mt-2 text-center max-w-[140px]">
-                  Join this opportunity and start earning immediately
+                  {enrollmentStatus === 'enrolled' 
+                     ? 'You are enrolled in this gig'
+                    : enrollmentStatus === 'requested'
+                     ? 'Your request is being processed'
+                    : enrollmentStatus === 'invited'
+                     ? 'You have been invited'
+                    : 'Join this opportunity and start earning immediately'
+                  }
                 </p>
               </div>
             </div>
@@ -480,7 +813,7 @@ export function GigDetails() {
               <div className="flex items-center text-gray-600">
                 <DollarSign className="w-5 h-5 mr-2" />
                 <div>
-                  <p className="text-sm font-medium">{gig.commission.baseAmount} {gig.commission.currency}/yr</p>
+                  <p className="text-sm font-medium">{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr</p>
                   <p className="text-xs">Base Salary</p>
                 </div>
               </div>
@@ -496,7 +829,7 @@ export function GigDetails() {
               <div className="flex items-center text-gray-600">
                 <Globe className="w-5 h-5 mr-2" />
                 <div>
-                  <p className="text-sm font-medium">{gig.destination_zone}</p>
+                  <p className="text-sm font-medium">{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone}</p>
                   <p className="text-xs">
                     {gig.availability?.time_zone?.countryCode || gig.availability?.time_zone?.abbreviation || 'Timezone'}
                   </p>
@@ -665,7 +998,7 @@ export function GigDetails() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Base Salary:</span>
-                  <span className="font-medium">{gig.commission.baseAmount} {gig.commission.currency}/year</span>
+                  <span className="font-medium">{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/year</span>
                 </div>
                 {gig.commission.bonus && (
                   <div className="flex justify-between">

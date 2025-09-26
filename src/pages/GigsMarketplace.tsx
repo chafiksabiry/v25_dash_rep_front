@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, Users, Globe, Calendar, Heart, User } from 'lucide-react';
+import { DollarSign, Users, Globe, Calendar, Heart, User, Mail, Clock } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 
 export function GigsMarketplace() {
@@ -92,7 +92,29 @@ export function GigsMarketplace() {
       updatedAt: Date;
     };
 
-    destination_zone: string;
+    destination_zone: {
+      name: {
+        common: string;
+        official: string;
+        nativeName?: {
+          [key: string]: {
+            official: string;
+            common: string;
+            _id: string;
+          };
+        };
+      };
+      flags: {
+        png: string;
+        svg: string;
+        alt: string;
+      };
+      _id: string;
+      cca2: string;
+      __v: number;
+      createdAt: string;
+      updatedAt: string;
+    };
     
     // 🎯 Activities populées
     activities: Array<{
@@ -252,8 +274,96 @@ export function GigsMarketplace() {
     updatedAt: Date;
   }
 
-  const [activeTab, setActiveTab] = useState<'available' | 'enrolled' | 'favorite'>('available');
+  // Interface pour les enrollments invités
+  interface InvitedEnrollment {
+    id: string;
+    gig: PopulatedGig | {
+      _id: string;
+      title: string;
+      description: string;
+      category: string;
+      destination_zone: {
+      name: {
+        common: string;
+        official: string;
+        nativeName?: {
+          [key: string]: {
+            official: string;
+            common: string;
+            _id: string;
+          };
+        };
+      };
+      flags: {
+        png: string;
+        svg: string;
+        alt: string;
+      };
+      _id: string;
+      cca2: string;
+      __v: number;
+      createdAt: string;
+      updatedAt: string;
+    };
+    };
+    enrollmentStatus: string;
+    invitationSentAt: string;
+    invitationExpiresAt: string;
+    isExpired: boolean;
+    canEnroll: boolean;
+    notes?: string;
+    matchScore?: number | null;
+    matchStatus?: string | null;
+  }
+
+  // Interface pour les gigs inscrits
+  interface EnrolledGig {
+    id: string;
+    gig: {
+      _id: string;
+      title: string;
+      description: string;
+      category: string;
+      destination_zone: {
+      name: {
+        common: string;
+        official: string;
+        nativeName?: {
+          [key: string]: {
+            official: string;
+            common: string;
+            _id: string;
+          };
+        };
+      };
+      flags: {
+        png: string;
+        svg: string;
+        alt: string;
+      };
+      _id: string;
+      cca2: string;
+      __v: number;
+      createdAt: string;
+      updatedAt: string;
+    };
+      company: string;
+      compensation: string;
+      experience: string;
+      workHours: string;
+    };
+    enrollmentStatus: string;
+    enrollmentDate: string;
+    enrollmentNotes?: string;
+    status: string;
+    matchScore: number;
+    matchStatus: string;
+  }
+
+  const [activeTab, setActiveTab] = useState<'available' | 'enrolled' | 'favorite' | 'invited'>('available');
   const [gigs, setGigs] = useState<PopulatedGig[]>([]);
+  const [invitedEnrollments, setInvitedEnrollments] = useState<InvitedEnrollment[]>([]);
+  const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -313,6 +423,10 @@ export function GigsMarketplace() {
       return;
     }
 
+    console.log('🔄 Adding to favorites:', gigId);
+    console.log('📋 Current favoriteGigs:', favoriteGigs);
+    console.log('🔗 API URL:', `${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}/favorites/${gigId}`);
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}/favorites/${gigId}`,
@@ -324,8 +438,18 @@ export function GigsMarketplace() {
           },
         }
       );
-      if (!response.ok) throw new Error('Failed to add to favorites');
+      
+      console.log('📡 Add to favorites response:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Failed to add to favorites:', errorText);
+        throw new Error('Failed to add to favorites');
+      }
+      
+      console.log('✅ Successfully added to favorites');
       setFavoriteGigs(prev => [...prev, gigId]);
+      console.log('📋 Updated favoriteGigs:', [...favoriteGigs, gigId]);
     } catch (error) {
       console.error('Error adding to favorites:', error);
     }
@@ -340,6 +464,10 @@ export function GigsMarketplace() {
       return;
     }
 
+    console.log('🗑️ Removing from favorites:', gigId);
+    console.log('📋 Current favoriteGigs:', favoriteGigs);
+    console.log('🔗 API URL:', `${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}/favorites/${gigId}`);
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}/favorites/${gigId}`,
@@ -350,10 +478,230 @@ export function GigsMarketplace() {
           },
         }
       );
-      if (!response.ok) throw new Error('Failed to remove from favorites');
+      
+      console.log('📡 Remove from favorites response:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Failed to remove from favorites:', errorText);
+        throw new Error('Failed to remove from favorites');
+      }
+      
+      console.log('✅ Successfully removed from favorites');
       setFavoriteGigs(prev => prev.filter(id => id !== gigId));
+      console.log('📋 Updated favoriteGigs:', favoriteGigs.filter(id => id !== gigId));
     } catch (error) {
       console.error('Error removing from favorites:', error);
+    }
+  };
+
+  // Fonction pour accepter une invitation
+  const acceptInvitation = async (enrollmentId: string) => {
+    const token = getAuthToken();
+    if (!token) {
+      console.error('Token not found');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invitations/${enrollmentId}/accept`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to accept invitation');
+      }
+      
+      console.log('Invitation accepted successfully');
+      // Retirer l'enrollment de la liste des invitations
+      setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
+      
+      // Rafraîchir la liste des gigs inscrits
+      fetchEnrolledGigs();
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+    }
+  };
+
+  // Fonction pour rejeter une invitation
+  const rejectInvitation = async (enrollmentId: string) => {
+    const token = getAuthToken();
+    if (!token) {
+      console.error('Token not found');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invitations/${enrollmentId}/reject`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to reject invitation');
+      }
+      
+      console.log('Invitation rejected successfully');
+      // Retirer l'enrollment de la liste des invitations
+      setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
+    } catch (error) {
+      console.error('Error rejecting invitation:', error);
+    }
+  };
+
+  // Fonction pour récupérer les gigs inscrits avec données complètes
+  const fetchEnrolledGigs = async () => {
+    const agentId = getAgentId();
+    const token = getAuthToken();
+    if (!agentId || !token) {
+      console.error('Agent ID or token not found');
+      return;
+    }
+
+    try {
+      console.log('🔍 Fetching enrolled gigs for agent:', agentId);
+      // Utiliser le nouvel endpoint /gig-agents/enrolled/agent/{agentId}
+      const enrollmentResponse = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrolled/agent/${agentId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (!enrollmentResponse.ok) {
+        throw new Error('Failed to fetch enrolled gigs');
+      }
+      
+      const enrollmentData = await enrollmentResponse.json();
+      console.log('📝 Enrolled gigs raw response:', enrollmentData);
+      console.log('📊 Response length:', enrollmentData.length);
+      
+      // La réponse est directement un tableau d'enrollments
+      if (Array.isArray(enrollmentData)) {
+        console.log('✅ Response is array, processing enrollments...');
+        console.log('🔍 First enrollment structure:', enrollmentData[0]);
+        
+        // Transformer les données pour correspondre à l'interface EnrolledGig
+        const transformedEnrollments = enrollmentData
+          .filter((gigAgent: any) => {
+            console.log('🔍 Checking enrollment:', gigAgent._id, 'gigId:', gigAgent.gigId);
+            return gigAgent.gigId; // Filtrer les enrollments sans gigId
+          })
+          .map((gigAgent: any) => {
+            console.log('🔄 Transforming enrollment:', gigAgent._id);
+            return {
+              id: gigAgent._id,
+              gig: {
+                _id: gigAgent.gigId._id,
+                title: gigAgent.gigId.title,
+                description: gigAgent.gigId.description,
+                category: gigAgent.gigId.category,
+                destination_zone: gigAgent.gigId.destination_zone,
+                // Copier toutes les autres propriétés du gig
+                ...gigAgent.gigId
+              },
+              enrollmentStatus: gigAgent.status, // 'accepted' pour les gigs inscrits
+              enrollmentDate: gigAgent.enrollmentDate || gigAgent.agentResponseAt,
+              enrollmentNotes: gigAgent.enrollmentNotes,
+              status: gigAgent.status,
+              matchScore: gigAgent.matchScore,
+              matchStatus: gigAgent.matchStatus
+            };
+          });
+        
+        console.log('✅ Transformed enrolled gigs:', transformedEnrollments);
+        console.log('📊 Final count:', transformedEnrollments.length);
+        setEnrolledGigs(transformedEnrollments);
+      } else {
+        console.error('❌ Invalid enrolled gigs data structure:', enrollmentData);
+        setEnrolledGigs([]);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching enrolled gigs:', error);
+      setEnrolledGigs([]);
+    }
+  };
+
+  // Fonction pour récupérer les enrollments invités avec données complètes des gigs
+  const fetchInvitedEnrollments = async () => {
+    const agentId = getAgentId();
+    const token = getAuthToken();
+    if (!agentId || !token) {
+      console.error('Agent ID or token not found');
+      return;
+    }
+
+    try {
+      // Utiliser le nouvel endpoint /gig-agents/invited/agent/{agentId}
+      const enrollmentResponse = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invited/agent/${agentId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (!enrollmentResponse.ok) {
+        throw new Error('Failed to fetch invited enrollments');
+      }
+      
+      const enrollmentData = await enrollmentResponse.json();
+      console.log('Invited enrollments response:', enrollmentData);
+      
+      // La réponse est directement un tableau d'enrollments
+      if (Array.isArray(enrollmentData)) {
+        console.log('Found invited enrollments:', enrollmentData);
+        console.log('First invited enrollment structure:', enrollmentData[0]);
+        
+        // Transformer les données pour correspondre à l'interface InvitedEnrollment
+        const transformedInvitations = enrollmentData
+          .filter((gigAgent: any) => gigAgent.gigId) // Filtrer les enrollments sans gigId
+          .map((gigAgent: any) => ({
+          id: gigAgent._id,
+                gig: {
+            _id: gigAgent.gigId._id,
+            title: gigAgent.gigId.title,
+            description: gigAgent.gigId.description,
+            category: gigAgent.gigId.category,
+            destination_zone: gigAgent.gigId.destination_zone,
+            // Copier toutes les autres propriétés du gig
+            ...gigAgent.gigId
+          },
+          enrollmentStatus: gigAgent.status, // 'invited' pour les invitations
+          invitationSentAt: gigAgent.invitationSentAt,
+          invitationExpiresAt: gigAgent.invitationExpiresAt,
+          isExpired: new Date(gigAgent.invitationExpiresAt) < new Date(),
+            canEnroll: (gigAgent.status === 'invited' || gigAgent.status === 'pending') && new Date(gigAgent.invitationExpiresAt) > new Date(),
+          notes: gigAgent.notes,
+          matchScore: gigAgent.matchScore,
+          matchStatus: gigAgent.matchStatus
+        }));
+        
+        console.log('Transformed invited enrollments:', transformedInvitations);
+        setInvitedEnrollments(transformedInvitations);
+      } else {
+        console.error('Invalid invited enrollments data structure:', enrollmentData);
+        setInvitedEnrollments([]);
+      }
+    } catch (error) {
+      console.error('Error fetching invited enrollments:', error);
+      setInvitedEnrollments([]);
     }
   };
 
@@ -502,45 +850,82 @@ export function GigsMarketplace() {
 
     fetchGigs();
     
-    // Fetch favorites when component mounts
+    // Fetch favorites, invited enrollments and enrolled gigs when component mounts
     const agentId = getAgentId();
     if (agentId) {
       fetchFavorites();
+      fetchInvitedEnrollments();
+      fetchEnrolledGigs();
     }
   }, []);
 
-  // Filter and sort gigs
-  const filteredAndSortedGigs = gigs
-    .filter(gig => {
-      switch (activeTab) {
-        case 'available':
-          // Tous les gigs sont déjà actifs depuis l'endpoint /gigs/active
-          return true;
-        case 'enrolled':
-          // TODO: Add enrolled gigs logic
-          return false;
-        case 'favorite':
-          console.log('Checking if gig is favorite:', {
-            gigId: gig._id,
-            favoriteGigs,
-            isFavorite: favoriteGigs.includes(gig._id)
+  // Filter and sort gigs based on active tab
+  const getFilteredAndSortedGigs = () => {
+    switch (activeTab) {
+      case 'available':
+        return gigs
+          .sort((a, b) => {
+            switch (sortBy) {
+              case 'salary':
+                return parseInt(b.commission.baseAmount) - parseInt(a.commission.baseAmount);
+              case 'experience':
+                return parseInt(b.seniority.yearsExperience) - parseInt(a.seniority.yearsExperience);
+              case 'latest':
+              default:
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            }
           });
-          return favoriteGigs.includes(gig._id);
-        default:
-          return false;
-      }
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'salary':
-          return parseInt(b.commission.baseAmount) - parseInt(a.commission.baseAmount);
-        case 'experience':
-          return parseInt(b.seniority.yearsExperience) - parseInt(a.seniority.yearsExperience);
-        case 'latest':
-        default:
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-    });
+      
+      case 'enrolled':
+        return enrolledGigs
+          .sort((a, b) => {
+            switch (sortBy) {
+              case 'salary':
+                // Pour les gigs inscrits, utiliser les données de base
+                return 0; // Pas de tri par salaire pour les gigs inscrits
+              case 'experience':
+                return 0; // Pas de tri par expérience pour les gigs inscrits
+              case 'latest':
+              default:
+                return new Date(a.enrollmentDate).getTime() - new Date(b.enrollmentDate).getTime();
+            }
+          });
+      
+      case 'favorite':
+        return gigs
+          .filter(gig => favoriteGigs.includes(gig._id))
+          .sort((a, b) => {
+            switch (sortBy) {
+              case 'salary':
+                return parseInt(b.commission.baseAmount) - parseInt(a.commission.baseAmount);
+              case 'experience':
+                return parseInt(b.seniority.yearsExperience) - parseInt(a.seniority.yearsExperience);
+              case 'latest':
+              default:
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            }
+          });
+      
+      case 'invited':
+        return invitedEnrollments
+          .sort((a, b) => {
+            switch (sortBy) {
+              case 'salary':
+                return 0; // Pas de tri par salaire pour les gigs invités
+              case 'experience':
+                return 0; // Pas de tri par expérience pour les gigs invités
+              case 'latest':
+              default:
+                return new Date(a.invitationSentAt).getTime() - new Date(b.invitationSentAt).getTime();
+            }
+          });
+      
+      default:
+        return [];
+    }
+  };
+
+  const filteredAndSortedGigs = getFilteredAndSortedGigs();
 
   // Pagination logic
   const indexOfLastGig = currentPage * gigsPerPage;
@@ -552,27 +937,16 @@ export function GigsMarketplace() {
   console.log('🎯 GIGS ACTUELLEMENT AFFICHÉS:', {
     activeTab,
     totalGigs: gigs.length,
+    totalEnrolledGigs: enrolledGigs.length,
+    totalInvitedEnrollments: invitedEnrollments.length,
     filteredGigs: filteredAndSortedGigs.length,
     currentGigs: currentGigs.length,
-    currentGigsData: currentGigs.map(gig => ({
-      id: gig._id,
-      title: gig.title,
-      company: gig.companyId?.name,
-      industries: gig.industries?.map(ind => ind.name || ind),
-      technicalSkills: gig.skills?.technical?.map(skill => ({
-        name: skill.skill?.name,
-        details: skill.details,
-        level: skill.level,
-        fullSkill: skill
-      })),
-      languages: gig.skills?.languages?.map(lang => ({
-        name: lang.language?.name,
-        iso: lang.iso639_1,
-        proficiency: lang.proficiency,
-        fullLang: lang
-      }))
-    }))
+    currentPage,
+    totalPages,
+    enrolledGigsData: enrolledGigs
   });
+
+
 
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading...</div>;
@@ -624,6 +998,16 @@ export function GigsMarketplace() {
         >
           Favorite Gigs
         </button>
+        <button
+          onClick={() => setActiveTab('invited')}
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'invited'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Invited Gigs
+        </button>
       </div>
 
       {activeTab === 'available' ? (
@@ -669,7 +1053,7 @@ export function GigsMarketplace() {
             <div className="mt-4 space-y-3">
               <div className="flex items-center text-sm text-gray-500">
                 <DollarSign className="w-4 h-4 mr-2" />
-                <span>{gig.commission.baseAmount} {gig.commission.currency}/yr base</span>
+                <span>{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr base</span>
                 {gig.commission.bonus && (
                   <span className="ml-1 text-xs text-green-600">+ bonus</span>
                 )}
@@ -680,7 +1064,7 @@ export function GigsMarketplace() {
               </div>
               <div className="flex items-center text-sm text-gray-500">
                 <Globe className="w-4 h-4 mr-2" />
-                <span>{gig.destination_zone} ({gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
+                <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
               </div>
               <div className="flex items-center text-sm text-gray-500">
                 <Calendar className="w-4 h-4 mr-2" />
@@ -790,7 +1174,7 @@ export function GigsMarketplace() {
                                         <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{gig.commission.baseAmount} {gig.commission.currency}/yr base</span>
+                        <span>{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr base</span>
                         {gig.commission.bonus && (
                           <span className="ml-1 text-xs text-green-600">+ bonus</span>
                         )}
@@ -801,7 +1185,7 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{gig.destination_zone} ({gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
+                        <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
@@ -859,6 +1243,346 @@ export function GigsMarketplace() {
                     >
                       View Details
                     </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'invited' ? (
+        <div>
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : invitedEnrollments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-4">
+              <div className="bg-blue-50 rounded-xl p-8 max-w-md w-full text-center">
+                <h3 className="text-xl font-semibold text-blue-900 mb-2">
+                  No Invitations Yet
+                </h3>
+                <p className="text-blue-600">
+                  You haven't received any gig invitations yet. Keep your profile updated to increase your chances of being invited to exciting opportunities.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {invitedEnrollments.map((enrollment) => (
+                  <div key={enrollment.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{enrollment.gig.title}</h3>
+                        <p className="text-xs text-gray-500">{enrollment.gig.category}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                          Invited
+                        </span>
+                        {('seniority' in enrollment.gig && enrollment.gig.seniority?.level) && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            {enrollment.gig.seniority.level}
+                          </span>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            favoriteGigs.includes(enrollment.gig._id)
+                              ? removeFromFavorites(enrollment.gig._id)
+                              : addToFavorites(enrollment.gig._id);
+                          }}
+                          className={`p-1 rounded-full transition-colors ${
+                            favoriteGigs.includes(enrollment.gig._id)
+                              ? 'hover:bg-red-50'
+                              : 'hover:bg-gray-100'
+                          }`}
+                          title={favoriteGigs.includes(enrollment.gig._id) ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <Heart 
+                            className={`w-5 h-5 ${
+                              favoriteGigs.includes(enrollment.gig._id)
+                                ? 'text-red-500 fill-current'
+                                : 'text-gray-400'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">{enrollment.gig.description}</p>
+
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <DollarSign className="w-4 h-4 mr-2" />
+                        <span>{('commission' in enrollment.gig && enrollment.gig.commission?.baseAmount) ? `${enrollment.gig.commission.baseAmount} ${enrollment.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
+                        {('commission' in enrollment.gig && enrollment.gig.commission?.bonus) && (
+                          <span className="ml-1 text-xs text-green-600">+ bonus</span>
+                        )}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Users className="w-4 h-4 mr-2" />
+                        <span>{('seniority' in enrollment.gig && enrollment.gig.seniority?.yearsExperience) ? `${enrollment.gig.seniority.yearsExperience} years experience` : 'N/A years experience'}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Globe className="w-4 h-4 mr-2" />
+                        <span>{typeof enrollment.gig.destination_zone === 'object' ? enrollment.gig.destination_zone?.name?.common || enrollment.gig.destination_zone?.cca2 || 'Unknown' : enrollment.gig.destination_zone} ({('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.abbreviation) ? enrollment.gig.availability.time_zone.abbreviation : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.name) ? enrollment.gig.availability.time_zone.name : 'N/A'})</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        <span>{('availability' in enrollment.gig && enrollment.gig.availability?.minimumHours?.weekly) ? `${enrollment.gig.availability.minimumHours.weekly}h/week` : 'N/A h/week'}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <User className="w-4 h-4 mr-2" />
+                        <span>{('companyId' in enrollment.gig && enrollment.gig.companyId?.name) ? enrollment.gig.companyId.name : 'Unknown'}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex-grow">
+                      {/* Industries */}
+                      {('industries' in enrollment.gig && enrollment.gig.industries && enrollment.gig.industries.length > 0) ? (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {enrollment.gig.industries.slice(0, 3).map((industry) => (
+                              <span key={industry._id} className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
+                                {industry.name}
+                              </span>
+                            ))}
+                            {enrollment.gig.industries.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                                +{enrollment.gig.industries.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
+                              N/A
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Activities */}
+                      {('activities' in enrollment.gig && enrollment.gig.activities && enrollment.gig.activities.length > 0) ? (
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {enrollment.gig.activities.slice(0, 3).map((activity) => (
+                              <span key={activity._id} className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                                {activity.name}
+                              </span>
+                            ))}
+                            {enrollment.gig.activities.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                                +{enrollment.gig.activities.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                              N/A
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-6 flex space-x-3">
+                      <button 
+                        onClick={() => acceptInvitation(enrollment.id)}
+                        className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                        disabled={!enrollment.canEnroll || enrollment.isExpired}
+                      >
+                        Accept
+                      </button>
+                      
+                      <button 
+                        onClick={() => rejectInvitation(enrollment.id)}
+                        className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+                        disabled={!enrollment.canEnroll || enrollment.isExpired}
+                      >
+                        Reject
+                      </button>
+                      
+                      <button 
+                        onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
+                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'enrolled' ? (
+        <div>
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : enrolledGigs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-4">
+              <div className="bg-blue-50 rounded-xl p-8 max-w-md w-full text-center">
+                <h3 className="text-xl font-semibold text-blue-900 mb-2">
+                  No Enrolled Gigs Yet
+                </h3>
+                <p className="text-blue-600">
+                  You haven't enrolled in any gigs yet. Accept invitations from the "Invited Gigs" tab to get started!
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {enrolledGigs.map((enrolledGig) => (
+                  <div key={enrolledGig.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{enrolledGig.gig.title}</h3>
+                        <p className="text-xs text-gray-500">{enrolledGig.gig.category}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                          Enrolled
+                        </span>
+                        {('seniority' in enrolledGig.gig && enrolledGig.gig.seniority?.level) && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            {enrolledGig.gig.seniority.level}
+                          </span>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            favoriteGigs.includes(enrolledGig.gig._id)
+                              ? removeFromFavorites(enrolledGig.gig._id)
+                              : addToFavorites(enrolledGig.gig._id);
+                          }}
+                          className={`p-1 rounded-full transition-colors ${
+                            favoriteGigs.includes(enrolledGig.gig._id)
+                              ? 'hover:bg-red-50'
+                              : 'hover:bg-gray-100'
+                          }`}
+                          title={favoriteGigs.includes(enrolledGig.gig._id) ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <Heart 
+                            className={`w-5 h-5 ${
+                              favoriteGigs.includes(enrolledGig.gig._id)
+                                ? 'text-red-500 fill-current'
+                                : 'text-gray-400'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">{enrolledGig.gig.description}</p>
+
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <DollarSign className="w-4 h-4 mr-2" />
+                        <span>{('commission' in enrolledGig.gig && enrolledGig.gig.commission?.baseAmount) ? `${enrolledGig.gig.commission.baseAmount} ${enrolledGig.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
+                        {('commission' in enrolledGig.gig && enrolledGig.gig.commission?.bonus) && (
+                          <span className="ml-1 text-xs text-green-600">+ bonus</span>
+                        )}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Users className="w-4 h-4 mr-2" />
+                        <span>{('seniority' in enrolledGig.gig && enrolledGig.gig.seniority?.yearsExperience) ? `${enrolledGig.gig.seniority.yearsExperience} years experience` : 'N/A years experience'}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Globe className="w-4 h-4 mr-2" />
+                        <span>{typeof enrolledGig.gig.destination_zone === 'object' ? enrolledGig.gig.destination_zone?.name?.common || enrolledGig.gig.destination_zone?.cca2 || 'Unknown' : enrolledGig.gig.destination_zone} ({('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.abbreviation) ? enrolledGig.gig.availability.time_zone.abbreviation : ('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.name) ? enrolledGig.gig.availability.time_zone.name : 'N/A'})</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        <span>{('availability' in enrolledGig.gig && enrolledGig.gig.availability?.minimumHours?.weekly) ? `${enrolledGig.gig.availability.minimumHours.weekly}h/week` : 'N/A h/week'}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <User className="w-4 h-4 mr-2" />
+                        <span>{('companyId' in enrolledGig.gig && enrolledGig.gig.companyId?.name) ? enrolledGig.gig.companyId.name : 'Unknown'}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex-grow">
+                      {/* Industries */}
+                      {('industries' in enrolledGig.gig && enrolledGig.gig.industries && enrolledGig.gig.industries.length > 0) ? (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {enrolledGig.gig.industries.slice(0, 3).map((industry) => (
+                              <span key={industry._id} className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
+                                {industry.name}
+                              </span>
+                            ))}
+                            {enrolledGig.gig.industries.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                                +{enrolledGig.gig.industries.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
+                              N/A
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Activities */}
+                      {('activities' in enrolledGig.gig && enrolledGig.gig.activities && enrolledGig.gig.activities.length > 0) ? (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {enrolledGig.gig.activities.slice(0, 3).map((activity) => (
+                              <span key={activity._id} className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                                {activity.name}
+                              </span>
+                            ))}
+                            {enrolledGig.gig.activities.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                                +{enrolledGig.gig.activities.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                              N/A
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+
+                    </div>
+
+                    <div className="mt-6">
+                      <button 
+                        onClick={() => navigate(`/gig/${enrolledGig.gig._id}`)}
+                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        View Details
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

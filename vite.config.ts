@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    base: 'https://preprod-rep-dashboard.harx.ai/',
+    base: 'https://prod-rep-dashboard.harx.ai/',
     plugins: [
       react(),
       qiankun('repdashboard', {
