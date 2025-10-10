@@ -647,8 +647,31 @@ export function GigsMarketplace() {
       // Extraire les IDs des gigs avec des demandes en attente
       if (data.gigs && Array.isArray(data.gigs)) {
         const pendingGigIds = data.gigs
-          .filter((gigRequest: any) => gigRequest.gig && gigRequest.status === 'pending')
-          .map((gigRequest: any) => gigRequest.gig._id);
+          .filter((gigRequest: any) => {
+            // Vérifier différents champs de statut
+            const isPending = gigRequest.status === 'pending' || 
+                            gigRequest.enrollmentStatus === 'requested' ||
+                            gigRequest.agentResponse === 'pending';
+            
+            console.log('🔍 Checking gig request:', {
+              gigId: gigRequest.gigId?.$oid || gigRequest.gigId,
+              status: gigRequest.status,
+              enrollmentStatus: gigRequest.enrollmentStatus,
+              agentResponse: gigRequest.agentResponse,
+              isPending
+            });
+            
+            return isPending;
+          })
+          .map((gigRequest: any) => {
+            // Gérer les différents formats d'ID
+            const gigId = gigRequest.gig?._id || 
+                         gigRequest.gig?.$oid || 
+                         gigRequest.gigId?.$oid || 
+                         gigRequest.gigId;
+            return gigId;
+          })
+          .filter(id => id); // Filtrer les IDs undefined/null
         
         console.log('⏳ Pending gig IDs:', pendingGigIds);
         setPendingRequests(pendingGigIds);
