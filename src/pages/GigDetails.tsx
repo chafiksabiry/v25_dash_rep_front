@@ -876,7 +876,28 @@ export function GigDetails() {
                 )}
 
                 {/* Bouton selon le statut d'enrollment */}
-                {getAgentStatus() === 'enrolled' || getAgentStatus() === 'pending' || getAgentStatus() === 'invited' ? null : (
+                {getAgentStatus() === 'enrolled' ? (
+                  <div className="text-center">
+                    <button
+                      onClick={() => navigate('/copilot')}
+                      className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
+                    >
+                      ▶ Start
+                    </button>
+                  </div>
+                ) : getAgentStatus() === 'pending' ? (
+                  <div className="text-center">
+                    <span className="inline-block px-5 py-2 bg-yellow-100 text-yellow-800 rounded-lg font-medium text-sm">
+                      ⏳ Pending
+                    </span>
+                  </div>
+                ) : getAgentStatus() === 'invited' ? (
+                  <div className="text-center">
+                    <span className="inline-block px-5 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium text-sm">
+                      📨 Invited
+                    </span>
+                  </div>
+                ) : (
                   <button 
                     onClick={handleApply}
                     disabled={applying}
