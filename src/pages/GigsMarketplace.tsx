@@ -813,7 +813,10 @@ export function GigsMarketplace() {
       if (enrollmentData.gigs && Array.isArray(enrollmentData.gigs)) {
         console.log('✅ Found invited enrollments:', enrollmentData.gigs.length);
         if (enrollmentData.gigs.length > 0) {
+          console.log('🔍 First invited enrollment FULL structure:', JSON.stringify(enrollmentData.gigs[0], null, 2));
           console.log('🔍 First invited enrollment structure:', enrollmentData.gigs[0]);
+          console.log('🆔 Enrollment ID (_id):', enrollmentData.gigs[0]._id);
+          console.log('🆔 Enrollment ID (id):', enrollmentData.gigs[0].id);
           console.log('🔍 First gig structure:', enrollmentData.gigs[0].gig);
           console.log('🏢 CompanyId:', enrollmentData.gigs[0].gig?.companyId);
           console.log('🏭 Industries:', enrollmentData.gigs[0].gig?.industries);
@@ -828,7 +831,16 @@ export function GigsMarketplace() {
           })
           .map((gigInvitation: any) => {
             console.log('🔄 Transforming invitation for gig:', gigInvitation.gig._id);
-            console.log('📝 GigAgent document ID:', gigInvitation._id);
+            
+            // Extraire l'ID du document GigAgent (peut être _id, id, ou _id.$oid)
+            const enrollmentId = gigInvitation._id?.$oid || gigInvitation._id || gigInvitation.id;
+            console.log('📝 GigAgent document ID (_id):', gigInvitation._id);
+            console.log('📝 GigAgent document ID (id):', gigInvitation.id);
+            console.log('📝 Final enrollment ID used:', enrollmentId);
+            
+            if (!enrollmentId) {
+              console.error('⚠️ WARNING: No enrollment ID found for invitation:', gigInvitation);
+            }
             
             // Calculer l'expiration basée sur invitationDate + 7 jours (par exemple)
             const invitationDate = new Date(gigInvitation.invitationDate || gigInvitation.updatedAt);
@@ -836,7 +848,7 @@ export function GigsMarketplace() {
             expirationDate.setDate(expirationDate.getDate() + 7); // 7 jours pour répondre
             
             return {
-              id: gigInvitation._id, // ✅ Utiliser l'ID du document GigAgent (enrollment ID)
+              id: enrollmentId, // ✅ Utiliser l'ID du document GigAgent (enrollment ID)
                 gig: {
                 _id: gigInvitation.gig._id,
                 title: gigInvitation.gig.title,
