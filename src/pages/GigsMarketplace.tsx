@@ -364,6 +364,7 @@ export function GigsMarketplace() {
   const [gigs, setGigs] = useState<PopulatedGig[]>([]);
   const [invitedEnrollments, setInvitedEnrollments] = useState<InvitedEnrollment[]>([]);
   const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<string[]>([]); // IDs des gigs avec demandes en attente
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -388,8 +389,11 @@ export function GigsMarketplace() {
       return 'invited';
     }
 
-    // Pour l'instant, on ne peut pas facilement déterminer le statut "pending"
-    // sans faire un appel API supplémentaire, donc on retourne 'none'
+    // Vérifier si le gig a une demande en attente
+    if (pendingRequests.includes(gigId)) {
+      return 'pending';
+    }
+
     return 'none';
   };
 
@@ -609,6 +613,52 @@ export function GigsMarketplace() {
       if (error instanceof Error) {
         console.error('Error details:', error.message);
       }
+    }
+  };
+
+  // Fonction pour récupérer les demandes en attente (pending requests)
+  const fetchPendingRequests = async () => {
+    const agentId = getAgentId();
+    const token = getAuthToken();
+    if (!agentId || !token) {
+      console.error('Agent ID or token not found');
+      return;
+    }
+
+    try {
+      console.log('🔍 Fetching pending requests for agent:', agentId);
+      // Utiliser l'endpoint pour récupérer les gigs avec statut pending
+      const response = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/agents/${agentId}/gigs?status=pending`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch pending requests');
+      }
+      
+      const data = await response.json();
+      console.log('📝 Pending requests response:', data);
+      
+      // Extraire les IDs des gigs avec des demandes en attente
+      if (data.gigs && Array.isArray(data.gigs)) {
+        const pendingGigIds = data.gigs
+          .filter((gigRequest: any) => gigRequest.gig && gigRequest.status === 'pending')
+          .map((gigRequest: any) => gigRequest.gig._id);
+        
+        console.log('⏳ Pending gig IDs:', pendingGigIds);
+        setPendingRequests(pendingGigIds);
+      } else {
+        console.log('ℹ️ No pending requests found');
+        setPendingRequests([]);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching pending requests:', error);
+      setPendingRequests([]);
     }
   };
 
@@ -926,6 +976,7 @@ export function GigsMarketplace() {
       fetchFavorites();
       fetchInvitedEnrollments();
       fetchEnrolledGigs();
+      fetchPendingRequests();
     }
   }, []);
 
