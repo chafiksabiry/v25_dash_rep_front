@@ -639,6 +639,12 @@ export function GigsMarketplace() {
               // Si les données ne sont pas populées (companyId est un string), on fait une requête pour le gig complet
               let fullGigData = gigAgent.gigId;
               
+              console.log('🔍 Checking if data is populated:', {
+                gigId: gigAgent.gigId._id,
+                companyIdType: typeof gigAgent.gigId.companyId,
+                companyIdValue: gigAgent.gigId.companyId
+              });
+              
               if (typeof gigAgent.gigId.companyId === 'string') {
                 console.log('⚠️ Gig data not populated, fetching full gig details for:', gigAgent.gigId._id);
                 try {
@@ -742,6 +748,12 @@ export function GigsMarketplace() {
             .map(async (gigAgent: any) => {
               // Si les données ne sont pas populées (companyId est un string), on fait une requête pour le gig complet
               let fullGigData = gigAgent.gigId;
+              
+              console.log('🔍 Checking if data is populated:', {
+                gigId: gigAgent.gigId._id,
+                companyIdType: typeof gigAgent.gigId.companyId,
+                companyIdValue: gigAgent.gigId.companyId
+              });
               
               if (typeof gigAgent.gigId.companyId === 'string') {
                 console.log('⚠️ Gig data not populated, fetching full gig details for:', gigAgent.gigId._id);
@@ -1412,7 +1424,7 @@ export function GigsMarketplace() {
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{('commission' in enrollment.gig && enrollment.gig.commission?.baseAmount) ? `${enrollment.gig.commission.baseAmount} ${enrollment.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
+                        <span>{('commission' in enrollment.gig && enrollment.gig.commission?.baseAmount) ? `${enrollment.gig.commission.baseAmount} ${typeof enrollment.gig.commission.currency === 'object' ? enrollment.gig.commission.currency?.symbol || enrollment.gig.commission.currency?.code || 'EUR' : enrollment.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
                         {('commission' in enrollment.gig && enrollment.gig.commission?.bonus) && (
                           <span className="ml-1 text-xs text-green-600">+ bonus</span>
                         )}
@@ -1587,7 +1599,7 @@ export function GigsMarketplace() {
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{('commission' in enrolledGig.gig && enrolledGig.gig.commission?.baseAmount) ? `${enrolledGig.gig.commission.baseAmount} ${enrolledGig.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
+                        <span>{('commission' in enrolledGig.gig && enrolledGig.gig.commission?.baseAmount) ? `${enrolledGig.gig.commission.baseAmount} ${typeof enrolledGig.gig.commission.currency === 'object' ? enrolledGig.gig.commission.currency?.symbol || enrolledGig.gig.commission.currency?.code || 'EUR' : enrolledGig.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
                         {('commission' in enrolledGig.gig && enrolledGig.gig.commission?.bonus) && (
                           <span className="ml-1 text-xs text-green-600">+ bonus</span>
                         )}
