@@ -1559,7 +1559,7 @@ export function GigsMarketplace() {
                               {gigStatus === 'enrolled' ? '✓ Enrolled' :
                                gigStatus === 'invited' ? '✉ Invited' :
                                '⏳ Pending'}
-                            </span>
+                        </span>
                           );
                         })()}
                         <button
