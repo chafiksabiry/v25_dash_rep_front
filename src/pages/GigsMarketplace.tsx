@@ -383,6 +383,8 @@ export function GigsMarketplace() {
   const [gigsPerPage] = useState(9);
   const [sortBy] = useState<'latest' | 'salary' | 'experience'>('latest');
   const [favoriteGigs, setFavoriteGigs] = useState<string[]>([]);
+  const [applyingGigId, setApplyingGigId] = useState<string | null>(null);
+  const [applicationMessage, setApplicationMessage] = useState<{ gigId: string; message: string; type: 'success' | 'error' } | null>(null);
 
   // Fonction pour obtenir le statut d'un gig pour l'agent connecté
   const getGigStatus = (gigId: string): 'enrolled' | 'invited' | 'pending' | 'none' => {
@@ -692,6 +694,95 @@ export function GigsMarketplace() {
       if (error instanceof Error) {
         console.error('Error details:', error.message);
       }
+    }
+  };
+
+  // Fonction pour postuler à un gig
+  const handleApplyToGig = async (gigId: string) => {
+    const agentId = getAgentId();
+    const token = getAuthToken();
+    
+    if (!agentId || !token) {
+      setApplicationMessage({ gigId, message: 'You must be logged in to apply', type: 'error' });
+      return;
+    }
+
+    setApplyingGigId(gigId);
+    setApplicationMessage(null);
+
+    try {
+      console.log('🚀 Applying to gig:', gigId);
+      console.log('👤 Agent ID:', agentId);
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-request/${agentId}/${gigId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            notes: "I am very interested in this project and have relevant experience."
+          }),
+        }
+      );
+
+      console.log('📡 Application response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Application failed:', errorText);
+        
+        // Si l'erreur indique que le gig est déjà en attente, rafraîchir le statut
+        if (response.status === 400 && errorText.includes('Cannot request enrollment for this gig at this time')) {
+          console.log('⏳ Gig is already pending, refreshing status...');
+          setApplicationMessage({ gigId, message: 'This gig is already pending', type: 'success' });
+          
+          // Rafraîchir tous les statuts
+          await Promise.all([
+            fetchPendingRequests(),
+            fetchEnrolledGigIdsFromProfile()
+          ]);
+          
+          return;
+        }
+        
+        throw new Error(`Application failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Application successful:', data);
+      
+      setApplicationMessage({ gigId, message: 'Application sent successfully!', type: 'success' });
+      
+      // Rafraîchir tous les statuts pour mettre à jour l'UI
+      await Promise.all([
+        fetchPendingRequests(),
+        fetchEnrolledGigIdsFromProfile(),
+        fetchInvitedEnrollments(),
+        fetchEnrolledGigs()
+      ]);
+      
+      // Effacer le message après 3 secondes
+      setTimeout(() => {
+        setApplicationMessage(null);
+      }, 3000);
+      
+    } catch (err) {
+      console.error('❌ Error applying to gig:', err);
+      setApplicationMessage({ 
+        gigId, 
+        message: err instanceof Error ? err.message : 'Error during application', 
+        type: 'error' 
+      });
+      
+      // Effacer le message d'erreur après 3 secondes
+      setTimeout(() => {
+        setApplicationMessage(null);
+      }, 3000);
+    } finally {
+      setApplyingGigId(null);
     }
   };
 
@@ -1235,6 +1326,20 @@ export function GigsMarketplace() {
         </button>
       </div>
 
+      {/* Message de notification pour les applications */}
+      {applicationMessage && (
+        <div className={`mb-4 p-4 rounded-lg ${
+          applicationMessage.type === 'success' 
+            ? 'bg-green-50 text-green-800 border border-green-200' 
+            : 'bg-red-50 text-red-800 border border-red-200'
+        }`}>
+          <p className="text-sm font-medium">
+            {applicationMessage.type === 'success' ? '✅ ' : '❌ '}
+            {applicationMessage.message}
+          </p>
+        </div>
+      )}
+
       {activeTab === 'available' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {currentGigs.map((gig) => {
@@ -1248,17 +1353,33 @@ export function GigsMarketplace() {
               </div>
               <div className="flex items-center space-x-2">
                 {/* Status Badge */}
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
-                  gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
-                  gigStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-purple-100 text-purple-700'
-                }`}>
-                  {gigStatus === 'enrolled' ? '✓ Enrolled' :
-                   gigStatus === 'invited' ? '✉ Invited' :
-                   gigStatus === 'pending' ? '⏳ Pending' :
-                   '📝 Apply now'}
-                </span>
+                {gigStatus === 'none' ? (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleApplyToGig(gig._id);
+                    }}
+                    disabled={applyingGigId === gig._id}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                      applyingGigId === gig._id
+                        ? 'bg-purple-200 text-purple-400 cursor-not-allowed'
+                        : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-md cursor-pointer'
+                    }`}
+                  >
+                    {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
+                  </button>
+                ) : (
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
+                    gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
+                    'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {gigStatus === 'enrolled' ? '✓ Enrolled' :
+                     gigStatus === 'invited' ? '✉ Invited' :
+                     '⏳ Pending'}
+                  </span>
+                )}
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -1413,17 +1534,31 @@ export function GigsMarketplace() {
                         {/* Status Badge */}
                         {(() => {
                           const gigStatus = getGigStatus(gig._id);
-                          return (
+                          return gigStatus === 'none' ? (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleApplyToGig(gig._id);
+                              }}
+                              disabled={applyingGigId === gig._id}
+                              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                                applyingGigId === gig._id
+                                  ? 'bg-purple-200 text-purple-400 cursor-not-allowed'
+                                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-md cursor-pointer'
+                              }`}
+                            >
+                              {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
+                            </button>
+                          ) : (
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                               gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
                               gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
-                              gigStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-purple-100 text-purple-700'
+                              'bg-yellow-100 text-yellow-700'
                             }`}>
                               {gigStatus === 'enrolled' ? '✓ Enrolled' :
                                gigStatus === 'invited' ? '✉ Invited' :
-                               gigStatus === 'pending' ? '⏳ Pending' :
-                               '📝 Apply now'}
+                               '⏳ Pending'}
                             </span>
                           );
                         })()}
