@@ -917,17 +917,6 @@ export function GigDetails() {
                     )}
                   </button>
                 )}
-                
-                <p className="text-xs text-gray-500 mt-2 text-center max-w-[140px]">
-                  {getAgentStatus() === 'enrolled' 
-                     ? 'You are enrolled in this gig'
-                    : getAgentStatus() === 'pending'
-                     ? 'Your request is being processed'
-                    : getAgentStatus() === 'invited'
-                     ? 'You have been invited'
-                    : 'Join this opportunity and start earning immediately'
-                  }
-                </p>
               </div>
             </div>
 
