@@ -243,7 +243,18 @@ interface PopulatedGig {
         yearsExperience: string;
       };
     }>;
-    territories: string[];
+    territories: (string | {
+      _id: string;
+      name: {
+        common: string;
+        official: string;
+      };
+      flags: {
+        png: string;
+        svg: string;
+      };
+      cca2: string;
+    })[];
   };
 
   // 📖 Documentation
@@ -1090,7 +1101,7 @@ export function GigDetails() {
                       <div className="flex flex-wrap gap-1 mt-1">
                         {gig.team.territories.map((territory, index) => (
                           <span key={index} className="px-2 py-1 bg-blue-100 rounded-full text-xs text-blue-700">
-                            {territory}
+                            {typeof territory === 'object' ? territory?.name?.common || territory?.cca2 || 'Unknown' : territory}
                           </span>
                         ))}
                       </div>
