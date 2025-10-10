@@ -660,6 +660,10 @@ export function GigsMarketplace() {
                   if (gigResponse.ok) {
                     const gigData = await gigResponse.json();
                     console.log('✅ Fetched full gig data:', gigData);
+                    console.log('🌍 Destination zone type:', typeof (gigData.data || gigData).destination_zone);
+                    console.log('🌍 Destination zone value:', (gigData.data || gigData).destination_zone);
+                    console.log('⏰ Time zone type:', typeof (gigData.data || gigData).availability?.time_zone);
+                    console.log('⏰ Time zone value:', (gigData.data || gigData).availability?.time_zone);
                     fullGigData = gigData.data || gigData;
                   } else {
                     console.error('❌ Failed to fetch full gig data');
@@ -770,6 +774,10 @@ export function GigsMarketplace() {
                   if (gigResponse.ok) {
                     const gigData = await gigResponse.json();
                     console.log('✅ Fetched full gig data:', gigData);
+                    console.log('🌍 Destination zone type:', typeof (gigData.data || gigData).destination_zone);
+                    console.log('🌍 Destination zone value:', (gigData.data || gigData).destination_zone);
+                    console.log('⏰ Time zone type:', typeof (gigData.data || gigData).availability?.time_zone);
+                    console.log('⏰ Time zone value:', (gigData.data || gigData).availability?.time_zone);
                     fullGigData = gigData.data || gigData;
                   } else {
                     console.error('❌ Failed to fetch full gig data');
