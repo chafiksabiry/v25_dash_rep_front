@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
+import { refreshGigStatuses } from '../utils/gigStatusUtils';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
 interface PopulatedGig {
@@ -729,8 +730,11 @@ export function GigDetails() {
       console.log('✅ Application successful:', data);
       
       setApplicationStatus('success');
-             setApplicationMessage(data.message || 'Application sent successfully!');
+      setApplicationMessage(data.message || 'Application sent successfully!');
       setEnrollmentStatus('requested');
+      
+      // Déclencher le rafraîchissement des statuts dans toutes les pages
+      await refreshGigStatuses();
       
       // Ne pas rediriger, juste mettre à jour le statut local
       

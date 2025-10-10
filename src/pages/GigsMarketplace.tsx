@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, Users, Globe, Calendar, Heart, User, Mail, Clock } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
+import { fetchPendingRequests as fetchPendingRequestsUtil } from '../utils/gigStatusUtils';
 
 export function GigsMarketplace() {
   const navigate = useNavigate();
@@ -377,24 +378,49 @@ export function GigsMarketplace() {
     const agentId = getAgentId();
     if (!agentId) return 'none';
 
+    // Log pour déboguer
+    console.log(`🔍 getGigStatus for gig ${gigId}:`, {
+      enrolledGigIds: enrolledGigs.map(eg => eg.gig._id),
+      invitedGigIds: invitedEnrollments.map(ie => ie.gig._id),
+      pendingGigIds: pendingRequests,
+      gigId
+    });
+
     // Vérifier si le gig est dans les gigs inscrits
     const enrolledGig = enrolledGigs.find(eg => eg.gig._id === gigId);
     if (enrolledGig) {
+      console.log(`✅ Gig ${gigId} is ENROLLED`);
       return 'enrolled';
     }
 
     // Vérifier si le gig est dans les invitations
     const invitedGig = invitedEnrollments.find(ie => ie.gig._id === gigId);
     if (invitedGig) {
+      console.log(`📨 Gig ${gigId} is INVITED`);
       return 'invited';
     }
 
     // Vérifier si le gig a une demande en attente
     if (pendingRequests.includes(gigId)) {
+      console.log(`⏳ Gig ${gigId} is PENDING`);
       return 'pending';
     }
 
+    console.log(`❌ Gig ${gigId} has NO STATUS`);
     return 'none';
+  };
+
+  // Fonction pour rafraîchir tous les statuts (à exporter pour GigDetails)
+  const refreshAllStatuses = async () => {
+    const agentId = getAgentId();
+    if (agentId) {
+      await Promise.all([
+        fetchFavorites(),
+        fetchInvitedEnrollments(),
+        fetchEnrolledGigs(),
+        fetchPendingRequests()
+      ]);
+    }
   };
 
   // Fonction pour récupérer les favoris
@@ -618,69 +644,13 @@ export function GigsMarketplace() {
 
   // Fonction pour récupérer les demandes en attente (pending requests)
   const fetchPendingRequests = async () => {
-    const agentId = getAgentId();
-    const token = getAuthToken();
-    if (!agentId || !token) {
-      console.error('Agent ID or token not found');
-      return;
-    }
-
+    console.log('🔍 Starting fetchPendingRequests...');
     try {
-      console.log('🔍 Fetching pending requests for agent:', agentId);
-      // Utiliser l'endpoint pour récupérer les gigs avec statut pending
-      const response = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/agents/${agentId}/gigs?status=pending`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch pending requests');
-      }
-      
-      const data = await response.json();
-      console.log('📝 Pending requests response:', data);
-      
-      // Extraire les IDs des gigs avec des demandes en attente
-      if (data.gigs && Array.isArray(data.gigs)) {
-        const pendingGigIds = data.gigs
-          .filter((gigRequest: any) => {
-            // Vérifier différents champs de statut
-            const isPending = gigRequest.status === 'pending' || 
-                            gigRequest.enrollmentStatus === 'requested' ||
-                            gigRequest.agentResponse === 'pending';
-            
-            console.log('🔍 Checking gig request:', {
-              gigId: gigRequest.gigId?.$oid || gigRequest.gigId,
-              status: gigRequest.status,
-              enrollmentStatus: gigRequest.enrollmentStatus,
-              agentResponse: gigRequest.agentResponse,
-              isPending
-            });
-            
-            return isPending;
-          })
-          .map((gigRequest: any) => {
-            // Gérer les différents formats d'ID
-            const gigId = gigRequest.gig?._id || 
-                         gigRequest.gig?.$oid || 
-                         gigRequest.gigId?.$oid || 
-                         gigRequest.gigId;
-            return gigId;
-          })
-          .filter(id => id); // Filtrer les IDs undefined/null
-        
-        console.log('⏳ Pending gig IDs:', pendingGigIds);
-        setPendingRequests(pendingGigIds);
-      } else {
-        console.log('ℹ️ No pending requests found');
-        setPendingRequests([]);
-      }
+      const pendingGigIds = await fetchPendingRequestsUtil();
+      console.log('✅ fetchPendingRequests completed, setting pendingRequests:', pendingGigIds);
+      setPendingRequests(pendingGigIds);
     } catch (error) {
-      console.error('❌ Error fetching pending requests:', error);
+      console.error('❌ Error in fetchPendingRequests:', error);
       setPendingRequests([]);
     }
   };
@@ -1001,6 +971,24 @@ export function GigsMarketplace() {
       fetchEnrolledGigs();
       fetchPendingRequests();
     }
+
+    // Écouter les événements de rafraîchissement des statuts
+    const handleRefreshStatuses = () => {
+      console.log('🔄 Refreshing gig statuses...');
+      if (agentId) {
+        fetchFavorites();
+        fetchInvitedEnrollments();
+        fetchEnrolledGigs();
+        fetchPendingRequests();
+      }
+    };
+
+    window.addEventListener('refreshGigStatuses', handleRefreshStatuses);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('refreshGigStatuses', handleRefreshStatuses);
+    };
   }, []);
 
   // Filter and sort gigs based on active tab
