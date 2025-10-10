@@ -273,7 +273,7 @@ interface PopulatedGig {
   // 👥 Agents enrolled/invited to this gig
   agents?: Array<{
     agentId: string;
-    status: 'invited' | 'enrolled' | 'rejected';
+    status: 'invited' | 'enrolled' | 'rejected' | 'requested' | 'pending';
     enrollmentDate?: string;
     invitationDate?: string;
     updatedAt?: string;
@@ -346,16 +346,39 @@ export function GigDetails() {
   };
   
   // Fonction pour obtenir le statut de l'agent dans ce gig
-  const getAgentStatus = (): 'enrolled' | 'invited' | 'none' => {
+  const getAgentStatus = (): 'enrolled' | 'invited' | 'pending' | 'none' => {
     const agentId = getAgentId();
     if (!agentId || !gig) return 'none';
     
-    if (gig.agents && Array.isArray(gig.agents)) {
-      const agentStatus = gig.agents.find((agent: any) => agent.agentId === agentId);
-      if (agentStatus?.status === 'enrolled') return 'enrolled';
-      if (agentStatus?.status === 'invited') return 'invited';
+    // 1. Vérifier d'abord les données du profil (plus fiables)
+    if (enrolledGigIds.includes(gigId!)) {
+      console.log(`✅ Agent is ENROLLED in gig ${gigId} (from profile)`);
+      return 'enrolled';
     }
     
+    if (pendingGigIds.includes(gigId!)) {
+      console.log(`⏳ Agent has PENDING request for gig ${gigId} (from profile)`);
+      return 'pending';
+    }
+    
+    // 2. Vérifier les données du gig (fallback)
+    if (gig.agents && Array.isArray(gig.agents)) {
+      const agentStatus = gig.agents.find((agent: any) => agent.agentId === agentId);
+      if (agentStatus?.status === 'enrolled') {
+        console.log(`✅ Agent is ENROLLED in gig ${gigId} (from gig data)`);
+        return 'enrolled';
+      }
+      if (agentStatus?.status === 'invited') {
+        console.log(`📨 Agent is INVITED to gig ${gigId} (from gig data)`);
+        return 'invited';
+      }
+      if (agentStatus?.status === 'requested' || agentStatus?.status === 'pending') {
+        console.log(`⏳ Agent has PENDING request for gig ${gigId} (from gig data)`);
+        return 'pending';
+      }
+    }
+    
+    console.log(`❌ Agent has NO STATUS for gig ${gigId}`);
     return 'none';
   };
 
@@ -364,6 +387,10 @@ export function GigDetails() {
   const [applicationStatus, setApplicationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [applicationMessage, setApplicationMessage] = useState('');
   const [enrollmentStatus, setEnrollmentStatus] = useState<'none' | 'requested' | 'enrolled' | 'invited'>('none');
+  
+  // États pour les statuts depuis le profil
+  const [pendingGigIds, setPendingGigIds] = useState<string[]>([]);
+  const [enrolledGigIds, setEnrolledGigIds] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchGigDetails = async () => {
@@ -436,6 +463,27 @@ export function GigDetails() {
 
     fetchGigDetails();
   }, [gigId]);
+
+  // Récupérer les statuts depuis le profil de l'agent
+  useEffect(() => {
+    const fetchStatusesFromProfile = async () => {
+      try {
+        console.log('🔍 Fetching statuses from agent profile...');
+        const [pendingIds, enrolledIds] = await Promise.all([
+          fetchPendingRequests(),
+          fetchEnrolledGigsFromProfile()
+        ]);
+        
+        console.log('📝 Profile statuses fetched:', { pendingIds, enrolledIds });
+        setPendingGigIds(pendingIds);
+        setEnrolledGigIds(enrolledIds);
+      } catch (error) {
+        console.error('❌ Error fetching statuses from profile:', error);
+      }
+    };
+
+    fetchStatusesFromProfile();
+  }, []);
 
   // Vérifier le statut d'enrollment de l'agent
   useEffect(() => {
@@ -801,6 +849,11 @@ export function GigDetails() {
                       ✉ Invited
                     </span>
                   )}
+                  {getAgentStatus() === 'pending' && (
+                    <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-700 border border-yellow-300">
+                      ⏳ Pending
+                    </span>
+                  )}
                 </div>
                 <p className="text-lg text-gray-600 mb-2">{gig.category}</p>
                 <div className="flex items-center gap-3 mb-3">
@@ -823,19 +876,19 @@ export function GigDetails() {
                 )}
 
                 {/* Bouton selon le statut d'enrollment */}
-                {enrollmentStatus === 'enrolled' ? (
+                {getAgentStatus() === 'enrolled' ? (
                   <div className="text-center">
                     <span className="inline-block px-5 py-2 bg-green-100 text-green-800 rounded-lg font-medium text-sm">
                       ✅ Enrolled
                     </span>
                   </div>
-                ) : enrollmentStatus === 'requested' ? (
+                ) : getAgentStatus() === 'pending' ? (
                   <div className="text-center">
                     <span className="inline-block px-5 py-2 bg-yellow-100 text-yellow-800 rounded-lg font-medium text-sm">
                       ⏳ Pending
                     </span>
                   </div>
-                ) : enrollmentStatus === 'invited' ? (
+                ) : getAgentStatus() === 'invited' ? (
                   <div className="text-center">
                     <span className="inline-block px-5 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium text-sm">
                       📨 Invited
@@ -859,15 +912,15 @@ export function GigDetails() {
                     ) : (
                       'Apply Now'
                     )}
-                </button>
+                  </button>
                 )}
                 
                 <p className="text-xs text-gray-500 mt-2 text-center max-w-[140px]">
-                  {enrollmentStatus === 'enrolled' 
+                  {getAgentStatus() === 'enrolled' 
                      ? 'You are enrolled in this gig'
-                    : enrollmentStatus === 'requested'
+                    : getAgentStatus() === 'pending'
                      ? 'Your request is being processed'
-                    : enrollmentStatus === 'invited'
+                    : getAgentStatus() === 'invited'
                      ? 'You have been invited'
                     : 'Join this opportunity and start earning immediately'
                   }
