@@ -827,7 +827,8 @@ export function GigsMarketplace() {
             return gigInvitation.gig; // Filtrer les invitations sans gig
           })
           .map((gigInvitation: any) => {
-            console.log('🔄 Transforming invitation:', gigInvitation.gig._id);
+            console.log('🔄 Transforming invitation for gig:', gigInvitation.gig._id);
+            console.log('📝 GigAgent document ID:', gigInvitation._id);
             
             // Calculer l'expiration basée sur invitationDate + 7 jours (par exemple)
             const invitationDate = new Date(gigInvitation.invitationDate || gigInvitation.updatedAt);
@@ -835,7 +836,7 @@ export function GigsMarketplace() {
             expirationDate.setDate(expirationDate.getDate() + 7); // 7 jours pour répondre
             
             return {
-              id: gigInvitation.gig._id, // Utiliser le gig ID comme identifiant unique
+              id: gigInvitation._id, // ✅ Utiliser l'ID du document GigAgent (enrollment ID)
                 gig: {
                 _id: gigInvitation.gig._id,
                 title: gigInvitation.gig.title,
