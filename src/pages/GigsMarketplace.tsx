@@ -1248,19 +1248,17 @@ export function GigsMarketplace() {
               </div>
               <div className="flex items-center space-x-2">
                 {/* Status Badge */}
-                {gigStatus !== 'none' && (
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
-                    gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
-                    gigStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {gigStatus === 'enrolled' ? '✓ Enrolled' :
-                     gigStatus === 'invited' ? '✉ Invited' :
-                     gigStatus === 'pending' ? '⏳ Pending' :
-                     gigStatus}
-                  </span>
-                )}
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
+                  gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
+                  gigStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-purple-100 text-purple-700'
+                }`}>
+                  {gigStatus === 'enrolled' ? '✓ Enrolled' :
+                   gigStatus === 'invited' ? '✉ Invited' :
+                   gigStatus === 'pending' ? '⏳ Pending' :
+                   '📝 Apply now'}
+                </span>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -1415,17 +1413,17 @@ export function GigsMarketplace() {
                         {/* Status Badge */}
                         {(() => {
                           const gigStatus = getGigStatus(gig._id);
-                          return gigStatus !== 'none' && (
+                          return (
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                               gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
                               gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
                               gigStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-gray-100 text-gray-700'
+                              'bg-purple-100 text-purple-700'
                             }`}>
                               {gigStatus === 'enrolled' ? '✓ Enrolled' :
                                gigStatus === 'invited' ? '✉ Invited' :
                                gigStatus === 'pending' ? '⏳ Pending' :
-                               gigStatus}
+                               '📝 Apply now'}
                             </span>
                           );
                         })()}
