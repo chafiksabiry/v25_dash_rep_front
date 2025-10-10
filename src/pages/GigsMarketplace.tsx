@@ -1623,10 +1623,16 @@ export function GigsMarketplace() {
 
                     </div>
 
-                    <div className="mt-6">
+                    <div className="mt-6 flex gap-3">
+                      <button 
+                        onClick={() => navigate('/copilot')}
+                        className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      >
+                        🚀 Start
+                      </button>
                       <button 
                         onClick={() => navigate(`/gig/${enrolledGig.gig._id}`)}
-                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
                       >
                         View Details
                       </button>
