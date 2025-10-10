@@ -747,14 +747,16 @@ export function GigsMarketplace() {
           })
           .map((gigEnrollment: any) => {
             console.log('🔄 Transforming enrollment:', gigEnrollment.gig._id);
-            console.log('📋 Full gigEnrollment structure:', gigEnrollment);
-            console.log('🆔 gigEnrollment._id:', gigEnrollment._id);
-            console.log('🆔 gigEnrollment.id:', gigEnrollment.id);
-            console.log('🆔 gigEnrollment.gigAgentId:', gigEnrollment.gigAgentId);
             
-            // Essayer différentes sources pour l'ID
-            const enrollmentId = gigEnrollment._id || gigEnrollment.id || gigEnrollment.gigAgentId;
-            console.log('✅ Using enrollmentId:', enrollmentId);
+            // ✅ Extraire le gigAgentId depuis gig.agents[]
+            const agentId = getAgentId();
+            const agentData = gigEnrollment.gig.agents?.find((agent: any) => 
+              agent.agentId === agentId || agent.agentId?.$oid === agentId
+            );
+            const enrollmentId = agentData?.gigAgentId || agentData?.gigAgentId?.$oid;
+            
+            console.log('🆔 Agent data from gig.agents:', agentData);
+            console.log('✅ Extracted gigAgentId:', enrollmentId);
             
             return {
               id: enrollmentId, // ✅ Utiliser l'ID du document GigAgent (enrollmentId)
@@ -816,6 +818,7 @@ export function GigsMarketplace() {
       const enrollmentData = await enrollmentResponse.json();
       console.log('📋 Invited enrollments response:', enrollmentData);
       console.log('📊 Response count:', enrollmentData.count);
+      console.log('🔍 RAW RESPONSE DATA:', JSON.stringify(enrollmentData, null, 2));
       
       // La réponse contient un objet avec la propriété 'gigs'
       if (enrollmentData.gigs && Array.isArray(enrollmentData.gigs)) {
@@ -840,14 +843,16 @@ export function GigsMarketplace() {
           })
           .map((gigInvitation: any) => {
             console.log('🔄 Transforming invitation:', gigInvitation.gig._id);
-            console.log('📋 Full gigInvitation structure:', gigInvitation);
-            console.log('🆔 gigInvitation._id:', gigInvitation._id);
-            console.log('🆔 gigInvitation.id:', gigInvitation.id);
-            console.log('🆔 gigInvitation.gigAgentId:', gigInvitation.gigAgentId);
             
-            // Essayer différentes sources pour l'ID
-            const enrollmentId = gigInvitation._id || gigInvitation.id || gigInvitation.gigAgentId;
-            console.log('✅ Using enrollmentId:', enrollmentId);
+            // ✅ Extraire le gigAgentId depuis gig.agents[]
+            const agentId = getAgentId();
+            const agentData = gigInvitation.gig.agents?.find((agent: any) => 
+              agent.agentId === agentId || agent.agentId?.$oid === agentId
+            );
+            const enrollmentId = agentData?.gigAgentId || agentData?.gigAgentId?.$oid;
+            
+            console.log('🆔 Agent data from gig.agents:', agentData);
+            console.log('✅ Extracted gigAgentId:', enrollmentId);
             
             // Calculer l'expiration basée sur invitationDate + 7 jours (par exemple)
             const invitationDate = new Date(gigInvitation.invitationDate || gigInvitation.updatedAt);
