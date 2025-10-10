@@ -1207,7 +1207,7 @@ export function GigsMarketplace() {
               {gigStatus === 'enrolled' ? (
                 <div className="flex gap-3">
                   <button 
-                    onClick={() => navigate('/copilot')}
+                    onClick={() => window.location.href = '/copilot'}
                     className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
                   >
                     🚀 Start
