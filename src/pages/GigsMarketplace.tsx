@@ -692,12 +692,18 @@ export function GigsMarketplace() {
       }
       
       const enrollmentData = await enrollmentResponse.json();
-      console.log('Invited enrollments response:', enrollmentData);
+      console.log('📋 Invited enrollments response:', enrollmentData);
       
       // La réponse est directement un tableau d'enrollments
       if (Array.isArray(enrollmentData)) {
-        console.log('Found invited enrollments:', enrollmentData);
-        console.log('First invited enrollment structure:', enrollmentData[0]);
+        console.log('✅ Found invited enrollments:', enrollmentData);
+        if (enrollmentData.length > 0) {
+          console.log('🔍 First invited enrollment structure:', enrollmentData[0]);
+          console.log('🔍 First gigId structure:', enrollmentData[0].gigId);
+          console.log('🏢 CompanyId:', enrollmentData[0].gigId?.companyId);
+          console.log('🏭 Industries:', enrollmentData[0].gigId?.industries);
+          console.log('📊 Activities:', enrollmentData[0].gigId?.activities);
+        }
         
         // Transformer les données pour correspondre à l'interface InvitedEnrollment
         const transformedInvitations = enrollmentData
