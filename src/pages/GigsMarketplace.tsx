@@ -619,11 +619,18 @@ export function GigsMarketplace() {
       console.log('✅ Invitation accepted successfully:', result);
       alert('Invitation accepted successfully!');
       
-      // Retirer l'enrollment de la liste des invitations
+      // Retirer immédiatement l'invitation de la liste (UI optimiste)
       setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
       
-      // Rafraîchir la liste des gigs inscrits
-      fetchEnrolledGigs();
+      // Rafraîchir tous les statuts pour mettre à jour l'UI
+      console.log('🔄 Refreshing all statuses after acceptance...');
+      await Promise.all([
+        fetchEnrolledGigs(),           // Recharger les gigs enrolled
+        fetchEnrolledGigIdsFromProfile(), // Mettre à jour les IDs du profil
+        fetchInvitedEnrollments(),     // Recharger les invitations (au cas où)
+        fetchPendingRequests()         // Mettre à jour les pending requests
+      ]);
+      console.log('✅ All statuses refreshed');
     } catch (error) {
       console.error('❌ Error accepting invitation:', error);
       if (error instanceof Error) {
@@ -669,8 +676,17 @@ export function GigsMarketplace() {
       console.log('✅ Invitation rejected successfully:', result);
       alert('Invitation rejected successfully!');
       
-      // Retirer l'enrollment de la liste des invitations
+      // Retirer immédiatement l'invitation de la liste (UI optimiste)
       setInvitedEnrollments((prev: any[]) => prev.filter(enrollment => enrollment.id !== enrollmentId));
+      
+      // Rafraîchir tous les statuts pour mettre à jour l'UI
+      console.log('🔄 Refreshing all statuses after rejection...');
+      await Promise.all([
+        fetchInvitedEnrollments(),     // Recharger les invitations
+        fetchEnrolledGigIdsFromProfile(), // Mettre à jour les IDs du profil
+        fetchPendingRequests()         // Mettre à jour les pending requests
+      ]);
+      console.log('✅ All statuses refreshed');
     } catch (error) {
       console.error('❌ Error rejecting invitation:', error);
       if (error instanceof Error) {
@@ -1245,9 +1261,6 @@ export function GigsMarketplace() {
                      gigStatus}
                   </span>
                 )}
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                  {gig.seniority.level}
-                </span>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -1399,9 +1412,23 @@ export function GigsMarketplace() {
                         <p className="text-xs text-gray-500">{gig.category}</p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                          {gig.seniority.level}
-                        </span>
+                        {/* Status Badge */}
+                        {(() => {
+                          const gigStatus = getGigStatus(gig._id);
+                          return gigStatus !== 'none' && (
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
+                              gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
+                              gigStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {gigStatus === 'enrolled' ? '✓ Enrolled' :
+                               gigStatus === 'invited' ? '✉ Invited' :
+                               gigStatus === 'pending' ? '⏳ Pending' :
+                               gigStatus}
+                            </span>
+                          );
+                        })()}
                         <button
                           onClick={(e) => {
                             e.preventDefault();
@@ -1524,13 +1551,8 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                          Invited
+                          ✉ Invited
                         </span>
-                        {('seniority' in enrollment.gig && enrollment.gig.seniority?.level) && (
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                            {enrollment.gig.seniority.level}
-                          </span>
-                        )}
                         <button
                           onClick={(e) => {
                             e.preventDefault();
@@ -1699,13 +1721,8 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                          Enrolled
+                          ✓ Enrolled
                         </span>
-                        {('seniority' in enrolledGig.gig && enrolledGig.gig.seniority?.level) && (
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                            {enrolledGig.gig.seniority.level}
-                          </span>
-                        )}
                         <button
                           onClick={(e) => {
                             e.preventDefault();
