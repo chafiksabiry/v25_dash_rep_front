@@ -603,9 +603,9 @@ export function GigsMarketplace() {
 
     try {
       console.log('🔍 Fetching enrolled gigs for agent:', agentId);
-      // Utiliser le nouvel endpoint /gig-agents/enrolled/agent/{agentId} avec populate
+      // Utiliser le nouvel endpoint /gig-agents/agents/{agentId}/gigs?status=enrolled
       const enrollmentResponse = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrolled/agent/${agentId}?populate=true`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/agents/${agentId}/gigs?status=enrolled`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -619,80 +619,41 @@ export function GigsMarketplace() {
       
       const enrollmentData = await enrollmentResponse.json();
       console.log('📝 Enrolled gigs raw response:', enrollmentData);
-      console.log('📊 Response length:', enrollmentData.length);
+      console.log('📊 Response count:', enrollmentData.count);
       
-      // La réponse est directement un tableau d'enrollments
-      if (Array.isArray(enrollmentData)) {
-        console.log('✅ Response is array, processing enrollments...');
-        console.log('🔍 First enrollment structure:', enrollmentData[0]);
+      // La réponse contient un objet avec la propriété 'gigs'
+      if (enrollmentData.gigs && Array.isArray(enrollmentData.gigs)) {
+        console.log('✅ Response has gigs array, processing enrollments...');
+        console.log('🔍 First enrollment structure:', enrollmentData.gigs[0]);
         
         // Transformer les données pour correspondre à l'interface EnrolledGig
-        const transformedEnrollments = await Promise.all(
-          enrollmentData
-            .filter((gigAgent: any) => {
-              console.log('🔍 Checking enrollment:', gigAgent._id, 'gigId:', gigAgent.gigId);
-              return gigAgent.gigId; // Filtrer les enrollments sans gigId
-            })
-            .map(async (gigAgent: any) => {
-              console.log('🔄 Transforming enrollment:', gigAgent._id);
-              
-              // Si les données ne sont pas populées (companyId est un string), on fait une requête pour le gig complet
-              let fullGigData = gigAgent.gigId;
-              
-              console.log('🔍 Checking if data is populated:', {
-                gigId: gigAgent.gigId._id,
-                companyIdType: typeof gigAgent.gigId.companyId,
-                companyIdValue: gigAgent.gigId.companyId
-              });
-              
-              if (typeof gigAgent.gigId.companyId === 'string') {
-                console.log('⚠️ Gig data not populated, fetching full gig details for:', gigAgent.gigId._id);
-                try {
-                  const gigResponse = await fetch(
-                    `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${gigAgent.gigId._id}/details`,
-                    {
-                      headers: {
-                        'Authorization': `Bearer ${token}`,
-                      },
-                    }
-                  );
-                  
-                  if (gigResponse.ok) {
-                    const gigData = await gigResponse.json();
-                    console.log('✅ Fetched full gig data:', gigData);
-                    console.log('🌍 Destination zone type:', typeof (gigData.data || gigData).destination_zone);
-                    console.log('🌍 Destination zone value:', (gigData.data || gigData).destination_zone);
-                    console.log('⏰ Time zone type:', typeof (gigData.data || gigData).availability?.time_zone);
-                    console.log('⏰ Time zone value:', (gigData.data || gigData).availability?.time_zone);
-                    fullGigData = gigData.data || gigData;
-                  } else {
-                    console.error('❌ Failed to fetch full gig data');
-                  }
-                } catch (error) {
-                  console.error('❌ Error fetching full gig data:', error);
-                }
-              }
-              
-              return {
-                id: gigAgent._id,
-                gig: {
-                  _id: fullGigData._id,
-                  title: fullGigData.title,
-                  description: fullGigData.description,
-                  category: fullGigData.category,
-                  destination_zone: fullGigData.destination_zone,
-                  // Copier toutes les autres propriétés du gig
-                  ...fullGigData
-                },
-                enrollmentStatus: gigAgent.status, // 'accepted' pour les gigs inscrits
-                enrollmentDate: gigAgent.enrollmentDate || gigAgent.agentResponseAt,
-                enrollmentNotes: gigAgent.enrollmentNotes,
-                status: gigAgent.status,
-                matchScore: gigAgent.matchScore,
-                matchStatus: gigAgent.matchStatus
-              };
-            })
-        );
+        const transformedEnrollments = enrollmentData.gigs
+          .filter((gigEnrollment: any) => {
+            console.log('🔍 Checking enrollment:', gigEnrollment.gig?._id);
+            return gigEnrollment.gig; // Filtrer les enrollments sans gig
+          })
+          .map((gigEnrollment: any) => {
+            console.log('🔄 Transforming enrollment:', gigEnrollment.gig._id);
+            
+            return {
+              id: gigEnrollment.gig._id, // Utiliser le gig ID comme identifiant unique
+              gig: {
+                _id: gigEnrollment.gig._id,
+                title: gigEnrollment.gig.title,
+                description: gigEnrollment.gig.description,
+                category: gigEnrollment.gig.category,
+                destination_zone: gigEnrollment.gig.destination_zone,
+                // Copier toutes les autres propriétés du gig (déjà populées)
+                ...gigEnrollment.gig
+              },
+              enrollmentStatus: gigEnrollment.status, // 'enrolled'
+              enrollmentDate: gigEnrollment.enrollmentDate,
+              enrollmentNotes: gigEnrollment.enrollmentNotes,
+              status: gigEnrollment.status,
+              matchScore: 0, // Pas de match score dans cette réponse
+              matchStatus: 'enrolled'
+            };
+          });
         
         console.log('✅ Transformed enrolled gigs:', transformedEnrollments);
         console.log('📊 Final count:', transformedEnrollments.length);
@@ -717,9 +678,9 @@ export function GigsMarketplace() {
     }
 
     try {
-      // Utiliser le nouvel endpoint /gig-agents/invited/agent/{agentId} avec populate
+      // Utiliser le nouvel endpoint /gig-agents/agents/{agentId}/gigs?status=invited
       const enrollmentResponse = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invited/agent/${agentId}?populate=true`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/agents/${agentId}/gigs?status=invited`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -733,82 +694,54 @@ export function GigsMarketplace() {
       
       const enrollmentData = await enrollmentResponse.json();
       console.log('📋 Invited enrollments response:', enrollmentData);
+      console.log('📊 Response count:', enrollmentData.count);
       
-      // La réponse est directement un tableau d'enrollments
-      if (Array.isArray(enrollmentData)) {
-        console.log('✅ Found invited enrollments:', enrollmentData);
-        if (enrollmentData.length > 0) {
-          console.log('🔍 First invited enrollment structure:', enrollmentData[0]);
-          console.log('🔍 First gigId structure:', enrollmentData[0].gigId);
-          console.log('🏢 CompanyId:', enrollmentData[0].gigId?.companyId);
-          console.log('🏭 Industries:', enrollmentData[0].gigId?.industries);
-          console.log('📊 Activities:', enrollmentData[0].gigId?.activities);
+      // La réponse contient un objet avec la propriété 'gigs'
+      if (enrollmentData.gigs && Array.isArray(enrollmentData.gigs)) {
+        console.log('✅ Found invited enrollments:', enrollmentData.gigs.length);
+        if (enrollmentData.gigs.length > 0) {
+          console.log('🔍 First invited enrollment structure:', enrollmentData.gigs[0]);
+          console.log('🔍 First gig structure:', enrollmentData.gigs[0].gig);
+          console.log('🏢 CompanyId:', enrollmentData.gigs[0].gig?.companyId);
+          console.log('🏭 Industries:', enrollmentData.gigs[0].gig?.industries);
+          console.log('📊 Activities:', enrollmentData.gigs[0].gig?.activities);
         }
         
         // Transformer les données pour correspondre à l'interface InvitedEnrollment
-        const transformedInvitations = await Promise.all(
-          enrollmentData
-            .filter((gigAgent: any) => gigAgent.gigId) // Filtrer les enrollments sans gigId
-            .map(async (gigAgent: any) => {
-              // Si les données ne sont pas populées (companyId est un string), on fait une requête pour le gig complet
-              let fullGigData = gigAgent.gigId;
-              
-              console.log('🔍 Checking if data is populated:', {
-                gigId: gigAgent.gigId._id,
-                companyIdType: typeof gigAgent.gigId.companyId,
-                companyIdValue: gigAgent.gigId.companyId
-              });
-              
-              if (typeof gigAgent.gigId.companyId === 'string') {
-                console.log('⚠️ Gig data not populated, fetching full gig details for:', gigAgent.gigId._id);
-                try {
-                  const gigResponse = await fetch(
-                    `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${gigAgent.gigId._id}/details`,
-                    {
-                      headers: {
-                        'Authorization': `Bearer ${token}`,
-                      },
-                    }
-                  );
-                  
-                  if (gigResponse.ok) {
-                    const gigData = await gigResponse.json();
-                    console.log('✅ Fetched full gig data:', gigData);
-                    console.log('🌍 Destination zone type:', typeof (gigData.data || gigData).destination_zone);
-                    console.log('🌍 Destination zone value:', (gigData.data || gigData).destination_zone);
-                    console.log('⏰ Time zone type:', typeof (gigData.data || gigData).availability?.time_zone);
-                    console.log('⏰ Time zone value:', (gigData.data || gigData).availability?.time_zone);
-                    fullGigData = gigData.data || gigData;
-                  } else {
-                    console.error('❌ Failed to fetch full gig data');
-                  }
-                } catch (error) {
-                  console.error('❌ Error fetching full gig data:', error);
-                }
-              }
-              
-              return {
-                id: gigAgent._id,
-                gig: {
-                  _id: fullGigData._id,
-                  title: fullGigData.title,
-                  description: fullGigData.description,
-                  category: fullGigData.category,
-                  destination_zone: fullGigData.destination_zone,
-                  // Copier toutes les autres propriétés du gig
-                  ...fullGigData
-                },
-                enrollmentStatus: gigAgent.status, // 'invited' pour les invitations
-                invitationSentAt: gigAgent.invitationSentAt,
-                invitationExpiresAt: gigAgent.invitationExpiresAt,
-                isExpired: new Date(gigAgent.invitationExpiresAt) < new Date(),
-                canEnroll: (gigAgent.status === 'invited' || gigAgent.status === 'pending') && new Date(gigAgent.invitationExpiresAt) > new Date(),
-                notes: gigAgent.notes,
-                matchScore: gigAgent.matchScore,
-                matchStatus: gigAgent.matchStatus
-              };
-            })
-        );
+        const transformedInvitations = enrollmentData.gigs
+          .filter((gigInvitation: any) => {
+            console.log('🔍 Checking invitation:', gigInvitation.gig?._id);
+            return gigInvitation.gig; // Filtrer les invitations sans gig
+          })
+          .map((gigInvitation: any) => {
+            console.log('🔄 Transforming invitation:', gigInvitation.gig._id);
+            
+            // Calculer l'expiration basée sur invitationDate + 7 jours (par exemple)
+            const invitationDate = new Date(gigInvitation.invitationDate || gigInvitation.updatedAt);
+            const expirationDate = new Date(invitationDate);
+            expirationDate.setDate(expirationDate.getDate() + 7); // 7 jours pour répondre
+            
+            return {
+              id: gigInvitation.gig._id, // Utiliser le gig ID comme identifiant unique
+              gig: {
+                _id: gigInvitation.gig._id,
+                title: gigInvitation.gig.title,
+                description: gigInvitation.gig.description,
+                category: gigInvitation.gig.category,
+                destination_zone: gigInvitation.gig.destination_zone,
+                // Copier toutes les autres propriétés du gig (déjà populées)
+                ...gigInvitation.gig
+              },
+              enrollmentStatus: gigInvitation.status, // 'invited'
+              invitationSentAt: gigInvitation.invitationDate || gigInvitation.updatedAt,
+              invitationExpiresAt: expirationDate.toISOString(),
+              isExpired: new Date() > expirationDate,
+              canEnroll: gigInvitation.status === 'invited',
+              notes: gigInvitation.notes,
+              matchScore: 0, // Pas de match score dans cette réponse
+              matchStatus: 'invited'
+            };
+          });
         
         console.log('✅ Transformed invited enrollments:', transformedInvitations);
         setInvitedEnrollments(transformedInvitations);
@@ -1181,7 +1114,7 @@ export function GigsMarketplace() {
               </div>
               <div className="flex items-center text-sm text-gray-500">
                 <Globe className="w-4 h-4 mr-2" />
-                <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
+                <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.zoneName || gig.availability?.time_zone?.countryName || gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
               </div>
               <div className="flex items-center text-sm text-gray-500">
                 <Calendar className="w-4 h-4 mr-2" />
@@ -1302,7 +1235,7 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
+                        <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.zoneName || gig.availability?.time_zone?.countryName || gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
@@ -1443,7 +1376,7 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{typeof enrollment.gig.destination_zone === 'object' ? enrollment.gig.destination_zone?.name?.common || enrollment.gig.destination_zone?.cca2 || 'Unknown' : enrollment.gig.destination_zone} ({('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.abbreviation) ? enrollment.gig.availability.time_zone.abbreviation : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.name) ? enrollment.gig.availability.time_zone.name : 'N/A'})</span>
+                        <span>{typeof enrollment.gig.destination_zone === 'object' ? enrollment.gig.destination_zone?.name?.common || enrollment.gig.destination_zone?.cca2 || 'Unknown' : enrollment.gig.destination_zone} ({('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.zoneName) ? enrollment.gig.availability.time_zone.zoneName : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.countryName) ? enrollment.gig.availability.time_zone.countryName : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.abbreviation) ? enrollment.gig.availability.time_zone.abbreviation : 'N/A'})</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
@@ -1618,7 +1551,7 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{typeof enrolledGig.gig.destination_zone === 'object' ? enrolledGig.gig.destination_zone?.name?.common || enrolledGig.gig.destination_zone?.cca2 || 'Unknown' : enrolledGig.gig.destination_zone} ({('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.abbreviation) ? enrolledGig.gig.availability.time_zone.abbreviation : ('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.name) ? enrolledGig.gig.availability.time_zone.name : 'N/A'})</span>
+                        <span>{typeof enrolledGig.gig.destination_zone === 'object' ? enrolledGig.gig.destination_zone?.name?.common || enrolledGig.gig.destination_zone?.cca2 || 'Unknown' : enrolledGig.gig.destination_zone} ({('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.zoneName) ? enrolledGig.gig.availability.time_zone.zoneName : ('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.countryName) ? enrolledGig.gig.availability.time_zone.countryName : ('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.abbreviation) ? enrolledGig.gig.availability.time_zone.abbreviation : 'N/A'})</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
