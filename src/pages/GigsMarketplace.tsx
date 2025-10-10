@@ -643,7 +643,7 @@ export function GigsMarketplace() {
                 console.log('⚠️ Gig data not populated, fetching full gig details for:', gigAgent.gigId._id);
                 try {
                   const gigResponse = await fetch(
-                    `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${gigAgent.gigId._id}`,
+                    `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${gigAgent.gigId._id}/details`,
                     {
                       headers: {
                         'Authorization': `Bearer ${token}`,
@@ -747,7 +747,7 @@ export function GigsMarketplace() {
                 console.log('⚠️ Gig data not populated, fetching full gig details for:', gigAgent.gigId._id);
                 try {
                   const gigResponse = await fetch(
-                    `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${gigAgent.gigId._id}`,
+                    `${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${gigAgent.gigId._id}/details`,
                     {
                       headers: {
                         'Authorization': `Bearer ${token}`,
