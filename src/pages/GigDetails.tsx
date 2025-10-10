@@ -268,6 +268,16 @@ interface PopulatedGig {
   createdAt: Date;
   updatedAt: Date;
   enrolledAgents?: string[]; // Added for enrollment status
+  
+  // 👥 Agents enrolled/invited to this gig
+  agents?: Array<{
+    agentId: string;
+    status: 'invited' | 'enrolled' | 'rejected';
+    enrollmentDate?: string;
+    invitationDate?: string;
+    updatedAt?: string;
+    _id: string;
+  }>;
 }
 
 // Interface pour les leads
@@ -319,6 +329,34 @@ export function GigDetails() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalLeads, setTotalLeads] = useState(0);
   const limit = 50; // Nombre de leads par page (maximum supporté par le backend)
+  
+  // Fonction pour vérifier si l'agent est enrolled dans ce gig
+  const isAgentEnrolled = () => {
+    const agentId = getAgentId();
+    if (!agentId || !gig) return false;
+    
+    // Vérifier si le gig a un champ agents avec le statut de l'agent
+    if (gig.agents && Array.isArray(gig.agents)) {
+      const agentStatus = gig.agents.find((agent: any) => agent.agentId === agentId);
+      return agentStatus?.status === 'enrolled';
+    }
+    
+    return false;
+  };
+  
+  // Fonction pour obtenir le statut de l'agent dans ce gig
+  const getAgentStatus = (): 'enrolled' | 'invited' | 'none' => {
+    const agentId = getAgentId();
+    if (!agentId || !gig) return 'none';
+    
+    if (gig.agents && Array.isArray(gig.agents)) {
+      const agentStatus = gig.agents.find((agent: any) => agent.agentId === agentId);
+      if (agentStatus?.status === 'enrolled') return 'enrolled';
+      if (agentStatus?.status === 'invited') return 'invited';
+    }
+    
+    return 'none';
+  };
 
   // États pour l'application
   const [applying, setApplying] = useState(false);
@@ -560,12 +598,12 @@ export function GigDetails() {
     }
   };
 
-  // Charger les leads quand le gigId change
+  // Charger les leads quand le gigId change et si l'agent est enrolled
   useEffect(() => {
-    if (gigId) {
+    if (gigId && isAgentEnrolled()) {
       fetchLeads(1);
     }
-  }, [gigId]);
+  }, [gigId, gig]);
 
   // Fonction pour changer de page
   const handlePageChange = (newPage: number) => {
@@ -746,7 +784,20 @@ export function GigDetails() {
           <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
             <div className="flex justify-between items-start mb-6">
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{gig.title}</h1>
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-3xl font-bold text-gray-900">{gig.title}</h1>
+                  {/* Badge de statut */}
+                  {getAgentStatus() === 'enrolled' && (
+                    <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-700 border border-green-300">
+                      ✓ Enrolled
+                    </span>
+                  )}
+                  {getAgentStatus() === 'invited' && (
+                    <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-700 border border-blue-300">
+                      ✉ Invited
+                    </span>
+                  )}
+                </div>
                 <p className="text-lg text-gray-600 mb-2">{gig.category}</p>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
@@ -1043,8 +1094,8 @@ export function GigDetails() {
               </div>
             </div>
 
-            {/* Leads Information */}
-            {gig.leads?.types?.length > 0 && (
+            {/* Leads Information - Only for enrolled agents */}
+            {isAgentEnrolled() && gig.leads?.types?.length > 0 && (
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Lead Types</h2>
                 <div className="space-y-3">
@@ -1391,11 +1442,12 @@ export function GigDetails() {
           </div>
         </div>
 
-        {/* Leads Section - Full Width */}
-        <div className="mt-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Available Leads</h2>
+        {/* Leads Section - Full Width - Only for enrolled agents */}
+        {isAgentEnrolled() && (
+          <div className="mt-8">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">Available Leads</h2>
                 {totalLeads > 0 && (
                   <span className="text-sm text-gray-600">
                     Total: {totalLeads} leads
@@ -1570,7 +1622,7 @@ export function GigDetails() {
               )}
             </div>
           </div>
-        </div>
+        )}
       </div>
   );
 }
