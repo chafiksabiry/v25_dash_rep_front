@@ -878,11 +878,11 @@ export function GigDetails() {
                 {/* Bouton selon le statut d'enrollment */}
                 {getAgentStatus() === 'enrolled' ? (
                   <div className="text-center">
-                    <button
-                      onClick={() => navigate('/copilot')}
-                      className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
+                    <button 
+                      onClick={() => window.location.href = '/copilot'}
+                      className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors shadow-md"
                     >
-                      ▶ Start
+                      🚀 Start
                     </button>
                   </div>
                 ) : getAgentStatus() === 'pending' ? (
