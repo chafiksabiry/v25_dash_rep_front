@@ -670,7 +670,7 @@ export function GigsMarketplace() {
       alert('Invitation rejected successfully!');
       
       // Retirer l'enrollment de la liste des invitations
-      setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
+      setInvitedEnrollments((prev: any[]) => prev.filter(enrollment => enrollment.id !== enrollmentId));
     } catch (error) {
       console.error('❌ Error rejecting invitation:', error);
       if (error instanceof Error) {
@@ -747,9 +747,17 @@ export function GigsMarketplace() {
           })
           .map((gigEnrollment: any) => {
             console.log('🔄 Transforming enrollment:', gigEnrollment.gig._id);
+            console.log('📋 Full gigEnrollment structure:', gigEnrollment);
+            console.log('🆔 gigEnrollment._id:', gigEnrollment._id);
+            console.log('🆔 gigEnrollment.id:', gigEnrollment.id);
+            console.log('🆔 gigEnrollment.gigAgentId:', gigEnrollment.gigAgentId);
+            
+            // Essayer différentes sources pour l'ID
+            const enrollmentId = gigEnrollment._id || gigEnrollment.id || gigEnrollment.gigAgentId;
+            console.log('✅ Using enrollmentId:', enrollmentId);
             
             return {
-              id: gigEnrollment._id, // ✅ Utiliser l'ID du document GigAgent (enrollmentId)
+              id: enrollmentId, // ✅ Utiliser l'ID du document GigAgent (enrollmentId)
               gig: {
                 _id: gigEnrollment.gig._id,
                 title: gigEnrollment.gig.title,
@@ -813,8 +821,12 @@ export function GigsMarketplace() {
       if (enrollmentData.gigs && Array.isArray(enrollmentData.gigs)) {
         console.log('✅ Found invited enrollments:', enrollmentData.gigs.length);
         if (enrollmentData.gigs.length > 0) {
-          console.log('🔍 First invited enrollment structure:', enrollmentData.gigs[0]);
+          console.log('🔍 First invited enrollment structure:', JSON.stringify(enrollmentData.gigs[0], null, 2));
           console.log('🔍 First gig structure:', enrollmentData.gigs[0].gig);
+          console.log('🆔 Checking IDs in first enrollment:');
+          console.log('   - _id:', enrollmentData.gigs[0]._id);
+          console.log('   - id:', enrollmentData.gigs[0].id);
+          console.log('   - gigAgentId:', enrollmentData.gigs[0].gigAgentId);
           console.log('🏢 CompanyId:', enrollmentData.gigs[0].gig?.companyId);
           console.log('🏭 Industries:', enrollmentData.gigs[0].gig?.industries);
           console.log('📊 Activities:', enrollmentData.gigs[0].gig?.activities);
@@ -828,6 +840,14 @@ export function GigsMarketplace() {
           })
           .map((gigInvitation: any) => {
             console.log('🔄 Transforming invitation:', gigInvitation.gig._id);
+            console.log('📋 Full gigInvitation structure:', gigInvitation);
+            console.log('🆔 gigInvitation._id:', gigInvitation._id);
+            console.log('🆔 gigInvitation.id:', gigInvitation.id);
+            console.log('🆔 gigInvitation.gigAgentId:', gigInvitation.gigAgentId);
+            
+            // Essayer différentes sources pour l'ID
+            const enrollmentId = gigInvitation._id || gigInvitation.id || gigInvitation.gigAgentId;
+            console.log('✅ Using enrollmentId:', enrollmentId);
             
             // Calculer l'expiration basée sur invitationDate + 7 jours (par exemple)
             const invitationDate = new Date(gigInvitation.invitationDate || gigInvitation.updatedAt);
@@ -835,7 +855,7 @@ export function GigsMarketplace() {
             expirationDate.setDate(expirationDate.getDate() + 7); // 7 jours pour répondre
             
             return {
-              id: gigInvitation._id, // ✅ Utiliser l'ID du document GigAgent (enrollmentId)
+              id: enrollmentId, // ✅ Utiliser l'ID du document GigAgent (enrollmentId)
                 gig: {
                 _id: gigInvitation.gig._id,
                 title: gigInvitation.gig.title,
