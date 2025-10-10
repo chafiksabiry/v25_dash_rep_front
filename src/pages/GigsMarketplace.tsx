@@ -499,9 +499,13 @@ export function GigsMarketplace() {
   const acceptInvitation = async (enrollmentId: string) => {
     const token = getAuthToken();
     if (!token) {
-      console.error('Token not found');
+      console.error('❌ Token not found');
+      alert('Authentication required. Please log in again.');
       return;
     }
+
+    console.log('🔄 Accepting invitation:', enrollmentId);
+    console.log('🔗 API URL:', `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invitations/${enrollmentId}/accept`);
 
     try {
       const response = await fetch(
@@ -515,18 +519,29 @@ export function GigsMarketplace() {
         }
       );
       
+      console.log('📡 Accept response status:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error('Failed to accept invitation');
+        const errorText = await response.text();
+        console.error('❌ Failed to accept invitation:', errorText);
+        alert(`Failed to accept invitation: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to accept invitation: ${errorText}`);
       }
       
-      console.log('Invitation accepted successfully');
+      const result = await response.json();
+      console.log('✅ Invitation accepted successfully:', result);
+      alert('Invitation accepted successfully!');
+      
       // Retirer l'enrollment de la liste des invitations
       setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
       
       // Rafraîchir la liste des gigs inscrits
       fetchEnrolledGigs();
     } catch (error) {
-      console.error('Error accepting invitation:', error);
+      console.error('❌ Error accepting invitation:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+      }
     }
   };
 
@@ -534,9 +549,13 @@ export function GigsMarketplace() {
   const rejectInvitation = async (enrollmentId: string) => {
     const token = getAuthToken();
     if (!token) {
-      console.error('Token not found');
+      console.error('❌ Token not found');
+      alert('Authentication required. Please log in again.');
       return;
     }
+
+    console.log('🔄 Rejecting invitation:', enrollmentId);
+    console.log('🔗 API URL:', `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invitations/${enrollmentId}/reject`);
 
     try {
       const response = await fetch(
@@ -550,15 +569,26 @@ export function GigsMarketplace() {
         }
       );
       
+      console.log('📡 Reject response status:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error('Failed to reject invitation');
+        const errorText = await response.text();
+        console.error('❌ Failed to reject invitation:', errorText);
+        alert(`Failed to reject invitation: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to reject invitation: ${errorText}`);
       }
       
-      console.log('Invitation rejected successfully');
+      const result = await response.json();
+      console.log('✅ Invitation rejected successfully:', result);
+      alert('Invitation rejected successfully!');
+      
       // Retirer l'enrollment de la liste des invitations
       setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
     } catch (error) {
-      console.error('Error rejecting invitation:', error);
+      console.error('❌ Error rejecting invitation:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+      }
     }
   };
 
@@ -1400,7 +1430,6 @@ export function GigsMarketplace() {
                       <button 
                         onClick={() => acceptInvitation(enrollment.id)}
                         className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-                        disabled={!enrollment.canEnroll || enrollment.isExpired}
                       >
                         Accept
                       </button>
@@ -1408,7 +1437,6 @@ export function GigsMarketplace() {
                       <button 
                         onClick={() => rejectInvitation(enrollment.id)}
                         className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
-                        disabled={!enrollment.canEnroll || enrollment.isExpired}
                       >
                         Reject
                       </button>
