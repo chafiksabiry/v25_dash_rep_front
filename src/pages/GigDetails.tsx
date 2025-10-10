@@ -1444,10 +1444,10 @@ export function GigDetails() {
 
         {/* Leads Section - Full Width - Only for enrolled agents */}
         {isAgentEnrolled() && (
-          <div className="mt-8">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">Available Leads</h2>
+        <div className="mt-8">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Available Leads</h2>
                 {totalLeads > 0 && (
                   <span className="text-sm text-gray-600">
                     Total: {totalLeads} leads
@@ -1623,7 +1623,7 @@ export function GigDetails() {
             </div>
           </div>
         )}
+        </div>
       </div>
-    </div>
   );
 }

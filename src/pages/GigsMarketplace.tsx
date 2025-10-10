@@ -371,7 +371,27 @@ export function GigsMarketplace() {
   const [sortBy] = useState<'latest' | 'salary' | 'experience'>('latest');
   const [favoriteGigs, setFavoriteGigs] = useState<string[]>([]);
 
+  // Fonction pour obtenir le statut d'un gig pour l'agent connecté
+  const getGigStatus = (gigId: string): 'enrolled' | 'invited' | 'pending' | 'none' => {
+    const agentId = getAgentId();
+    if (!agentId) return 'none';
 
+    // Vérifier si le gig est dans les gigs inscrits
+    const enrolledGig = enrolledGigs.find(eg => eg.gig._id === gigId);
+    if (enrolledGig) {
+      return 'enrolled';
+    }
+
+    // Vérifier si le gig est dans les invitations
+    const invitedGig = invitedEnrollments.find(ie => ie.gig._id === gigId);
+    if (invitedGig) {
+      return 'invited';
+    }
+
+    // Pour l'instant, on ne peut pas facilement déterminer le statut "pending"
+    // sans faire un appel API supplémentaire, donc on retourne 'none'
+    return 'none';
+  };
 
   // Fonction pour récupérer les favoris
   const fetchFavorites = async () => {
@@ -723,7 +743,7 @@ export function GigsMarketplace() {
             
             return {
               id: gigInvitation.gig._id, // Utiliser le gig ID comme identifiant unique
-              gig: {
+                gig: {
                 _id: gigInvitation.gig._id,
                 title: gigInvitation.gig.title,
                 description: gigInvitation.gig.description,
@@ -1062,7 +1082,9 @@ export function GigsMarketplace() {
 
       {activeTab === 'available' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {currentGigs.map((gig) => (
+          {currentGigs.map((gig) => {
+            const gigStatus = getGigStatus(gig._id);
+            return (
           <div key={gig._id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
             <div className="flex justify-between items-start">
               <div className="flex-1">
@@ -1070,6 +1092,20 @@ export function GigsMarketplace() {
                 <p className="text-xs text-gray-500">{gig.category}</p>
               </div>
               <div className="flex items-center space-x-2">
+                {/* Status Badge */}
+                {gigStatus !== 'none' && (
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
+                    gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
+                    gigStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-gray-100 text-gray-700'
+                  }`}>
+                    {gigStatus === 'enrolled' ? '✓ Enrolled' :
+                     gigStatus === 'invited' ? '✉ Invited' :
+                     gigStatus === 'pending' ? '⏳ Pending' :
+                     gigStatus}
+                  </span>
+                )}
                 <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                   {gig.seniority.level}
                 </span>
@@ -1166,14 +1202,35 @@ export function GigsMarketplace() {
               )}
             </div>
 
-            <button 
-              onClick={() => navigate(`/gig/${gig._id}`)}
-              className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              View Details
-            </button>
+            {/* Buttons section - conditional based on status */}
+            <div className="mt-6">
+              {gigStatus === 'enrolled' ? (
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => window.location.href = '/copilot'}
+                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  >
+                    🚀 Start
+                  </button>
+                  <button 
+                    onClick={() => navigate(`/gig/${gig._id}`)}
+                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    View Details
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => navigate(`/gig/${gig._id}`)}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  View Details
+                </button>
+              )}
+            </div>
           </div>
-        ))}
+        );
+        })}
         </div>
       ) : activeTab === 'favorite' ? (
         <div>
