@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, Users, Globe, Calendar, Heart, User, Mail, Clock } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
-import { fetchPendingRequests as fetchPendingRequestsUtil } from '../utils/gigStatusUtils';
+import { fetchPendingRequests as fetchPendingRequestsUtil, fetchEnrolledGigsFromProfile } from '../utils/gigStatusUtils';
 
 export function GigsMarketplace() {
   const navigate = useNavigate();
@@ -270,6 +270,16 @@ export function GigsMarketplace() {
       training?: Array<{ name: string; url: string }>;
     };
 
+    // 👥 Agents enrolled/invited/requested
+    agents?: Array<{
+      agentId: string;
+      status: 'enrolled' | 'invited' | 'requested' | 'pending';
+      enrollmentDate?: Date | string;
+      invitationDate?: Date | string;
+      updatedAt?: Date | string;
+      _id?: string;
+    }>;
+
     status: 'to_activate' | 'active' | 'inactive' | 'archived';
     createdAt: Date;
     updatedAt: Date;
@@ -366,6 +376,7 @@ export function GigsMarketplace() {
   const [invitedEnrollments, setInvitedEnrollments] = useState<InvitedEnrollment[]>([]);
   const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
   const [pendingRequests, setPendingRequests] = useState<string[]>([]); // IDs des gigs avec demandes en attente
+  const [enrolledGigIds, setEnrolledGigIds] = useState<string[]>([]); // IDs des gigs inscrits depuis le profil
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -381,15 +392,47 @@ export function GigsMarketplace() {
     // Log pour déboguer
     console.log(`🔍 getGigStatus for gig ${gigId}:`, {
       enrolledGigIds: enrolledGigs.map(eg => eg.gig._id),
+      enrolledGigIdsFromProfile: enrolledGigIds,
       invitedGigIds: invitedEnrollments.map(ie => ie.gig._id),
       pendingGigIds: pendingRequests,
       gigId
     });
 
-    // Vérifier si le gig est dans les gigs inscrits
+    // 1. Vérifier d'abord les données du profil (plus fiables)
+    if (enrolledGigIds.includes(gigId)) {
+      console.log(`✅ Gig ${gigId} is ENROLLED (from profile)`);
+      return 'enrolled';
+    }
+
+    if (pendingRequests.includes(gigId)) {
+      console.log(`⏳ Gig ${gigId} is PENDING (from profile)`);
+      return 'pending';
+    }
+
+    // 2. Vérifier les données du gig directement (si disponible)
+    const currentGig = gigs.find(g => g._id === gigId);
+    if (currentGig && currentGig.agents && Array.isArray(currentGig.agents)) {
+      const agentInGig = currentGig.agents.find((agent: any) => agent.agentId === agentId);
+      if (agentInGig) {
+        if (agentInGig.status === 'enrolled') {
+          console.log(`✅ Gig ${gigId} is ENROLLED (from gig.agents)`);
+          return 'enrolled';
+        }
+        if (agentInGig.status === 'invited') {
+          console.log(`📨 Gig ${gigId} is INVITED (from gig.agents)`);
+          return 'invited';
+        }
+        if (agentInGig.status === 'requested' || agentInGig.status === 'pending') {
+          console.log(`⏳ Gig ${gigId} is PENDING/REQUESTED (from gig.agents)`);
+          return 'pending';
+        }
+      }
+    }
+
+    // 3. Vérifier les données des API (fallback)
     const enrolledGig = enrolledGigs.find(eg => eg.gig._id === gigId);
     if (enrolledGig) {
-      console.log(`✅ Gig ${gigId} is ENROLLED`);
+      console.log(`✅ Gig ${gigId} is ENROLLED (from API)`);
       return 'enrolled';
     }
 
@@ -398,12 +441,6 @@ export function GigsMarketplace() {
     if (invitedGig) {
       console.log(`📨 Gig ${gigId} is INVITED`);
       return 'invited';
-    }
-
-    // Vérifier si le gig a une demande en attente
-    if (pendingRequests.includes(gigId)) {
-      console.log(`⏳ Gig ${gigId} is PENDING`);
-      return 'pending';
     }
 
     console.log(`❌ Gig ${gigId} has NO STATUS`);
@@ -652,6 +689,19 @@ export function GigsMarketplace() {
     } catch (error) {
       console.error('❌ Error in fetchPendingRequests:', error);
       setPendingRequests([]);
+    }
+  };
+
+  // Fonction pour récupérer les gigs inscrits depuis le profil
+  const fetchEnrolledGigIdsFromProfile = async () => {
+    console.log('🔍 Starting fetchEnrolledGigIdsFromProfile...');
+    try {
+      const enrolledIds = await fetchEnrolledGigsFromProfile();
+      console.log('✅ fetchEnrolledGigIdsFromProfile completed, setting enrolledGigIds:', enrolledIds);
+      setEnrolledGigIds(enrolledIds);
+    } catch (error) {
+      console.error('❌ Error in fetchEnrolledGigIdsFromProfile:', error);
+      setEnrolledGigIds([]);
     }
   };
 
@@ -970,6 +1020,7 @@ export function GigsMarketplace() {
       fetchInvitedEnrollments();
       fetchEnrolledGigs();
       fetchPendingRequests();
+      fetchEnrolledGigIdsFromProfile(); // Nouveau : récupérer les statuts depuis le profil
     }
 
     // Écouter les événements de rafraîchissement des statuts
@@ -980,6 +1031,7 @@ export function GigsMarketplace() {
         fetchInvitedEnrollments();
         fetchEnrolledGigs();
         fetchPendingRequests();
+        fetchEnrolledGigIdsFromProfile(); // Nouveau : rafraîchir aussi les statuts du profil
       }
     };
 
