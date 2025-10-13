@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
+import { refreshGigStatuses } from '../utils/gigStatusUtils';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
 interface PopulatedGig {
@@ -243,7 +244,18 @@ interface PopulatedGig {
         yearsExperience: string;
       };
     }>;
-    territories: string[];
+    territories: (string | {
+      _id: string;
+      name: {
+        common: string;
+        official: string;
+      };
+      flags: {
+        png: string;
+        svg: string;
+      };
+      cca2: string;
+    })[];
   };
 
   // 📖 Documentation
@@ -257,6 +269,16 @@ interface PopulatedGig {
   createdAt: Date;
   updatedAt: Date;
   enrolledAgents?: string[]; // Added for enrollment status
+  
+  // 👥 Agents enrolled/invited to this gig
+  agents?: Array<{
+    agentId: string;
+    status: 'invited' | 'enrolled' | 'rejected' | 'requested' | 'pending';
+    enrollmentDate?: string;
+    invitationDate?: string;
+    updatedAt?: string;
+    _id: string;
+  }>;
 }
 
 // Interface pour les leads
@@ -308,12 +330,67 @@ export function GigDetails() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalLeads, setTotalLeads] = useState(0);
   const limit = 50; // Nombre de leads par page (maximum supporté par le backend)
+  
+  // Fonction pour vérifier si l'agent est enrolled dans ce gig
+  const isAgentEnrolled = () => {
+    const agentId = getAgentId();
+    if (!agentId || !gig) return false;
+    
+    // Vérifier si le gig a un champ agents avec le statut de l'agent
+    if (gig.agents && Array.isArray(gig.agents)) {
+      const agentStatus = gig.agents.find((agent: any) => agent.agentId === agentId);
+      return agentStatus?.status === 'enrolled';
+    }
+    
+    return false;
+  };
+  
+  // Fonction pour obtenir le statut de l'agent dans ce gig
+  const getAgentStatus = (): 'enrolled' | 'invited' | 'pending' | 'none' => {
+    const agentId = getAgentId();
+    if (!agentId || !gig) return 'none';
+    
+    // 1. Vérifier d'abord les données du profil (plus fiables)
+    if (enrolledGigIds.includes(gigId!)) {
+      console.log(`✅ Agent is ENROLLED in gig ${gigId} (from profile)`);
+      return 'enrolled';
+    }
+    
+    if (pendingGigIds.includes(gigId!)) {
+      console.log(`⏳ Agent has PENDING request for gig ${gigId} (from profile)`);
+      return 'pending';
+    }
+    
+    // 2. Vérifier les données du gig (fallback)
+    if (gig.agents && Array.isArray(gig.agents)) {
+      const agentStatus = gig.agents.find((agent: any) => agent.agentId === agentId);
+      if (agentStatus?.status === 'enrolled') {
+        console.log(`✅ Agent is ENROLLED in gig ${gigId} (from gig data)`);
+        return 'enrolled';
+      }
+      if (agentStatus?.status === 'invited') {
+        console.log(`📨 Agent is INVITED to gig ${gigId} (from gig data)`);
+        return 'invited';
+      }
+      if (agentStatus?.status === 'requested' || agentStatus?.status === 'pending') {
+        console.log(`⏳ Agent has PENDING request for gig ${gigId} (from gig data)`);
+        return 'pending';
+      }
+    }
+    
+    console.log(`❌ Agent has NO STATUS for gig ${gigId}`);
+    return 'none';
+  };
 
   // États pour l'application
   const [applying, setApplying] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [applicationMessage, setApplicationMessage] = useState('');
   const [enrollmentStatus, setEnrollmentStatus] = useState<'none' | 'requested' | 'enrolled' | 'invited'>('none');
+  
+  // États pour les statuts depuis le profil
+  const [pendingGigIds, setPendingGigIds] = useState<string[]>([]);
+  const [enrolledGigIds, setEnrolledGigIds] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchGigDetails = async () => {
@@ -386,6 +463,27 @@ export function GigDetails() {
 
     fetchGigDetails();
   }, [gigId]);
+
+  // Récupérer les statuts depuis le profil de l'agent
+  useEffect(() => {
+    const fetchStatusesFromProfile = async () => {
+      try {
+        console.log('🔍 Fetching statuses from agent profile...');
+        const [pendingIds, enrolledIds] = await Promise.all([
+          fetchPendingRequests(),
+          fetchEnrolledGigsFromProfile()
+        ]);
+        
+        console.log('📝 Profile statuses fetched:', { pendingIds, enrolledIds });
+        setPendingGigIds(pendingIds);
+        setEnrolledGigIds(enrolledIds);
+      } catch (error) {
+        console.error('❌ Error fetching statuses from profile:', error);
+      }
+    };
+
+    fetchStatusesFromProfile();
+  }, []);
 
   // Vérifier le statut d'enrollment de l'agent
   useEffect(() => {
@@ -549,12 +647,12 @@ export function GigDetails() {
     }
   };
 
-  // Charger les leads quand le gigId change
+  // Charger les leads quand le gigId change et si l'agent est enrolled
   useEffect(() => {
-    if (gigId) {
+    if (gigId && isAgentEnrolled()) {
       fetchLeads(1);
     }
-  }, [gigId]);
+  }, [gigId, gig]);
 
   // Fonction pour changer de page
   const handlePageChange = (newPage: number) => {
@@ -680,8 +778,11 @@ export function GigDetails() {
       console.log('✅ Application successful:', data);
       
       setApplicationStatus('success');
-             setApplicationMessage(data.message || 'Application sent successfully!');
+      setApplicationMessage(data.message || 'Application sent successfully!');
       setEnrollmentStatus('requested');
+      
+      // Déclencher le rafraîchissement des statuts dans toutes les pages
+      await refreshGigStatuses();
       
       // Ne pas rediriger, juste mettre à jour le statut local
       
@@ -735,7 +836,25 @@ export function GigDetails() {
           <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
             <div className="flex justify-between items-start mb-6">
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{gig.title}</h1>
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-3xl font-bold text-gray-900">{gig.title}</h1>
+                  {/* Badge de statut */}
+                  {getAgentStatus() === 'enrolled' && (
+                    <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-700 border border-green-300">
+                      ✓ Enrolled
+                    </span>
+                  )}
+                  {getAgentStatus() === 'invited' && (
+                    <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-700 border border-blue-300">
+                      ✉ Invited
+                    </span>
+                  )}
+                  {getAgentStatus() === 'pending' && (
+                    <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-700 border border-yellow-300">
+                      ⏳ Pending
+                    </span>
+                  )}
+                </div>
                 <p className="text-lg text-gray-600 mb-2">{gig.category}</p>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
@@ -757,19 +876,22 @@ export function GigDetails() {
                 )}
 
                 {/* Bouton selon le statut d'enrollment */}
-                {enrollmentStatus === 'enrolled' ? (
+                {getAgentStatus() === 'enrolled' ? (
                   <div className="text-center">
-                    <span className="inline-block px-5 py-2 bg-green-100 text-green-800 rounded-lg font-medium text-sm">
-                      ✅ Enrolled
-                    </span>
+                    <button 
+                      onClick={() => window.location.href = '/copilot'}
+                      className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors shadow-md"
+                    >
+                      🚀 Start
+                    </button>
                   </div>
-                ) : enrollmentStatus === 'requested' ? (
+                ) : getAgentStatus() === 'pending' ? (
                   <div className="text-center">
                     <span className="inline-block px-5 py-2 bg-yellow-100 text-yellow-800 rounded-lg font-medium text-sm">
                       ⏳ Pending
                     </span>
                   </div>
-                ) : enrollmentStatus === 'invited' ? (
+                ) : getAgentStatus() === 'invited' ? (
                   <div className="text-center">
                     <span className="inline-block px-5 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium text-sm">
                       📨 Invited
@@ -793,19 +915,8 @@ export function GigDetails() {
                     ) : (
                       'Apply Now'
                     )}
-                </button>
+                  </button>
                 )}
-                
-                <p className="text-xs text-gray-500 mt-2 text-center max-w-[140px]">
-                  {enrollmentStatus === 'enrolled' 
-                     ? 'You are enrolled in this gig'
-                    : enrollmentStatus === 'requested'
-                     ? 'Your request is being processed'
-                    : enrollmentStatus === 'invited'
-                     ? 'You have been invited'
-                    : 'Join this opportunity and start earning immediately'
-                  }
-                </p>
               </div>
             </div>
 
@@ -1032,8 +1143,8 @@ export function GigDetails() {
               </div>
             </div>
 
-            {/* Leads Information */}
-            {gig.leads?.types?.length > 0 && (
+            {/* Leads Information - Only for enrolled agents */}
+            {isAgentEnrolled() && gig.leads?.types?.length > 0 && (
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Lead Types</h2>
                 <div className="space-y-3">
@@ -1090,7 +1201,7 @@ export function GigDetails() {
                       <div className="flex flex-wrap gap-1 mt-1">
                         {gig.team.territories.map((territory, index) => (
                           <span key={index} className="px-2 py-1 bg-blue-100 rounded-full text-xs text-blue-700">
-                            {territory}
+                            {typeof territory === 'object' ? territory?.name?.common || territory?.cca2 || 'Unknown' : territory}
                           </span>
                         ))}
                       </div>
@@ -1380,7 +1491,8 @@ export function GigDetails() {
           </div>
         </div>
 
-        {/* Leads Section - Full Width */}
+        {/* Leads Section - Full Width - Only for enrolled agents */}
+        {isAgentEnrolled() && (
         <div className="mt-8">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <div className="flex justify-between items-center mb-4">
@@ -1559,6 +1671,7 @@ export function GigDetails() {
               )}
             </div>
           </div>
+        )}
         </div>
       </div>
   );

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, Users, Globe, Calendar, Heart, User, Mail, Clock } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
+import { fetchPendingRequests as fetchPendingRequestsUtil, fetchEnrolledGigsFromProfile } from '../utils/gigStatusUtils';
 
 export function GigsMarketplace() {
   const navigate = useNavigate();
@@ -269,6 +270,16 @@ export function GigsMarketplace() {
       training?: Array<{ name: string; url: string }>;
     };
 
+    // 👥 Agents enrolled/invited/requested
+    agents?: Array<{
+      agentId: string;
+      status: 'enrolled' | 'invited' | 'requested' | 'pending';
+      enrollmentDate?: Date | string;
+      invitationDate?: Date | string;
+      updatedAt?: Date | string;
+      _id?: string;
+    }>;
+
     status: 'to_activate' | 'active' | 'inactive' | 'archived';
     createdAt: Date;
     updatedAt: Date;
@@ -364,14 +375,92 @@ export function GigsMarketplace() {
   const [gigs, setGigs] = useState<PopulatedGig[]>([]);
   const [invitedEnrollments, setInvitedEnrollments] = useState<InvitedEnrollment[]>([]);
   const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<string[]>([]); // IDs des gigs avec demandes en attente
+  const [enrolledGigIds, setEnrolledGigIds] = useState<string[]>([]); // IDs des gigs inscrits depuis le profil
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [gigsPerPage] = useState(9);
   const [sortBy] = useState<'latest' | 'salary' | 'experience'>('latest');
   const [favoriteGigs, setFavoriteGigs] = useState<string[]>([]);
+  const [applyingGigId, setApplyingGigId] = useState<string | null>(null);
+  const [applicationMessage, setApplicationMessage] = useState<{ gigId: string; message: string; type: 'success' | 'error' } | null>(null);
 
+  // Fonction pour obtenir le statut d'un gig pour l'agent connecté
+  const getGigStatus = (gigId: string): 'enrolled' | 'invited' | 'pending' | 'none' => {
+    const agentId = getAgentId();
+    if (!agentId) return 'none';
 
+    // Log pour déboguer
+    console.log(`🔍 getGigStatus for gig ${gigId}:`, {
+      enrolledGigIds: enrolledGigs.map(eg => eg.gig._id),
+      enrolledGigIdsFromProfile: enrolledGigIds,
+      invitedGigIds: invitedEnrollments.map(ie => ie.gig._id),
+      pendingGigIds: pendingRequests,
+      gigId
+    });
+
+    // 1. Vérifier d'abord les données du profil (plus fiables)
+    if (enrolledGigIds.includes(gigId)) {
+      console.log(`✅ Gig ${gigId} is ENROLLED (from profile)`);
+      return 'enrolled';
+    }
+
+    if (pendingRequests.includes(gigId)) {
+      console.log(`⏳ Gig ${gigId} is PENDING (from profile)`);
+      return 'pending';
+    }
+
+    // 2. Vérifier les données du gig directement (si disponible)
+    const currentGig = gigs.find(g => g._id === gigId);
+    if (currentGig && currentGig.agents && Array.isArray(currentGig.agents)) {
+      const agentInGig = currentGig.agents.find((agent: any) => agent.agentId === agentId);
+      if (agentInGig) {
+        if (agentInGig.status === 'enrolled') {
+          console.log(`✅ Gig ${gigId} is ENROLLED (from gig.agents)`);
+          return 'enrolled';
+        }
+        if (agentInGig.status === 'invited') {
+          console.log(`📨 Gig ${gigId} is INVITED (from gig.agents)`);
+          return 'invited';
+        }
+        if (agentInGig.status === 'requested' || agentInGig.status === 'pending') {
+          console.log(`⏳ Gig ${gigId} is PENDING/REQUESTED (from gig.agents)`);
+          return 'pending';
+        }
+      }
+    }
+
+    // 3. Vérifier les données des API (fallback)
+    const enrolledGig = enrolledGigs.find(eg => eg.gig._id === gigId);
+    if (enrolledGig) {
+      console.log(`✅ Gig ${gigId} is ENROLLED (from API)`);
+      return 'enrolled';
+    }
+
+    // Vérifier si le gig est dans les invitations
+    const invitedGig = invitedEnrollments.find(ie => ie.gig._id === gigId);
+    if (invitedGig) {
+      console.log(`📨 Gig ${gigId} is INVITED`);
+      return 'invited';
+    }
+
+    console.log(`❌ Gig ${gigId} has NO STATUS`);
+    return 'none';
+  };
+
+  // Fonction pour rafraîchir tous les statuts (à exporter pour GigDetails)
+  const refreshAllStatuses = async () => {
+    const agentId = getAgentId();
+    if (agentId) {
+      await Promise.all([
+        fetchFavorites(),
+        fetchInvitedEnrollments(),
+        fetchEnrolledGigs(),
+        fetchPendingRequests()
+      ]);
+    }
+  };
 
   // Fonction pour récupérer les favoris
   const fetchFavorites = async () => {
@@ -499,9 +588,13 @@ export function GigsMarketplace() {
   const acceptInvitation = async (enrollmentId: string) => {
     const token = getAuthToken();
     if (!token) {
-      console.error('Token not found');
+      console.error('❌ Token not found');
+      alert('Authentication required. Please log in again.');
       return;
     }
+
+    console.log('🔄 Accepting invitation:', enrollmentId);
+    console.log('🔗 API URL:', `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invitations/${enrollmentId}/accept`);
 
     try {
       const response = await fetch(
@@ -515,18 +608,36 @@ export function GigsMarketplace() {
         }
       );
       
+      console.log('📡 Accept response status:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error('Failed to accept invitation');
+        const errorText = await response.text();
+        console.error('❌ Failed to accept invitation:', errorText);
+        alert(`Failed to accept invitation: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to accept invitation: ${errorText}`);
       }
       
-      console.log('Invitation accepted successfully');
-      // Retirer l'enrollment de la liste des invitations
+      const result = await response.json();
+      console.log('✅ Invitation accepted successfully:', result);
+      alert('Invitation accepted successfully!');
+      
+      // Retirer immédiatement l'invitation de la liste (UI optimiste)
       setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
       
-      // Rafraîchir la liste des gigs inscrits
-      fetchEnrolledGigs();
+      // Rafraîchir tous les statuts pour mettre à jour l'UI
+      console.log('🔄 Refreshing all statuses after acceptance...');
+      await Promise.all([
+        fetchEnrolledGigs(),           // Recharger les gigs enrolled
+        fetchEnrolledGigIdsFromProfile(), // Mettre à jour les IDs du profil
+        fetchInvitedEnrollments(),     // Recharger les invitations (au cas où)
+        fetchPendingRequests()         // Mettre à jour les pending requests
+      ]);
+      console.log('✅ All statuses refreshed');
     } catch (error) {
-      console.error('Error accepting invitation:', error);
+      console.error('❌ Error accepting invitation:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+      }
     }
   };
 
@@ -534,9 +645,13 @@ export function GigsMarketplace() {
   const rejectInvitation = async (enrollmentId: string) => {
     const token = getAuthToken();
     if (!token) {
-      console.error('Token not found');
+      console.error('❌ Token not found');
+      alert('Authentication required. Please log in again.');
       return;
     }
+
+    console.log('🔄 Rejecting invitation:', enrollmentId);
+    console.log('🔗 API URL:', `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invitations/${enrollmentId}/reject`);
 
     try {
       const response = await fetch(
@@ -550,15 +665,150 @@ export function GigsMarketplace() {
         }
       );
       
+      console.log('📡 Reject response status:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error('Failed to reject invitation');
+        const errorText = await response.text();
+        console.error('❌ Failed to reject invitation:', errorText);
+        alert(`Failed to reject invitation: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to reject invitation: ${errorText}`);
       }
       
-      console.log('Invitation rejected successfully');
-      // Retirer l'enrollment de la liste des invitations
-      setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
+      const result = await response.json();
+      console.log('✅ Invitation rejected successfully:', result);
+      alert('Invitation rejected successfully!');
+      
+      // Retirer immédiatement l'invitation de la liste (UI optimiste)
+      setInvitedEnrollments((prev: any[]) => prev.filter(enrollment => enrollment.id !== enrollmentId));
+      
+      // Rafraîchir tous les statuts pour mettre à jour l'UI
+      console.log('🔄 Refreshing all statuses after rejection...');
+      await Promise.all([
+        fetchInvitedEnrollments(),     // Recharger les invitations
+        fetchEnrolledGigIdsFromProfile(), // Mettre à jour les IDs du profil
+        fetchPendingRequests()         // Mettre à jour les pending requests
+      ]);
+      console.log('✅ All statuses refreshed');
     } catch (error) {
-      console.error('Error rejecting invitation:', error);
+      console.error('❌ Error rejecting invitation:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+      }
+    }
+  };
+
+  // Fonction pour postuler à un gig
+  const handleApplyToGig = async (gigId: string) => {
+    const agentId = getAgentId();
+    const token = getAuthToken();
+    
+    if (!agentId || !token) {
+      setApplicationMessage({ gigId, message: 'You must be logged in to apply', type: 'error' });
+      return;
+    }
+
+    setApplyingGigId(gigId);
+    setApplicationMessage(null);
+
+    try {
+      console.log('🚀 Applying to gig:', gigId);
+      console.log('👤 Agent ID:', agentId);
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-request/${agentId}/${gigId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            notes: "I am very interested in this project and have relevant experience."
+          }),
+        }
+      );
+
+      console.log('📡 Application response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Application failed:', errorText);
+        
+        // Si l'erreur indique que le gig est déjà en attente, rafraîchir le statut
+        if (response.status === 400 && errorText.includes('Cannot request enrollment for this gig at this time')) {
+          console.log('⏳ Gig is already pending, refreshing status...');
+          setApplicationMessage({ gigId, message: 'This gig is already pending', type: 'success' });
+          
+          // Rafraîchir tous les statuts
+          await Promise.all([
+            fetchPendingRequests(),
+            fetchEnrolledGigIdsFromProfile()
+          ]);
+          
+          return;
+        }
+        
+        throw new Error(`Application failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Application successful:', data);
+      
+      setApplicationMessage({ gigId, message: 'Application sent successfully!', type: 'success' });
+      
+      // Rafraîchir tous les statuts pour mettre à jour l'UI
+      await Promise.all([
+        fetchPendingRequests(),
+        fetchEnrolledGigIdsFromProfile(),
+        fetchInvitedEnrollments(),
+        fetchEnrolledGigs()
+      ]);
+      
+      // Effacer le message après 3 secondes
+      setTimeout(() => {
+        setApplicationMessage(null);
+      }, 3000);
+      
+    } catch (err) {
+      console.error('❌ Error applying to gig:', err);
+      setApplicationMessage({ 
+        gigId, 
+        message: err instanceof Error ? err.message : 'Error during application', 
+        type: 'error' 
+      });
+      
+      // Effacer le message d'erreur après 3 secondes
+      setTimeout(() => {
+        setApplicationMessage(null);
+      }, 3000);
+    } finally {
+      setApplyingGigId(null);
+    }
+  };
+
+  // Fonction pour récupérer les demandes en attente (pending requests)
+  const fetchPendingRequests = async () => {
+    console.log('🔍 Starting fetchPendingRequests...');
+    try {
+      const pendingGigIds = await fetchPendingRequestsUtil();
+      console.log('✅ fetchPendingRequests completed, setting pendingRequests:', pendingGigIds);
+      setPendingRequests(pendingGigIds);
+    } catch (error) {
+      console.error('❌ Error in fetchPendingRequests:', error);
+      setPendingRequests([]);
+    }
+  };
+
+  // Fonction pour récupérer les gigs inscrits depuis le profil
+  const fetchEnrolledGigIdsFromProfile = async () => {
+    console.log('🔍 Starting fetchEnrolledGigIdsFromProfile...');
+    try {
+      const enrolledIds = await fetchEnrolledGigsFromProfile();
+      console.log('✅ fetchEnrolledGigIdsFromProfile completed, setting enrolledGigIds:', enrolledIds);
+      setEnrolledGigIds(enrolledIds);
+    } catch (error) {
+      console.error('❌ Error in fetchEnrolledGigIdsFromProfile:', error);
+      setEnrolledGigIds([]);
     }
   };
 
@@ -573,9 +823,9 @@ export function GigsMarketplace() {
 
     try {
       console.log('🔍 Fetching enrolled gigs for agent:', agentId);
-      // Utiliser le nouvel endpoint /gig-agents/enrolled/agent/{agentId}
+      // Utiliser le nouvel endpoint /gig-agents/agents/{agentId}/gigs?status=enrolled
       const enrollmentResponse = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrolled/agent/${agentId}`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/agents/${agentId}/gigs?status=enrolled`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -589,38 +839,49 @@ export function GigsMarketplace() {
       
       const enrollmentData = await enrollmentResponse.json();
       console.log('📝 Enrolled gigs raw response:', enrollmentData);
-      console.log('📊 Response length:', enrollmentData.length);
+      console.log('📊 Response count:', enrollmentData.count);
       
-      // La réponse est directement un tableau d'enrollments
-      if (Array.isArray(enrollmentData)) {
-        console.log('✅ Response is array, processing enrollments...');
-        console.log('🔍 First enrollment structure:', enrollmentData[0]);
+      // La réponse contient un objet avec la propriété 'gigs'
+      if (enrollmentData.gigs && Array.isArray(enrollmentData.gigs)) {
+        console.log('✅ Response has gigs array, processing enrollments...');
+        console.log('🔍 First enrollment structure:', enrollmentData.gigs[0]);
         
         // Transformer les données pour correspondre à l'interface EnrolledGig
-        const transformedEnrollments = enrollmentData
-          .filter((gigAgent: any) => {
-            console.log('🔍 Checking enrollment:', gigAgent._id, 'gigId:', gigAgent.gigId);
-            return gigAgent.gigId; // Filtrer les enrollments sans gigId
+        const transformedEnrollments = enrollmentData.gigs
+          .filter((gigEnrollment: any) => {
+            console.log('🔍 Checking enrollment:', gigEnrollment.gig?._id);
+            return gigEnrollment.gig; // Filtrer les enrollments sans gig
           })
-          .map((gigAgent: any) => {
-            console.log('🔄 Transforming enrollment:', gigAgent._id);
+          .map((gigEnrollment: any) => {
+            console.log('🔄 Transforming enrollment:', gigEnrollment.gig._id);
+            
+            // ✅ Extraire le gigAgentId depuis gig.agents[]
+            const agentId = getAgentId();
+            const agentData = gigEnrollment.gig.agents?.find((agent: any) => 
+              agent.agentId === agentId || agent.agentId?.$oid === agentId
+            );
+            const enrollmentId = agentData?.gigAgentId || agentData?.gigAgentId?.$oid;
+            
+            console.log('🆔 Agent data from gig.agents:', agentData);
+            console.log('✅ Extracted gigAgentId:', enrollmentId);
+            
             return {
-              id: gigAgent._id,
+              id: enrollmentId, // ✅ Utiliser l'ID du document GigAgent (enrollmentId)
               gig: {
-                _id: gigAgent.gigId._id,
-                title: gigAgent.gigId.title,
-                description: gigAgent.gigId.description,
-                category: gigAgent.gigId.category,
-                destination_zone: gigAgent.gigId.destination_zone,
-                // Copier toutes les autres propriétés du gig
-                ...gigAgent.gigId
+                _id: gigEnrollment.gig._id,
+                title: gigEnrollment.gig.title,
+                description: gigEnrollment.gig.description,
+                category: gigEnrollment.gig.category,
+                destination_zone: gigEnrollment.gig.destination_zone,
+                // Copier toutes les autres propriétés du gig (déjà populées)
+                ...gigEnrollment.gig
               },
-              enrollmentStatus: gigAgent.status, // 'accepted' pour les gigs inscrits
-              enrollmentDate: gigAgent.enrollmentDate || gigAgent.agentResponseAt,
-              enrollmentNotes: gigAgent.enrollmentNotes,
-              status: gigAgent.status,
-              matchScore: gigAgent.matchScore,
-              matchStatus: gigAgent.matchStatus
+              enrollmentStatus: gigEnrollment.status, // 'enrolled'
+              enrollmentDate: gigEnrollment.enrollmentDate,
+              enrollmentNotes: gigEnrollment.enrollmentNotes,
+              status: gigEnrollment.status,
+              matchScore: 0, // Pas de match score dans cette réponse
+              matchStatus: 'enrolled'
             };
           });
         
@@ -647,9 +908,9 @@ export function GigsMarketplace() {
     }
 
     try {
-      // Utiliser le nouvel endpoint /gig-agents/invited/agent/{agentId}
+      // Utiliser le nouvel endpoint /gig-agents/agents/{agentId}/gigs?status=invited
       const enrollmentResponse = await fetch(
-        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invited/agent/${agentId}`,
+        `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/agents/${agentId}/gigs?status=invited`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -662,38 +923,72 @@ export function GigsMarketplace() {
       }
       
       const enrollmentData = await enrollmentResponse.json();
-      console.log('Invited enrollments response:', enrollmentData);
+      console.log('📋 Invited enrollments response:', enrollmentData);
+      console.log('📊 Response count:', enrollmentData.count);
+      console.log('🔍 RAW RESPONSE DATA:', JSON.stringify(enrollmentData, null, 2));
       
-      // La réponse est directement un tableau d'enrollments
-      if (Array.isArray(enrollmentData)) {
-        console.log('Found invited enrollments:', enrollmentData);
-        console.log('First invited enrollment structure:', enrollmentData[0]);
+      // La réponse contient un objet avec la propriété 'gigs'
+      if (enrollmentData.gigs && Array.isArray(enrollmentData.gigs)) {
+        console.log('✅ Found invited enrollments:', enrollmentData.gigs.length);
+        if (enrollmentData.gigs.length > 0) {
+          console.log('🔍 First invited enrollment structure:', JSON.stringify(enrollmentData.gigs[0], null, 2));
+          console.log('🔍 First gig structure:', enrollmentData.gigs[0].gig);
+          console.log('🆔 Checking IDs in first enrollment:');
+          console.log('   - _id:', enrollmentData.gigs[0]._id);
+          console.log('   - id:', enrollmentData.gigs[0].id);
+          console.log('   - gigAgentId:', enrollmentData.gigs[0].gigAgentId);
+          console.log('🏢 CompanyId:', enrollmentData.gigs[0].gig?.companyId);
+          console.log('🏭 Industries:', enrollmentData.gigs[0].gig?.industries);
+          console.log('📊 Activities:', enrollmentData.gigs[0].gig?.activities);
+        }
         
         // Transformer les données pour correspondre à l'interface InvitedEnrollment
-        const transformedInvitations = enrollmentData
-          .filter((gigAgent: any) => gigAgent.gigId) // Filtrer les enrollments sans gigId
-          .map((gigAgent: any) => ({
-          id: gigAgent._id,
+        const transformedInvitations = enrollmentData.gigs
+          .filter((gigInvitation: any) => {
+            console.log('🔍 Checking invitation:', gigInvitation.gig?._id);
+            return gigInvitation.gig; // Filtrer les invitations sans gig
+          })
+          .map((gigInvitation: any) => {
+            console.log('🔄 Transforming invitation:', gigInvitation.gig._id);
+            
+            // ✅ Extraire le gigAgentId depuis gig.agents[]
+            const agentId = getAgentId();
+            const agentData = gigInvitation.gig.agents?.find((agent: any) => 
+              agent.agentId === agentId || agent.agentId?.$oid === agentId
+            );
+            const enrollmentId = agentData?.gigAgentId || agentData?.gigAgentId?.$oid;
+            
+            console.log('🆔 Agent data from gig.agents:', agentData);
+            console.log('✅ Extracted gigAgentId:', enrollmentId);
+            
+            // Calculer l'expiration basée sur invitationDate + 7 jours (par exemple)
+            const invitationDate = new Date(gigInvitation.invitationDate || gigInvitation.updatedAt);
+            const expirationDate = new Date(invitationDate);
+            expirationDate.setDate(expirationDate.getDate() + 7); // 7 jours pour répondre
+            
+            return {
+              id: enrollmentId, // ✅ Utiliser l'ID du document GigAgent (enrollmentId)
                 gig: {
-            _id: gigAgent.gigId._id,
-            title: gigAgent.gigId.title,
-            description: gigAgent.gigId.description,
-            category: gigAgent.gigId.category,
-            destination_zone: gigAgent.gigId.destination_zone,
-            // Copier toutes les autres propriétés du gig
-            ...gigAgent.gigId
-          },
-          enrollmentStatus: gigAgent.status, // 'invited' pour les invitations
-          invitationSentAt: gigAgent.invitationSentAt,
-          invitationExpiresAt: gigAgent.invitationExpiresAt,
-          isExpired: new Date(gigAgent.invitationExpiresAt) < new Date(),
-            canEnroll: (gigAgent.status === 'invited' || gigAgent.status === 'pending') && new Date(gigAgent.invitationExpiresAt) > new Date(),
-          notes: gigAgent.notes,
-          matchScore: gigAgent.matchScore,
-          matchStatus: gigAgent.matchStatus
-        }));
+                _id: gigInvitation.gig._id,
+                title: gigInvitation.gig.title,
+                description: gigInvitation.gig.description,
+                category: gigInvitation.gig.category,
+                destination_zone: gigInvitation.gig.destination_zone,
+                // Copier toutes les autres propriétés du gig (déjà populées)
+                ...gigInvitation.gig
+              },
+              enrollmentStatus: gigInvitation.status, // 'invited'
+              invitationSentAt: gigInvitation.invitationDate || gigInvitation.updatedAt,
+              invitationExpiresAt: expirationDate.toISOString(),
+              isExpired: new Date() > expirationDate,
+              canEnroll: gigInvitation.status === 'invited',
+              notes: gigInvitation.notes,
+              matchScore: 0, // Pas de match score dans cette réponse
+              matchStatus: 'invited'
+            };
+          });
         
-        console.log('Transformed invited enrollments:', transformedInvitations);
+        console.log('✅ Transformed invited enrollments:', transformedInvitations);
         setInvitedEnrollments(transformedInvitations);
       } else {
         console.error('Invalid invited enrollments data structure:', enrollmentData);
@@ -856,7 +1151,28 @@ export function GigsMarketplace() {
       fetchFavorites();
       fetchInvitedEnrollments();
       fetchEnrolledGigs();
+      fetchPendingRequests();
+      fetchEnrolledGigIdsFromProfile(); // Nouveau : récupérer les statuts depuis le profil
     }
+
+    // Écouter les événements de rafraîchissement des statuts
+    const handleRefreshStatuses = () => {
+      console.log('🔄 Refreshing gig statuses...');
+      if (agentId) {
+        fetchFavorites();
+        fetchInvitedEnrollments();
+        fetchEnrolledGigs();
+        fetchPendingRequests();
+        fetchEnrolledGigIdsFromProfile(); // Nouveau : rafraîchir aussi les statuts du profil
+      }
+    };
+
+    window.addEventListener('refreshGigStatuses', handleRefreshStatuses);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('refreshGigStatuses', handleRefreshStatuses);
+    };
   }, []);
 
   // Filter and sort gigs based on active tab
@@ -1010,9 +1326,25 @@ export function GigsMarketplace() {
         </button>
       </div>
 
+      {/* Message de notification pour les applications */}
+      {applicationMessage && (
+        <div className={`mb-4 p-4 rounded-lg ${
+          applicationMessage.type === 'success' 
+            ? 'bg-green-50 text-green-800 border border-green-200' 
+            : 'bg-red-50 text-red-800 border border-red-200'
+        }`}>
+          <p className="text-sm font-medium">
+            {applicationMessage.type === 'success' ? '✅ ' : '❌ '}
+            {applicationMessage.message}
+          </p>
+        </div>
+      )}
+
       {activeTab === 'available' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {currentGigs.map((gig) => (
+          {currentGigs.map((gig) => {
+            const gigStatus = getGigStatus(gig._id);
+            return (
           <div key={gig._id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
             <div className="flex justify-between items-start">
               <div className="flex-1">
@@ -1020,9 +1352,34 @@ export function GigsMarketplace() {
                 <p className="text-xs text-gray-500">{gig.category}</p>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                  {gig.seniority.level}
-                </span>
+                {/* Status Badge */}
+                {gigStatus === 'none' ? (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleApplyToGig(gig._id);
+                    }}
+                    disabled={applyingGigId === gig._id}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                      applyingGigId === gig._id
+                        ? 'bg-purple-200 text-purple-400 cursor-not-allowed'
+                        : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-md cursor-pointer'
+                    }`}
+                  >
+                    {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
+                  </button>
+                ) : (
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
+                    gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
+                    'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {gigStatus === 'enrolled' ? '✓ Enrolled' :
+                     gigStatus === 'invited' ? '✉ Invited' :
+                     '⏳ Pending'}
+                  </span>
+                )}
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -1064,7 +1421,7 @@ export function GigsMarketplace() {
               </div>
               <div className="flex items-center text-sm text-gray-500">
                 <Globe className="w-4 h-4 mr-2" />
-                <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
+                <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.zoneName || gig.availability?.time_zone?.countryName || gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
               </div>
               <div className="flex items-center text-sm text-gray-500">
                 <Calendar className="w-4 h-4 mr-2" />
@@ -1116,14 +1473,35 @@ export function GigsMarketplace() {
               )}
             </div>
 
-            <button 
-              onClick={() => navigate(`/gig/${gig._id}`)}
-              className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              View Details
-            </button>
+            {/* Buttons section - conditional based on status */}
+            <div className="mt-6">
+              {gigStatus === 'enrolled' ? (
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => window.location.href = '/copilot'}
+                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  >
+                    🚀 Start
+                  </button>
+                  <button 
+                    onClick={() => navigate(`/gig/${gig._id}`)}
+                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    View Details
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => navigate(`/gig/${gig._id}`)}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  View Details
+                </button>
+              )}
+            </div>
           </div>
-        ))}
+        );
+        })}
         </div>
       ) : activeTab === 'favorite' ? (
         <div>
@@ -1153,9 +1531,37 @@ export function GigsMarketplace() {
                         <p className="text-xs text-gray-500">{gig.category}</p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                          {gig.seniority.level}
+                        {/* Status Badge */}
+                        {(() => {
+                          const gigStatus = getGigStatus(gig._id);
+                          return gigStatus === 'none' ? (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleApplyToGig(gig._id);
+                              }}
+                              disabled={applyingGigId === gig._id}
+                              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                                applyingGigId === gig._id
+                                  ? 'bg-purple-200 text-purple-400 cursor-not-allowed'
+                                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-md cursor-pointer'
+                              }`}
+                            >
+                              {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
+                            </button>
+                          ) : (
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
+                              gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {gigStatus === 'enrolled' ? '✓ Enrolled' :
+                               gigStatus === 'invited' ? '✉ Invited' :
+                               '⏳ Pending'}
                         </span>
+                          );
+                        })()}
                         <button
                           onClick={(e) => {
                             e.preventDefault();
@@ -1185,7 +1591,7 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
+                        <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.zoneName || gig.availability?.time_zone?.countryName || gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
@@ -1278,13 +1684,8 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                          Invited
+                          ✉ Invited
                         </span>
-                        {('seniority' in enrollment.gig && enrollment.gig.seniority?.level) && (
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                            {enrollment.gig.seniority.level}
-                          </span>
-                        )}
                         <button
                           onClick={(e) => {
                             e.preventDefault();
@@ -1315,7 +1716,7 @@ export function GigsMarketplace() {
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{('commission' in enrollment.gig && enrollment.gig.commission?.baseAmount) ? `${enrollment.gig.commission.baseAmount} ${enrollment.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
+                        <span>{('commission' in enrollment.gig && enrollment.gig.commission?.baseAmount) ? `${enrollment.gig.commission.baseAmount} ${typeof enrollment.gig.commission.currency === 'object' ? enrollment.gig.commission.currency?.symbol || enrollment.gig.commission.currency?.code || 'EUR' : enrollment.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
                         {('commission' in enrollment.gig && enrollment.gig.commission?.bonus) && (
                           <span className="ml-1 text-xs text-green-600">+ bonus</span>
                         )}
@@ -1326,7 +1727,7 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{typeof enrollment.gig.destination_zone === 'object' ? enrollment.gig.destination_zone?.name?.common || enrollment.gig.destination_zone?.cca2 || 'Unknown' : enrollment.gig.destination_zone} ({('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.abbreviation) ? enrollment.gig.availability.time_zone.abbreviation : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.name) ? enrollment.gig.availability.time_zone.name : 'N/A'})</span>
+                        <span>{typeof enrollment.gig.destination_zone === 'object' ? enrollment.gig.destination_zone?.name?.common || enrollment.gig.destination_zone?.cca2 || 'Unknown' : enrollment.gig.destination_zone} ({('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.zoneName) ? enrollment.gig.availability.time_zone.zoneName : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.countryName) ? enrollment.gig.availability.time_zone.countryName : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.abbreviation) ? enrollment.gig.availability.time_zone.abbreviation : 'N/A'})</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
@@ -1400,7 +1801,6 @@ export function GigsMarketplace() {
                       <button 
                         onClick={() => acceptInvitation(enrollment.id)}
                         className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-                        disabled={!enrollment.canEnroll || enrollment.isExpired}
                       >
                         Accept
                       </button>
@@ -1408,7 +1808,6 @@ export function GigsMarketplace() {
                       <button 
                         onClick={() => rejectInvitation(enrollment.id)}
                         className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
-                        disabled={!enrollment.canEnroll || enrollment.isExpired}
                       >
                         Reject
                       </button>
@@ -1455,13 +1854,8 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                          Enrolled
+                          ✓ Enrolled
                         </span>
-                        {('seniority' in enrolledGig.gig && enrolledGig.gig.seniority?.level) && (
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                            {enrolledGig.gig.seniority.level}
-                          </span>
-                        )}
                         <button
                           onClick={(e) => {
                             e.preventDefault();
@@ -1492,7 +1886,7 @@ export function GigsMarketplace() {
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{('commission' in enrolledGig.gig && enrolledGig.gig.commission?.baseAmount) ? `${enrolledGig.gig.commission.baseAmount} ${enrolledGig.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
+                        <span>{('commission' in enrolledGig.gig && enrolledGig.gig.commission?.baseAmount) ? `${enrolledGig.gig.commission.baseAmount} ${typeof enrolledGig.gig.commission.currency === 'object' ? enrolledGig.gig.commission.currency?.symbol || enrolledGig.gig.commission.currency?.code || 'EUR' : enrolledGig.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
                         {('commission' in enrolledGig.gig && enrolledGig.gig.commission?.bonus) && (
                           <span className="ml-1 text-xs text-green-600">+ bonus</span>
                         )}
@@ -1503,7 +1897,7 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
-                        <span>{typeof enrolledGig.gig.destination_zone === 'object' ? enrolledGig.gig.destination_zone?.name?.common || enrolledGig.gig.destination_zone?.cca2 || 'Unknown' : enrolledGig.gig.destination_zone} ({('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.abbreviation) ? enrolledGig.gig.availability.time_zone.abbreviation : ('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.name) ? enrolledGig.gig.availability.time_zone.name : 'N/A'})</span>
+                        <span>{typeof enrolledGig.gig.destination_zone === 'object' ? enrolledGig.gig.destination_zone?.name?.common || enrolledGig.gig.destination_zone?.cca2 || 'Unknown' : enrolledGig.gig.destination_zone} ({('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.zoneName) ? enrolledGig.gig.availability.time_zone.zoneName : ('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.countryName) ? enrolledGig.gig.availability.time_zone.countryName : ('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.abbreviation) ? enrolledGig.gig.availability.time_zone.abbreviation : 'N/A'})</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
@@ -1575,10 +1969,16 @@ export function GigsMarketplace() {
 
                     </div>
 
-                    <div className="mt-6">
+                    <div className="mt-6 flex gap-3">
+                      <button 
+                        onClick={() => navigate('/copilot')}
+                        className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      >
+                        🚀 Start
+                      </button>
                       <button 
                         onClick={() => navigate(`/gig/${enrolledGig.gig._id}`)}
-                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
                       >
                         View Details
                       </button>
