@@ -626,14 +626,15 @@ export function GigDetails() {
       
       if (!journeysResponse.ok) {
         console.warn('⚠️ Could not fetch training journeys:', journeysResponse.status);
-        // Si pas de formation disponible, considérer comme complété
-        return true;
+        // Si on ne peut pas vérifier, considérer comme non complété pour la sécurité
+        return false;
       }
       
       const journeys = await journeysResponse.json();
       if (!journeys || journeys.length === 0) {
         console.log('ℹ️ No training journeys found for this gig');
-        return true; // Si pas de formation, considérer comme complété
+        // Si pas de formation, considérer comme complété (pas de formation = pas de prérequis)
+        return true;
       }
       
       // Récupérer les journeys du rep pour vérifier le progrès
@@ -1635,14 +1636,14 @@ export function GigDetails() {
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-900">Available Leads</h2>
-                {totalLeads > 0 && trainingCompleted && (
+                {totalLeads > 0 && trainingCompleted === true && (
                   <span className="text-sm text-gray-600">
                     Total: {totalLeads} leads
                   </span>
                 )}
               </div>
 
-              {checkingTraining ? (
+              {checkingTraining || trainingCompleted === null ? (
                 <div className="flex justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   <span className="ml-3 text-gray-600">Checking training completion...</span>
@@ -1662,27 +1663,29 @@ export function GigDetails() {
                     </button>
                   </div>
                 </div>
-              ) : leadsLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-              ) : leadsError ? (
-                <div className="text-center py-8">
-                  <p className="text-red-600 mb-2">❌ {leadsError}</p>
-                  <button
-                    onClick={() => fetchLeads(currentPage)}
-                    className="text-blue-600 hover:text-blue-700 text-sm"
-                  >
-                    Try again
-                  </button>
-                </div>
-              ) : leads.length === 0 && trainingCompleted ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No leads available for this gig yet.</p>
-                </div>
-              ) : trainingCompleted ? (
+              ) : trainingCompleted === true ? (
                 <>
-                  {/* Leads Table */}
+                  {leadsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : leadsError ? (
+                    <div className="text-center py-8">
+                      <p className="text-red-600 mb-2">❌ {leadsError}</p>
+                      <button
+                        onClick={() => fetchLeads(currentPage)}
+                        className="text-blue-600 hover:text-blue-700 text-sm"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  ) : leads.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No leads available for this gig yet.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Leads Table */}
                   <div className="border border-gray-200 rounded-lg overflow-hidden">
                     {/* Table Header - Fixed */}
                     <div className="overflow-x-auto">
@@ -1824,9 +1827,10 @@ export function GigDetails() {
                         </button>
                       </div>
                     </div>
+                    </>
                   )}
                 </>
-              )}
+              ) : null}
             </div>
           </div>
         )}
