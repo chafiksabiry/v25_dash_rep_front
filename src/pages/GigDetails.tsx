@@ -1686,7 +1686,7 @@ export function GigDetails() {
                   ) : (
                     <>
                       {/* Leads Table */}
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
                     {/* Table Header - Fixed */}
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse">
@@ -1827,10 +1827,11 @@ export function GigDetails() {
                         </button>
                       </div>
                     </div>
-                    </>
                   )}
-                </>
-              ) : null}
+                      </>
+                    )}
+                  </>
+                ) : null}
             </div>
           </div>
         )}
