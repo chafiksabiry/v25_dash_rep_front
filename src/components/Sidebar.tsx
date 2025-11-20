@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor } from 'lucide-react';
+import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 // Declare qiankun global variables
@@ -61,6 +61,12 @@ export function Sidebar({ phases }: SidebarProps) {
       icon: Monitor, 
       label: 'Workspace', 
       path: '/workspace', 
+      isAccessible: () => isPhaseCompleted(5)
+    },
+    { 
+      icon: Users, 
+      label: 'Leads', 
+      path: '/import-leads', 
       isAccessible: () => isPhaseCompleted(5)
     },
     { 

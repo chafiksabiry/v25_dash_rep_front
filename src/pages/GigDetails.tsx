@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
-import { refreshGigStatuses } from '../utils/gigStatusUtils';
+import { fetchEnrolledGigsFromProfile, fetchPendingRequests, refreshGigStatuses } from '../utils/gigStatusUtils';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
 interface PopulatedGig {
@@ -331,6 +331,10 @@ export function GigDetails() {
   const [totalLeads, setTotalLeads] = useState(0);
   const limit = 50; // Nombre de leads par page (maximum supporté par le backend)
   
+  // États pour la vérification de complétion de la formation
+  const [trainingCompleted, setTrainingCompleted] = useState<boolean | null>(null);
+  const [checkingTraining, setCheckingTraining] = useState(false);
+  
   // Fonction pour vérifier si l'agent est enrolled dans ce gig
   const isAgentEnrolled = () => {
     const agentId = getAgentId();
@@ -605,6 +609,123 @@ export function GigDetails() {
     }
   }, [gig, gigId, loading]);
 
+  // Fonction pour vérifier si la formation est complétée
+  const checkTrainingCompletion = async (): Promise<boolean> => {
+    const agentId = getAgentId();
+    if (!agentId || !gigId) return false;
+    
+    setCheckingTraining(true);
+    try {
+      // Récupérer les training journeys pour ce gig
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'http://localhost:8080';
+      
+      // Récupérer les journeys pour ce gig
+      const journeysResponse = await fetch(
+        `${trainingBackendUrl}/training_journeys?gigId=${gigId}`
+      );
+      
+      if (!journeysResponse.ok) {
+        console.warn('⚠️ Could not fetch training journeys:', journeysResponse.status);
+        // Si pas de formation disponible, considérer comme complété
+        return true;
+      }
+      
+      const journeys = await journeysResponse.json();
+      if (!journeys || journeys.length === 0) {
+        console.log('ℹ️ No training journeys found for this gig');
+        return true; // Si pas de formation, considérer comme complété
+      }
+      
+      // Récupérer les journeys du rep pour vérifier le progrès
+      const repJourneysResponse = await fetch(
+        `${trainingBackendUrl}/training_journeys/rep/${agentId}`
+      );
+      
+      if (!repJourneysResponse.ok) {
+        console.warn('⚠️ Could not fetch rep journeys:', repJourneysResponse.status);
+        return false;
+      }
+      
+      const repJourneys = await repJourneysResponse.json();
+      const repJourneyIds = repJourneys.map((j: any) => j.id || j._id).filter(Boolean);
+      
+      // Vérifier la complétion pour chaque journey du gig
+      for (const journey of journeys) {
+        const journeyId = journey.id || journey._id;
+        if (!journeyId) continue;
+        
+        // Vérifier si le rep est enrollé dans ce journey
+        if (!journey.enrolledRepIds || !journey.enrolledRepIds.includes(agentId)) {
+          console.log(`ℹ️ Rep not enrolled in journey ${journeyId}`);
+          continue; // Skip si pas enrollé
+        }
+        
+        // Vérifier si tous les modules sont complétés
+        if (journey.modules && Array.isArray(journey.modules)) {
+          for (const module of journey.modules) {
+            const moduleId = module.id || module._id;
+            if (!moduleId) continue;
+            
+            // Vérifier le progrès via l'API de progrès
+            const progressResponse = await fetch(
+              `${trainingBackendUrl}/rep-progress?repId=${agentId}&journeyId=${journeyId}&moduleId=${moduleId}`
+            );
+            
+            if (progressResponse.ok) {
+              const progressData = await progressResponse.json();
+              const progress = Array.isArray(progressData) ? progressData[0] : progressData;
+              
+              // Vérifier si le module est complété
+              if (!progress || progress.status !== 'completed' || progress.progress < 100) {
+                console.log(`❌ Module ${moduleId} not completed (status: ${progress?.status}, progress: ${progress?.progress})`);
+                return false;
+              }
+            } else {
+              console.warn(`⚠️ Could not fetch progress for module ${moduleId}`);
+              return false; // Si on ne peut pas vérifier, considérer comme non complété
+            }
+            
+            // Vérifier si tous les quizzes sont complétés
+            if (module.quizzes && Array.isArray(module.quizzes) && module.quizzes.length > 0) {
+              for (const quiz of module.quizzes) {
+                const quizId = quiz.id || quiz._id;
+                if (!quizId) continue;
+                
+                // Vérifier les tentatives de quiz
+                const quizAttemptsResponse = await fetch(
+                  `${trainingBackendUrl}/module-quizzes/${quizId}/attempts?repId=${agentId}`
+                );
+                
+                if (quizAttemptsResponse.ok) {
+                  const quizAttempts = await quizAttemptsResponse.json();
+                  const passedAttempt = Array.isArray(quizAttempts) 
+                    ? quizAttempts.find((attempt: any) => attempt.status === 'passed' || attempt.passed === true)
+                    : (quizAttempts.status === 'passed' || quizAttempts.passed === true ? quizAttempts : null);
+                  
+                  if (!passedAttempt) {
+                    console.log(`❌ Quiz ${quizId} not passed`);
+                    return false;
+                  }
+                } else {
+                  console.warn(`⚠️ Could not fetch quiz attempts for quiz ${quizId}`);
+                  return false; // Si on ne peut pas vérifier, considérer comme non complété
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      console.log('✅ All training modules and quizzes completed');
+      return true;
+    } catch (err) {
+      console.error('❌ Error checking training completion:', err);
+      return false; // En cas d'erreur, considérer comme non complété pour la sécurité
+    } finally {
+      setCheckingTraining(false);
+    }
+  };
+  
   // Fonction pour récupérer les leads
   const fetchLeads = async (page: number = 1) => {
     if (!gigId) return;
@@ -647,11 +768,28 @@ export function GigDetails() {
     }
   };
 
-  // Charger les leads quand le gigId change et si l'agent est enrolled
+  // Vérifier la complétion de la formation quand l'agent est enrolled
   useEffect(() => {
-    if (gigId && isAgentEnrolled()) {
-      fetchLeads(1);
-    }
+    const verifyTrainingAndLoadLeads = async () => {
+      if (gigId && isAgentEnrolled()) {
+        const completed = await checkTrainingCompletion();
+        setTrainingCompleted(completed);
+        
+        // Charger les leads uniquement si la formation est complétée
+        if (completed) {
+          fetchLeads(1);
+        } else {
+          // Réinitialiser les leads si la formation n'est pas complétée
+          setLeads([]);
+          setTotalLeads(0);
+          setTotalPages(0);
+        }
+      } else {
+        setTrainingCompleted(null);
+      }
+    };
+    
+    verifyTrainingAndLoadLeads();
   }, [gigId, gig]);
 
   // Fonction pour changer de page
@@ -1491,20 +1629,40 @@ export function GigDetails() {
           </div>
         </div>
 
-        {/* Leads Section - Full Width - Only for enrolled agents */}
+        {/* Leads Section - Full Width - Only for enrolled agents who completed training */}
         {isAgentEnrolled() && (
         <div className="mt-8">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-900">Available Leads</h2>
-                {totalLeads > 0 && (
+                {totalLeads > 0 && trainingCompleted && (
                   <span className="text-sm text-gray-600">
                     Total: {totalLeads} leads
                   </span>
                 )}
               </div>
 
-              {leadsLoading ? (
+              {checkingTraining ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-gray-600">Checking training completion...</span>
+                </div>
+              ) : trainingCompleted === false ? (
+                <div className="text-center py-8">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                    <p className="text-yellow-800 font-medium mb-2">⚠️ Training Not Completed</p>
+                    <p className="text-yellow-700 text-sm mb-4">
+                      You must complete all training modules and quizzes before accessing leads.
+                    </p>
+                    <button
+                      onClick={() => navigate('/learning')}
+                      className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                    >
+                      Go to Training
+                    </button>
+                  </div>
+                </div>
+              ) : leadsLoading ? (
                 <div className="flex justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
@@ -1518,11 +1676,11 @@ export function GigDetails() {
                     Try again
                   </button>
                 </div>
-              ) : leads.length === 0 ? (
+              ) : leads.length === 0 && trainingCompleted ? (
                 <div className="text-center py-8">
                   <p className="text-gray-500">No leads available for this gig yet.</p>
                 </div>
-              ) : (
+              ) : trainingCompleted ? (
                 <>
                   {/* Leads Table */}
                   <div className="border border-gray-200 rounded-lg overflow-hidden">

@@ -14,6 +14,7 @@ import { Operations } from './pages/Operations';
 import { Workspace } from './pages/Workspace';
 import { Community } from './pages/Community';
 import { WalletPage } from './pages/Wallet';
+import { ImportLeads } from './pages/ImportLeads';
 import CallReportCard from './components/CallReport';
 import { fetchProfileFromAPI } from './utils/profileUtils';
 import ProtectedRoute, { PhaseProtectedRoute } from './components/ProtectedRoute';
@@ -210,6 +211,11 @@ function AppContent() {
                 <Route path="/operations" element={
                   <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                     <Operations />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="/import-leads" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                    <ImportLeads />
                   </PhaseProtectedRoute>
                 } />
                 <Route path="/workspace" element={
