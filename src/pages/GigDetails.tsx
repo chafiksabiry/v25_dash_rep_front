@@ -664,6 +664,18 @@ export function GigDetails() {
     }
   };
 
+  // Fonction helper pour extraire l'ID d'un objet MongoDB (gère les formats $oid et string)
+  const extractId = (id: any): string => {
+    if (!id) return '';
+    if (typeof id === 'string') return id;
+    if (id.$oid) return id.$oid;
+    if (id._id) {
+      if (typeof id._id === 'string') return id._id;
+      if (id._id.$oid) return id._id.$oid;
+    }
+    return String(id);
+  };
+
   // Fonction pour rediriger vers le training
   const handleTrainingClick = (trainingId: string) => {
     const trainingUrl = `https://v25.harx.ai/training/repashboard/${trainingId}`;
@@ -1698,46 +1710,49 @@ export function GigDetails() {
                 </div>
               ) : availableTrainings.length > 0 ? (
                 <div className="space-y-3">
-                  {availableTrainings.map((training) => (
-                    <div
-                      key={training.id || training._id}
-                      className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
-                      onClick={() => handleTrainingClick(training.id || training._id)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1">
-                            {training.title || 'Untitled Training'}
-                          </h3>
-                          {training.description && (
-                            <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                              {training.description}
-                            </p>
-                          )}
-                          {training.status && (
-                            <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                              training.status === 'active' || training.status === 'published'
-                                ? 'bg-green-100 text-green-700'
-                                : training.status === 'draft'
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {training.status}
-                            </span>
-                          )}
+                  {availableTrainings.map((training) => {
+                    const trainingId = extractId(training.id || training._id);
+                    return (
+                      <div
+                        key={trainingId}
+                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                        onClick={() => handleTrainingClick(trainingId)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 mb-1">
+                              {training.title || 'Untitled Training'}
+                            </h3>
+                            {training.description && (
+                              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                                {training.description}
+                              </p>
+                            )}
+                            {training.status && (
+                              <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                                training.status === 'active' || training.status === 'published'
+                                  ? 'bg-green-100 text-green-700'
+                                  : training.status === 'draft'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {training.status}
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTrainingClick(trainingId);
+                            }}
+                          >
+                            Start Training
+                          </button>
                         </div>
-                        <button
-                          className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTrainingClick(training.id || training._id);
-                          }}
-                        >
-                          Start Training
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
