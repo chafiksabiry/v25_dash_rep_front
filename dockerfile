@@ -9,16 +9,36 @@ COPY package*.json ./
 RUN apk add --no-cache git
 
 # Build argument for GitHub token (can be passed at build time)
+# Can also be set as environment variable: export GITHUB_TOKEN=your_token
 # Usage: docker build --build-arg GITHUB_TOKEN=your_token_here .
 ARG GITHUB_TOKEN
 
 # Replace the expired token in package.json and package-lock.json with the new token if provided
-RUN if [ -n "$GITHUB_TOKEN" ]; then \
-      OLD_TOKEN="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"; \
+# Also configure Git to use the token for GitHub URLs as a fallback
+RUN OLD_TOKEN="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"; \
+    echo "Checking for GITHUB_TOKEN..."; \
+    if [ -n "$GITHUB_TOKEN" ]; then \
+      echo "✓ GITHUB_TOKEN is set (length: ${#GITHUB_TOKEN})"; \
+      echo "Replacing GitHub token in package files..."; \
       sed -i "s|${OLD_TOKEN}|${GITHUB_TOKEN}|g" package.json; \
       if [ -f package-lock.json ]; then \
+        echo "Replacing token in package-lock.json..."; \
+        COUNT=$(grep -c "${OLD_TOKEN}" package-lock.json || echo "0"); \
+        echo "Found ${COUNT} occurrences of old token in package-lock.json"; \
         sed -i "s|${OLD_TOKEN}|${GITHUB_TOKEN}|g" package-lock.json; \
+        REMAINING=$(grep -c "${OLD_TOKEN}" package-lock.json || echo "0"); \
+        echo "Remaining occurrences after replacement: ${REMAINING}"; \
       fi; \
+      echo "Configuring Git URL rewriting for GitHub..."; \
+      git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"; \
+      git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://${OLD_TOKEN}@github.com/"; \
+      echo "✓ GitHub token configured successfully"; \
+    else \
+      echo "✗ ERROR: GITHUB_TOKEN not provided!"; \
+      echo "Please provide GITHUB_TOKEN as build arg or environment variable:"; \
+      echo "  docker build --build-arg GITHUB_TOKEN=your_token ."; \
+      echo "  OR: export GITHUB_TOKEN=your_token && docker build ."; \
+      exit 1; \
     fi
 
 # Set environment variables
