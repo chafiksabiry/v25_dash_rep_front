@@ -8,6 +8,19 @@ WORKDIR /app
 COPY package*.json ./
 RUN apk add --no-cache git
 
+# Build argument for GitHub token (can be passed at build time)
+# Usage: docker build --build-arg GITHUB_TOKEN=your_token_here .
+ARG GITHUB_TOKEN
+
+# Replace the expired token in package.json and package-lock.json with the new token if provided
+RUN if [ -n "$GITHUB_TOKEN" ]; then \
+      OLD_TOKEN="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"; \
+      sed -i "s|${OLD_TOKEN}|${GITHUB_TOKEN}|g" package.json; \
+      if [ -f package-lock.json ]; then \
+        sed -i "s|${OLD_TOKEN}|${GITHUB_TOKEN}|g" package-lock.json; \
+      fi; \
+    fi
+
 # Set environment variables
 ENV VITE_API_URL=https://api-rep-dashboard.harx.ai
 ENV VITE_CALLS_API_URL=https://api-dash-calls.harx.ai
