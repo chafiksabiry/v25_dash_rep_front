@@ -1,41 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Phone, Mic, MicOff, Volume2, VolumeX, MessageSquare } from 'lucide-react';
+import { Phone, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { Device, Call } from '@twilio/voice-sdk';
 import axios from 'axios';
 import ReactDOM from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Calls } from "@qalqul/sdk-call";
-import { QalqulSDK } from "@qalqul/sdk-call/dist/model/QalqulSDK";
-import io from "socket.io-client";
 import { callsApi } from "../services/api/calls";
 import { AIAssistantAPI } from './GlobalAIAssistant';
 import { useNavigate } from 'react-router-dom';
 
 // Constants for speech recognition
-
-
-// Define interfaces for Qalqul SDK types
-interface QalqulCall {
-  status: string;
-  isMuted: () => boolean;
-  unMute: () => void;
-  mute: () => void;
-  isOnHold: () => boolean;
-  resume: () => void;
-  hold: () => void;
-  hangup: () => void;
-}
-
-interface QalqulSDKType {
-  new (io: any, settings: any, callback: () => void): QalqulSDKType;
-  getCalls: () => Promise<QalqulCall[]>;
-  dial: (recipient: string) => Promise<string>;
-  initialize: () => Promise<void>;
-  logout: () => Promise<void>;
-}
-
-// Cast the QalqulSDK class to our type
-const QalqulSDKWithTypes = QalqulSDK as unknown as QalqulSDKType;
 
 type CallStatus = 'idle' | 'initiating' | 'active' | 'ended';
 
@@ -53,7 +26,7 @@ interface CallInterfaceProps {
   agentId: string;
   onEnd: () => void;
   onCallSaved?: () => void;
-  provider?: 'twilio' | 'qalqul';
+  provider?: 'twilio';
   keepAIPanelAfterCall?: boolean;
   callId: string;
 }
@@ -96,74 +69,6 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   const [audioProcessor, setAudioProcessor] = useState<AudioWorkletNode | null>(null);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const { currentUser } = useAuth();
-  let qalqulSDK: QalqulSDKType | undefined;
-  let calls: any[] = [];
-  let isSdkInitialized: boolean = false;
-  let start_timer_var = 0;  
-  let callTimer = "00:00:00";
-  let uuId: string | null = null;
-
-  // Qalqul settings
-  let settings1 = {
-    generalSettings: {
-      agent: {
-        username: "Agent.1",
-        password: "ewyaHtvzDPRdXrZL",
-        name: "Agent.1",
-        sipAddress: `sip:Agent.1@digital-works.qalqul.io`,
-      },
-      baseUrl: 'https://digital-works.qalqul.io',
-      server: {
-        realm: 'digital-works.qalqul.io',
-        ws: 'wss://digital-works.qalqul.io:10443',
-      },
-      iceServers: [{ url: "stun:digital-works.qalqul.io:3478" }],
-      logLevel: false
-    },
-    headerData: {
-      ...(phoneNumber.startsWith('+212') || phoneNumber.startsWith('00212') ? {
-        callerId: 8678,
-        outCallerId: "0522774125",
-        CampaignID: 3,
-        agent: 7,
-        sipNumber: 8595,
-        QueueName: 'DigitalWorksQueueMA',
-        queueId: 11,
-        CountryCode: 212,
-        outRouteId: 72,
-        outGatewayId: 94,
-        outGatewayName: 'Ma_GW',
-      } : phoneNumber.startsWith('+33') || phoneNumber.startsWith('0033') ? {
-        callerId: 8678,
-        outCallerId: "33162151114",
-        CampaignID: 3, 
-        agent: 7,
-        sipNumber: 8595,
-        QueueName: 'DigitalWorksQueueFR',
-        queueId: 2,
-        CountryCode: 33,
-        outRouteId: 47,
-        outGatewayId: 29,
-        outGatewayName: 'GW_FR_new',
-      } : {}),
-      agentusername: 'Agent.1',
-      CampaignName: "",
-      Disposition: "",
-      InteractionID: null,
-      PCIRecord: false,
-      RecordChannel: "",
-      UniqueID: null,
-      WrapupStrict: 'No',
-      WrapupTime: 0,
-      DispositionType: 'Yes',
-      transfer: false,
-      WrapupStatus: false,
-      profileId: '16045',
-    }
-  };
-
-  let callManage: NodeJS.Timeout | undefined;
-  let intervalTimer: NodeJS.Timeout | undefined;
 
   // Speech recognition states
   const [lastProcessedTranscript, setLastProcessedTranscript] = useState<string>('');
@@ -176,7 +81,6 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
 
   const navigate = useNavigate();
-  const socketRef = useRef<any>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -283,75 +187,6 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
     }
   };
 
-  let callback = async () => {
-    console.log("Start callback function");
-    if (!qalqulSDK) return;
-    
-    //Get Calls from SDK Qalqul
-    await updateCallsState();
-    console.log("callback function suite");
-    //There is no call : appel terminé
-    const calls = await qalqulSDK.getCalls();
-    if (calls.length === 0) {
-      console.log("fin du call:", qalqulSDK);
-      console.log("clear timer to getCalls:", callManage);
-      clearInterval(callManage);
-      callManage = undefined;
-      console.log("stop call timer:", intervalTimer);
-      clearInterval(intervalTimer);
-      await setCallStatus('ended');
-      console.log("terminated call -> popup to register info in DB");
-      //function to update the rest of call details in DB
-      if (uuId) {
-        await updateCallDetailsInDB(uuId);
-      }
-    }
-  };
-
-  let updateCallDetailsInDB = async (callSid: string) => {
-    console.log("update call details in DB:", callSid);
-    //function to update the rest of call details in DB
-
-    const res = await callsApi.storeCallInDBAtEndCall(phoneNumber, callSid);
-    const callDetails = res.data.data;
-    console.log("call details from DB:", callDetails);
-  };
-
-  let updateCallsState = async () => {
-    console.log("Début de la fonction : updateCallsState");
-    if (!qalqulSDK) return;
-    calls = await qalqulSDK.getCalls();
-    console.log(" Fin : calls in update calls state:", calls);
-  };
-
-  let handleDial = async () => {
-    console.log("Start Handle Dial Function:");
-    start_timer_var = 0;
-    callTimer = "00 : 00 : 00";
-    const recipient = phoneNumber;
-    console.log("Lead phone number to call:", recipient);
-    try {
-      if (!qalqulSDK) {
-        console.error("SDK not initialized");
-        return;
-      }
-      
-      const newUuid = await qalqulSDK.dial(recipient);
-      if (newUuid) {
-        uuId = newUuid;
-        console.log("Call initiated with UUID:", uuId);
-        await storeQalqulCallInDbInStart(newUuid);
-        console.log("in dial after store in db");
-
-        await updateCallsState();
-        await getCalls();
-      }
-    } catch (error) {
-      console.error("Error dialing:", error);
-    } finally {
-      console.log("Finish Handle Dial Function:");
-    }
-  };
 
   useEffect(() => {
     const initiateCall = async () => {
@@ -363,324 +198,316 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
       console.log('Initiating the call...');
 
       try {
-        if (provider === 'qalqul') {
-          // Initialize Qalqul with credentials
-          await initializeSdk();
-          if(isSdkInitialized){
-            await handleDial();
+        // Twilio implementation
+        const response = await axios.get(`${import.meta.env.VITE_API_URL_CALL}/api/calls/token`);
+        const token = response.data.token;
+
+        const newDevice = new Device(token, {
+          codecPreferences: ['pcmu', 'pcma'] as any,
+          edge: ['ashburn', 'dublin', 'sydney']
+        });
+        
+        await newDevice.register();
+        const conn = await newDevice.connect({
+          params: { 
+            To: phoneNumber,
+            MediaStream: true,
+          },
+          rtcConfiguration: { 
+            sdpSemantics: "unified-plan",
+            iceServers: [
+              { urls: 'stun:stun.l.google.com:19302' }
+            ]
+          },
+          audio: {
+            echoCancellation: true,
+            autoGainControl: true,
+            noiseSuppression: true
           }
-        } else {
-          // Existing Twilio implementation
-          const response = await axios.get(`${import.meta.env.VITE_API_URL_CALL}/api/calls/token`);
-          const token = response.data.token;
+        } as any);
 
-          const newDevice = new Device(token, {
-            codecPreferences: ['pcmu', 'pcma'] as any,
-            edge: ['ashburn', 'dublin', 'sydney']
-          });
-          
-          await newDevice.register();
-          const conn = await newDevice.connect({
-            params: { 
-              To: phoneNumber,
-              MediaStream: true,
-            },
-            rtcConfiguration: { 
-              sdpSemantics: "unified-plan",
-              iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' }
-              ]
-            },
-            audio: {
-              echoCancellation: true,
-              autoGainControl: true,
-              noiseSuppression: true
-            }
-          } as any);
+        setConnection(conn);
+        setCallStatus("initiating");
 
-          setConnection(conn);
-          setCallStatus("initiating");
+        conn.on('connect', () => {
+          const callSid = conn.parameters.CallSid;
+          console.log("CallSid:", callSid);
+        });
 
-          conn.on('connect', () => {
-            const callSid = conn.parameters.CallSid;
-            console.log("CallSid:", callSid);
-          });
+        conn.on('accept', () => {
+          console.log("✅ Call accepted");
+          const Sid = conn.parameters.CallSid;
+          console.log("CallSid recupéré", Sid);
+          setCallSid(Sid);
+          // Set call details in global state
+          AIAssistantAPI.setCallDetails(Sid, agentId);
+          setCallStatus("active");
 
-          conn.on('accept', () => {
-            console.log("✅ Call accepted");
-            const Sid = conn.parameters.CallSid;
-            console.log("CallSid recupéré", Sid);
-            setCallSid(Sid);
-            // Set call details in global state
-            AIAssistantAPI.setCallDetails(Sid, agentId);
-            setCallStatus("active");
+          // Wait a moment for the media stream to be ready
+          setTimeout(() => {
+            const stream = conn.getRemoteStream();
+            console.log("mediaStream:", stream);
+            
+            if (stream) {
+              try {
+                // Create an audio context to process the stream
+                const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                setAudioContext(audioContext);
+                const source = audioContext.createMediaStreamSource(stream);
+                
+                // Create audio analyzer to monitor audio levels
+                const analyzer = audioContext.createAnalyser();
+                analyzer.fftSize = 2048;
+                source.connect(analyzer);
 
-            // Wait a moment for the media stream to be ready
-            setTimeout(() => {
-              const stream = conn.getRemoteStream();
-              console.log("mediaStream:", stream);
-              
-              if (stream) {
-                try {
-                  // Create an audio context to process the stream
-                  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-                  setAudioContext(audioContext);
-                  const source = audioContext.createMediaStreamSource(stream);
+                let isCallActive = true;
+                let cleanupInitiated = false;
+
+                const cleanup = async () => {
+                  if (cleanupInitiated) return;
+                  cleanupInitiated = true;
+                  console.log("🧹 Starting cleanup...");
                   
-                  // Create audio analyzer to monitor audio levels
-                  const analyzer = audioContext.createAnalyser();
-                  analyzer.fftSize = 2048;
-                  source.connect(analyzer);
+                  isCallActive = false;
+                  
+                  // Close WebSocket first
+                  if (ws?.readyState === WebSocket.OPEN) {
+                    console.log("🔌 Closing WebSocket connection...");
+                    ws.close(1000, "Call ended normally");
+                  }
 
-                  let isCallActive = true;
-                  let cleanupInitiated = false;
+                  // Wait a bit for WebSocket to close cleanly
+                  await new Promise(resolve => setTimeout(resolve, 500));
 
-                  const cleanup = async () => {
-                    if (cleanupInitiated) return;
-                    cleanupInitiated = true;
-                    console.log("🧹 Starting cleanup...");
+                  // Then cleanup audio
+                  try {
+                    console.log("🎵 Cleaning up audio resources...");
+                    if (analyzer) {
+                      analyzer.disconnect();
+                    }
+                    if (source) {
+                      source.disconnect();
+                    }
+                    if (audioProcessor) {
+                      audioProcessor.disconnect();
+                    }
+                    if (audioContext) {
+                      await audioContext.close();
+                    }
+                  } catch (error) {
+                    console.error("❌ Error during audio cleanup:", error);
+                  }
+
+                  console.log("✅ Cleanup complete");
+                };
+
+                // Initialize WebSocket connection for streaming audio to backend
+                const wsUrl = import.meta.env.VITE_WS_URL || `${import.meta.env.VITE_API_URL_CALL.replace('http', 'ws')}/speech-to-text`;
+                console.log('Connecting to WebSocket URL:', wsUrl);
+                const newWs = new WebSocket(wsUrl);
+                setWs(newWs);
+                let newAudioProcessor: AudioWorkletNode | null = null;
+
+                newWs.onopen = async () => {
+                  if (!isCallActive) {
+                    console.log("Call no longer active, closing new WebSocket connection");
+                    newWs.close(1000, "Call already ended");
+                    return;
+                  }
+
+                  console.log('🔌 WebSocket connection established for speech-to-text');
+                  try {
+                    // Create audio worklet for processing after WebSocket is ready
+                    await audioContext.audioWorklet.addModule('/audio-processor.js');
+                    newAudioProcessor = new AudioWorkletNode(audioContext, 'audio-processor', {
+                      numberOfInputs: 1,
+                      numberOfOutputs: 1,
+                      channelCount: 1,
+                      processorOptions: {
+                        sampleRate: audioContext.sampleRate
+                      }
+                    });
+                    setAudioProcessor(newAudioProcessor);
                     
-                    isCallActive = false;
-                    
-                    // Close WebSocket first
-                    if (ws?.readyState === WebSocket.OPEN) {
-                      console.log("🔌 Closing WebSocket connection...");
-                      ws.close(1000, "Call ended normally");
-                    }
+                    source.connect(newAudioProcessor);
+                    newAudioProcessor.connect(audioContext.destination);
 
-                    // Wait a bit for WebSocket to close cleanly
-                    await new Promise(resolve => setTimeout(resolve, 500));
-
-                    // Then cleanup audio
-                    try {
-                      console.log("🎵 Cleaning up audio resources...");
-                      if (analyzer) {
-                        analyzer.disconnect();
-                      }
-                      if (source) {
-                        source.disconnect();
-                      }
-                      if (audioProcessor) {
-                        audioProcessor.disconnect();
-                      }
-                      if (audioContext) {
-                        await audioContext.close();
-                      }
-                    } catch (error) {
-                      console.error("❌ Error during audio cleanup:", error);
-                    }
-
-                    console.log("✅ Cleanup complete");
-                  };
-
-                  // Initialize WebSocket connection for streaming audio to backend
-                  const wsUrl = import.meta.env.VITE_WS_URL || `${import.meta.env.VITE_API_URL_CALL.replace('http', 'ws')}/speech-to-text`;
-                  console.log('Connecting to WebSocket URL:', wsUrl);
-                  const newWs = new WebSocket(wsUrl);
-                  setWs(newWs);
-                  let newAudioProcessor: AudioWorkletNode | null = null;
-
-                  newWs.onopen = async () => {
-                    if (!isCallActive) {
-                      console.log("Call no longer active, closing new WebSocket connection");
-                      newWs.close(1000, "Call already ended");
-                      return;
-                    }
-
-                    console.log('🔌 WebSocket connection established for speech-to-text');
-                    try {
-                      // Create audio worklet for processing after WebSocket is ready
-                      await audioContext.audioWorklet.addModule('/audio-processor.js');
-                      newAudioProcessor = new AudioWorkletNode(audioContext, 'audio-processor', {
-                        numberOfInputs: 1,
-                        numberOfOutputs: 1,
-                        channelCount: 1,
-                        processorOptions: {
-                          sampleRate: audioContext.sampleRate
-                        }
-                      });
-                      setAudioProcessor(newAudioProcessor);
-                      
-                      source.connect(newAudioProcessor);
-                      newAudioProcessor.connect(audioContext.destination);
-
-                      // Send configuration message with improved settings
-                      const config = {
-                        config: {
-                          encoding: 'LINEAR16',
-                          sampleRateHertz: audioContext.sampleRate,
-                          languageCode: getLanguageFromPhoneNumber(phoneNumber).languageCode,
-                          enableAutomaticPunctuation: true,
-                          model: 'phone_call',
-                          useEnhanced: true,
-                          audioChannelCount: 1,
-                          enableWordConfidence: true,
+                    // Send configuration message with improved settings
+                    const config = {
+                      config: {
+                        encoding: 'LINEAR16',
+                        sampleRateHertz: audioContext.sampleRate,
+                        languageCode: getLanguageFromPhoneNumber(phoneNumber).languageCode,
+                        enableAutomaticPunctuation: true,
+                        model: 'phone_call',
+                        useEnhanced: true,
+                        audioChannelCount: 1,
+                        enableWordConfidence: true,
+                        enableSpeakerDiarization: true,
+                        diarizationConfig: {
                           enableSpeakerDiarization: true,
-                          diarizationConfig: {
-                            enableSpeakerDiarization: true,
-                            minSpeakerCount: 2,
-                            maxSpeakerCount: 2
-                          },
-                          enableAutomaticLanguageIdentification: true,
-                          alternativeLanguageCodes: getLanguageFromPhoneNumber(phoneNumber).alternativeLanguageCodes,
-                          interimResults: true,
-                          singleUtterance: false,
-                          metadata: {
-                            interactionType: 'PHONE_CALL',
-                            industryNaicsCodeOfAudio: 518,
-                            originalMediaType: 'PHONE_CALL',
-                            recordingDeviceType: 'PHONE_LINE',
-                            microphoneDistance: 'NEARFIELD',
-                            originalMimeType: 'audio/x-raw',
-                            audioTopic: 'customer_service'
-                          }
+                          minSpeakerCount: 2,
+                          maxSpeakerCount: 2
+                        },
+                        enableAutomaticLanguageIdentification: true,
+                        alternativeLanguageCodes: getLanguageFromPhoneNumber(phoneNumber).alternativeLanguageCodes,
+                        interimResults: true,
+                        singleUtterance: false,
+                        metadata: {
+                          interactionType: 'PHONE_CALL',
+                          industryNaicsCodeOfAudio: 518,
+                          originalMediaType: 'PHONE_CALL',
+                          recordingDeviceType: 'PHONE_LINE',
+                          microphoneDistance: 'NEARFIELD',
+                          originalMimeType: 'audio/x-raw',
+                          audioTopic: 'customer_service'
                         }
-                      };
-                      
-                      console.log('📝 Sending speech recognition config:', config);
-                      newWs.send(JSON.stringify(config));
-
-                      // Handle audio data from worklet with improved error handling
-                      newAudioProcessor.port.onmessage = (event) => {
-                        if (newWs.readyState === WebSocket.OPEN && isCallActive) {
-                          try {
-                            const audioData = event.data;
-                            if (!(audioData instanceof ArrayBuffer)) {
-                              console.error('❌ Invalid audio data format:', typeof audioData);
-                              return;
-                            }
-
-                            // Convert to 16-bit PCM
-                            const view = new DataView(audioData);
-                            const pcmData = new Int16Array(audioData.byteLength / 2);
-                            for (let i = 0; i < pcmData.length; i++) {
-                              pcmData[i] = view.getInt16(i * 2, true);
-                            }
-                            
-                            // Send audio data with error handling
-                            try {
-                              newWs.send(pcmData.buffer);
-                            } catch (wsError) {
-                              console.error('❌ WebSocket send error:', wsError);
-                              if (isCallActive && newWs.readyState !== WebSocket.OPEN) {
-                                console.log('🔄 WebSocket not open, attempting reconnection...');
-                                reconnectWebSocket();
-                              }
-                            }
-                          } catch (error) {
-                            console.error('❌ Error processing audio data:', error);
-                          }
-                        }
-                      };
-
-                      // Start monitoring audio levels with improved thresholds
-                      const analyzeAudio = () => {
-                        if (!isCallActive) return;
-                        
-                        const dataArray = new Float32Array(analyzer.frequencyBinCount);
-                        analyzer.getFloatTimeDomainData(dataArray);
-                        
-                        let rms = 0;
-                        let peak = 0;
-                        for (let i = 0; i < dataArray.length; i++) {
-                          const amplitude = Math.abs(dataArray[i]);
-                          rms += amplitude * amplitude;
-                          peak = Math.max(peak, amplitude);
-                        }
-                        
-                        rms = Math.sqrt(rms / dataArray.length);
-                        const isActive = rms > 0.02; // Adjusted threshold
-                        
-                        // Only log if there's significant audio or status change
-                        if (rms > 0.01) {
-                          console.log('🎤 Audio levels:', {
-                            rms: rms.toFixed(3),
-                            peak: peak.toFixed(3),
-                            bufferSize: dataArray.length,
-                            isActive
-                          });
-                        }
-                        
-                        if (isCallActive) {
-                          requestAnimationFrame(analyzeAudio);
-                        }
-                      };
-                      analyzeAudio();
-
-                    } catch (error) {
-                      console.error('❌ Error initializing audio worklet:', error);
-                      console.error('Error details:', error);
-                    }
-                  };
-
-                  const reconnectWebSocket = () => {
-                    if (isCallActive && (!newWs || newWs.readyState === WebSocket.CLOSED)) {
-                      console.log('🔄 Attempting to reconnect WebSocket...');
-                      const reconnectWs = new WebSocket(wsUrl);
-                      setWs(reconnectWs);
-                    }
-                  };
-
-                  newWs.onerror = (error) => {
-                    console.error('❌ WebSocket error:', error);
-                    if (isCallActive) {
-                      setTimeout(reconnectWebSocket, 2000);
-                    }
-                  };
-
-                  newWs.onclose = (event) => {
-                    console.log('WebSocket connection closed:', event.code, event.reason);
-                    if (isCallActive && event.code !== 1000) {
-                      console.log('🔄 WebSocket closed unexpectedly, attempting to reconnect...');
-                      setTimeout(reconnectWebSocket, 2000);
-                    }
-                  };
-
-                  // Update WebSocket message handler
-                  newWs.onmessage = handleWebSocketMessage;
-
-                  // Set up cleanup for call end
-                  conn.on("disconnect", async () => {
-                    console.log("❌ Call disconnected - Starting cleanup and save process");
-                    
-                    const currentCallSid = conn.parameters.CallSid;
-                    onEnd();
-                    try {
-                      // First do the cleanup to ensure resources are released
-                      await cleanup();
-                      console.log("✅ Cleanup completed, proceeding to save call details");
-
-                      // Save call details using global state
-                      if (currentCallSid) {
-                        await AIAssistantAPI.saveCallToDB();
-                        console.log("✅ Successfully saved call details to DB");
-                        if (onCallSaved) {
-                          onCallSaved();
-                        }
-                      } else {
-                        console.warn("⚠️ No CallSid available for saving call details");
                       }
-                    } catch (error) {
-                      console.error("❌ Error during cleanup or save:", error);
-                    } finally {
-                      setCallStatus("ended"); 
+                    };
+                    
+                    console.log('📝 Sending speech recognition config:', config);
+                    newWs.send(JSON.stringify(config));
+
+                    // Handle audio data from worklet with improved error handling
+                    newAudioProcessor.port.onmessage = (event) => {
+                      if (newWs.readyState === WebSocket.OPEN && isCallActive) {
+                        try {
+                          const audioData = event.data;
+                          if (!(audioData instanceof ArrayBuffer)) {
+                            console.error('❌ Invalid audio data format:', typeof audioData);
+                            return;
+                          }
+
+                          // Convert to 16-bit PCM
+                          const view = new DataView(audioData);
+                          const pcmData = new Int16Array(audioData.byteLength / 2);
+                          for (let i = 0; i < pcmData.length; i++) {
+                            pcmData[i] = view.getInt16(i * 2, true);
+                          }
+                          
+                          // Send audio data with error handling
+                          try {
+                            newWs.send(pcmData.buffer);
+                          } catch (wsError) {
+                            console.error('❌ WebSocket send error:', wsError);
+                            if (isCallActive && newWs.readyState !== WebSocket.OPEN) {
+                              console.log('🔄 WebSocket not open, attempting reconnection...');
+                              reconnectWebSocket();
+                            }
+                          }
+                        } catch (error) {
+                          console.error('❌ Error processing audio data:', error);
+                        }
+                      }
+                    };
+
+                    // Start monitoring audio levels with improved thresholds
+                    const analyzeAudio = () => {
+                      if (!isCallActive) return;
+                      
+                      const dataArray = new Float32Array(analyzer.frequencyBinCount);
+                      analyzer.getFloatTimeDomainData(dataArray);
+                      
+                      let rms = 0;
+                      let peak = 0;
+                      for (let i = 0; i < dataArray.length; i++) {
+                        const amplitude = Math.abs(dataArray[i]);
+                        rms += amplitude * amplitude;
+                        peak = Math.max(peak, amplitude);
+                      }
+                      
+                      rms = Math.sqrt(rms / dataArray.length);
+                      const isActive = rms > 0.02; // Adjusted threshold
+                      
+                      // Only log if there's significant audio or status change
+                      if (rms > 0.01) {
+                        console.log('🎤 Audio levels:', {
+                          rms: rms.toFixed(3),
+                          peak: peak.toFixed(3),
+                          bufferSize: dataArray.length,
+                          isActive
+                        });
+                      }
+                      
+                      if (isCallActive) {
+                        requestAnimationFrame(analyzeAudio);
+                      }
+                    };
+                    analyzeAudio();
+
+                  } catch (error) {
+                    console.error('❌ Error initializing audio worklet:', error);
+                    console.error('Error details:', error);
+                  }
+                };
+
+                const reconnectWebSocket = () => {
+                  if (isCallActive && (!newWs || newWs.readyState === WebSocket.CLOSED)) {
+                    console.log('🔄 Attempting to reconnect WebSocket...');
+                    const reconnectWs = new WebSocket(wsUrl);
+                    setWs(reconnectWs);
+                  }
+                };
+
+                newWs.onerror = (error) => {
+                  console.error('❌ WebSocket error:', error);
+                  if (isCallActive) {
+                    setTimeout(reconnectWebSocket, 2000);
+                  }
+                };
+
+                newWs.onclose = (event) => {
+                  console.log('WebSocket connection closed:', event.code, event.reason);
+                  if (isCallActive && event.code !== 1000) {
+                    console.log('🔄 WebSocket closed unexpectedly, attempting to reconnect...');
+                    setTimeout(reconnectWebSocket, 2000);
+                  }
+                };
+
+                // Update WebSocket message handler
+                newWs.onmessage = handleWebSocketMessage;
+
+                // Set up cleanup for call end
+                conn.on("disconnect", async () => {
+                  console.log("❌ Call disconnected - Starting cleanup and save process");
+                  
+                  const currentCallSid = conn.parameters.CallSid;
+                  onEnd();
+                  try {
+                    // First do the cleanup to ensure resources are released
+                    await cleanup();
+                    console.log("✅ Cleanup completed, proceeding to save call details");
+
+                    // Save call details using global state
+                    if (currentCallSid) {
+                      await AIAssistantAPI.saveCallToDB();
+                      console.log("✅ Successfully saved call details to DB");
+                      if (onCallSaved) {
+                        onCallSaved();
+                      }
+                    } else {
+                      console.warn("⚠️ No CallSid available for saving call details");
                     }
-                  });
+                  } catch (error) {
+                    console.error("❌ Error during cleanup or save:", error);
+                  } finally {
+                    setCallStatus("ended"); 
+                  }
+                });
 
-                  // Return cleanup function for component unmount
-                  return () => {
-                    cleanup();
-                  };
+                // Return cleanup function for component unmount
+                return () => {
+                  cleanup();
+                };
 
-                } catch (error) {
-                  console.error('Error initializing audio processing:', error);
-                }
-              } else {
-                console.error("No media stream available - Make sure media permissions are granted");
+              } catch (error) {
+                console.error('Error initializing audio processing:', error);
               }
-            }, 1000);
-          });
-        }
+            } else {
+              console.error("No media stream available - Make sure media permissions are granted");
+            }
+          }, 1000);
+        });
       } catch (err) {
         console.error("Error initiating call:", err);
         setError('Failed to initiate call');
@@ -689,7 +516,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
     };
 
     initiateCall();
-  }, [phoneNumber, onEnd, agentId, provider]);
+  }, [phoneNumber, onEnd, agentId]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -708,12 +535,8 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   };
 
   const handleMuteToggle = () => {
-    if (provider === 'qalqul' ? qalqulSDK : connection) {
-      if (provider === 'qalqul') {
-        manageMuteCall(calls[calls.length - 1]);
-      } else {
-        connection?.mute(!isMuted);
-      }
+    if (connection) {
+      connection?.mute(!isMuted);
       setIsMuted(!isMuted);
     }
   };
@@ -734,20 +557,11 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
         localStream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
       }
       
-      // Close socket connection if exists
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-      
       // Update call status
       setCallStatus('ended');
 
-      // Handle provider-specific disconnection
-      if (provider === 'qalqul') {
-        if (calls.length > 0) {
-          await manageHangupCall(calls[calls.length - 1]);
-        }
-      } else if (connection) {
+      // Handle disconnection
+      if (connection) {
         // The disconnect handler will handle cleanup and saving
         connection.disconnect();
       }
@@ -918,115 +732,6 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
     return { rms, peak, isActive };
   }, [isSpeaking, lastSpeechTimestamp, currentSpeechSegment]);
 
-  let getCalls = async () => {
-    console.log("getCalls en boucle");
-    callManage = setInterval(async () => {
-      if (!qalqulSDK) {
-        console.error("SDK not initialized");
-        clearInterval(callManage);
-        return;
-      }
-      
-      try {
-        calls = await qalqulSDK.getCalls();
-        console.log("calls exist ?", calls);
-        console.log("start_timer_var:", start_timer_var);
-        if (calls.length > 0) {
-          if (calls[0].status == "CONNECTED" && start_timer_var == 0) {
-            console.log("accepted call -> start timer");
-            setCallStatus('active');
-          }
-          console.log("call status:", calls[0].status);
-          if (calls[0].status === "TERMINATING") {
-            console.log("Handle Terminating case:");
-            clearInterval(callManage);
-            callManage = undefined;
-            clearInterval(intervalTimer);
-            await setCallStatus('ended');
-            console.log("terminated call -> ");
-            qalqulSDK.logout();
-          }
-        } else {
-          console.log("no calls");
-        }
-      } catch (error) {
-        console.error("Error getting calls:", error);
-      }
-    }, 1000);
-  };
-
-  let initializeSdk = async () => {
-    if (qalqulSDK) {
-      console.log("qalqulSdk exists => logout qalqulSdk:", qalqulSDK);
-      await qalqulSDK.logout();
-    }
-
-    qalqulSDK = new QalqulSDKWithTypes(io, settings1, callback);
-    console.log("init qalqulSdk", qalqulSDK);
-    try {
-      await qalqulSDK.initialize();
-      console.log("after init:", qalqulSDK);
-      isSdkInitialized = true;
-      await updateCallsState();
-      return true;
-    } catch (error) {
-      console.log("Erreur dans l'initialisation du SDK : ", error);
-      console.warn("Erreur dans l'initialisation du SDK. Veuillez réessayer plus tard");
-      return false;
-    }
-  };
-
-  let manageMuteCall = (call: any) => {
-    if (provider === 'qalqul' && call) {
-      call.isMuted() ? call.unMute() : call.mute();
-      console.log("call after mute:", call);
-    }
-  };
-
-  let manageOnHoldCall = (call: any) => {
-    if (provider === 'qalqul' && call) {
-      call.isOnHold() ? call.resume() : call.hold();
-      console.log("call after onHold:", call);
-    }
-  };
-
-  let manageHangupCall = async (call: any) => {
-    console.log("call in hangup:", call);
-    call.hangup();
-    console.log("call terminated:", call);
-
-    // Stop timers and loops associated with this call
-    console.log("stop call timer");
-    clearInterval(intervalTimer);
-
-    console.log("stop loop to get calls states");
-    clearInterval(callManage);
-    callManage = undefined;
-
-    // Post-call management will be handled by the callback function
-    console.log("Hangup logic done. Waiting for callback to handle post-call actions.");
-    await qalqulSDK?.logout();
-    console.log("qalqulSDK logged out");
-  };
-
-  const storeQalqulCallInDbInStart = async (callUuid: string) => {
-    console.log("storing call from qalqul in DB au lancement de l'appel:", callUuid);
-
-    try {
-      const storeCall = {
-        call_id: callUuid,
-        id_lead: "65d2b8f4e45a3c5a12e8f123",
-        caller: agentId,
-      };
-      console.log("data call to store:", storeCall);
-      const res = await callsApi.storeCallInDBAtStartCall(storeCall);
-      console.log("result of storing call:", res);
-      const storedCallId = res._id;
-      console.log("id of callObject in DB:", storedCallId);
-    } catch (error) {
-      console.log("error in storing qalqul call in DB:", error);
-    }
-  };
 
   const setupSpeechRecognition = (audioContext: AudioContext) => {
     const langConfig = getLanguageFromPhoneNumber(phoneNumber);
