@@ -334,6 +334,7 @@ export function GigDetails() {
   // États pour la vérification de complétion de la formation
   const [trainingCompleted, setTrainingCompleted] = useState<boolean | null>(null);
   const [checkingTraining, setCheckingTraining] = useState(false);
+  const [journeyId, setJourneyId] = useState<string | null>(null);
   
   // Fonction pour vérifier si l'agent est enrolled dans ce gig
   const isAgentEnrolled = () => {
@@ -634,7 +635,14 @@ export function GigDetails() {
       if (!journeys || journeys.length === 0) {
         console.log('ℹ️ No training journeys found for this gig');
         // Si pas de formation, considérer comme complété (pas de formation = pas de prérequis)
+        setJourneyId(null);
         return true;
+      }
+      
+      // Stocker le premier journey ID pour la redirection
+      const firstJourneyId = journeys[0]?.id || journeys[0]?._id;
+      if (firstJourneyId) {
+        setJourneyId(firstJourneyId);
       }
       
       // Récupérer les journeys du rep pour vérifier le progrès
@@ -726,7 +734,7 @@ export function GigDetails() {
       setCheckingTraining(false);
     }
   };
-  
+
   // Fonction pour récupérer les leads
   const fetchLeads = async (page: number = 1) => {
     if (!gigId) return;
@@ -772,13 +780,13 @@ export function GigDetails() {
   // Vérifier la complétion de la formation quand l'agent est enrolled
   useEffect(() => {
     const verifyTrainingAndLoadLeads = async () => {
-      if (gigId && isAgentEnrolled()) {
+    if (gigId && isAgentEnrolled()) {
         const completed = await checkTrainingCompletion();
         setTrainingCompleted(completed);
         
         // Charger les leads uniquement si la formation est complétée
         if (completed) {
-          fetchLeads(1);
+      fetchLeads(1);
         } else {
           // Réinitialiser les leads si la formation n'est pas complétée
           setLeads([]);
@@ -1656,7 +1664,14 @@ export function GigDetails() {
                       You must complete all training modules and quizzes before accessing leads.
                     </p>
                     <button
-                      onClick={() => navigate('/learning')}
+                      onClick={() => {
+                        if (journeyId) {
+                          window.location.href = `/training/repdashboard/${journeyId}`;
+                        } else {
+                          // Fallback si pas de journeyId trouvé
+                          window.location.href = '/training/repdashboard';
+                        }
+                      }}
                       className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
                     >
                       Go to Training
@@ -1665,28 +1680,28 @@ export function GigDetails() {
                 </div>
               ) : trainingCompleted === true ? (
                 <>
-                  {leadsLoading ? (
-                    <div className="flex justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    </div>
-                  ) : leadsError ? (
-                    <div className="text-center py-8">
-                      <p className="text-red-600 mb-2">❌ {leadsError}</p>
-                      <button
-                        onClick={() => fetchLeads(currentPage)}
-                        className="text-blue-600 hover:text-blue-700 text-sm"
-                      >
-                        Try again
-                      </button>
-                    </div>
-                  ) : leads.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">No leads available for this gig yet.</p>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Leads Table */}
-                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+              {leadsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : leadsError ? (
+                <div className="text-center py-8">
+                  <p className="text-red-600 mb-2">❌ {leadsError}</p>
+                  <button
+                    onClick={() => fetchLeads(currentPage)}
+                    className="text-blue-600 hover:text-blue-700 text-sm"
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : leads.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No leads available for this gig yet.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Leads Table */}
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
                     {/* Table Header - Fixed */}
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse">
@@ -1828,8 +1843,8 @@ export function GigDetails() {
                       </div>
                     </div>
                   )}
-                      </>
-                    )}
+                </>
+              )}
                   </>
                 ) : null}
             </div>
