@@ -617,21 +617,52 @@ export function GigDetails() {
     }
   }, [gig, gigId, loading]);
 
-  // Charger les trainings disponibles pour ce gig
-  useEffect(() => {
-    if (gigId) {
-      fetchAvailableTrainings();
+  // Fonction helper pour extraire l'ID d'un objet MongoDB (gère les formats $oid et string)
+  const extractId = (id: any): string => {
+    if (!id) return '';
+    if (typeof id === 'string') return id;
+    if (id.$oid) return id.$oid;
+    if (id._id) {
+      if (typeof id._id === 'string') return id._id;
+      if (id._id.$oid) return id._id.$oid;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gigId]);
-  
-  // Charger la progression des trainings quand les trainings sont chargés
-  useEffect(() => {
-    if (availableTrainings.length > 0 && gigId && isAgentEnrolled()) {
-      fetchTrainingsProgress();
+    return String(id);
+  };
+
+  // Fonction pour récupérer la progression des trainings pour ce gig
+  const fetchTrainingsProgress = async () => {
+    const agentId = getAgentId();
+    if (!agentId || !gigId) return;
+    
+    setLoadingProgress(true);
+    try {
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
+      const url = `${trainingBackendUrl}/training_journeys/rep/${agentId}/progress/gig/${gigId}`;
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📊 Progress data received:', data);
+        if (data.success && data.data && data.data.trainings) {
+          // Créer un map de progression par journeyId
+          const progressMap: Record<string, any> = {};
+          data.data.trainings.forEach((training: any) => {
+            const journeyId = extractId(training.journeyId);
+            progressMap[journeyId] = training;
+            console.log('📈 Mapped progress for journeyId:', journeyId, training);
+          });
+          console.log('📊 Progress map:', progressMap);
+          setTrainingsProgress(progressMap);
+        }
+      } else {
+        console.warn('⚠️ Could not fetch progress:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching trainings progress:', error);
+    } finally {
+      setLoadingProgress(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [availableTrainings, gigId]);
+  };
 
   // Fonction pour récupérer les trainings disponibles pour ce gig
   const fetchAvailableTrainings = async () => {
@@ -676,55 +707,69 @@ export function GigDetails() {
     }
   };
 
-  // Fonction pour récupérer la progression des trainings pour ce gig
-  const fetchTrainingsProgress = async () => {
+  // Charger les trainings disponibles pour ce gig
+  useEffect(() => {
+    if (gigId) {
+      fetchAvailableTrainings();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gigId]);
+  
+  // Charger la progression des trainings quand les trainings sont chargés
+  useEffect(() => {
+    if (availableTrainings.length > 0 && gigId && isAgentEnrolled()) {
+      fetchTrainingsProgress();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableTrainings, gigId]);
+
+  // Fonction pour initialiser la progression avant de démarrer le training
+  const initializeTrainingProgress = async (trainingId: string) => {
     const agentId = getAgentId();
-    if (!agentId || !gigId) return;
+    if (!agentId) {
+      console.error('❌ No agentId found');
+      return false;
+    }
     
-    setLoadingProgress(true);
     try {
       const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
-      const url = `${trainingBackendUrl}/training_journeys/rep/${agentId}/progress/gig/${gigId}`;
+      const url = `${trainingBackendUrl}/training_journeys/rep-progress/start`;
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          repId: agentId,
+          journeyId: trainingId
+        })
+      });
+      
       if (response.ok) {
         const data = await response.json();
-        console.log('📊 Progress data received:', data);
-        if (data.success && data.data && data.data.trainings) {
-          // Créer un map de progression par journeyId
-          const progressMap: Record<string, any> = {};
-          data.data.trainings.forEach((training: any) => {
-            const journeyId = extractId(training.journeyId);
-            progressMap[journeyId] = training;
-            console.log('📈 Mapped progress for journeyId:', journeyId, training);
-          });
-          console.log('📊 Progress map:', progressMap);
-          setTrainingsProgress(progressMap);
-        }
+        console.log('✅ Training progress initialized:', data);
+        return true;
       } else {
-        console.warn('⚠️ Could not fetch progress:', response.status);
+        const errorData = await response.json();
+        console.warn('⚠️ Could not initialize progress:', response.status, errorData);
+        return false;
       }
     } catch (error) {
-      console.error('❌ Error fetching trainings progress:', error);
-    } finally {
-      setLoadingProgress(false);
+      console.error('❌ Error initializing training progress:', error);
+      return false;
     }
-  };
-
-  // Fonction helper pour extraire l'ID d'un objet MongoDB (gère les formats $oid et string)
-  const extractId = (id: any): string => {
-    if (!id) return '';
-    if (typeof id === 'string') return id;
-    if (id.$oid) return id.$oid;
-    if (id._id) {
-      if (typeof id._id === 'string') return id._id;
-      if (id._id.$oid) return id._id.$oid;
-    }
-    return String(id);
   };
 
   // Fonction pour rediriger vers le training
-  const handleTrainingClick = (trainingId: string) => {
+  const handleTrainingClick = async (trainingId: string) => {
+    // Initialiser la progression avant de rediriger
+    await initializeTrainingProgress(trainingId);
+    
+    // Rafraîchir la progression après initialisation
+    setTimeout(() => {
+      fetchTrainingsProgress();
+    }, 500);
     const trainingUrl = `https://v25.harx.ai/training/repdashboard/${trainingId}`;
     window.open(trainingUrl, '_blank');
   };
