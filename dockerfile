@@ -13,6 +13,12 @@ RUN apk add --no-cache git
 # Usage: docker build --build-arg GITHUB_TOKEN=your_token_here .
 ARG GITHUB_TOKEN
 
+# Replace the expired GitHub PAT in package.json with the provided token
+# This allows npm to access private GitHub repositories
+RUN if [ -n "$GITHUB_TOKEN" ]; then \
+      sed -i "s|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|${GITHUB_TOKEN}|g" package.json package-lock.json 2>/dev/null || true; \
+    fi
+
 # Set environment variables
 ENV VITE_API_URL=https://api-rep-dashboard.harx.ai
 ENV VITE_CALLS_API_URL=https://api-dash-calls.harx.ai
