@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight, BookOpen, Play } from 'lucide-react';
+import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchEnrolledGigsFromProfile, fetchPendingRequests, refreshGigStatuses } from '../utils/gigStatusUtils';
@@ -334,12 +334,6 @@ export function GigDetails() {
   // États pour la vérification de complétion de la formation
   const [trainingCompleted, setTrainingCompleted] = useState<boolean | null>(null);
   const [checkingTraining, setCheckingTraining] = useState(false);
-  const [journeyId, setJourneyId] = useState<string | null>(null);
-  
-  // États pour les trainings disponibles
-  const [trainings, setTrainings] = useState<any[]>([]);
-  const [loadingTrainings, setLoadingTrainings] = useState(false);
-  const [trainingsError, setTrainingsError] = useState<string | null>(null);
   
   // Fonction pour vérifier si l'agent est enrolled dans ce gig
   const isAgentEnrolled = () => {
@@ -495,46 +489,6 @@ export function GigDetails() {
     fetchStatusesFromProfile();
   }, []);
 
-  // Charger les trainings disponibles pour ce gig
-  useEffect(() => {
-    const fetchTrainings = async () => {
-      if (!gigId) {
-        return;
-      }
-
-      setLoadingTrainings(true);
-      setTrainingsError(null);
-
-      try {
-        console.log('🎓 Fetching trainings for gig:', gigId);
-        // Utiliser l'URL de l'API de training (à ajuster selon votre configuration)
-        const trainingApiUrl = import.meta.env.VITE_TRAINING_API_URL || 'https://api-training.harx.ai';
-        const response = await fetch(`${trainingApiUrl}/training_journeys/gig/${gigId}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch trainings: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('✅ Received trainings:', data);
-        
-        if (data.success && data.data) {
-          setTrainings(Array.isArray(data.data) ? data.data : []);
-        } else {
-          setTrainings([]);
-        }
-      } catch (error: any) {
-        console.error('❌ Error fetching trainings:', error);
-        setTrainingsError(error.message || 'Failed to load trainings');
-        setTrainings([]);
-      } finally {
-        setLoadingTrainings(false);
-      }
-    };
-
-    fetchTrainings();
-  }, [gigId]);
-
   // Vérifier le statut d'enrollment de l'agent
   useEffect(() => {
     const checkEnrollmentStatus = async () => {
@@ -680,14 +634,7 @@ export function GigDetails() {
       if (!journeys || journeys.length === 0) {
         console.log('ℹ️ No training journeys found for this gig');
         // Si pas de formation, considérer comme complété (pas de formation = pas de prérequis)
-        setJourneyId(null);
         return true;
-      }
-      
-      // Stocker le premier journey ID pour la redirection
-      const firstJourneyId = journeys[0]?.id || journeys[0]?._id;
-      if (firstJourneyId) {
-        setJourneyId(firstJourneyId);
       }
       
       // Récupérer les journeys du rep pour vérifier le progrès
@@ -1683,112 +1630,6 @@ export function GigDetails() {
           </div>
         </div>
 
-        {/* Trainings Section - Full Width */}
-        <div className="mt-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Available Trainings</h2>
-              {trainings.length > 0 && (
-                <span className="text-sm text-gray-600">
-                  {trainings.length} {trainings.length === 1 ? 'training' : 'trainings'} available
-                </span>
-              )}
-            </div>
-
-            {loadingTrainings ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-600">Loading trainings...</span>
-              </div>
-            ) : trainingsError ? (
-              <div className="text-center py-8">
-                <p className="text-red-600 mb-2">❌ {trainingsError}</p>
-                <button
-                  onClick={() => {
-                    const trainingApiUrl = import.meta.env.VITE_TRAINING_API_URL || 'https://api-training.harx.ai';
-                    window.location.href = `${trainingApiUrl}/training_journeys/gig/${gigId}`;
-                  }}
-                  className="text-blue-600 hover:text-blue-700 text-sm"
-                >
-                  Try again
-                </button>
-              </div>
-            ) : trainings.length === 0 ? (
-              <div className="text-center py-8">
-                <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No trainings available for this gig yet.</p>
-                <p className="text-gray-400 text-sm mt-2">Check back later or contact the company for more information.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {trainings.map((training: any) => {
-                  const trainingId = training.id || training._id;
-                  const modulesCount = Array.isArray(training.modules) ? training.modules.length : 0;
-                  
-                  return (
-                    <div
-                      key={trainingId}
-                      className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-5 border border-blue-200 hover:shadow-md transition-all cursor-pointer"
-                      onClick={() => {
-                        // Rediriger vers la page de training
-                        window.location.href = `/training/repdashboard/${trainingId}`;
-                      }}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
-                            <BookOpen className="h-5 w-5 text-white" />
-                          </div>
-                          <div>
-                            <div className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                              training.status === 'completed' 
-                                ? 'bg-green-100 text-green-700' 
-                                : training.status === 'active'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {training.status === 'completed' ? 'Completed' : training.status === 'active' ? 'Active' : 'Available'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <h3 className="text-lg font-bold text-gray-900 mb-2">
-                        {training.title || training.name || 'Untitled Training'}
-                      </h3>
-                      
-                      {training.description && (
-                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                          {training.description}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <div className="flex items-center space-x-1">
-                            <BookOpen className="h-4 w-4" />
-                            <span>{modulesCount} modules</span>
-                          </div>
-                        </div>
-                        <button
-                          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.location.href = `/training/repdashboard/${trainingId}`;
-                          }}
-                        >
-                          <Play className="h-4 w-4" />
-                          <span>Start Training</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Leads Section - Full Width - Only for enrolled agents who completed training */}
         {isAgentEnrolled() && (
         <div className="mt-8">
@@ -1815,14 +1656,7 @@ export function GigDetails() {
                       You must complete all training modules and quizzes before accessing leads.
                     </p>
                     <button
-                      onClick={() => {
-                        if (journeyId) {
-                          window.location.href = `/training/repdashboard/${journeyId}`;
-                        } else {
-                          // Fallback si pas de journeyId trouvé
-                          window.location.href = '/training/repdashboard';
-                        }
-                      }}
+                      onClick={() => navigate('/learning')}
                       className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
                     >
                       Go to Training

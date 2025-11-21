@@ -8,17 +8,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN apk add --no-cache git
 
-# Build argument for GitHub token (can be passed at build time)
-# Can also be set as environment variable: export GITHUB_TOKEN=your_token
-# Usage: docker build --build-arg GITHUB_TOKEN=your_token_here .
-ARG GITHUB_TOKEN
-
-# Replace the expired GitHub PAT in package.json with the provided token
-# This allows npm to access private GitHub repositories
-RUN if [ -n "$GITHUB_TOKEN" ]; then \
-      sed -i "s|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|${GITHUB_TOKEN}|g" package.json package-lock.json 2>/dev/null || true; \
-    fi
-
 # Set environment variables
 ENV VITE_API_URL=https://api-rep-dashboard.harx.ai
 ENV VITE_CALLS_API_URL=https://api-dash-calls.harx.ai
@@ -41,7 +30,6 @@ ENV VITE_AUTH_API_URL=https://api-registration.harx.ai/api
 ENV VITE_FRONT_URL=https://rep-dashboard.harx.ai/
 ENV VITE_DASH_COMPANY_BACKEND=https://api-dashboard.harx.ai/api
 ENV VITE_MATCHING_API_URL=https://api-matching.harx.ai/api
-ENV VITE_TRAINING_API_URL=https://api-training.harx.ai
 ENV VITE_COPILOT_URL=/copilot
 # Install dependencies
 RUN npm install
