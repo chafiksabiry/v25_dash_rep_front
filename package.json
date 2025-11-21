@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@qalqul/sdk-call": "git+https://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@github.com/qalqul/qalqul-sdk-call.git",
     "@tensorflow/tfjs": "^4.17.0",
     "@types/js-cookie": "^3.0.6",
     "axios": "^1.9.0",
