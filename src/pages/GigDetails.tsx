@@ -1983,5 +1983,6 @@ export function GigDetails() {
         </div>
         )}
       </div>
+    </div>
   );
 }
