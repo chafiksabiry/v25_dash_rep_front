@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN apk add --no-cache git
+RUN apk add --no-cache git python3 make g++
 
 # Set environment variables
 ENV VITE_API_URL=https://preprod-api-rep-dashboard.harx.ai
@@ -32,7 +32,11 @@ ENV VITE_DASH_COMPANY_BACKEND=https://preprod-api-dashboard.harx.ai/api
 ENV VITE_MATCHING_API_URL=https://preprod-api-matching.harx.ai/api
 ENV VITE_COPILOT_URL=/copilot
 # Install dependencies
+# Force installation of optional dependencies to fix rollup native binaries issue
+RUN npm config set optional true
 RUN npm install
+# Explicitly install rollup native binary for Alpine Linux (musl)
+RUN npm install @rollup/rollup-linux-x64-musl --save-optional --force || true
 
 # Copy source code
 COPY . .
