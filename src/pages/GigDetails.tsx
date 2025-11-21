@@ -339,6 +339,10 @@ export function GigDetails() {
   const [availableTrainings, setAvailableTrainings] = useState<any[]>([]);
   const [loadingTrainings, setLoadingTrainings] = useState(false);
   
+  // État pour la progression des trainings
+  const [trainingsProgress, setTrainingsProgress] = useState<Record<string, any>>({});
+  const [loadingProgress, setLoadingProgress] = useState(false);
+  
   // Fonction pour vérifier si l'agent est enrolled dans ce gig
   const isAgentEnrolled = () => {
     const agentId = getAgentId();
@@ -620,6 +624,14 @@ export function GigDetails() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gigId]);
+  
+  // Charger la progression des trainings quand les trainings sont chargés
+  useEffect(() => {
+    if (availableTrainings.length > 0 && gigId && isAgentEnrolled()) {
+      fetchTrainingsProgress();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableTrainings, gigId]);
 
   // Fonction pour récupérer les trainings disponibles pour ce gig
   const fetchAvailableTrainings = async () => {
@@ -1717,6 +1729,10 @@ export function GigDetails() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {availableTrainings.map((training) => {
                   const trainingId = extractId(training.id || training._id);
+                  const progress = trainingsProgress[trainingId];
+                  const progressPercent = progress?.progress || 0;
+                  const progressStatus = progress?.status || 'not-started';
+                  
                   return (
                     <div
                       key={trainingId}
@@ -1732,26 +1748,64 @@ export function GigDetails() {
                             {training.description}
                           </p>
                         )}
-                        {training.status && (
-                          <span className={`inline-block px-2 py-1 text-xs rounded-full mb-3 ${
-                            training.status === 'active' || training.status === 'published'
-                              ? 'bg-green-100 text-green-700'
-                              : training.status === 'draft'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-gray-100 text-gray-700'
-                          }`}>
-                            {training.status}
-                          </span>
+                        
+                        {/* Progress Bar */}
+                        {progress && progressStatus !== 'not-started' && (
+                          <div className="mb-3">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-xs text-gray-600">Progress</span>
+                              <span className="text-xs font-medium text-gray-900">{progressPercent}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full transition-all ${
+                                  progressStatus === 'completed'
+                                    ? 'bg-green-600'
+                                    : 'bg-blue-600'
+                                }`}
+                                style={{ width: `${progressPercent}%` }}
+                              ></div>
+                            </div>
+                          </div>
                         )}
+                        
+                        <div className="flex items-center gap-2 mb-3">
+                          {training.status && (
+                            <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                              training.status === 'active' || training.status === 'published'
+                                ? 'bg-green-100 text-green-700'
+                                : training.status === 'draft'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {training.status}
+                            </span>
+                          )}
+                          {progressStatus && progressStatus !== 'not-started' && (
+                            <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                              progressStatus === 'completed'
+                                ? 'bg-green-100 text-green-700'
+                                : progressStatus === 'in-progress'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {progressStatus === 'completed' ? 'Completed' : 'In Progress'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <button
-                        className="w-full mt-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className={`w-full mt-auto px-4 py-2 rounded-lg transition-colors ${
+                          progressStatus === 'completed'
+                            ? 'bg-green-600 text-white hover:bg-green-700'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleTrainingClick(trainingId);
                         }}
                       >
-                        Start Training
+                        {progressStatus === 'completed' ? 'Review Training' : progressStatus === 'in-progress' ? 'Continue Training' : 'Start Training'}
                       </button>
                     </div>
                   );
