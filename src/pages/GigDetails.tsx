@@ -676,6 +676,41 @@ export function GigDetails() {
     }
   };
 
+  // Fonction pour récupérer la progression des trainings pour ce gig
+  const fetchTrainingsProgress = async () => {
+    const agentId = getAgentId();
+    if (!agentId || !gigId) return;
+    
+    setLoadingProgress(true);
+    try {
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
+      const url = `${trainingBackendUrl}/training_journeys/rep/${agentId}/progress/gig/${gigId}`;
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📊 Progress data received:', data);
+        if (data.success && data.data && data.data.trainings) {
+          // Créer un map de progression par journeyId
+          const progressMap: Record<string, any> = {};
+          data.data.trainings.forEach((training: any) => {
+            const journeyId = extractId(training.journeyId);
+            progressMap[journeyId] = training;
+            console.log('📈 Mapped progress for journeyId:', journeyId, training);
+          });
+          console.log('📊 Progress map:', progressMap);
+          setTrainingsProgress(progressMap);
+        }
+      } else {
+        console.warn('⚠️ Could not fetch progress:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching trainings progress:', error);
+    } finally {
+      setLoadingProgress(false);
+    }
+  };
+
   // Fonction helper pour extraire l'ID d'un objet MongoDB (gère les formats $oid et string)
   const extractId = (id: any): string => {
     if (!id) return '';
@@ -1729,7 +1764,9 @@ export function GigDetails() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {availableTrainings.map((training) => {
                   const trainingId = extractId(training.id || training._id);
-                  const progress = trainingsProgress[trainingId];
+                  // Chercher la progression par journeyId (qui correspond au trainingId)
+                  // L'API retourne journeyId dans les données de progression
+                  const progress = trainingsProgress[trainingId] || trainingsProgress[extractId(training.id || training._id)];
                   const progressPercent = progress?.progress || 0;
                   const progressStatus = progress?.status || 'not-started';
                   
