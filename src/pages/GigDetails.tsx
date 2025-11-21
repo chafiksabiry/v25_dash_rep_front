@@ -623,26 +623,42 @@ export function GigDetails() {
 
   // Fonction pour récupérer les trainings disponibles pour ce gig
   const fetchAvailableTrainings = async () => {
-    if (!gigId) return;
+    if (!gigId) {
+      console.log('⚠️ No gigId provided, skipping training fetch');
+      return;
+    }
     
+    console.log('🔍 Fetching trainings for gigId:', gigId);
     setLoadingTrainings(true);
     try {
       const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
+      console.log('🌐 Training backend URL:', trainingBackendUrl);
       
-      const response = await fetch(
-        `${trainingBackendUrl}/training_journeys/gig/${gigId}`
-      );
+      const url = `${trainingBackendUrl}/training_journeys/gig/${gigId}`;
+      console.log('📡 Fetching from URL:', url);
+      
+      const response = await fetch(url);
+      console.log('📥 Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
+        console.log('📦 Response data:', data);
+        
         if (data.success && data.data) {
+          console.log('✅ Found', data.data.length, 'trainings');
           setAvailableTrainings(data.data);
+        } else {
+          console.warn('⚠️ Response format issue:', { success: data.success, hasData: !!data.data });
+          setAvailableTrainings([]);
         }
       } else {
-        console.warn('⚠️ Could not fetch trainings:', response.status);
+        const errorText = await response.text();
+        console.warn('⚠️ Could not fetch trainings:', response.status, errorText);
+        setAvailableTrainings([]);
       }
     } catch (error) {
       console.error('❌ Error fetching trainings:', error);
+      setAvailableTrainings([]);
     } finally {
       setLoadingTrainings(false);
     }
@@ -1673,60 +1689,63 @@ export function GigDetails() {
             )}
 
             {/* Available Trainings Section */}
-            {availableTrainings.length > 0 && (
-              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Trainings</h2>
-                {loadingTrainings ? (
-                  <div className="flex justify-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span className="ml-3 text-gray-600">Loading trainings...</span>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {availableTrainings.map((training) => (
-                      <div
-                        key={training.id || training._id}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
-                        onClick={() => handleTrainingClick(training.id || training._id)}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 mb-1">
-                              {training.title || 'Untitled Training'}
-                            </h3>
-                            {training.description && (
-                              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                                {training.description}
-                              </p>
-                            )}
-                            {training.status && (
-                              <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                                training.status === 'active' || training.status === 'published'
-                                  ? 'bg-green-100 text-green-700'
-                                  : training.status === 'draft'
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}>
-                                {training.status}
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTrainingClick(training.id || training._id);
-                            }}
-                          >
-                            Start Training
-                          </button>
+            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Trainings</h2>
+              {loadingTrainings ? (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-gray-600">Loading trainings...</span>
+                </div>
+              ) : availableTrainings.length > 0 ? (
+                <div className="space-y-3">
+                  {availableTrainings.map((training) => (
+                    <div
+                      key={training.id || training._id}
+                      className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                      onClick={() => handleTrainingClick(training.id || training._id)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-1">
+                            {training.title || 'Untitled Training'}
+                          </h3>
+                          {training.description && (
+                            <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                              {training.description}
+                            </p>
+                          )}
+                          {training.status && (
+                            <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                              training.status === 'active' || training.status === 'published'
+                                ? 'bg-green-100 text-green-700'
+                                : training.status === 'draft'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {training.status}
+                            </span>
+                          )}
                         </div>
+                        <button
+                          className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTrainingClick(training.id || training._id);
+                          }}
+                        >
+                          Start Training
+                        </button>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No trainings available for this gig.</p>
+                  <p className="text-sm mt-2">Trainings will appear here once they are assigned to this gig.</p>
+                </div>
+              )}
+            </div>
 
           </div>
         </div>
