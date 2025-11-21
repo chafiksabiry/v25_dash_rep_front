@@ -122,7 +122,7 @@ export interface Call {
   sid?: string;
   parentCallSid?: string | null;
   direction: 'inbound' | 'outbound-dial';
-  provider?: 'twilio' | 'qalqul';
+  provider?: 'twilio';
   startTime: Date;
   endTime?: Date | null;
   status: string;
