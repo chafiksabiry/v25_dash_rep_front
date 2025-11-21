@@ -1701,7 +1701,7 @@ export function GigDetails() {
             )}
 
             {/* Available Trainings Section */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <div id="available-trainings-section" className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Trainings</h2>
               {loadingTrainings ? (
                 <div className="flex justify-center py-4">
@@ -1709,47 +1709,45 @@ export function GigDetails() {
                   <span className="ml-3 text-gray-600">Loading trainings...</span>
                 </div>
               ) : availableTrainings.length > 0 ? (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {availableTrainings.map((training) => {
                     const trainingId = extractId(training.id || training._id);
                     return (
                       <div
                         key={trainingId}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer flex flex-col"
                         onClick={() => handleTrainingClick(trainingId)}
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 mb-1">
-                              {training.title || 'Untitled Training'}
-                            </h3>
-                            {training.description && (
-                              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                                {training.description}
-                              </p>
-                            )}
-                            {training.status && (
-                              <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                                training.status === 'active' || training.status === 'published'
-                                  ? 'bg-green-100 text-green-700'
-                                  : training.status === 'draft'
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}>
-                                {training.status}
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTrainingClick(trainingId);
-                            }}
-                          >
-                            Start Training
-                          </button>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                            {training.title || 'Untitled Training'}
+                          </h3>
+                          {training.description && (
+                            <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+                              {training.description}
+                            </p>
+                          )}
+                          {training.status && (
+                            <span className={`inline-block px-2 py-1 text-xs rounded-full mb-3 ${
+                              training.status === 'active' || training.status === 'published'
+                                ? 'bg-green-100 text-green-700'
+                                : training.status === 'draft'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {training.status}
+                            </span>
+                          )}
                         </div>
+                        <button
+                          className="w-full mt-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTrainingClick(trainingId);
+                          }}
+                        >
+                          Start Training
+                        </button>
                       </div>
                     );
                   })}
@@ -1788,10 +1786,19 @@ export function GigDetails() {
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
                     <p className="text-yellow-800 font-medium mb-2">⚠️ Training Not Completed</p>
                     <p className="text-yellow-700 text-sm mb-4">
-                      You must complete all training modules and quizzes before accessing leads.
+                      You must complete all training modules, quizzes, and final exam before accessing leads.
+                    </p>
+                    <p className="text-yellow-600 text-xs mb-4">
+                      Please complete all required trainings and assessments to unlock access to leads.
                     </p>
                     <button
-                      onClick={() => navigate('/learning')}
+                      onClick={() => {
+                        // Scroll to trainings section
+                        const trainingsSection = document.getElementById('available-trainings-section');
+                        if (trainingsSection) {
+                          trainingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }}
                       className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
                     >
                       Go to Training
