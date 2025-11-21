@@ -1700,68 +1700,72 @@ export function GigDetails() {
               </div>
             )}
 
-            {/* Available Trainings Section */}
-            <div id="available-trainings-section" className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Trainings</h2>
-              {loadingTrainings ? (
-                <div className="flex justify-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  <span className="ml-3 text-gray-600">Loading trainings...</span>
-                </div>
-              ) : availableTrainings.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {availableTrainings.map((training) => {
-                    const trainingId = extractId(training.id || training._id);
-                    return (
-                      <div
-                        key={trainingId}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer flex flex-col"
-                        onClick={() => handleTrainingClick(trainingId)}
-                      >
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                            {training.title || 'Untitled Training'}
-                          </h3>
-                          {training.description && (
-                            <p className="text-sm text-gray-600 mb-3 line-clamp-3">
-                              {training.description}
-                            </p>
-                          )}
-                          {training.status && (
-                            <span className={`inline-block px-2 py-1 text-xs rounded-full mb-3 ${
-                              training.status === 'active' || training.status === 'published'
-                                ? 'bg-green-100 text-green-700'
-                                : training.status === 'draft'
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {training.status}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          className="w-full mt-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTrainingClick(trainingId);
-                          }}
-                        >
-                          Start Training
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No trainings available for this gig.</p>
-                  <p className="text-sm mt-2">Trainings will appear here once they are assigned to this gig.</p>
-                </div>
-              )}
-            </div>
-
           </div>
         </div>
+
+        {/* Available Trainings Section - Before Leads */}
+        {isAgentEnrolled() && (
+        <div className="mt-8">
+          <div id="available-trainings-section" className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Trainings</h2>
+            {loadingTrainings ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Loading trainings...</span>
+              </div>
+            ) : availableTrainings.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {availableTrainings.map((training) => {
+                  const trainingId = extractId(training.id || training._id);
+                  return (
+                    <div
+                      key={trainingId}
+                      className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer flex flex-col"
+                      onClick={() => handleTrainingClick(trainingId)}
+                    >
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                          {training.title || 'Untitled Training'}
+                        </h3>
+                        {training.description && (
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+                            {training.description}
+                          </p>
+                        )}
+                        {training.status && (
+                          <span className={`inline-block px-2 py-1 text-xs rounded-full mb-3 ${
+                            training.status === 'active' || training.status === 'published'
+                              ? 'bg-green-100 text-green-700'
+                              : training.status === 'draft'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {training.status}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        className="w-full mt-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTrainingClick(trainingId);
+                        }}
+                      >
+                        Start Training
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>No trainings available for this gig.</p>
+                <p className="text-sm mt-2">Trainings will appear here once they are assigned to this gig.</p>
+              </div>
+            )}
+          </div>
+        </div>
+        )}
 
         {/* Leads Section - Full Width - Only for enrolled agents who completed training */}
         {isAgentEnrolled() && (
