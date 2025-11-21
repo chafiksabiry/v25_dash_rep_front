@@ -7,6 +7,7 @@ interface ImportMetaEnv {
     readonly VITE_REP_API_URL: string;
     readonly VITE_BACKEND_URL_GIGS: string;
     readonly VITE_DASH_COMPANY_BACKEND: string;
+    readonly VITE_TRAINING_API_URL: string;
     readonly VITE_COPILOT_URL: string;
     readonly NODE_ENV: string;
   }

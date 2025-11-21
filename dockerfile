@@ -30,6 +30,7 @@ ENV VITE_AUTH_API_URL=https://api-registration.harx.ai/api
 ENV VITE_FRONT_URL=https://rep-dashboard.harx.ai/
 ENV VITE_DASH_COMPANY_BACKEND=https://api-dashboard.harx.ai/api
 ENV VITE_MATCHING_API_URL=https://api-matching.harx.ai/api
+ENV VITE_TRAINING_API_URL=https://api-training.harx.ai
 ENV VITE_COPILOT_URL=/copilot
 # Install dependencies
 RUN npm install
