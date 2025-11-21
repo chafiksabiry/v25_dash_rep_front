@@ -678,7 +678,7 @@ export function GigDetails() {
 
   // Fonction pour rediriger vers le training
   const handleTrainingClick = (trainingId: string) => {
-    const trainingUrl = `https://v25.harx.ai/training/repashboard/${trainingId}`;
+    const trainingUrl = `https://v25.harx.ai/training/repdashboard/${trainingId}`;
     window.open(trainingUrl, '_blank');
   };
 
