@@ -31,11 +31,9 @@ ENV VITE_FRONT_URL=https://rep-dashboard.harx.ai/
 ENV VITE_DASH_COMPANY_BACKEND=https://preprod-api-dashboard.harx.ai/api
 ENV VITE_MATCHING_API_URL=https://preprod-api-matching.harx.ai/api
 ENV VITE_COPILOT_URL=/copilot
-# Install dependencies
-# Force installation of optional dependencies to fix rollup native binaries issue
-RUN npm config set optional true
-RUN npm install
-# Explicitly install rollup native binary for Alpine Linux (musl)
+# Install dependencies with optional dependencies included
+RUN npm install --include=optional
+# Explicitly install rollup native binary for Alpine Linux (musl) if not already installed
 RUN npm install @rollup/rollup-linux-x64-musl --save-optional --force || true
 
 # Copy source code
