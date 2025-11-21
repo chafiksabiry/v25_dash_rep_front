@@ -335,6 +335,10 @@ export function GigDetails() {
   const [trainingCompleted, setTrainingCompleted] = useState<boolean | null>(null);
   const [checkingTraining, setCheckingTraining] = useState(false);
   
+  // États pour les trainings disponibles
+  const [availableTrainings, setAvailableTrainings] = useState<any[]>([]);
+  const [loadingTrainings, setLoadingTrainings] = useState(false);
+  
   // Fonction pour vérifier si l'agent est enrolled dans ce gig
   const isAgentEnrolled = () => {
     const agentId = getAgentId();
@@ -609,6 +613,47 @@ export function GigDetails() {
     }
   }, [gig, gigId, loading]);
 
+  // Charger les trainings disponibles pour ce gig
+  useEffect(() => {
+    if (gigId) {
+      fetchAvailableTrainings();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gigId]);
+
+  // Fonction pour récupérer les trainings disponibles pour ce gig
+  const fetchAvailableTrainings = async () => {
+    if (!gigId) return;
+    
+    setLoadingTrainings(true);
+    try {
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
+      
+      const response = await fetch(
+        `${trainingBackendUrl}/training_journeys/gig/${gigId}`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setAvailableTrainings(data.data);
+        }
+      } else {
+        console.warn('⚠️ Could not fetch trainings:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching trainings:', error);
+    } finally {
+      setLoadingTrainings(false);
+    }
+  };
+
+  // Fonction pour rediriger vers le training
+  const handleTrainingClick = (trainingId: string) => {
+    const trainingUrl = `https://v25.harx.ai/training/repashboard/${trainingId}`;
+    window.open(trainingUrl, '_blank');
+  };
+
   // Fonction pour vérifier si la formation est complétée
   const checkTrainingCompletion = async (): Promise<boolean> => {
     const agentId = getAgentId();
@@ -617,11 +662,11 @@ export function GigDetails() {
     setCheckingTraining(true);
     try {
       // Récupérer les training journeys pour ce gig
-      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'http://localhost:8080';
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
       
       // Récupérer les journeys pour ce gig
       const journeysResponse = await fetch(
-        `${trainingBackendUrl}/training_journeys?gigId=${gigId}`
+        `${trainingBackendUrl}/training_journeys/gig/${gigId}`
       );
       
       if (!journeysResponse.ok) {
@@ -630,7 +675,8 @@ export function GigDetails() {
         return false;
       }
       
-      const journeys = await journeysResponse.json();
+      const journeysData = await journeysResponse.json();
+      const journeys = journeysData.success ? journeysData.data : [];
       if (!journeys || journeys.length === 0) {
         console.log('ℹ️ No training journeys found for this gig');
         // Si pas de formation, considérer comme complété (pas de formation = pas de prérequis)
@@ -1626,6 +1672,61 @@ export function GigDetails() {
               </div>
             )}
 
+            {/* Available Trainings Section */}
+            {availableTrainings.length > 0 && (
+              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Trainings</h2>
+                {loadingTrainings ? (
+                  <div className="flex justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span className="ml-3 text-gray-600">Loading trainings...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {availableTrainings.map((training) => (
+                      <div
+                        key={training.id || training._id}
+                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                        onClick={() => handleTrainingClick(training.id || training._id)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 mb-1">
+                              {training.title || 'Untitled Training'}
+                            </h3>
+                            {training.description && (
+                              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                                {training.description}
+                              </p>
+                            )}
+                            {training.status && (
+                              <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                                training.status === 'active' || training.status === 'published'
+                                  ? 'bg-green-100 text-green-700'
+                                  : training.status === 'draft'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {training.status}
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTrainingClick(training.id || training._id);
+                            }}
+                          >
+                            Start Training
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
           </div>
         </div>
