@@ -334,6 +334,8 @@ export function GigDetails() {
   // États pour la vérification de complétion de la formation
   const [trainingCompleted, setTrainingCompleted] = useState<boolean | null>(null);
   const [checkingTraining, setCheckingTraining] = useState(false);
+  const [trainingStarted, setTrainingStarted] = useState<boolean | null>(null);
+  const [hasTraining, setHasTraining] = useState<boolean>(false);
   
   // État pour le score d'engagement
   const [engagementScore, setEngagementScore] = useState<number | null>(null);
@@ -842,6 +844,69 @@ export function GigDetails() {
     }
   };
 
+  // Fonction pour vérifier si le gig a des formations et si le rep a commencé
+  const checkTrainingStarted = async (): Promise<{ hasTraining: boolean; started: boolean }> => {
+    const agentId = getAgentId();
+    if (!agentId || !gigId) return { hasTraining: false, started: false };
+    
+    try {
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
+      
+      // Récupérer les journeys pour ce gig
+      const journeysResponse = await fetch(
+        `${trainingBackendUrl}/training_journeys/gig/${gigId}`
+      );
+      
+      if (!journeysResponse.ok) {
+        console.warn('⚠️ Could not fetch training journeys:', journeysResponse.status);
+        return { hasTraining: false, started: false };
+      }
+      
+      const journeysData = await journeysResponse.json();
+      const journeys = journeysData.success ? journeysData.data : [];
+      
+      if (!journeys || journeys.length === 0) {
+        // Pas de formation pour ce gig
+        return { hasTraining: false, started: false };
+      }
+      
+      // Vérifier si le rep a commencé au moins une formation
+      let hasStarted = false;
+      for (const journey of journeys) {
+        const journeyId = journey.id || journey._id;
+        if (!journeyId) continue;
+        
+        // Vérifier si le rep est enrollé dans ce journey
+        if (!journey.enrolledRepIds || !journey.enrolledRepIds.includes(agentId)) {
+          continue;
+        }
+        
+        // Vérifier si le rep a un progrès pour ce journey
+        const progressResponse = await fetch(
+          `${trainingBackendUrl}/training_journeys/rep-progress?repId=${agentId}&journeyId=${journeyId}`
+        );
+        
+        if (progressResponse.ok) {
+          const progressData = await progressResponse.json();
+          const progress = progressData.success 
+            ? (Array.isArray(progressData.data) ? progressData.data[0] : progressData.data)
+            : null;
+          
+          if (progress && progress.id) {
+            // Le rep a commencé cette formation
+            hasStarted = true;
+            break;
+          }
+        }
+      }
+      
+      return { hasTraining: true, started: hasStarted };
+    } catch (err) {
+      console.error('❌ Error checking training started:', err);
+      return { hasTraining: false, started: false };
+    }
+  };
+
   // Fonction pour vérifier si la formation est complétée
   const checkTrainingCompletion = async (): Promise<boolean> => {
     const agentId = getAgentId();
@@ -1007,6 +1072,22 @@ export function GigDetails() {
   useEffect(() => {
     const verifyTrainingAndLoadLeads = async () => {
     if (gigId && isAgentEnrolled()) {
+        // Vérifier d'abord si le gig a des formations et si le rep a commencé
+        const trainingStatus = await checkTrainingStarted();
+        setHasTraining(trainingStatus.hasTraining);
+        setTrainingStarted(trainingStatus.started);
+        
+        // Si le gig a des formations mais le rep n'a pas commencé, ne pas afficher les leads
+        if (trainingStatus.hasTraining && !trainingStatus.started) {
+          console.log('⚠️ Le gig a des formations mais le rep n\'a pas commencé, les leads ne seront pas affichés');
+          setTrainingCompleted(false);
+          setLeads([]);
+          setTotalLeads(0);
+          setTotalPages(0);
+          return;
+        }
+        
+        // Si le rep a commencé, vérifier la complétion
         const completed = await checkTrainingCompletion();
         setTrainingCompleted(completed);
         
@@ -1038,6 +1119,8 @@ export function GigDetails() {
         }
       } else {
         setTrainingCompleted(null);
+        setHasTraining(false);
+        setTrainingStarted(null);
       }
     };
     
@@ -1996,6 +2079,32 @@ export function GigDetails() {
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <span className="ml-3 text-gray-600">Checking training completion...</span>
+              </div>
+            </div>
+          ) : hasTraining && trainingStarted === false ? (
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+              <div className="text-center py-8">
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                  <p className="text-orange-800 font-medium mb-2 text-lg">📚 Training Required!</p>
+                  <p className="text-orange-700 text-sm mb-4">
+                    This gig requires training. You must start the training before accessing leads.
+                  </p>
+                  <p className="text-orange-600 text-xs mb-4">
+                    Please start the required training to unlock access to leads.
+                  </p>
+                  <button
+                    onClick={() => {
+                      // Scroll to trainings section
+                      const trainingsSection = document.getElementById('available-trainings-section');
+                      if (trainingsSection) {
+                        trainingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                  >
+                    Go to Training
+                  </button>
+                </div>
               </div>
             </div>
           ) : trainingCompleted === false ? (
