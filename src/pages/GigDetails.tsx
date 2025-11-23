@@ -335,6 +335,9 @@ export function GigDetails() {
   const [trainingCompleted, setTrainingCompleted] = useState<boolean | null>(null);
   const [checkingTraining, setCheckingTraining] = useState(false);
   
+  // État pour le score d'engagement
+  const [engagementScore, setEngagementScore] = useState<number | null>(null);
+  
   // États pour les trainings disponibles
   const [availableTrainings, setAvailableTrainings] = useState<any[]>([]);
   const [loadingTrainings, setLoadingTrainings] = useState(false);
@@ -1008,13 +1011,14 @@ export function GigDetails() {
         setTrainingCompleted(completed);
         
         // Vérifier le score d'engagement
-        const engagementScore = await getEngagementScore();
+        const score = await getEngagementScore();
+        setEngagementScore(score);
         
         // Charger les leads uniquement si la formation est complétée ET le score > 100
         // Note: Comme le score maximum est 100, cette condition ne sera jamais vraie
         // Si vous voulez afficher les leads avec un score de 100, changez la condition en >= 100
         // Si le score est <= 100, ne pas afficher les leads
-        if (completed && engagementScore !== null && engagementScore > 100) {
+        if (completed && score !== null && score > 100) {
       fetchLeads(1);
         } else {
           // Réinitialiser les leads si la formation n'est pas complétée ou si le score <= 100
@@ -2014,11 +2018,19 @@ export function GigDetails() {
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-900">Available Leads</h2>
-                {totalLeads > 0 && (
-                  <span className="text-sm text-gray-600">
-                    Total: {totalLeads} leads
-                  </span>
-                )}
+                <div className="flex items-center gap-4">
+                  {engagementScore !== null && (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-lg border border-blue-200">
+                      <span className="text-sm font-medium text-gray-700">Score:</span>
+                      <span className="text-sm font-bold text-blue-600">{engagementScore}/100</span>
+                    </div>
+                  )}
+                  {totalLeads > 0 && (
+                    <span className="text-sm text-gray-600">
+                      Total: {totalLeads} leads
+                    </span>
+                  )}
+                </div>
               </div>
               {leadsLoading ? (
                 <div className="flex justify-center py-8">
