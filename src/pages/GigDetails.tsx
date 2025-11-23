@@ -1015,13 +1015,23 @@ export function GigDetails() {
         setEngagementScore(score);
         
         // Charger les leads uniquement si la formation est complétée ET le score > 100
-        // Note: Comme le score maximum est 100, cette condition ne sera jamais vraie
-        // Si vous voulez afficher les leads avec un score de 100, changez la condition en >= 100
         // Si le score est <= 100, ne pas afficher les leads
-        if (completed && score !== null && score > 100) {
-      fetchLeads(1);
+        // Note: Si le score est null (pas encore défini), on affiche les leads si la formation est complétée
+        if (completed) {
+          // Si le score n'est pas défini ou est > 100, afficher les leads
+          if (score === null || score > 100) {
+            console.log(`✅ Formation complétée, score: ${score}, affichage des leads`);
+            fetchLeads(1);
+          } else {
+            // Score <= 100 : ne pas afficher les leads selon la demande
+            console.log(`⚠️ Score d'engagement (${score}) <= 100, les leads ne seront pas affichés`);
+            setLeads([]);
+            setTotalLeads(0);
+            setTotalPages(0);
+          }
         } else {
-          // Réinitialiser les leads si la formation n'est pas complétée ou si le score <= 100
+          // Formation non complétée : ne pas afficher les leads
+          console.log('⚠️ Formation non complétée, les leads ne seront pas affichés');
           setLeads([]);
           setTotalLeads(0);
           setTotalPages(0);
