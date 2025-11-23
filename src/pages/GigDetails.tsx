@@ -774,6 +774,71 @@ export function GigDetails() {
     window.open(trainingUrl, '_blank');
   };
 
+  // Fonction pour récupérer le score d'engagement
+  const getEngagementScore = async (): Promise<number | null> => {
+    const agentId = getAgentId();
+    if (!agentId || !gigId) return null;
+    
+    try {
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
+      
+      // Récupérer les journeys pour ce gig
+      const journeysResponse = await fetch(
+        `${trainingBackendUrl}/training_journeys/gig/${gigId}`
+      );
+      
+      if (!journeysResponse.ok) {
+        console.warn('⚠️ Could not fetch training journeys for score:', journeysResponse.status);
+        return null;
+      }
+      
+      const journeysData = await journeysResponse.json();
+      const journeys = journeysData.success ? journeysData.data : [];
+      if (!journeys || journeys.length === 0) {
+        console.log('ℹ️ No training journeys found for this gig');
+        return null;
+      }
+      
+      // Récupérer le score d'engagement pour chaque journey du gig
+      let maxScore = 0;
+      let hasScore = false;
+      
+      for (const journey of journeys) {
+        const journeyId = journey.id || journey._id;
+        if (!journeyId) continue;
+        
+        // Vérifier si le rep est enrollé dans ce journey
+        if (!journey.enrolledRepIds || !journey.enrolledRepIds.includes(agentId)) {
+          continue;
+        }
+        
+        // Récupérer le progrès avec le score d'engagement
+        const progressResponse = await fetch(
+          `${trainingBackendUrl}/training_journeys/rep-progress?repId=${agentId}&journeyId=${journeyId}`
+        );
+        
+        if (progressResponse.ok) {
+          const progressData = await progressResponse.json();
+          const progress = progressData.success 
+            ? (Array.isArray(progressData.data) ? progressData.data[0] : progressData.data)
+            : null;
+          
+          if (progress && progress.engagementScore !== undefined && progress.engagementScore !== null) {
+            hasScore = true;
+            if (progress.engagementScore > maxScore) {
+              maxScore = progress.engagementScore;
+            }
+          }
+        }
+      }
+      
+      return hasScore ? maxScore : null;
+    } catch (err) {
+      console.error('❌ Error fetching engagement score:', err);
+      return null;
+    }
+  };
+
   // Fonction pour vérifier si la formation est complétée
   const checkTrainingCompletion = async (): Promise<boolean> => {
     const agentId = getAgentId();
@@ -942,11 +1007,17 @@ export function GigDetails() {
         const completed = await checkTrainingCompletion();
         setTrainingCompleted(completed);
         
-        // Charger les leads uniquement si la formation est complétée
-        if (completed) {
+        // Vérifier le score d'engagement
+        const engagementScore = await getEngagementScore();
+        
+        // Charger les leads uniquement si la formation est complétée ET le score > 100
+        // Note: Comme le score maximum est 100, cette condition ne sera jamais vraie
+        // Si vous voulez afficher les leads avec un score de 100, changez la condition en >= 100
+        // Si le score est <= 100, ne pas afficher les leads
+        if (completed && engagementScore !== null && engagementScore > 100) {
       fetchLeads(1);
         } else {
-          // Réinitialiser les leads si la formation n'est pas complétée
+          // Réinitialiser les leads si la formation n'est pas complétée ou si le score <= 100
           setLeads([]);
           setTotalLeads(0);
           setTotalPages(0);
@@ -1015,7 +1086,7 @@ export function GigDetails() {
         // Si l'erreur indique que le gig est déjà en attente, rafraîchir le statut
         if (response.status === 400 && errorText.includes('Cannot request enrollment for this gig at this time')) {
           console.log('⏳ Gig is already pending, refreshing enrollment status...');
-          setApplicationStatus('info');
+          setApplicationStatus('idle');
           setApplicationMessage('This gig is already pending. Refreshing status...');
           
           // Rafraîchir le statut d'enrollment après un court délai
