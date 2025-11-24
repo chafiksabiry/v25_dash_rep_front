@@ -1072,44 +1072,39 @@ export function GigDetails() {
   useEffect(() => {
     const verifyTrainingAndLoadLeads = async () => {
     if (gigId && isAgentEnrolled()) {
-        // Vérifier d'abord si le gig a des formations et si le rep a commencé
+        // Vérifier d'abord si le gig a des formations
         const trainingStatus = await checkTrainingStarted();
         setHasTraining(trainingStatus.hasTraining);
-        setTrainingStarted(trainingStatus.started);
         
-        // Si le gig a des formations mais le rep n'a pas commencé, ne pas afficher les leads
-        if (trainingStatus.hasTraining && !trainingStatus.started) {
+        // Vérifier la complétion de la formation
+        const completed = await checkTrainingCompletion();
+        setTrainingCompleted(completed);
+        
+        // Si la formation est complétée, considérer qu'elle a été commencée
+        if (completed) {
+          setTrainingStarted(true);
+        } else {
+          setTrainingStarted(trainingStatus.started);
+        }
+        
+        // Si le gig a des formations mais le rep n'a pas commencé ET n'est pas complété, ne pas afficher les leads
+        if (trainingStatus.hasTraining && !completed && !trainingStatus.started) {
           console.log('⚠️ Le gig a des formations mais le rep n\'a pas commencé, les leads ne seront pas affichés');
-          setTrainingCompleted(false);
           setLeads([]);
           setTotalLeads(0);
           setTotalPages(0);
           return;
         }
         
-        // Si le rep a commencé, vérifier la complétion
-        const completed = await checkTrainingCompletion();
-        setTrainingCompleted(completed);
-        
         // Vérifier le score d'engagement
         const score = await getEngagementScore();
         setEngagementScore(score);
         
-        // Charger les leads uniquement si la formation est complétée ET le score > 100
-        // Si le score est <= 100, ne pas afficher les leads
-        // Note: Si le score est null (pas encore défini), on affiche les leads si la formation est complétée
+        // Charger les leads uniquement si la formation est complétée
+        // Note: Le score d'engagement est informatif mais n'empêche pas l'affichage des leads si la formation est complétée
         if (completed) {
-          // Si le score n'est pas défini ou est > 100, afficher les leads
-          if (score === null || score > 100) {
-            console.log(`✅ Formation complétée, score: ${score}, affichage des leads`);
-            fetchLeads(1);
-          } else {
-            // Score <= 100 : ne pas afficher les leads selon la demande
-            console.log(`⚠️ Score d'engagement (${score}) <= 100, les leads ne seront pas affichés`);
-            setLeads([]);
-            setTotalLeads(0);
-            setTotalPages(0);
-          }
+          console.log(`✅ Formation complétée à 100%, score: ${score}, affichage des leads`);
+          fetchLeads(1);
         } else {
           // Formation non complétée : ne pas afficher les leads
           console.log('⚠️ Formation non complétée, les leads ne seront pas affichés');
