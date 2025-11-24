@@ -1072,42 +1072,36 @@ export function GigDetails() {
   useEffect(() => {
     const verifyTrainingAndLoadLeads = async () => {
     if (gigId && isAgentEnrolled()) {
-        // Vérifier d'abord si le gig a des formations
+        // Vérifier d'abord si le gig a des formations et si le rep a commencé
         const trainingStatus = await checkTrainingStarted();
         setHasTraining(trainingStatus.hasTraining);
+        setTrainingStarted(trainingStatus.started);
         
-        // Vérifier la complétion de la formation
-        const completed = await checkTrainingCompletion();
-        setTrainingCompleted(completed);
-        
-        // Si la formation est complétée, considérer qu'elle a été commencée
-        if (completed) {
-          setTrainingStarted(true);
-        } else {
-          setTrainingStarted(trainingStatus.started);
-        }
-        
-        // Si le gig a des formations mais le rep n'a pas commencé ET n'est pas complété, ne pas afficher les leads
-        if (trainingStatus.hasTraining && !completed && !trainingStatus.started) {
+        // Si le gig a des formations mais le rep n'a pas commencé, ne pas afficher les leads
+        if (trainingStatus.hasTraining && !trainingStatus.started) {
           console.log('⚠️ Le gig a des formations mais le rep n\'a pas commencé, les leads ne seront pas affichés');
+          setTrainingCompleted(false);
           setLeads([]);
           setTotalLeads(0);
           setTotalPages(0);
           return;
         }
         
+        // Si le rep a commencé, vérifier la complétion
+        const completed = await checkTrainingCompletion();
+        setTrainingCompleted(completed);
+        
         // Vérifier le score d'engagement
         const score = await getEngagementScore();
         setEngagementScore(score);
         
-        // Charger les leads uniquement si la formation est complétée
-        // Note: Le score d'engagement est informatif mais n'empêche pas l'affichage des leads si la formation est complétée
-        if (completed) {
-          console.log(`✅ Formation complétée à 100%, score: ${score}, affichage des leads`);
+        // Charger les leads uniquement si la formation est complétée ET le rep a commencé
+        if (completed && trainingStatus.started) {
+          console.log(`✅ Formation complétée à 100% et rep a commencé, score: ${score}, affichage des leads`);
           fetchLeads(1);
         } else {
-          // Formation non complétée : ne pas afficher les leads
-          console.log('⚠️ Formation non complétée, les leads ne seront pas affichés');
+          // Formation non complétée ou rep n'a pas commencé : ne pas afficher les leads
+          console.log(`⚠️ Formation non complétée (${completed}) ou rep n'a pas commencé (${trainingStatus.started}), les leads ne seront pas affichés`);
           setLeads([]);
           setTotalLeads(0);
           setTotalPages(0);
