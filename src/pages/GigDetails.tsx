@@ -11,7 +11,7 @@ interface PopulatedGig {
   title: string;
   description: string;
   category: string;
-  
+
   // 👤 User populé
   userId: {
     _id: string;
@@ -95,7 +95,7 @@ interface PopulatedGig {
     createdAt: string;
     updatedAt: string;
   };
-  
+
   // 🎯 Activities populées
   activities: Array<{
     _id: string;
@@ -269,7 +269,7 @@ interface PopulatedGig {
   createdAt: Date;
   updatedAt: Date;
   enrolledAgents?: string[]; // Added for enrollment status
-  
+
   // 👥 Agents enrolled/invited to this gig
   agents?: Array<{
     agentId: string;
@@ -310,7 +310,7 @@ interface LeadsResponse {
   success: boolean;
   count: number;  // Number of leads in current page
   total: number;  // Total number of leads for this gig
-  totalPages: number;  
+  totalPages: number;
   currentPage: number;  // Current page number
   data: Lead[];
 }
@@ -321,7 +321,7 @@ export function GigDetails() {
   const [gig, setGig] = useState<PopulatedGig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // États pour les leads
   const [leads, setLeads] = useState<Lead[]>([]);
   const [leadsLoading, setLeadsLoading] = useState(false);
@@ -330,54 +330,54 @@ export function GigDetails() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalLeads, setTotalLeads] = useState(0);
   const limit = 50; // Nombre de leads par page (maximum supporté par le backend)
-  
+
   // États pour la vérification de complétion de la formation
   const [trainingCompleted, setTrainingCompleted] = useState<boolean | null>(null);
   const [checkingTraining, setCheckingTraining] = useState(false);
   const [trainingStarted, setTrainingStarted] = useState<boolean | null>(null);
   const [hasTraining, setHasTraining] = useState<boolean>(false);
-  
+
   // État pour le score d'engagement
   const [engagementScore, setEngagementScore] = useState<number | null>(null);
-  
+
   // États pour les trainings disponibles
   const [availableTrainings, setAvailableTrainings] = useState<any[]>([]);
   const [loadingTrainings, setLoadingTrainings] = useState(false);
-  
+
   // État pour la progression des trainings
   const [trainingsProgress, setTrainingsProgress] = useState<Record<string, any>>({});
   const [loadingProgress, setLoadingProgress] = useState(false);
-  
+
   // Fonction pour vérifier si l'agent est enrolled dans ce gig
   const isAgentEnrolled = () => {
     const agentId = getAgentId();
     if (!agentId || !gig) return false;
-    
+
     // Vérifier si le gig a un champ agents avec le statut de l'agent
     if (gig.agents && Array.isArray(gig.agents)) {
       const agentStatus = gig.agents.find((agent: any) => agent.agentId === agentId);
       return agentStatus?.status === 'enrolled';
     }
-    
+
     return false;
   };
-  
+
   // Fonction pour obtenir le statut de l'agent dans ce gig
   const getAgentStatus = (): 'enrolled' | 'invited' | 'pending' | 'none' => {
     const agentId = getAgentId();
     if (!agentId || !gig) return 'none';
-    
+
     // 1. Vérifier d'abord les données du profil (plus fiables)
     if (enrolledGigIds.includes(gigId!)) {
       console.log(`✅ Agent is ENROLLED in gig ${gigId} (from profile)`);
       return 'enrolled';
     }
-    
+
     if (pendingGigIds.includes(gigId!)) {
       console.log(`⏳ Agent has PENDING request for gig ${gigId} (from profile)`);
       return 'pending';
     }
-    
+
     // 2. Vérifier les données du gig (fallback)
     if (gig.agents && Array.isArray(gig.agents)) {
       const agentStatus = gig.agents.find((agent: any) => agent.agentId === agentId);
@@ -394,7 +394,7 @@ export function GigDetails() {
         return 'pending';
       }
     }
-    
+
     console.log(`❌ Agent has NO STATUS for gig ${gigId}`);
     return 'none';
   };
@@ -404,7 +404,7 @@ export function GigDetails() {
   const [applicationStatus, setApplicationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [applicationMessage, setApplicationMessage] = useState('');
   const [enrollmentStatus, setEnrollmentStatus] = useState<'none' | 'requested' | 'enrolled' | 'invited'>('none');
-  
+
   // États pour les statuts depuis le profil
   const [pendingGigIds, setPendingGigIds] = useState<string[]>([]);
   const [enrolledGigIds, setEnrolledGigIds] = useState<string[]>([]);
@@ -424,7 +424,7 @@ export function GigDetails() {
       try {
         console.log('🔍 Fetching gig details for ID:', gigId);
         const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${gigId}/details`);
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           console.error('❌ API Error:', {
@@ -437,7 +437,7 @@ export function GigDetails() {
 
         const data = await response.json();
         console.log('✅ Received gig details:', data);
-        
+
         if (data.success && data.data) {
           console.log('🔍 Gig data structure:', {
             skills: data.data.skills,
@@ -490,7 +490,7 @@ export function GigDetails() {
           fetchPendingRequests(),
           fetchEnrolledGigsFromProfile()
         ]);
-        
+
         console.log('📝 Profile statuses fetched:', { pendingIds, enrolledIds });
         setPendingGigIds(pendingIds);
         setEnrolledGigIds(enrolledIds);
@@ -507,20 +507,20 @@ export function GigDetails() {
     const checkEnrollmentStatus = async () => {
       const agentId = getAgentId();
       const token = getAuthToken();
-      
+
       if (!agentId || !token || !gigId) {
         return;
       }
 
       try {
         console.log('🔍 Checking enrollment status for agent:', agentId, 'gig:', gigId);
-        
+
         // Vérifier d'abord si l'agent est dans la liste des agents inscrits du gig
         if (gig && gig.enrolledAgents) {
-          const isEnrolled = gig.enrolledAgents.some((agent: any) => 
+          const isEnrolled = gig.enrolledAgents.some((agent: any) =>
             agent.$oid === agentId || agent === agentId
           );
-          
+
           if (isEnrolled) {
             console.log('✅ Agent is enrolled in this gig');
             setEnrollmentStatus('enrolled');
@@ -543,12 +543,12 @@ export function GigDetails() {
           if (invitedResponse.ok) {
             const invitedData = await invitedResponse.json();
             console.log('📧 Invited gigs data:', invitedData);
-            
+
             // Vérifier si ce gig est dans la liste des gigs invités
-            const isInvited = invitedData.some((invitation: any) => 
+            const isInvited = invitedData.some((invitation: any) =>
               invitation.gigId === gigId || invitation.gigId?._id === gigId
             );
-            
+
             if (isInvited) {
               console.log('📨 Agent is invited to this gig');
               setEnrollmentStatus('invited');
@@ -562,7 +562,7 @@ export function GigDetails() {
         // Vérifier si l'agent a déjà fait une demande d'enrollment en regardant les gigs enrolled
         try {
           console.log('🔍 Checking if agent has pending enrollment request');
-          
+
           // Utiliser l'endpoint des enrollments de l'agent pour vérifier le statut
           const enrolledResponse = await fetch(
             `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrolled/agent/${agentId}`,
@@ -576,13 +576,13 @@ export function GigDetails() {
           if (enrolledResponse.ok) {
             const enrolledData = await enrolledResponse.json();
             console.log('📝 Enrolled gigs data:', enrolledData);
-            
+
             // Vérifier si il y a une demande en attente pour ce gig (status pending)
-            const hasPendingRequest = enrolledData.some((enrollment: any) => 
-              (enrollment.gigId === gigId || enrollment.gigId?._id === gigId) && 
+            const hasPendingRequest = enrolledData.some((enrollment: any) =>
+              (enrollment.gigId === gigId || enrollment.gigId?._id === gigId) &&
               enrollment.status === 'pending'
             );
-            
+
             if (hasPendingRequest) {
               console.log('⏳ Agent has pending enrollment request for this gig');
               setEnrollmentStatus('requested');
@@ -590,11 +590,11 @@ export function GigDetails() {
             }
 
             // Vérifier aussi si l'agent est déjà accepté/enrolled
-            const hasAcceptedRequest = enrolledData.some((enrollment: any) => 
-              (enrollment.gigId === gigId || enrollment.gigId?._id === gigId) && 
+            const hasAcceptedRequest = enrolledData.some((enrollment: any) =>
+              (enrollment.gigId === gigId || enrollment.gigId?._id === gigId) &&
               (enrollment.status === 'accepted' || enrollment.status === 'enrolled')
             );
-            
+
             if (hasAcceptedRequest) {
               console.log('✅ Agent is enrolled in this gig');
               setEnrollmentStatus('enrolled');
@@ -610,7 +610,7 @@ export function GigDetails() {
         // Si aucune des vérifications n'a trouvé de statut, l'agent n'a pas de relation avec ce gig
         console.log('ℹ️ Agent has no relationship with this gig');
         setEnrollmentStatus('none');
-        
+
       } catch (err) {
         console.error('❌ Error checking enrollment status:', err);
         setEnrollmentStatus('none');
@@ -638,12 +638,12 @@ export function GigDetails() {
   const fetchTrainingsProgress = async () => {
     const agentId = getAgentId();
     if (!agentId || !gigId) return;
-    
+
     setLoadingProgress(true);
     try {
-      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://v25platformtrainingbackend-production.up.railway.app';
       const url = `${trainingBackendUrl}/training_journeys/rep/${agentId}/progress/gig/${gigId}`;
-      
+
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
@@ -675,23 +675,23 @@ export function GigDetails() {
       console.log('⚠️ No gigId provided, skipping training fetch');
       return;
     }
-    
+
     console.log('🔍 Fetching trainings for gigId:', gigId);
     setLoadingTrainings(true);
     try {
-      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://v25platformtrainingbackend-production.up.railway.app';
       console.log('🌐 Training backend URL:', trainingBackendUrl);
-      
+
       const url = `${trainingBackendUrl}/training_journeys/gig/${gigId}`;
       console.log('📡 Fetching from URL:', url);
-      
+
       const response = await fetch(url);
       console.log('📥 Response status:', response.status);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('📦 Response data:', data);
-        
+
         if (data.success && data.data) {
           console.log('✅ Found', data.data.length, 'trainings');
           setAvailableTrainings(data.data);
@@ -719,7 +719,7 @@ export function GigDetails() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gigId]);
-  
+
   // Charger la progression des trainings quand les trainings sont chargés
   useEffect(() => {
     if (availableTrainings.length > 0 && gigId && isAgentEnrolled()) {
@@ -735,11 +735,11 @@ export function GigDetails() {
       console.error('❌ No agentId found');
       return false;
     }
-    
+
     try {
-      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://v25platformtrainingbackend-production.up.railway.app';
       const url = `${trainingBackendUrl}/training_journeys/rep-progress/start`;
-      
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -750,7 +750,7 @@ export function GigDetails() {
           journeyId: trainingId
         })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Training progress initialized:', data);
@@ -770,12 +770,12 @@ export function GigDetails() {
   const handleTrainingClick = async (trainingId: string) => {
     // Initialiser la progression avant de rediriger
     await initializeTrainingProgress(trainingId);
-    
+
     // Rafraîchir la progression après initialisation
     setTimeout(() => {
       fetchTrainingsProgress();
     }, 500);
-    const trainingUrl = `https://v25.harx.ai/training/repdashboard/${trainingId}`;
+    const trainingUrl = `https://harx25pageslinks.netlify.app/training/repdashboard/${trainingId}`;
     window.open(trainingUrl, '_blank');
   };
 
@@ -783,51 +783,51 @@ export function GigDetails() {
   const getEngagementScore = async (): Promise<number | null> => {
     const agentId = getAgentId();
     if (!agentId || !gigId) return null;
-    
+
     try {
-      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
-      
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://v25platformtrainingbackend-production.up.railway.app';
+
       // Récupérer les journeys pour ce gig
       const journeysResponse = await fetch(
         `${trainingBackendUrl}/training_journeys/gig/${gigId}`
       );
-      
+
       if (!journeysResponse.ok) {
         console.warn('⚠️ Could not fetch training journeys for score:', journeysResponse.status);
         return null;
       }
-      
+
       const journeysData = await journeysResponse.json();
       const journeys = journeysData.success ? journeysData.data : [];
       if (!journeys || journeys.length === 0) {
         console.log('ℹ️ No training journeys found for this gig');
         return null;
       }
-      
+
       // Récupérer le score d'engagement pour chaque journey du gig
       let maxScore = 0;
       let hasScore = false;
-      
+
       for (const journey of journeys) {
         const journeyId = journey.id || journey._id;
         if (!journeyId) continue;
-        
+
         // Vérifier si le rep est enrollé dans ce journey
         if (!journey.enrolledRepIds || !journey.enrolledRepIds.includes(agentId)) {
           continue;
         }
-        
+
         // Récupérer le progrès avec le score d'engagement
         const progressResponse = await fetch(
           `${trainingBackendUrl}/training_journeys/rep-progress?repId=${agentId}&journeyId=${journeyId}`
         );
-        
+
         if (progressResponse.ok) {
           const progressData = await progressResponse.json();
-          const progress = progressData.success 
+          const progress = progressData.success
             ? (Array.isArray(progressData.data) ? progressData.data[0] : progressData.data)
             : null;
-          
+
           if (progress && progress.engagementScore !== undefined && progress.engagementScore !== null) {
             hasScore = true;
             if (progress.engagementScore > maxScore) {
@@ -836,7 +836,7 @@ export function GigDetails() {
           }
         }
       }
-      
+
       return hasScore ? maxScore : null;
     } catch (err) {
       console.error('❌ Error fetching engagement score:', err);
@@ -848,50 +848,50 @@ export function GigDetails() {
   const checkTrainingStarted = async (): Promise<{ hasTraining: boolean; started: boolean }> => {
     const agentId = getAgentId();
     if (!agentId || !gigId) return { hasTraining: false, started: false };
-    
+
     try {
-      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
-      
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://v25platformtrainingbackend-production.up.railway.app';
+
       // Récupérer les journeys pour ce gig
       const journeysResponse = await fetch(
         `${trainingBackendUrl}/training_journeys/gig/${gigId}`
       );
-      
+
       if (!journeysResponse.ok) {
         console.warn('⚠️ Could not fetch training journeys:', journeysResponse.status);
         return { hasTraining: false, started: false };
       }
-      
+
       const journeysData = await journeysResponse.json();
       const journeys = journeysData.success ? journeysData.data : [];
-      
+
       if (!journeys || journeys.length === 0) {
         // Pas de formation pour ce gig
         return { hasTraining: false, started: false };
       }
-      
+
       // Vérifier si le rep a commencé au moins une formation
       let hasStarted = false;
       for (const journey of journeys) {
         const journeyId = journey.id || journey._id;
         if (!journeyId) continue;
-        
+
         // Vérifier si le rep est enrollé dans ce journey
         if (!journey.enrolledRepIds || !journey.enrolledRepIds.includes(agentId)) {
           continue;
         }
-        
+
         // Vérifier si le rep a un progrès pour ce journey
         const progressResponse = await fetch(
           `${trainingBackendUrl}/training_journeys/rep-progress?repId=${agentId}&journeyId=${journeyId}`
         );
-        
+
         if (progressResponse.ok) {
           const progressData = await progressResponse.json();
-          const progress = progressData.success 
+          const progress = progressData.success
             ? (Array.isArray(progressData.data) ? progressData.data[0] : progressData.data)
             : null;
-          
+
           if (progress && progress.id) {
             // Le rep a commencé cette formation
             hasStarted = true;
@@ -899,7 +899,7 @@ export function GigDetails() {
           }
         }
       }
-      
+
       return { hasTraining: true, started: hasStarted };
     } catch (err) {
       console.error('❌ Error checking training started:', err);
@@ -911,23 +911,23 @@ export function GigDetails() {
   const checkTrainingCompletion = async (): Promise<boolean> => {
     const agentId = getAgentId();
     if (!agentId || !gigId) return false;
-    
+
     setCheckingTraining(true);
     try {
       // Récupérer les training journeys pour ce gig
-      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://api-training.harx.ai';
-      
+      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://v25platformtrainingbackend-production.up.railway.app';
+
       // Récupérer les journeys pour ce gig
       const journeysResponse = await fetch(
         `${trainingBackendUrl}/training_journeys/gig/${gigId}`
       );
-      
+
       if (!journeysResponse.ok) {
         console.warn('⚠️ Could not fetch training journeys:', journeysResponse.status);
         // Si on ne peut pas vérifier, considérer comme non complété pour la sécurité
         return false;
       }
-      
+
       const journeysData = await journeysResponse.json();
       const journeys = journeysData.success ? journeysData.data : [];
       if (!journeys || journeys.length === 0) {
@@ -935,46 +935,46 @@ export function GigDetails() {
         // Si pas de formation, considérer comme complété (pas de formation = pas de prérequis)
         return true;
       }
-      
+
       // Récupérer les journeys du rep pour vérifier le progrès
       const repJourneysResponse = await fetch(
         `${trainingBackendUrl}/training_journeys/rep/${agentId}`
       );
-      
+
       if (!repJourneysResponse.ok) {
         console.warn('⚠️ Could not fetch rep journeys:', repJourneysResponse.status);
         return false;
       }
-      
+
       const repJourneys = await repJourneysResponse.json();
       const repJourneyIds = repJourneys.map((j: any) => j.id || j._id).filter(Boolean);
-      
+
       // Vérifier la complétion pour chaque journey du gig
       for (const journey of journeys) {
         const journeyId = journey.id || journey._id;
         if (!journeyId) continue;
-        
+
         // Vérifier si le rep est enrollé dans ce journey
         if (!journey.enrolledRepIds || !journey.enrolledRepIds.includes(agentId)) {
           console.log(`ℹ️ Rep not enrolled in journey ${journeyId}`);
           continue; // Skip si pas enrollé
         }
-        
+
         // Vérifier si tous les modules sont complétés
         if (journey.modules && Array.isArray(journey.modules)) {
           for (const module of journey.modules) {
             const moduleId = module.id || module._id;
             if (!moduleId) continue;
-            
+
             // Vérifier le progrès via l'API de progrès
             const progressResponse = await fetch(
               `${trainingBackendUrl}/rep-progress?repId=${agentId}&journeyId=${journeyId}&moduleId=${moduleId}`
             );
-            
+
             if (progressResponse.ok) {
               const progressData = await progressResponse.json();
               const progress = Array.isArray(progressData) ? progressData[0] : progressData;
-              
+
               // Vérifier si le module est complété
               if (!progress || progress.status !== 'completed' || progress.progress < 100) {
                 console.log(`❌ Module ${moduleId} not completed (status: ${progress?.status}, progress: ${progress?.progress})`);
@@ -984,24 +984,24 @@ export function GigDetails() {
               console.warn(`⚠️ Could not fetch progress for module ${moduleId}`);
               return false; // Si on ne peut pas vérifier, considérer comme non complété
             }
-            
+
             // Vérifier si tous les quizzes sont complétés
             if (module.quizzes && Array.isArray(module.quizzes) && module.quizzes.length > 0) {
               for (const quiz of module.quizzes) {
                 const quizId = quiz.id || quiz._id;
                 if (!quizId) continue;
-                
+
                 // Vérifier les tentatives de quiz
                 const quizAttemptsResponse = await fetch(
                   `${trainingBackendUrl}/module-quizzes/${quizId}/attempts?repId=${agentId}`
                 );
-                
+
                 if (quizAttemptsResponse.ok) {
                   const quizAttempts = await quizAttemptsResponse.json();
-                  const passedAttempt = Array.isArray(quizAttempts) 
+                  const passedAttempt = Array.isArray(quizAttempts)
                     ? quizAttempts.find((attempt: any) => attempt.status === 'passed' || attempt.passed === true)
                     : (quizAttempts.status === 'passed' || quizAttempts.passed === true ? quizAttempts : null);
-                  
+
                   if (!passedAttempt) {
                     console.log(`❌ Quiz ${quizId} not passed`);
                     return false;
@@ -1015,7 +1015,7 @@ export function GigDetails() {
           }
         }
       }
-      
+
       console.log('✅ All training modules and quizzes completed');
       return true;
     } catch (err) {
@@ -1029,16 +1029,16 @@ export function GigDetails() {
   // Fonction pour récupérer les leads
   const fetchLeads = async (page: number = 1) => {
     if (!gigId) return;
-    
+
     setLeadsLoading(true);
     setLeadsError(null);
-    
+
     try {
       console.log('🔍 Fetching leads for gig ID:', gigId, 'page:', page);
       const response = await fetch(
         `${import.meta.env.VITE_DASH_COMPANY_BACKEND}/leads/gig/${gigId}?page=${page}&limit=${limit}`
       );
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Leads API Error:', {
@@ -1051,7 +1051,7 @@ export function GigDetails() {
 
       const data: LeadsResponse = await response.json();
       console.log('✅ Received leads data:', data);
-      
+
       if (data.success) {
         setLeads(data.data);
         setCurrentPage(data.currentPage);
@@ -1071,12 +1071,12 @@ export function GigDetails() {
   // Vérifier la complétion de la formation quand l'agent est enrolled
   useEffect(() => {
     const verifyTrainingAndLoadLeads = async () => {
-    if (gigId && isAgentEnrolled()) {
+      if (gigId && isAgentEnrolled()) {
         // Vérifier d'abord si le gig a des formations et si le rep a commencé
         const trainingStatus = await checkTrainingStarted();
         setHasTraining(trainingStatus.hasTraining);
         setTrainingStarted(trainingStatus.started);
-        
+
         // Si le gig a des formations mais le rep n'a pas commencé, ne pas afficher les leads
         if (trainingStatus.hasTraining && !trainingStatus.started) {
           console.log('⚠️ Le gig a des formations mais le rep n\'a pas commencé, les leads ne seront pas affichés');
@@ -1086,15 +1086,15 @@ export function GigDetails() {
           setTotalPages(0);
           return;
         }
-        
+
         // Si le rep a commencé, vérifier la complétion
         const completed = await checkTrainingCompletion();
         setTrainingCompleted(completed);
-        
+
         // Vérifier le score d'engagement
         const score = await getEngagementScore();
         setEngagementScore(score);
-        
+
         // Charger les leads uniquement si la formation est complétée ET le rep a commencé
         if (completed && trainingStatus.started) {
           console.log(`✅ Formation complétée à 100% et rep a commencé, score: ${score}, affichage des leads`);
@@ -1112,7 +1112,7 @@ export function GigDetails() {
         setTrainingStarted(null);
       }
     };
-    
+
     verifyTrainingAndLoadLeads();
   }, [gigId, gig]);
 
@@ -1128,16 +1128,16 @@ export function GigDetails() {
   const handleApply = async () => {
     const agentId = getAgentId();
     const token = getAuthToken();
-    
+
     if (!agentId || !token) {
       setApplicationStatus('error');
-             setApplicationMessage('You must be logged in to apply');
+      setApplicationMessage('You must be logged in to apply');
       return;
     }
 
     if (!gigId) {
       setApplicationStatus('error');
-             setApplicationMessage('Gig ID not found');
+      setApplicationMessage('Gig ID not found');
       return;
     }
 
@@ -1148,7 +1148,7 @@ export function GigDetails() {
     try {
       console.log('🚀 Applying to gig:', gigId);
       console.log('👤 Agent ID:', agentId);
-      
+
       const response = await fetch(
         `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-request/${agentId}/${gigId}`,
         {
@@ -1164,26 +1164,26 @@ export function GigDetails() {
       );
 
       console.log('📡 Application response status:', response.status);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Application failed:', errorText);
-        
+
         // Si l'erreur indique que le gig est déjà en attente, rafraîchir le statut
         if (response.status === 400 && errorText.includes('Cannot request enrollment for this gig at this time')) {
           console.log('⏳ Gig is already pending, refreshing enrollment status...');
           setApplicationStatus('idle');
           setApplicationMessage('This gig is already pending. Refreshing status...');
-          
+
           // Rafraîchir le statut d'enrollment après un court délai
           setTimeout(() => {
             // Appeler la fonction de vérification du statut
             const checkStatus = async () => {
               const agentId = getAgentId();
               const token = getAuthToken();
-              
+
               if (!agentId || !token || !gigId) return;
-              
+
               try {
                 console.log('🔄 Refreshing enrollment status...');
                 const enrolledResponse = await fetch(
@@ -1198,12 +1198,12 @@ export function GigDetails() {
                 if (enrolledResponse.ok) {
                   const enrolledData = await enrolledResponse.json();
                   console.log('📝 Refreshed enrolled data:', enrolledData);
-                  
+
                   // Vérifier le statut de l'enrollment pour ce gig spécifique
-                  const enrollmentForThisGig = enrolledData.find((enrollment: any) => 
+                  const enrollmentForThisGig = enrolledData.find((enrollment: any) =>
                     enrollment.gigId === gigId || enrollment.gigId?._id === gigId
                   );
-                  
+
                   if (enrollmentForThisGig) {
                     if (enrollmentForThisGig.status === 'pending') {
                       console.log('⏳ Found pending enrollment, updating status');
@@ -1226,32 +1226,32 @@ export function GigDetails() {
                 console.error('❌ Error refreshing enrollment status:', err);
               }
             };
-            
+
             checkStatus();
           }, 1000);
-          
+
           return;
         }
-        
+
         throw new Error(`Échec de la candidature: ${response.status}`);
       }
 
       const data = await response.json();
       console.log('✅ Application successful:', data);
-      
+
       setApplicationStatus('success');
       setApplicationMessage(data.message || 'Application sent successfully!');
       setEnrollmentStatus('requested');
-      
+
       // Déclencher le rafraîchissement des statuts dans toutes les pages
       await refreshGigStatuses();
-      
+
       // Ne pas rediriger, juste mettre à jour le statut local
-      
+
     } catch (err) {
       console.error('❌ Error applying to gig:', err);
       setApplicationStatus('error');
-             setApplicationMessage(err instanceof Error ? err.message : 'Error during application');
+      setApplicationMessage(err instanceof Error ? err.message : 'Error during application');
     } finally {
       setApplying(false);
     }
@@ -1294,7 +1294,7 @@ export function GigDetails() {
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back to Marketplace
           </button>
-          
+
           <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
             <div className="flex justify-between items-start mb-6">
               <div className="flex-1">
@@ -1340,7 +1340,7 @@ export function GigDetails() {
                 {/* Bouton selon le statut d'enrollment */}
                 {getAgentStatus() === 'enrolled' ? (
                   <div className="text-center">
-                    <button 
+                    <button
                       onClick={() => window.location.href = '/copilot'}
                       className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors shadow-md"
                     >
@@ -1360,14 +1360,13 @@ export function GigDetails() {
                     </span>
                   </div>
                 ) : (
-                  <button 
+                  <button
                     onClick={handleApply}
                     disabled={applying}
-                    className={`px-5 py-2 rounded-lg transition-colors font-medium text-sm shadow-md ${
-                      applying
-                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
+                    className={`px-5 py-2 rounded-lg transition-colors font-medium text-sm shadow-md ${applying
+                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
                   >
                     {applying ? (
                       <span className="flex items-center">
@@ -1390,7 +1389,7 @@ export function GigDetails() {
                   <p className="text-xs">Base Salary</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center text-gray-600">
                 <Users className="w-5 h-5 mr-2" />
                 <div>
@@ -1433,7 +1432,7 @@ export function GigDetails() {
             {(gig.skills?.technical?.length > 0 || gig.skills?.professional?.length > 0 || gig.skills?.soft?.length > 0) && (
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Required Skills</h2>
-                
+
                 {gig.skills.technical?.length > 0 && (
                   <div className="mb-4">
                     <h3 className="text-lg font-medium text-gray-800 mb-2">Technical Skills</h3>
@@ -1613,11 +1612,10 @@ export function GigDetails() {
                   {gig.leads.types.map((leadType, index) => (
                     <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                       <div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          leadType.type === 'hot' ? 'bg-red-100 text-red-700' :
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${leadType.type === 'hot' ? 'bg-red-100 text-red-700' :
                           leadType.type === 'warm' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-blue-100 text-blue-700'
-                        }`}>
+                            'bg-blue-100 text-blue-700'
+                          }`}>
                           {leadType.type.charAt(0).toUpperCase() + leadType.type.slice(1)}
                         </span>
                         <p className="text-sm text-gray-600 mt-1">{leadType.description}</p>
@@ -1687,60 +1685,60 @@ export function GigDetails() {
             )}
 
             {/* Career Growth & Benefits */}
-            {((gig.companyId?.opportunities && (gig.companyId.opportunities.roles?.length > 0 || gig.companyId.opportunities.growthPotential || gig.companyId.opportunities.training)) || 
-             (gig.companyId?.culture && (gig.companyId.culture.benefits?.length > 0 || gig.companyId.culture.workEnvironment))) && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Career Growth & Benefits</h2>
-                
-                {gig.companyId?.opportunities?.roles?.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="font-medium text-gray-800 mb-2">Career Progression:</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {gig.companyId.opportunities.roles.map((role, index) => (
-                        <span key={index} className="px-3 py-1 bg-green-100 rounded-full text-sm text-green-800">
-                          {role}
-                        </span>
-                      ))}
+            {((gig.companyId?.opportunities && (gig.companyId.opportunities.roles?.length > 0 || gig.companyId.opportunities.growthPotential || gig.companyId.opportunities.training)) ||
+              (gig.companyId?.culture && (gig.companyId.culture.benefits?.length > 0 || gig.companyId.culture.workEnvironment))) && (
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Career Growth & Benefits</h2>
+
+                  {gig.companyId?.opportunities?.roles?.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="font-medium text-gray-800 mb-2">Career Progression:</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {gig.companyId.opportunities.roles.map((role, index) => (
+                          <span key={index} className="px-3 py-1 bg-green-100 rounded-full text-sm text-green-800">
+                            {role}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {gig.companyId?.opportunities?.growthPotential && (
-                  <div className="mb-3">
-                    <h3 className="font-medium text-gray-800 mb-1">Growth Potential:</h3>
-                    <p className="text-sm text-gray-600">{gig.companyId.opportunities.growthPotential}</p>
-                  </div>
-                )}
+                  {gig.companyId?.opportunities?.growthPotential && (
+                    <div className="mb-3">
+                      <h3 className="font-medium text-gray-800 mb-1">Growth Potential:</h3>
+                      <p className="text-sm text-gray-600">{gig.companyId.opportunities.growthPotential}</p>
+                    </div>
+                  )}
 
-                {gig.companyId?.opportunities?.training && (
-                  <div className="mb-4">
-                    <h3 className="font-medium text-gray-800 mb-1">Training & Development:</h3>
-                    <p className="text-sm text-gray-600">{gig.companyId.opportunities.training}</p>
-                  </div>
-                )}
+                  {gig.companyId?.opportunities?.training && (
+                    <div className="mb-4">
+                      <h3 className="font-medium text-gray-800 mb-1">Training & Development:</h3>
+                      <p className="text-sm text-gray-600">{gig.companyId.opportunities.training}</p>
+                    </div>
+                  )}
 
-                {gig.companyId?.culture?.benefits?.length > 0 && (
-                  <div className="mb-3">
-                    <h3 className="font-medium text-gray-800 mb-2">Benefits Package:</h3>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      {gig.companyId.culture.benefits.map((benefit, index) => (
-                        <li key={index} className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          {benefit}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                  {gig.companyId?.culture?.benefits?.length > 0 && (
+                    <div className="mb-3">
+                      <h3 className="font-medium text-gray-800 mb-2">Benefits Package:</h3>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        {gig.companyId.culture.benefits.map((benefit, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="text-green-600 mr-2">•</span>
+                            {benefit}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                {gig.companyId?.culture?.workEnvironment && (
-                  <div>
-                    <h3 className="font-medium text-gray-800 mb-1">Work Environment:</h3>
-                    <p className="text-sm text-gray-600">{gig.companyId.culture.workEnvironment}</p>
-                  </div>
-                )}
-              </div>
-            )}
+                  {gig.companyId?.culture?.workEnvironment && (
+                    <div>
+                      <h3 className="font-medium text-gray-800 mb-1">Work Environment:</h3>
+                      <p className="text-sm text-gray-600">{gig.companyId.culture.workEnvironment}</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
           </div>
 
@@ -1770,7 +1768,7 @@ export function GigDetails() {
                   </div>
                 )}
               </div>
-              
+
               {gig.companyId?.overview && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <h3 className="font-medium text-gray-900 mb-2">About</h3>
@@ -1823,7 +1821,7 @@ export function GigDetails() {
             {/* Schedule & Availability */}
             <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Availability</h2>
-              
+
               {/* Timezone */}
               {gig.availability?.time_zone && (
                 <div className="mb-4 p-3 bg-blue-50 rounded-lg">
@@ -1836,7 +1834,7 @@ export function GigDetails() {
                     </span>
                   </div>
                   <p className="text-xs text-blue-600 mt-1">
-                    GMT{gig.availability.time_zone.gmtOffset 
+                    GMT{gig.availability.time_zone.gmtOffset
                       ? (gig.availability.time_zone.gmtOffset >= 0 ? '+' : '') + (gig.availability.time_zone.gmtOffset / 3600)
                       : gig.availability.time_zone.offset}
                   </p>
@@ -1904,14 +1902,14 @@ export function GigDetails() {
             {((gig.documentation?.product?.length ?? 0) > 0 || (gig.documentation?.process?.length ?? 0) > 0 || (gig.documentation?.training?.length ?? 0) > 0) && (
               <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Documentation & Resources</h2>
-                
+
                 {(gig.documentation?.product?.length ?? 0) > 0 && (
                   <div className="mb-4">
                     <h3 className="font-medium text-gray-800 mb-2">Product Documentation:</h3>
                     <div className="space-y-1">
                       {gig.documentation?.product?.map((doc, index) => (
-                        <a key={index} href={doc.url} target="_blank" rel="noopener noreferrer" 
-                           className="block text-sm text-blue-600 hover:underline">
+                        <a key={index} href={doc.url} target="_blank" rel="noopener noreferrer"
+                          className="block text-sm text-blue-600 hover:underline">
                           📄 {doc.name}
                         </a>
                       ))}
@@ -1924,8 +1922,8 @@ export function GigDetails() {
                     <h3 className="font-medium text-gray-800 mb-2">Process Documentation:</h3>
                     <div className="space-y-1">
                       {gig.documentation?.process?.map((doc, index) => (
-                        <a key={index} href={doc.url} target="_blank" rel="noopener noreferrer" 
-                           className="block text-sm text-blue-600 hover:underline">
+                        <a key={index} href={doc.url} target="_blank" rel="noopener noreferrer"
+                          className="block text-sm text-blue-600 hover:underline">
                           📋 {doc.name}
                         </a>
                       ))}
@@ -1938,8 +1936,8 @@ export function GigDetails() {
                     <h3 className="font-medium text-gray-800 mb-2">Training Materials:</h3>
                     <div className="space-y-1">
                       {gig.documentation?.training?.map((doc, index) => (
-                        <a key={index} href={doc.url} target="_blank" rel="noopener noreferrer" 
-                           className="block text-sm text-blue-600 hover:underline">
+                        <a key={index} href={doc.url} target="_blank" rel="noopener noreferrer"
+                          className="block text-sm text-blue-600 hover:underline">
                           🎓 {doc.name}
                         </a>
                       ))}
@@ -1954,360 +1952,354 @@ export function GigDetails() {
 
         {/* Available Trainings Section - Before Leads */}
         {isAgentEnrolled() && (
-        <div className="mt-8">
-          <div id="available-trainings-section" className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Trainings</h2>
-            {loadingTrainings ? (
-              <div className="flex justify-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-600">Loading trainings...</span>
-              </div>
-            ) : availableTrainings.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {availableTrainings.map((training) => {
-                  const trainingId = extractId(training.id || training._id);
-                  // Chercher la progression par journeyId (qui correspond au trainingId)
-                  // L'API retourne journeyId dans les données de progression
-                  const progress = trainingsProgress[trainingId] || trainingsProgress[extractId(training.id || training._id)];
-                  const progressPercent = progress?.progress || 0;
-                  const progressStatus = progress?.status || 'not-started';
-                  
-                  return (
-                    <div
-                      key={trainingId}
-                      className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer flex flex-col"
-                      onClick={() => handleTrainingClick(trainingId)}
-                    >
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                          {training.title || 'Untitled Training'}
-                        </h3>
-                        {training.description && (
-                          <p className="text-sm text-gray-600 mb-3 line-clamp-3">
-                            {training.description}
-                          </p>
-                        )}
-                        
-                        {/* Progress Bar */}
-                        {progress && progressStatus !== 'not-started' && (
-                          <div className="mb-3">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs text-gray-600">Progress</span>
-                              <span className="text-xs font-medium text-gray-900">{progressPercent}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div
-                                className={`h-2 rounded-full transition-all ${
-                                  progressStatus === 'completed'
+          <div className="mt-8">
+            <div id="available-trainings-section" className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Trainings</h2>
+              {loadingTrainings ? (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-gray-600">Loading trainings...</span>
+                </div>
+              ) : availableTrainings.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {availableTrainings.map((training) => {
+                    const trainingId = extractId(training.id || training._id);
+                    // Chercher la progression par journeyId (qui correspond au trainingId)
+                    // L'API retourne journeyId dans les données de progression
+                    const progress = trainingsProgress[trainingId] || trainingsProgress[extractId(training.id || training._id)];
+                    const progressPercent = progress?.progress || 0;
+                    const progressStatus = progress?.status || 'not-started';
+
+                    return (
+                      <div
+                        key={trainingId}
+                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer flex flex-col"
+                        onClick={() => handleTrainingClick(trainingId)}
+                      >
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                            {training.title || 'Untitled Training'}
+                          </h3>
+                          {training.description && (
+                            <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+                              {training.description}
+                            </p>
+                          )}
+
+                          {/* Progress Bar */}
+                          {progress && progressStatus !== 'not-started' && (
+                            <div className="mb-3">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs text-gray-600">Progress</span>
+                                <span className="text-xs font-medium text-gray-900">{progressPercent}%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full transition-all ${progressStatus === 'completed'
                                     ? 'bg-green-600'
                                     : 'bg-blue-600'
-                                }`}
-                                style={{ width: `${progressPercent}%` }}
-                              ></div>
+                                    }`}
+                                  style={{ width: `${progressPercent}%` }}
+                                ></div>
+                              </div>
                             </div>
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center gap-2 mb-3">
-                          {training.status && (
-                            <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                              training.status === 'active' || training.status === 'published'
+                          )}
+
+                          <div className="flex items-center gap-2 mb-3">
+                            {training.status && (
+                              <span className={`inline-block px-2 py-1 text-xs rounded-full ${training.status === 'active' || training.status === 'published'
                                 ? 'bg-green-100 text-green-700'
                                 : training.status === 'draft'
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {training.status}
-                            </span>
-                          )}
-                          {progressStatus && progressStatus !== 'not-started' && (
-                            <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                              progressStatus === 'completed'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                {training.status}
+                              </span>
+                            )}
+                            {progressStatus && progressStatus !== 'not-started' && (
+                              <span className={`inline-block px-2 py-1 text-xs rounded-full ${progressStatus === 'completed'
                                 ? 'bg-green-100 text-green-700'
                                 : progressStatus === 'in-progress'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {progressStatus === 'completed' ? 'Completed' : 'In Progress'}
-                            </span>
-                          )}
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                {progressStatus === 'completed' ? 'Completed' : 'In Progress'}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <button
-                        className={`w-full mt-auto px-4 py-2 rounded-lg transition-colors ${
-                          progressStatus === 'completed'
+                        <button
+                          className={`w-full mt-auto px-4 py-2 rounded-lg transition-colors ${progressStatus === 'completed'
                             ? 'bg-green-600 text-white hover:bg-green-700'
                             : 'bg-blue-600 text-white hover:bg-blue-700'
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTrainingClick(trainingId);
-                        }}
-                      >
-                        {progressStatus === 'completed' ? 'Review Training' : progressStatus === 'in-progress' ? 'Continue Training' : 'Start Training'}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p>No trainings available for this gig.</p>
-                <p className="text-sm mt-2">Trainings will appear here once they are assigned to this gig.</p>
-              </div>
-            )}
+                            }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTrainingClick(trainingId);
+                          }}
+                        >
+                          {progressStatus === 'completed' ? 'Review Training' : progressStatus === 'in-progress' ? 'Continue Training' : 'Start Training'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No trainings available for this gig.</p>
+                  <p className="text-sm mt-2">Trainings will appear here once they are assigned to this gig.</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         )}
 
         {/* Leads Section - Full Width - Only for enrolled agents who completed training */}
         {isAgentEnrolled() && (
-        <div className="mt-8">
-          {checkingTraining || trainingCompleted === null ? (
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-600">Checking training completion...</span>
-              </div>
-            </div>
-          ) : hasTraining && trainingStarted === false ? (
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <div className="text-center py-8">
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-                  <p className="text-orange-800 font-medium mb-2 text-lg">📚 Training Required!</p>
-                  <p className="text-orange-700 text-sm mb-4">
-                    This gig requires training. You must start the training before accessing leads.
-                  </p>
-                  <p className="text-orange-600 text-xs mb-4">
-                    Please start the required training to unlock access to leads.
-                  </p>
-                  <button
-                    onClick={() => {
-                      // Scroll to trainings section
-                      const trainingsSection = document.getElementById('available-trainings-section');
-                      if (trainingsSection) {
-                        trainingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    }}
-                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-                  >
-                    Go to Training
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : trainingCompleted === false ? (
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <div className="text-center py-8">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                  <p className="text-yellow-800 font-medium mb-2 text-lg">⚠️ Training Not Completed</p>
-                  <p className="text-yellow-700 text-sm mb-4">
-                    You must complete all training modules, quizzes, and final exam before accessing leads.
-                  </p>
-                  <p className="text-yellow-600 text-xs mb-4">
-                    Please complete all required trainings and assessments to unlock access to leads.
-                  </p>
-                  <button
-                    onClick={() => {
-                      // Scroll to trainings section
-                      const trainingsSection = document.getElementById('available-trainings-section');
-                      if (trainingsSection) {
-                        trainingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    }}
-                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-                  >
-                    Go to Training
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : trainingCompleted === true ? (
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Available Leads</h2>
-                <div className="flex items-center gap-4">
-                  {engagementScore !== null && (
-                    <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-lg border border-blue-200">
-                      <span className="text-sm font-medium text-gray-700">Score:</span>
-                      <span className="text-sm font-bold text-blue-600">{engagementScore}/100</span>
-                    </div>
-                  )}
-                  {totalLeads > 0 && (
-                    <span className="text-sm text-gray-600">
-                      Total: {totalLeads} leads
-                    </span>
-                  )}
-                </div>
-              </div>
-              {leadsLoading ? (
+          <div className="mt-8">
+            {checkingTraining || trainingCompleted === null ? (
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="flex justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-gray-600">Checking training completion...</span>
                 </div>
-              ) : leadsError ? (
+              </div>
+            ) : hasTraining && trainingStarted === false ? (
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="text-center py-8">
-                  <p className="text-red-600 mb-2">❌ {leadsError}</p>
-                  <button
-                    onClick={() => fetchLeads(currentPage)}
-                    className="text-blue-600 hover:text-blue-700 text-sm"
-                  >
-                    Try again
-                  </button>
-                </div>
-              ) : leads.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No leads available for this gig yet.</p>
-                </div>
-              ) : (
-                <>
-                  {/* Leads Table */}
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
-                    {/* Table Header - Fixed */}
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead className="bg-gray-50 sticky top-0 z-10">
-                          <tr className="border-b border-gray-200">
-                            <th className="text-left py-3 px-4 font-medium text-gray-900">Lead Name</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-900">Email</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-900">Phone</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
-                          </tr>
-                        </thead>
-                      </table>
-                    </div>
-                    
-                    {/* Table Body - Scrollable */}
-                    <div className="overflow-y-auto overflow-x-auto max-h-96" style={{ maxHeight: '480px' }}>
-                      <table className="w-full border-collapse">
-                        <tbody>
-                          {leads.map((lead, index) => (
-                            <tr
-                              key={lead._id || index}
-                              className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                            >
-                              {/* Lead Name */}
-                              <td className="py-3 px-4" style={{ width: '25%' }}>
-                                <div>
-                                  <div className="font-medium text-gray-900">
-                                    {lead.Deal_Name || lead.assignedTo?.name || `Lead #${index + 1}`}
-                                  </div>
-                                  {lead.Activity_Tag && (
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      {lead.Activity_Tag}
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-
-                              {/* Email */}
-                              <td className="py-3 px-4" style={{ width: '35%' }}>
-                                {lead.Email_1 ? (
-                                  <div className="flex items-center">
-                                    <Mail className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
-                                    <a
-                                      href={`mailto:${lead.Email_1}`}
-                                      className="text-blue-600 hover:text-blue-700 hover:underline text-sm truncate"
-                                      title={lead.Email_1}
-                                    >
-                                      {lead.Email_1.length > 25 ? `${lead.Email_1.substring(0, 25)}...` : lead.Email_1}
-                                    </a>
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-400 text-sm">-</span>
-                                )}
-                              </td>
-
-                              {/* Phone */}
-                              <td className="py-3 px-4" style={{ width: '25%' }}>
-                                {lead.Phone ? (
-                                  <div className="flex items-center">
-                                    <Phone className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
-                                    <span className="text-gray-900 text-sm">
-                                      {lead.Phone}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-400 text-sm">-</span>
-                                )}
-                              </td>
-
-                              {/* Actions */}
-                              <td className="py-3 px-4" style={{ width: '15%' }}>
-                                <button
-                                  onClick={() => {
-                                    console.log('Redirecting to copilot for lead:', lead);
-                                    const copilotUrl = import.meta.env.VITE_COPILOT_URL;
-                                    if (copilotUrl) {
-                                      // Construire l'URL avec l'ID du lead comme paramètre
-                                      const leadId = lead._id || lead.id;
-                                      const fullUrl = leadId 
-                                        ? `${copilotUrl}?leadId=${leadId}`
-                                        : copilotUrl;
-                                      
-                                      // Le cookie gigId est déjà mis à jour lors du chargement de la page
-                                      // La page copilot peut maintenant récupérer à la fois le leadId (URL) et le gigId (cookie)
-                                      console.log('Navigating to copilot with lead ID:', leadId);
-                                      console.log('Current gigId available in cookie:', Cookies.get('currentGigId'));
-                                      window.location.href = fullUrl;
-                                    } else {
-                                      console.error('VITE_COPILOT_URL not configured');
-                                    }
-                                  }}
-                                  className="flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
-                                  title="Call this lead"
-                                >
-                                  <Phone className="w-4 h-4 mr-1" />
-                                  Call
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                    <p className="text-orange-800 font-medium mb-2 text-lg">📚 Training Required!</p>
+                    <p className="text-orange-700 text-sm mb-4">
+                      This gig requires training. You must start the training before accessing leads.
+                    </p>
+                    <p className="text-orange-600 text-xs mb-4">
+                      Please start the required training to unlock access to leads.
+                    </p>
+                    <button
+                      onClick={() => {
+                        // Scroll to trainings section
+                        const trainingsSection = document.getElementById('available-trainings-section');
+                        if (trainingsSection) {
+                          trainingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }}
+                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                    >
+                      Go to Training
+                    </button>
                   </div>
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
-                      <div className="text-sm text-gray-600">
-                        Page {currentPage} of {totalPages}
+                </div>
+              </div>
+            ) : trainingCompleted === false ? (
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <div className="text-center py-8">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                    <p className="text-yellow-800 font-medium mb-2 text-lg">⚠️ Training Not Completed</p>
+                    <p className="text-yellow-700 text-sm mb-4">
+                      You must complete all training modules, quizzes, and final exam before accessing leads.
+                    </p>
+                    <p className="text-yellow-600 text-xs mb-4">
+                      Please complete all required trainings and assessments to unlock access to leads.
+                    </p>
+                    <button
+                      onClick={() => {
+                        // Scroll to trainings section
+                        const trainingsSection = document.getElementById('available-trainings-section');
+                        if (trainingsSection) {
+                          trainingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }}
+                      className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                    >
+                      Go to Training
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : trainingCompleted === true ? (
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">Available Leads</h2>
+                  <div className="flex items-center gap-4">
+                    {engagementScore !== null && (
+                      <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-lg border border-blue-200">
+                        <span className="text-sm font-medium text-gray-700">Score:</span>
+                        <span className="text-sm font-bold text-blue-600">{engagementScore}/100</span>
                       </div>
-                      
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handlePageChange(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className={`flex items-center px-3 py-1 rounded-md text-sm ${
-                            currentPage === 1
-                              ? 'text-gray-400 cursor-not-allowed'
-                              : 'text-gray-700 hover:bg-gray-100'
-                          }`}
-                        >
-                          <ChevronLeft className="w-4 h-4 mr-1" />
-                          Previous
-                        </button>
-                        
-                        <button
-                          onClick={() => handlePageChange(currentPage + 1)}
-                          disabled={currentPage === totalPages}
-                          className={`flex items-center px-3 py-1 rounded-md text-sm ${
-                            currentPage === totalPages
-                              ? 'text-gray-400 cursor-not-allowed'
-                              : 'text-gray-700 hover:bg-gray-100'
-                          }`}
-                        >
-                          Next
-                          <ChevronRight className="w-4 h-4 ml-1" />
-                        </button>
+                    )}
+                    {totalLeads > 0 && (
+                      <span className="text-sm text-gray-600">
+                        Total: {totalLeads} leads
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {leadsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : leadsError ? (
+                  <div className="text-center py-8">
+                    <p className="text-red-600 mb-2">❌ {leadsError}</p>
+                    <button
+                      onClick={() => fetchLeads(currentPage)}
+                      className="text-blue-600 hover:text-blue-700 text-sm"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                ) : leads.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No leads available for this gig yet.</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Leads Table */}
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      {/* Table Header - Fixed */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
+                          <thead className="bg-gray-50 sticky top-0 z-10">
+                            <tr className="border-b border-gray-200">
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">Lead Name</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">Email</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">Phone</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
+                            </tr>
+                          </thead>
+                        </table>
+                      </div>
+
+                      {/* Table Body - Scrollable */}
+                      <div className="overflow-y-auto overflow-x-auto max-h-96" style={{ maxHeight: '480px' }}>
+                        <table className="w-full border-collapse">
+                          <tbody>
+                            {leads.map((lead, index) => (
+                              <tr
+                                key={lead._id || index}
+                                className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                              >
+                                {/* Lead Name */}
+                                <td className="py-3 px-4" style={{ width: '25%' }}>
+                                  <div>
+                                    <div className="font-medium text-gray-900">
+                                      {lead.Deal_Name || lead.assignedTo?.name || `Lead #${index + 1}`}
+                                    </div>
+                                    {lead.Activity_Tag && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        {lead.Activity_Tag}
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+
+                                {/* Email */}
+                                <td className="py-3 px-4" style={{ width: '35%' }}>
+                                  {lead.Email_1 ? (
+                                    <div className="flex items-center">
+                                      <Mail className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                                      <a
+                                        href={`mailto:${lead.Email_1}`}
+                                        className="text-blue-600 hover:text-blue-700 hover:underline text-sm truncate"
+                                        title={lead.Email_1}
+                                      >
+                                        {lead.Email_1.length > 25 ? `${lead.Email_1.substring(0, 25)}...` : lead.Email_1}
+                                      </a>
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400 text-sm">-</span>
+                                  )}
+                                </td>
+
+                                {/* Phone */}
+                                <td className="py-3 px-4" style={{ width: '25%' }}>
+                                  {lead.Phone ? (
+                                    <div className="flex items-center">
+                                      <Phone className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                                      <span className="text-gray-900 text-sm">
+                                        {lead.Phone}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400 text-sm">-</span>
+                                  )}
+                                </td>
+
+                                {/* Actions */}
+                                <td className="py-3 px-4" style={{ width: '15%' }}>
+                                  <button
+                                    onClick={() => {
+                                      console.log('Redirecting to copilot for lead:', lead);
+                                      const copilotUrl = import.meta.env.VITE_COPILOT_URL;
+                                      if (copilotUrl) {
+                                        // Construire l'URL avec l'ID du lead comme paramètre
+                                        const leadId = lead._id || lead.id;
+                                        const fullUrl = leadId
+                                          ? `${copilotUrl}?leadId=${leadId}`
+                                          : copilotUrl;
+
+                                        // Le cookie gigId est déjà mis à jour lors du chargement de la page
+                                        // La page copilot peut maintenant récupérer à la fois le leadId (URL) et le gigId (cookie)
+                                        console.log('Navigating to copilot with lead ID:', leadId);
+                                        console.log('Current gigId available in cookie:', Cookies.get('currentGigId'));
+                                        window.location.href = fullUrl;
+                                      } else {
+                                        console.error('VITE_COPILOT_URL not configured');
+                                      }
+                                    }}
+                                    className="flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
+                                    title="Call this lead"
+                                  >
+                                    <Phone className="w-4 h-4 mr-1" />
+                                    Call
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
-                  )}
-                </>
-              )}
-            </div>
-          ) : null}
-        </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+                        <div className="text-sm text-gray-600">
+                          Page {currentPage} of {totalPages}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className={`flex items-center px-3 py-1 rounded-md text-sm ${currentPage === 1
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-gray-700 hover:bg-gray-100'
+                              }`}
+                          >
+                            <ChevronLeft className="w-4 h-4 mr-1" />
+                            Previous
+                          </button>
+
+                          <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className={`flex items-center px-3 py-1 rounded-md text-sm ${currentPage === totalPages
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-gray-700 hover:bg-gray-100'
+                              }`}
+                          >
+                            Next
+                            <ChevronRight className="w-4 h-4 ml-1" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : null}
+          </div>
         )}
       </div>
     </div>

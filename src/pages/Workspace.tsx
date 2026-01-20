@@ -57,7 +57,7 @@ export function Workspace() {
   useEffect(() => {
     if (activeTab === 'voice') {
       // fetchLeads(); // Commented for testing
-      
+
       // Mock lead for testing
       const mockLead: Lead = {
         id: 'mock-1',
@@ -72,7 +72,7 @@ export function Workspace() {
           email: 'owner@example.com'
         }
       };
-      
+
       setLeads([mockLead]);
     }
   }, [activeTab]);
@@ -82,7 +82,7 @@ export function Workspace() {
     try {
       setIsLoadingLeads(true);
       const userId = '682b590b4d60b1ff380973c2';
-      const response = await fetch(`https://api-dashboard.harx.ai/api/leads/user/${userId}`);
+      const response = await fetch(`https://harxv25dashboardfrontend.netlify.app/api/leads/user/${userId}`);
       const responseData: APIResponse = await response.json();
       console.log("data", responseData);
       if (responseData.success && Array.isArray(responseData.data)) {
@@ -91,7 +91,7 @@ export function Workspace() {
         setLeads([]);
       }
     } catch (error) {
-      console.error('Error fetching leads:', error); 
+      console.error('Error fetching leads:', error);
       setLeads([]);
     } finally {
       setIsLoadingLeads(false);
@@ -106,7 +106,7 @@ export function Workspace() {
     if (selectedInteraction?.issue) {
       aiService.suggestQuickResponses(selectedInteraction.issue)
         .then(suggestions => setAiSuggestions(suggestions));
-      
+
       aiService.analyzeSentiment(selectedInteraction.issue)
         .then(result => setSentiment(result));
     }
@@ -188,26 +188,24 @@ export function Workspace() {
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg ${
-                    item.type === 'call' ? 'bg-green-50' :
-                    item.type === 'email' ? 'bg-blue-50' :
-                    item.type === 'chat' ? 'bg-purple-50' : 'bg-orange-50'
-                  }`}>
+                  <div className={`p-2 rounded-lg ${item.type === 'call' ? 'bg-green-50' :
+                      item.type === 'email' ? 'bg-blue-50' :
+                        item.type === 'chat' ? 'bg-purple-50' : 'bg-orange-50'
+                    }`}>
                     {item.type === 'call' ? <PhoneIncoming className="w-5 h-5 text-green-600" /> :
-                     item.type === 'email' ? <Mail className="w-5 h-5 text-blue-600" /> :
-                     item.type === 'chat' ? <MessageSquare className="w-5 h-5 text-purple-600" /> :
-                     <Globe className="w-5 h-5 text-orange-600" />}
+                      item.type === 'email' ? <Mail className="w-5 h-5 text-blue-600" /> :
+                        item.type === 'chat' ? <MessageSquare className="w-5 h-5 text-purple-600" /> :
+                          <Globe className="w-5 h-5 text-orange-600" />}
                   </div>
                   <div>
                     <h3 className="font-medium text-gray-900">{item.customer}</h3>
                     <p className="text-sm text-gray-500">{item.channel}</p>
                   </div>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  item.priority === 'High' ? 'bg-red-100 text-red-700' :
-                  item.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-green-100 text-green-700'
-                }`}>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.priority === 'High' ? 'bg-red-100 text-red-700' :
+                    item.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-green-100 text-green-700'
+                  }`}>
                   {item.priority}
                 </span>
               </div>
@@ -281,8 +279,8 @@ export function Workspace() {
                 ) : (
                   <div className="space-y-3">
                     {leads.map((lead) => (
-                      <div 
-                        key={`${lead.id}-${lead.Email_1}-${lead.Created_Time}`} 
+                      <div
+                        key={`${lead.id}-${lead.Email_1}-${lead.Created_Time}`}
                         className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
                       >
                         <div className="flex justify-between items-center">
@@ -292,14 +290,13 @@ export function Workspace() {
                             <p className="text-sm text-gray-500">{lead.Email_1 || 'No email'}</p>
                           </div>
                           <div className="flex items-center space-x-3">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              lead.Stage === 'Respecte le planning' ? 'bg-green-100 text-green-700' :
-                              lead.Stage === 'En retard' ? 'bg-red-100 text-red-700' :
-                              'bg-gray-100 text-gray-700'
-                            }`}>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${lead.Stage === 'Respecte le planning' ? 'bg-green-100 text-green-700' :
+                                lead.Stage === 'En retard' ? 'bg-red-100 text-red-700' :
+                                  'bg-gray-100 text-gray-700'
+                              }`}>
                               {lead.Stage}
                             </span>
-                            <button 
+                            <button
                               className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
                               onClick={() => handleCallClick(lead)}
                             >
@@ -533,11 +530,10 @@ export function Workspace() {
           <button
             key={tool.id}
             onClick={() => setActiveTab(tool.id)}
-            className={`flex items-center justify-center space-x-2 p-4 rounded-lg transition-colors ${
-              activeTab === tool.id
+            className={`flex items-center justify-center space-x-2 p-4 rounded-lg transition-colors ${activeTab === tool.id
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
+              }`}
           >
             <tool.icon className="w-5 h-5" />
             <span>{tool.label}</span>
@@ -547,7 +543,7 @@ export function Workspace() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">{renderWorkspace()}</div>
-        
+
         <div className="space-y-6">
           <div className="bg-white rounded-xl p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Info</h2>
@@ -566,12 +562,11 @@ export function Workspace() {
               </div>
               <div>
                 <label className="text-sm text-gray-500">Priority</label>
-                <span className={`inline-block px-2 py-1 rounded-full text-sm ${
-                  selectedInteraction?.priority === 'High' ? 'bg-red-100 text-red-700' :
-                  selectedInteraction?.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                  selectedInteraction?.priority === 'Low' ? 'bg-green-100 text-green-700' :
-                  'bg-gray-100 text-gray-700'
-                }`}>
+                <span className={`inline-block px-2 py-1 rounded-full text-sm ${selectedInteraction?.priority === 'High' ? 'bg-red-100 text-red-700' :
+                    selectedInteraction?.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                      selectedInteraction?.priority === 'Low' ? 'bg-green-100 text-green-700' :
+                        'bg-gray-100 text-gray-700'
+                  }`}>
                   {selectedInteraction?.priority || 'N/A'}
                 </span>
               </div>

@@ -9,10 +9,10 @@ COPY package*.json ./
 RUN apk add --no-cache git python3 make g++
 
 # Set environment variables
-ENV VITE_API_URL=https://api-rep-dashboard.harx.ai
+ENV VITE_API_URL=https://harxv25dashboardrepfront.netlify.app/
 ENV VITE_CALLS_API_URL=https://api-dash-calls.harx.ai
-ENV VITE_DASHBOARD_COMPANY_API_URL=https://api-dashboard.harx.ai/api
-ENV VITE_BACKEND_URL_GIGS=https://api-gigsmanual.harx.ai/api
+ENV VITE_DASHBOARD_COMPANY_API_URL=https://harxv25dashboardfrontend.netlify.app/api
+ENV VITE_BACKEND_URL_GIGS=https://v25gigsmanualcreationbackend-production.up.railway.app/api
 #ENV VITE_RUN_MODE=standalone
 ENV VITE_RUN_MODE=in-app
 ENV VITE_STANDALONE_USER_ID=6814d30f2c1ca099fe2b16b6
@@ -25,12 +25,12 @@ ENV VITE_TWILIO_AUTH_TOKEN=7ade91a170bff98bc625543287ee62c8
 ENV VITE_WS_URL=wss://api-dash-calls.harx.ai/speech-to-text
 ENV VITE_API_URL_AI_MESSAGES=https://api-messages-service.harx.ai/api
 ENV VITE_API_URL_CALL=https://api-dash-calls.harx.ai
-ENV VITE_REP_API_URL=https://api-repcreationwizard.harx.ai
-ENV VITE_AUTH_API_URL=https://api-registration.harx.ai/api
+ENV VITE_REP_API_URL=
+ENV VITE_AUTH_API_URL=https://v25registrationbackend-production.up.railway.app/api
 ENV VITE_FRONT_URL=https://harxv25dashboardrepfront.netlify.app/
-ENV VITE_DASH_COMPANY_BACKEND=https://api-dashboard.harx.ai/api
-ENV VITE_MATCHING_API_URL=https://api-matching.harx.ai/api
-ENV VITE_TRAINING_BACKEND_URL=https://api-training.harx.ai
+ENV VITE_DASH_COMPANY_BACKEND=https://harxv25dashboardfrontend.netlify.app/api
+ENV VITE_MATCHING_API_URL=https://v25matchingbackend-production.up.railway.app/api
+ENV VITE_TRAINING_BACKEND_URL=https://v25platformtrainingbackend-production.up.railway.app
 ENV VITE_COPILOT_URL=/copilot
 # Install dependencies with optional dependencies included
 RUN npm install --include=optional
