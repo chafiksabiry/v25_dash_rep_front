@@ -469,7 +469,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       setIsPublishing(true);
       console.log('🚀 Publishing profile...', profile._id);
 
-      const updatedData = await updateProfileData(profile._id, { status: 'active' });
+      const updatedData = await updateProfileData(profile._id, { status: 'completed' });
       console.log('✅ Profile published successfully:', updatedData);
 
       if (onProfileUpdate) {
@@ -480,11 +480,9 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       const storedProfile = localStorage.getItem('profileData');
       if (storedProfile) {
         const parsed = JSON.parse(storedProfile);
-        parsed.status = 'active';
+        parsed.status = 'completed';
         localStorage.setItem('profileData', JSON.stringify(parsed));
       }
-
-      alert('Your profile has been successfully published! 🚀');
     } catch (error) {
       console.error('❌ Error publishing profile:', error);
       alert('Failed to publish profile. Please try again.');
@@ -498,7 +496,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       <div className="md:col-span-12 flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold text-gray-900">Profile Information</h1>
         <div className="flex gap-3">
-          {profile.status !== 'active' && (
+          {profile.status !== 'completed' && (
             <button
               onClick={handlePublish}
               disabled={isPublishing}

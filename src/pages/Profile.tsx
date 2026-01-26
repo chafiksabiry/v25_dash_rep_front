@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ProfileView } from '../components/ProfileView';
 import { ProfileEditView } from '../components/ProfileEditView';
-import { getProfileData, updateProfileData, updateBasicInfo, updateExperience, updateSkills } from '../utils/profileUtils';
-import { profileApi } from '../utils/client';
+import { getProfileData, updateProfileData } from '../utils/profileUtils';
 
 // Import Timezone type from repWizard service
 import { Timezone } from '../services/api/repWizard';
