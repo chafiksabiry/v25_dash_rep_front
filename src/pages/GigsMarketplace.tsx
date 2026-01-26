@@ -6,14 +6,14 @@ import { fetchPendingRequests as fetchPendingRequestsUtil, fetchEnrolledGigsFrom
 
 export function GigsMarketplace() {
   const navigate = useNavigate();
-  
+
   // Interface pour les gigs populés
   interface PopulatedGig {
     _id: string;
     title: string;
     description: string;
     category: string;
-    
+
     // 👤 User populé
     userId: {
       _id: string;
@@ -116,7 +116,7 @@ export function GigsMarketplace() {
       createdAt: string;
       updatedAt: string;
     };
-    
+
     // 🎯 Activities populées
     activities: Array<{
       _id: string;
@@ -175,20 +175,20 @@ export function GigsMarketplace() {
           createdAt: Date;
           updatedAt: Date;
         };
-    level: number;
-    details: string;
+        level: number;
+        details: string;
       }>;
       languages: Array<{
         language: {
-    _id: string;
+          _id: string;
           name: string;
           iso639_1: string;
           description?: string;
           createdAt: Date;
           updatedAt: Date;
         };
-    proficiency: string;
-    iso639_1: string;
+        proficiency: string;
+        iso639_1: string;
       }>;
     };
 
@@ -196,13 +196,13 @@ export function GigsMarketplace() {
     availability: {
       schedule: Array<{
         day: string;
-    hours: {
-      start: string;
-      end: string;
-    };
+        hours: {
+          start: string;
+          end: string;
+        };
       }>;
       time_zone: {
-    _id: string;
+        _id: string;
         name: string;
         offset: string;
         abbreviation: string;
@@ -220,11 +220,11 @@ export function GigsMarketplace() {
 
     // 💰 Commission
     commission: {
-    base: string;
-    baseAmount: string;
-    bonus?: string;
-    bonusAmount?: string;
-    structure?: string;
+      base: string;
+      baseAmount: string;
+      bonus?: string;
+      bonusAmount?: string;
+      structure?: string;
       currency: string;
       minimumVolume: {
         amount: string;
@@ -255,10 +255,10 @@ export function GigsMarketplace() {
       structure: Array<{
         roleId: string;
         count: number;
-    seniority: {
-      level: string;
-      yearsExperience: string;
-    };
+        seniority: {
+          level: string;
+          yearsExperience: string;
+        };
       }>;
       territories: string[];
     };
@@ -294,28 +294,28 @@ export function GigsMarketplace() {
       description: string;
       category: string;
       destination_zone: {
-      name: {
-        common: string;
-        official: string;
-        nativeName?: {
-          [key: string]: {
-            official: string;
-            common: string;
-            _id: string;
+        name: {
+          common: string;
+          official: string;
+          nativeName?: {
+            [key: string]: {
+              official: string;
+              common: string;
+              _id: string;
+            };
           };
         };
+        flags: {
+          png: string;
+          svg: string;
+          alt: string;
+        };
+        _id: string;
+        cca2: string;
+        __v: number;
+        createdAt: string;
+        updatedAt: string;
       };
-      flags: {
-        png: string;
-        svg: string;
-        alt: string;
-      };
-      _id: string;
-      cca2: string;
-      __v: number;
-      createdAt: string;
-      updatedAt: string;
-    };
     };
     enrollmentStatus: string;
     invitationSentAt: string;
@@ -336,28 +336,28 @@ export function GigsMarketplace() {
       description: string;
       category: string;
       destination_zone: {
-      name: {
-        common: string;
-        official: string;
-        nativeName?: {
-          [key: string]: {
-            official: string;
-            common: string;
-            _id: string;
+        name: {
+          common: string;
+          official: string;
+          nativeName?: {
+            [key: string]: {
+              official: string;
+              common: string;
+              _id: string;
+            };
           };
         };
+        flags: {
+          png: string;
+          svg: string;
+          alt: string;
+        };
+        _id: string;
+        cca2: string;
+        __v: number;
+        createdAt: string;
+        updatedAt: string;
       };
-      flags: {
-        png: string;
-        svg: string;
-        alt: string;
-      };
-      _id: string;
-      cca2: string;
-      __v: number;
-      createdAt: string;
-      updatedAt: string;
-    };
       company: string;
       compensation: string;
       experience: string;
@@ -527,15 +527,15 @@ export function GigsMarketplace() {
           },
         }
       );
-      
+
       console.log('📡 Add to favorites response:', response.status, response.statusText);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Failed to add to favorites:', errorText);
         throw new Error('Failed to add to favorites');
       }
-      
+
       console.log('✅ Successfully added to favorites');
       setFavoriteGigs(prev => [...prev, gigId]);
       console.log('📋 Updated favoriteGigs:', [...favoriteGigs, gigId]);
@@ -567,15 +567,15 @@ export function GigsMarketplace() {
           },
         }
       );
-      
+
       console.log('📡 Remove from favorites response:', response.status, response.statusText);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Failed to remove from favorites:', errorText);
         throw new Error('Failed to remove from favorites');
       }
-      
+
       console.log('✅ Successfully removed from favorites');
       setFavoriteGigs(prev => prev.filter(id => id !== gigId));
       console.log('📋 Updated favoriteGigs:', favoriteGigs.filter(id => id !== gigId));
@@ -607,23 +607,23 @@ export function GigsMarketplace() {
           },
         }
       );
-      
+
       console.log('📡 Accept response status:', response.status, response.statusText);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Failed to accept invitation:', errorText);
         alert(`Failed to accept invitation: ${response.status} ${response.statusText}`);
         throw new Error(`Failed to accept invitation: ${errorText}`);
       }
-      
+
       const result = await response.json();
       console.log('✅ Invitation accepted successfully:', result);
       alert('Invitation accepted successfully!');
-      
+
       // Retirer immédiatement l'invitation de la liste (UI optimiste)
       setInvitedEnrollments(prev => prev.filter(enrollment => enrollment.id !== enrollmentId));
-      
+
       // Rafraîchir tous les statuts pour mettre à jour l'UI
       console.log('🔄 Refreshing all statuses after acceptance...');
       await Promise.all([
@@ -664,23 +664,23 @@ export function GigsMarketplace() {
           },
         }
       );
-      
+
       console.log('📡 Reject response status:', response.status, response.statusText);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Failed to reject invitation:', errorText);
         alert(`Failed to reject invitation: ${response.status} ${response.statusText}`);
         throw new Error(`Failed to reject invitation: ${errorText}`);
       }
-      
+
       const result = await response.json();
       console.log('✅ Invitation rejected successfully:', result);
       alert('Invitation rejected successfully!');
-      
+
       // Retirer immédiatement l'invitation de la liste (UI optimiste)
       setInvitedEnrollments((prev: any[]) => prev.filter(enrollment => enrollment.id !== enrollmentId));
-      
+
       // Rafraîchir tous les statuts pour mettre à jour l'UI
       console.log('🔄 Refreshing all statuses after rejection...');
       await Promise.all([
@@ -701,7 +701,7 @@ export function GigsMarketplace() {
   const handleApplyToGig = async (gigId: string) => {
     const agentId = getAgentId();
     const token = getAuthToken();
-    
+
     if (!agentId || !token) {
       setApplicationMessage({ gigId, message: 'You must be logged in to apply', type: 'error' });
       return;
@@ -713,7 +713,7 @@ export function GigsMarketplace() {
     try {
       console.log('🚀 Applying to gig:', gigId);
       console.log('👤 Agent ID:', agentId);
-      
+
       const response = await fetch(
         `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrollment-request/${agentId}/${gigId}`,
         {
@@ -729,33 +729,33 @@ export function GigsMarketplace() {
       );
 
       console.log('📡 Application response status:', response.status);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Application failed:', errorText);
-        
+
         // Si l'erreur indique que le gig est déjà en attente, rafraîchir le statut
         if (response.status === 400 && errorText.includes('Cannot request enrollment for this gig at this time')) {
           console.log('⏳ Gig is already pending, refreshing status...');
           setApplicationMessage({ gigId, message: 'This gig is already pending', type: 'success' });
-          
+
           // Rafraîchir tous les statuts
           await Promise.all([
             fetchPendingRequests(),
             fetchEnrolledGigIdsFromProfile()
           ]);
-          
+
           return;
         }
-        
+
         throw new Error(`Application failed: ${response.status}`);
       }
 
       const data = await response.json();
       console.log('✅ Application successful:', data);
-      
+
       setApplicationMessage({ gigId, message: 'Application sent successfully!', type: 'success' });
-      
+
       // Rafraîchir tous les statuts pour mettre à jour l'UI
       await Promise.all([
         fetchPendingRequests(),
@@ -763,20 +763,20 @@ export function GigsMarketplace() {
         fetchInvitedEnrollments(),
         fetchEnrolledGigs()
       ]);
-      
+
       // Effacer le message après 3 secondes
       setTimeout(() => {
         setApplicationMessage(null);
       }, 3000);
-      
+
     } catch (err) {
       console.error('❌ Error applying to gig:', err);
-      setApplicationMessage({ 
-        gigId, 
-        message: err instanceof Error ? err.message : 'Error during application', 
-        type: 'error' 
+      setApplicationMessage({
+        gigId,
+        message: err instanceof Error ? err.message : 'Error during application',
+        type: 'error'
       });
-      
+
       // Effacer le message d'erreur après 3 secondes
       setTimeout(() => {
         setApplicationMessage(null);
@@ -832,20 +832,20 @@ export function GigsMarketplace() {
           },
         }
       );
-      
+
       if (!enrollmentResponse.ok) {
         throw new Error('Failed to fetch enrolled gigs');
       }
-      
+
       const enrollmentData = await enrollmentResponse.json();
       console.log('📝 Enrolled gigs raw response:', enrollmentData);
       console.log('📊 Response count:', enrollmentData.count);
-      
+
       // La réponse contient un objet avec la propriété 'gigs'
       if (enrollmentData.gigs && Array.isArray(enrollmentData.gigs)) {
         console.log('✅ Response has gigs array, processing enrollments...');
         console.log('🔍 First enrollment structure:', enrollmentData.gigs[0]);
-        
+
         // Transformer les données pour correspondre à l'interface EnrolledGig
         const transformedEnrollments = enrollmentData.gigs
           .filter((gigEnrollment: any) => {
@@ -854,17 +854,17 @@ export function GigsMarketplace() {
           })
           .map((gigEnrollment: any) => {
             console.log('🔄 Transforming enrollment:', gigEnrollment.gig._id);
-            
+
             // ✅ Extraire le gigAgentId depuis gig.agents[]
             const agentId = getAgentId();
-            const agentData = gigEnrollment.gig.agents?.find((agent: any) => 
+            const agentData = gigEnrollment.gig.agents?.find((agent: any) =>
               agent.agentId === agentId || agent.agentId?.$oid === agentId
             );
             const enrollmentId = agentData?.gigAgentId || agentData?.gigAgentId?.$oid;
-            
+
             console.log('🆔 Agent data from gig.agents:', agentData);
             console.log('✅ Extracted gigAgentId:', enrollmentId);
-            
+
             return {
               id: enrollmentId, // ✅ Utiliser l'ID du document GigAgent (enrollmentId)
               gig: {
@@ -884,7 +884,7 @@ export function GigsMarketplace() {
               matchStatus: 'enrolled'
             };
           });
-        
+
         console.log('✅ Transformed enrolled gigs:', transformedEnrollments);
         console.log('📊 Final count:', transformedEnrollments.length);
         setEnrolledGigs(transformedEnrollments);
@@ -917,16 +917,16 @@ export function GigsMarketplace() {
           },
         }
       );
-      
+
       if (!enrollmentResponse.ok) {
         throw new Error('Failed to fetch invited enrollments');
       }
-      
+
       const enrollmentData = await enrollmentResponse.json();
       console.log('📋 Invited enrollments response:', enrollmentData);
       console.log('📊 Response count:', enrollmentData.count);
       console.log('🔍 RAW RESPONSE DATA:', JSON.stringify(enrollmentData, null, 2));
-      
+
       // La réponse contient un objet avec la propriété 'gigs'
       if (enrollmentData.gigs && Array.isArray(enrollmentData.gigs)) {
         console.log('✅ Found invited enrollments:', enrollmentData.gigs.length);
@@ -941,7 +941,7 @@ export function GigsMarketplace() {
           console.log('🏭 Industries:', enrollmentData.gigs[0].gig?.industries);
           console.log('📊 Activities:', enrollmentData.gigs[0].gig?.activities);
         }
-        
+
         // Transformer les données pour correspondre à l'interface InvitedEnrollment
         const transformedInvitations = enrollmentData.gigs
           .filter((gigInvitation: any) => {
@@ -950,25 +950,25 @@ export function GigsMarketplace() {
           })
           .map((gigInvitation: any) => {
             console.log('🔄 Transforming invitation:', gigInvitation.gig._id);
-            
+
             // ✅ Extraire le gigAgentId depuis gig.agents[]
             const agentId = getAgentId();
-            const agentData = gigInvitation.gig.agents?.find((agent: any) => 
+            const agentData = gigInvitation.gig.agents?.find((agent: any) =>
               agent.agentId === agentId || agent.agentId?.$oid === agentId
             );
             const enrollmentId = agentData?.gigAgentId || agentData?.gigAgentId?.$oid;
-            
+
             console.log('🆔 Agent data from gig.agents:', agentData);
             console.log('✅ Extracted gigAgentId:', enrollmentId);
-            
+
             // Calculer l'expiration basée sur invitationDate + 7 jours (par exemple)
             const invitationDate = new Date(gigInvitation.invitationDate || gigInvitation.updatedAt);
             const expirationDate = new Date(invitationDate);
             expirationDate.setDate(expirationDate.getDate() + 7); // 7 jours pour répondre
-            
+
             return {
               id: enrollmentId, // ✅ Utiliser l'ID du document GigAgent (enrollmentId)
-                gig: {
+              gig: {
                 _id: gigInvitation.gig._id,
                 title: gigInvitation.gig.title,
                 description: gigInvitation.gig.description,
@@ -987,7 +987,7 @@ export function GigsMarketplace() {
               matchStatus: 'invited'
             };
           });
-        
+
         console.log('✅ Transformed invited enrollments:', transformedInvitations);
         setInvitedEnrollments(transformedInvitations);
       } else {
@@ -1010,12 +1010,12 @@ export function GigsMarketplace() {
           VITE_BACKEND_URL_GIGS: import.meta.env.VITE_BACKEND_URL_GIGS,
           NODE_ENV: import.meta.env.NODE_ENV
         });
-        
+
         const response = await fetch(url);
-        
+
         console.log('📡 Response status:', response.status, response.statusText);
         console.log('📋 Response headers:', Object.fromEntries(response.headers.entries()));
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           console.error('❌ API Error Response:', {
@@ -1024,11 +1024,11 @@ export function GigsMarketplace() {
             body: errorText,
             url: url
           });
-          
+
           // Si l'endpoint /gigs/active ne fonctionne pas, essayer l'ancien endpoint
           console.log('⚠️ Trying fallback to /gigs endpoint...');
           const fallbackResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs`);
-          
+
           if (!fallbackResponse.ok) {
             const fallbackErrorText = await fallbackResponse.text();
             console.error('❌ Fallback API Error:', {
@@ -1038,11 +1038,11 @@ export function GigsMarketplace() {
             });
             throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
           }
-          
+
           console.log('✅ Fallback endpoint working, using /gigs');
           const fallbackData = await fallbackResponse.json();
           console.log('🔍 Received gigs data from fallback:', fallbackData);
-          
+
           if (!fallbackData.data || !Array.isArray(fallbackData.data)) {
             console.error('❌ Invalid fallback data structure:', fallbackData);
             throw new Error('Invalid data structure received from fallback API');
@@ -1051,7 +1051,7 @@ export function GigsMarketplace() {
           // Filtrer pour ne garder que les gigs actifs
           const activeGigs = fallbackData.data.filter((gig: PopulatedGig) => gig.status === 'active');
           console.log('🎯 Filtered active gigs:', activeGigs.length, 'out of', fallbackData.data.length);
-          
+
           // Log de la structure comme avant
           if (activeGigs.length > 0) {
             const firstGig = activeGigs[0];
@@ -1066,7 +1066,7 @@ export function GigsMarketplace() {
               fullGig: firstGig
             });
           }
-          
+
           setGigs(activeGigs);
           return;
         }
@@ -1081,7 +1081,7 @@ export function GigsMarketplace() {
 
         const data = await response.json();
         console.log('🔍 Received active gigs data:', data);
-        
+
         if (!data.data || !Array.isArray(data.data)) {
           console.error('❌ Invalid data structure:', data);
           throw new Error('Invalid data structure received from API');
@@ -1108,12 +1108,12 @@ export function GigsMarketplace() {
               soft: firstGig.skills.soft,
               languages: firstGig.skills.languages
             });
-            
+
             // Log d'un skill technique si disponible
             if (firstGig.skills.technical && firstGig.skills.technical.length > 0) {
               console.log('🔧 PREMIER SKILL TECHNIQUE:', firstGig.skills.technical[0]);
             }
-            
+
             // Log d'une langue si disponible
             if (firstGig.skills.languages && firstGig.skills.languages.length > 0) {
               console.log('🗣️ PREMIÈRE LANGUE:', firstGig.skills.languages[0]);
@@ -1144,7 +1144,7 @@ export function GigsMarketplace() {
     };
 
     fetchGigs();
-    
+
     // Fetch favorites, invited enrollments and enrolled gigs when component mounts
     const agentId = getAgentId();
     if (agentId) {
@@ -1191,7 +1191,7 @@ export function GigsMarketplace() {
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             }
           });
-      
+
       case 'enrolled':
         return enrolledGigs
           .sort((a, b) => {
@@ -1206,7 +1206,7 @@ export function GigsMarketplace() {
                 return new Date(a.enrollmentDate).getTime() - new Date(b.enrollmentDate).getTime();
             }
           });
-      
+
       case 'favorite':
         return gigs
           .filter(gig => favoriteGigs.includes(gig._id))
@@ -1221,7 +1221,7 @@ export function GigsMarketplace() {
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             }
           });
-      
+
       case 'invited':
         return invitedEnrollments
           .sort((a, b) => {
@@ -1235,7 +1235,7 @@ export function GigsMarketplace() {
                 return new Date(a.invitationSentAt).getTime() - new Date(b.invitationSentAt).getTime();
             }
           });
-      
+
       default:
         return [];
     }
@@ -1286,41 +1286,37 @@ export function GigsMarketplace() {
       <div className="flex space-x-4 border-b border-gray-200">
         <button
           onClick={() => setActiveTab('available')}
-          className={`px-4 py-2 font-medium ${
-            activeTab === 'available'
+          className={`px-4 py-2 font-medium ${activeTab === 'available'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
         >
           Available Gigs
         </button>
         <button
           onClick={() => setActiveTab('enrolled')}
-          className={`px-4 py-2 font-medium ${
-            activeTab === 'enrolled'
+          className={`px-4 py-2 font-medium ${activeTab === 'enrolled'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
         >
           Enrolled Gigs
         </button>
         <button
           onClick={() => setActiveTab('favorite')}
-          className={`px-4 py-2 font-medium ${
-            activeTab === 'favorite'
+          className={`px-4 py-2 font-medium ${activeTab === 'favorite'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
         >
           Favorite Gigs
         </button>
         <button
           onClick={() => setActiveTab('invited')}
-          className={`px-4 py-2 font-medium ${
-            activeTab === 'invited'
+          className={`px-4 py-2 font-medium ${activeTab === 'invited'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
         >
           Invited Gigs
         </button>
@@ -1328,11 +1324,10 @@ export function GigsMarketplace() {
 
       {/* Message de notification pour les applications */}
       {applicationMessage && (
-        <div className={`mb-4 p-4 rounded-lg ${
-          applicationMessage.type === 'success' 
-            ? 'bg-green-50 text-green-800 border border-green-200' 
+        <div className={`mb-4 p-4 rounded-lg ${applicationMessage.type === 'success'
+            ? 'bg-green-50 text-green-800 border border-green-200'
             : 'bg-red-50 text-red-800 border border-red-200'
-        }`}>
+          }`}>
           <p className="text-sm font-medium">
             {applicationMessage.type === 'success' ? '✅ ' : '❌ '}
             {applicationMessage.message}
@@ -1345,163 +1340,159 @@ export function GigsMarketplace() {
           {currentGigs.map((gig) => {
             const gigStatus = getGigStatus(gig._id);
             return (
-          <div key={gig._id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">{gig.title}</h3>
-                <p className="text-xs text-gray-500">{gig.category}</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                {/* Status Badge */}
-                {gigStatus === 'none' ? (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleApplyToGig(gig._id);
-                    }}
-                    disabled={applyingGigId === gig._id}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                      applyingGigId === gig._id
-                        ? 'bg-purple-200 text-purple-400 cursor-not-allowed'
-                        : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-md cursor-pointer'
-                    }`}
-                  >
-                    {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
-                  </button>
-                ) : (
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
-                    gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
-                    'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {gigStatus === 'enrolled' ? '✓ Enrolled' :
-                     gigStatus === 'invited' ? '✉ Invited' :
-                     '⏳ Pending'}
-                  </span>
-                )}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    favoriteGigs.includes(gig._id)
-                      ? removeFromFavorites(gig._id)
-                      : addToFavorites(gig._id);
-                  }}
-                  className={`p-1 rounded-full transition-colors ${
-                    favoriteGigs.includes(gig._id)
-                      ? 'hover:bg-red-50'
-                      : 'hover:bg-gray-100'
-                  }`}
-                  title={favoriteGigs.includes(gig._id) ? "Remove from favorites" : "Add to favorites"}
-                >
-                  <Heart 
-                    className={`w-5 h-5 ${
-                      favoriteGigs.includes(gig._id)
-                        ? 'text-red-500 fill-current'
-                        : 'text-gray-400'
-                    }`}
-                  />
-                </button>
-              </div>
-            </div>
-
-            <p className="mt-2 text-sm text-gray-600 line-clamp-2">{gig.description}</p>
-
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center text-sm text-gray-500">
-                <DollarSign className="w-4 h-4 mr-2" />
-                <span>{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr base</span>
-                {gig.commission.bonus && (
-                  <span className="ml-1 text-xs text-green-600">+ bonus</span>
-                )}
-              </div>
-              <div className="flex items-center text-sm text-gray-500">
-                <Users className="w-4 h-4 mr-2" />
-                <span>{gig.seniority.yearsExperience} years experience</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-500">
-                <Globe className="w-4 h-4 mr-2" />
-                <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.zoneName || gig.availability?.time_zone?.countryName || gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-500">
-                <Calendar className="w-4 h-4 mr-2" />
-                <span>{gig.availability?.minimumHours?.weekly || 'N/A'}h/week</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-500">
-                <User className="w-4 h-4 mr-2" />
-                <span>{gig.companyId?.name || 'Unknown'}</span>
-              </div>
-            </div>
-
-            <div className="mt-4 flex-grow">
-              {/* Industries */}
-              {gig.industries && gig.industries.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {gig.industries.slice(0, 3).map((industry) => (
-                      <span key={industry._id} className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
-                        {industry.name}
-                      </span>
-                    ))}
-                    {gig.industries.length > 3 && (
-                      <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                        +{gig.industries.length - 3} more
+              <div key={gig._id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{gig.title}</h3>
+                    <p className="text-xs text-gray-500">{gig.category}</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {/* Status Badge */}
+                    {gigStatus === 'none' ? (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleApplyToGig(gig._id);
+                        }}
+                        disabled={applyingGigId === gig._id}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${applyingGigId === gig._id
+                            ? 'bg-purple-200 text-purple-400 cursor-not-allowed'
+                            : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-md cursor-pointer'
+                          }`}
+                      >
+                        {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
+                      </button>
+                    ) : (
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
+                          gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
+                            'bg-yellow-100 text-yellow-700'
+                        }`}>
+                        {gigStatus === 'enrolled' ? '✓ Enrolled' :
+                          gigStatus === 'invited' ? '✉ Invited' :
+                            '⏳ Pending'}
                       </span>
                     )}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        favoriteGigs.includes(gig._id)
+                          ? removeFromFavorites(gig._id)
+                          : addToFavorites(gig._id);
+                      }}
+                      className={`p-1 rounded-full transition-colors ${favoriteGigs.includes(gig._id)
+                          ? 'hover:bg-red-50'
+                          : 'hover:bg-gray-100'
+                        }`}
+                      title={favoriteGigs.includes(gig._id) ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <Heart
+                        className={`w-5 h-5 ${favoriteGigs.includes(gig._id)
+                            ? 'text-red-500 fill-current'
+                            : 'text-gray-400'
+                          }`}
+                      />
+                    </button>
                   </div>
                 </div>
-              )}
 
-              {/* Activities */}
-              {gig.activities && gig.activities.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {gig.activities.slice(0, 3).map((activity) => (
-                      <span key={activity._id} className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
-                        {activity.name}
-                      </span>
-                    ))}
-                    {gig.activities.length > 3 && (
-                      <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                        +{gig.activities.length - 3} more
-                      </span>
+                <p className="mt-2 text-sm text-gray-600 line-clamp-2">{gig.description}</p>
+
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center text-sm text-gray-500">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    <span>{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr base</span>
+                    {gig.commission.bonus && (
+                      <span className="ml-1 text-xs text-green-600">+ bonus</span>
                     )}
                   </div>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Users className="w-4 h-4 mr-2" />
+                    <span>{gig.seniority.yearsExperience} years experience</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Globe className="w-4 h-4 mr-2" />
+                    <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.zoneName || gig.availability?.time_zone?.countryName || gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    <span>{gig.availability?.minimumHours?.weekly || 'N/A'}h/week</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <User className="w-4 h-4 mr-2" />
+                    <span>{gig.companyId?.name || (gig as any).company || gig.userId?.fullName || 'Unknown'}</span>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* Buttons section - conditional based on status */}
-            <div className="mt-6">
-              {gigStatus === 'enrolled' ? (
-                <div className="flex gap-3">
-                  <button 
-                    onClick={() => window.location.href = '/copilot'}
-                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
-                  >
-                    🚀 Start
-                  </button>
-                  <button 
-                    onClick={() => navigate(`/gig/${gig._id}`)}
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    View Details
-                  </button>
+                <div className="mt-4 flex-grow">
+                  {/* Industries */}
+                  {gig.industries && gig.industries.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {gig.industries.slice(0, 3).map((industry) => (
+                          <span key={industry._id} className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
+                            {industry.name}
+                          </span>
+                        ))}
+                        {gig.industries.length > 3 && (
+                          <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                            +{gig.industries.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Activities */}
+                  {gig.activities && gig.activities.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {gig.activities.slice(0, 3).map((activity) => (
+                          <span key={activity._id} className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                            {activity.name}
+                          </span>
+                        ))}
+                        {gig.activities.length > 3 && (
+                          <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                            +{gig.activities.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <button 
-                  onClick={() => navigate(`/gig/${gig._id}`)}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  View Details
-                </button>
-              )}
-            </div>
-          </div>
-        );
-        })}
+
+                {/* Buttons section - conditional based on status */}
+                <div className="mt-6">
+                  {gigStatus === 'enrolled' ? (
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => window.location.href = '/copilot'}
+                        className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      >
+                        🚀 Start
+                      </button>
+                      <button
+                        onClick={() => navigate(`/gig/${gig._id}`)}
+                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => navigate(`/gig/${gig._id}`)}
+                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      View Details
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : activeTab === 'favorite' ? (
         <div>
@@ -1542,24 +1533,22 @@ export function GigsMarketplace() {
                                 handleApplyToGig(gig._id);
                               }}
                               disabled={applyingGigId === gig._id}
-                              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                                applyingGigId === gig._id
+                              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${applyingGigId === gig._id
                                   ? 'bg-purple-200 text-purple-400 cursor-not-allowed'
                                   : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-md cursor-pointer'
-                              }`}
+                                }`}
                             >
                               {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
                             </button>
                           ) : (
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
-                              gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
-                              'bg-yellow-100 text-yellow-700'
-                            }`}>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
+                                gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                              }`}>
                               {gigStatus === 'enrolled' ? '✓ Enrolled' :
-                               gigStatus === 'invited' ? '✉ Invited' :
-                               '⏳ Pending'}
-                        </span>
+                                gigStatus === 'invited' ? '✉ Invited' :
+                                  '⏳ Pending'}
+                            </span>
                           );
                         })()}
                         <button
@@ -1577,7 +1566,7 @@ export function GigsMarketplace() {
 
                     <p className="mt-2 text-sm text-gray-600 line-clamp-2">{gig.description}</p>
 
-                                        <div className="mt-4 space-y-3">
+                    <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
                         <span>{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr base</span>
@@ -1643,7 +1632,7 @@ export function GigsMarketplace() {
                       )}
                     </div>
 
-                    <button 
+                    <button
                       onClick={() => navigate(`/gig/${gig._id}`)}
                       className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
                     >
@@ -1693,19 +1682,17 @@ export function GigsMarketplace() {
                               ? removeFromFavorites(enrollment.gig._id)
                               : addToFavorites(enrollment.gig._id);
                           }}
-                          className={`p-1 rounded-full transition-colors ${
-                            favoriteGigs.includes(enrollment.gig._id)
+                          className={`p-1 rounded-full transition-colors ${favoriteGigs.includes(enrollment.gig._id)
                               ? 'hover:bg-red-50'
                               : 'hover:bg-gray-100'
-                          }`}
+                            }`}
                           title={favoriteGigs.includes(enrollment.gig._id) ? "Remove from favorites" : "Add to favorites"}
                         >
-                          <Heart 
-                            className={`w-5 h-5 ${
-                              favoriteGigs.includes(enrollment.gig._id)
+                          <Heart
+                            className={`w-5 h-5 ${favoriteGigs.includes(enrollment.gig._id)
                                 ? 'text-red-500 fill-current'
                                 : 'text-gray-400'
-                            }`}
+                              }`}
                           />
                         </button>
                       </div>
@@ -1798,21 +1785,21 @@ export function GigsMarketplace() {
                     </div>
 
                     <div className="mt-6 flex space-x-3">
-                      <button 
+                      <button
                         onClick={() => acceptInvitation(enrollment.id)}
                         className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
                       >
                         Accept
                       </button>
-                      
-                      <button 
+
+                      <button
                         onClick={() => rejectInvitation(enrollment.id)}
                         className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
                       >
                         Reject
                       </button>
-                      
-                      <button 
+
+                      <button
                         onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
                         className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
                       >
@@ -1863,19 +1850,17 @@ export function GigsMarketplace() {
                               ? removeFromFavorites(enrolledGig.gig._id)
                               : addToFavorites(enrolledGig.gig._id);
                           }}
-                          className={`p-1 rounded-full transition-colors ${
-                            favoriteGigs.includes(enrolledGig.gig._id)
+                          className={`p-1 rounded-full transition-colors ${favoriteGigs.includes(enrolledGig.gig._id)
                               ? 'hover:bg-red-50'
                               : 'hover:bg-gray-100'
-                          }`}
+                            }`}
                           title={favoriteGigs.includes(enrolledGig.gig._id) ? "Remove from favorites" : "Add to favorites"}
                         >
-                          <Heart 
-                            className={`w-5 h-5 ${
-                              favoriteGigs.includes(enrolledGig.gig._id)
+                          <Heart
+                            className={`w-5 h-5 ${favoriteGigs.includes(enrolledGig.gig._id)
                                 ? 'text-red-500 fill-current'
                                 : 'text-gray-400'
-                            }`}
+                              }`}
                           />
                         </button>
                       </div>
@@ -1970,13 +1955,13 @@ export function GigsMarketplace() {
                     </div>
 
                     <div className="mt-6 flex gap-3">
-                      <button 
+                      <button
                         onClick={() => navigate('/copilot')}
                         className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
                       >
                         🚀 Start
                       </button>
-                      <button 
+                      <button
                         onClick={() => navigate(`/gig/${enrolledGig.gig._id}`)}
                         className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
                       >
@@ -2008,11 +1993,10 @@ export function GigsMarketplace() {
           <button
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
-            className={`px-4 py-2 rounded-lg ${
-              currentPage === 1
+            className={`px-4 py-2 rounded-lg ${currentPage === 1
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
+              }`}
           >
             Previous
           </button>
@@ -2021,11 +2005,10 @@ export function GigsMarketplace() {
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`px-4 py-2 rounded-lg ${
-                  currentPage === page
+                className={`px-4 py-2 rounded-lg ${currentPage === page
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 {page}
               </button>
@@ -2034,11 +2017,10 @@ export function GigsMarketplace() {
           <button
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
-            className={`px-4 py-2 rounded-lg ${
-              currentPage === totalPages
+            className={`px-4 py-2 rounded-lg ${currentPage === totalPages
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
+              }`}
           >
             Next
           </button>

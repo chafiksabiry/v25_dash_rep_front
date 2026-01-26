@@ -145,7 +145,7 @@ export function Profile() {
 
   useEffect(() => {
     console.log('📋 Profile component mounted - loading profile data');
-    
+
     const loadProfile = async () => {
       console.log('🔄 Starting profile data loading process');
       try {
@@ -210,14 +210,15 @@ export function Profile() {
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {isEditing ? (
-          <ProfileEditView 
-            profile={profile} 
-            onSave={handleProfileUpdate} 
+          <ProfileEditView
+            profile={profile}
+            onSave={handleProfileUpdate}
           />
         ) : (
-          <ProfileView 
-            profile={profile} 
+          <ProfileView
+            profile={profile}
             onEditClick={() => setIsEditing(true)}
+            onProfileUpdate={handleProfileUpdate}
           />
         )}
       </div>

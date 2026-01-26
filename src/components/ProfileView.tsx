@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase, 
+import {
+  MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase,
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
-  Edit, CreditCard, X
+  Edit, CreditCard, X, RefreshCw, CheckCircle
 } from 'lucide-react';
-import { getProfilePlan, checkCountryMismatch } from '../utils/profileUtils';
+import { getProfilePlan, checkCountryMismatch, updateProfileData } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 // Type definitions
 interface AssessmentResults {
@@ -98,7 +98,7 @@ interface Profile {
 
 // Convert proficiency level to star rating (A1-C2 = 1-6 stars)
 const getProficiencyStars = (proficiency: string): number => {
-  switch(proficiency) {
+  switch (proficiency) {
     case 'A1':
     case 'Basic':
       return 1;
@@ -145,7 +145,8 @@ const CONTACT_CENTER_SKILLS = [
   }
 ];
 
-export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = ({ profile, onEditClick }) => {
+export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onProfileUpdate?: (updatedProfile: any) => void }> = ({ profile, onEditClick, onProfileUpdate }) => {
+  const [isPublishing, setIsPublishing] = useState(false);
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -153,7 +154,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
   const [timezoneData, setTimezoneData] = useState<Timezone | null>(null);
   const [allTimezones, setAllTimezones] = useState<Timezone[]>([]);
   const [countries, setCountries] = useState<Timezone[]>([]);
-  
+
   // Add state for country mismatch checking
   const [countryMismatch, setCountryMismatch] = useState<{
     hasMismatch: boolean;
@@ -194,7 +195,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
     const fetchPlanData = async () => {
       try {
         if (!profile?._id) return;
-        
+
         const data = await getProfilePlan(profile._id);
         // Convert the response to match our interface
         const planResponse: PlanResponse = {
@@ -256,22 +257,22 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
 
       try {
         setCheckingCountryMismatch(true);
-        
+
         // Only show spinner if check takes longer than 800ms
         const spinnerTimer = setTimeout(() => {
           setShowLoadingSpinner(true);
         }, 800);
-        
+
         console.log('🔍 Checking country mismatch for selected country:', countryData.countryCode);
-        
+
         const mismatchResult = await checkCountryMismatch(
-          countryData.countryCode, 
+          countryData.countryCode,
           countries
         );
-        
+
         // Clear the spinner timer since we got a result
         clearTimeout(spinnerTimer);
-        
+
         if (mismatchResult) {
           setCountryMismatch(mismatchResult);
           if (mismatchResult.hasMismatch) {
@@ -295,20 +296,20 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
 
   // Get timezone and country mismatch info
   const getTimezoneMismatchInfo = () => {
-    const currentTimezoneId = typeof profile.availability?.timeZone === 'object' 
-      ? profile.availability.timeZone._id 
+    const currentTimezoneId = typeof profile.availability?.timeZone === 'object'
+      ? profile.availability.timeZone._id
       : profile.availability?.timeZone;
-    
+
     const selectedTimezoneData = allTimezones.find(tz => tz._id === currentTimezoneId);
-    
+
     if (!countryData || !selectedTimezoneData || !currentTimezoneId) {
       return null;
     }
-    
+
     // Check if timezone belongs to selected country
     const timezoneCountry = selectedTimezoneData.countryCode;
     const selectedCountryCode = countryData.countryCode;
-    
+
     if (timezoneCountry !== selectedCountryCode) {
       const timezoneCountryData = countries.find(c => c.countryCode === timezoneCountry);
       return {
@@ -317,22 +318,22 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         timezoneName: selectedTimezoneData.zoneName
       };
     }
-    
+
     return null;
   };
 
   // Calculate average score from contact center skills if available
   const calculateOverallScore = () => {
-    if (!profile.skills?.contactCenter?.length || 
-        !profile.skills.contactCenter[0]?.assessmentResults?.keyMetrics) {
+    if (!profile.skills?.contactCenter?.length ||
+      !profile.skills.contactCenter[0]?.assessmentResults?.keyMetrics) {
       return 'N/A';
     }
-    
+
     const metrics = profile.skills.contactCenter[0].assessmentResults.keyMetrics;
     const professionalism = metrics.professionalism || 0;
     const effectiveness = metrics.effectiveness || 0;
     const customerFocus = metrics.customerFocus || 0;
-    
+
     return Math.floor((professionalism + effectiveness + customerFocus) / 3);
   };
 
@@ -373,19 +374,19 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
       'vietnamese': 'vi',
       // Add more as needed
     };
-    
+
     return langMap[langName.toLowerCase()] || 'en';
   };
-  
+
   // Function to take a language assessment
   const takeLanguageAssessment = (language: string, iso639_1Code?: string) => {
     // Check if we're in standalone mode
     const isStandaloneMode = import.meta.env.VITE_RUN_MODE === 'standalone';
     // Use the appropriate assessment app URL based on the mode
-    const assessmentAppUrl = isStandaloneMode 
-      ? import.meta.env.VITE_ASSESSMENT_APP_STANDALONE 
+    const assessmentAppUrl = isStandaloneMode
+      ? import.meta.env.VITE_ASSESSMENT_APP_STANDALONE
       : import.meta.env.VITE_ASSESSMENT_APP;
-    
+
     //const assessmentUrl = `${assessmentAppUrl}/language/${langParameter}`;
     const assessmentUrl = `${assessmentAppUrl}/language?lang=${language}&code=${iso639_1Code}`;
 
@@ -401,14 +402,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
   // Function to take a contact center skill assessment
   const takeContactCenterSkillAssessment = (skillName: string) => {
     const formattedSkill = formatSkillForUrl(skillName);
-    
+
     // Check if we're in standalone mode
     const isStandaloneMode = import.meta.env.VITE_RUN_MODE === 'standalone';
     // Use the appropriate assessment app URL based on the mode
-    const assessmentAppUrl = isStandaloneMode 
-      ? import.meta.env.VITE_ASSESSMENT_APP_STANDALONE 
+    const assessmentAppUrl = isStandaloneMode
+      ? import.meta.env.VITE_ASSESSMENT_APP_STANDALONE
       : import.meta.env.VITE_ASSESSMENT_APP;
-    
+
     const assessmentUrl = `${assessmentAppUrl}/contact-center/${formattedSkill}`;
     console.log("assessmentUrl contact center", assessmentUrl);
     window.location.href = assessmentUrl;
@@ -456,22 +457,69 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         }
       });
     }
-    
+
     return [];
+  };
+
+  // Function to publish the profile
+  const handlePublish = async () => {
+    if (!profile?._id) return;
+
+    try {
+      setIsPublishing(true);
+      console.log('🚀 Publishing profile...', profile._id);
+
+      const updatedData = await updateProfileData(profile._id, { status: 'active' });
+      console.log('✅ Profile published successfully:', updatedData);
+
+      if (onProfileUpdate) {
+        onProfileUpdate(updatedData);
+      }
+
+      // Update local storage directly to reflect change immediately
+      const storedProfile = localStorage.getItem('profileData');
+      if (storedProfile) {
+        const parsed = JSON.parse(storedProfile);
+        parsed.status = 'active';
+        localStorage.setItem('profileData', JSON.stringify(parsed));
+      }
+
+      alert('Your profile has been successfully published! 🚀');
+    } catch (error) {
+      console.error('❌ Error publishing profile:', error);
+      alert('Failed to publish profile. Please try again.');
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
-      {/* Page Header with Edit Button */}
       <div className="md:col-span-12 flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold text-gray-900">Profile Information</h1>
-        <button
-          onClick={onEditClick}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors"
-        >
-          <Edit className="w-4 h-4" />
-          Edit Profile
-        </button>
+        <div className="flex gap-3">
+          {profile.status !== 'active' && (
+            <button
+              onClick={handlePublish}
+              disabled={isPublishing}
+              className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 flex items-center gap-2 text-sm font-medium transition-colors shadow-md hover:shadow-lg disabled:opacity-50"
+            >
+              {isPublishing ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle className="w-4 h-4" />
+              )}
+              {isPublishing ? 'Publishing...' : 'Publish Profile'}
+            </button>
+          )}
+          <button
+            onClick={onEditClick}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors"
+          >
+            <Edit className="w-4 h-4" />
+            Edit Profile
+          </button>
+        </div>
       </div>
 
       {/* Left Column */}
@@ -480,16 +528,16 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         <div className="bg-white rounded-lg p-6">
           <div className="text-center">
             <div className="mb-6">
-              <div 
+              <div
                 className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group cursor-pointer"
                 title="Click to view photo"
                 onClick={() => profile.personalInfo?.photo?.url && setShowImageModal(true)}
               >
                 {profile.personalInfo?.photo?.url ? (
                   <>
-                    <img 
-                      src={profile.personalInfo.photo.url} 
-                      alt={profile.personalInfo?.name || 'Profile'} 
+                    <img
+                      src={profile.personalInfo.photo.url}
+                      alt={profile.personalInfo?.name || 'Profile'}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -509,7 +557,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               <MapPin className="w-4 h-4" />
               <span>{countryData?.countryName || 'Country not specified'}</span>
             </div>
-            
+
             {/* Country mismatch warning */}
             {countryMismatch?.hasMismatch && (
               <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
@@ -527,7 +575,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                 </div>
               </div>
             )}
-            
+
             {checkingCountryMismatch && showLoadingSpinner && (
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                 <div className="flex items-center">
@@ -618,14 +666,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               const status = profile.onboardingProgress?.phases?.[phaseKey]?.status || 'pending';
               const isCompleted = status === 'completed';
               const isCurrent = status === 'in_progress';
-              
+
               return (
                 <div key={phaseNum} className="flex items-center gap-3">
                   <div className={`
                     w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-                    ${isCompleted ? 'bg-green-100 text-green-800' : 
-                      isCurrent ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-400' : 
-                      'bg-gray-100 text-gray-400'}
+                    ${isCompleted ? 'bg-green-100 text-green-800' :
+                      isCurrent ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-400' :
+                        'bg-gray-100 text-gray-400'}
                   `}>
                     {phaseNum}
                   </div>
@@ -634,28 +682,28 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                       Phase {phaseNum}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {status === 'completed' ? 'Completed' : 
-                       status === 'in_progress' ? 'In Progress' : 
-                       status === 'blocked' ? 'Blocked' :
-                       'Not Started'}
+                      {status === 'completed' ? 'Completed' :
+                        status === 'in_progress' ? 'In Progress' :
+                          status === 'blocked' ? 'Blocked' :
+                            'Not Started'}
                     </div>
                   </div>
                   <div className={`
                     px-2 py-1 rounded text-xs font-medium
-                    ${status === 'completed' ? 'bg-green-100 text-green-800' : 
-                      status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
-                      status === 'blocked' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-500'}
+                    ${status === 'completed' ? 'bg-green-100 text-green-800' :
+                      status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                        status === 'blocked' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-500'}
                   `}>
-                    {status === 'completed' ? '✓ Done' : 
-                     status === 'in_progress' ? 'Active' : 
-                     status === 'blocked' ? 'Blocked' :
-                     'Pending'}
+                    {status === 'completed' ? '✓ Done' :
+                      status === 'in_progress' ? 'Active' :
+                        status === 'blocked' ? 'Blocked' :
+                          'Pending'}
                   </div>
                 </div>
               );
             })}
-            
+
             <button
               onClick={() => window.location.href = '/reporchestrator'}
               className="w-full mt-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
@@ -751,7 +799,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                 <div className="flex items-center gap-2 text-gray-600">
                   <Clock className="w-4 h-4" />
                   <span>
-                    {timezoneData 
+                    {timezoneData
                       ? repWizardApi.formatTimezone(timezoneData)
                       : typeof profile.availability.timeZone === 'string'
                         ? profile.availability.timeZone
@@ -761,7 +809,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                     }
                   </span>
                 </div>
-                
+
                 {/* Timezone mismatch warning */}
                 {(() => {
                   const mismatchInfo = getTimezoneMismatchInfo();
@@ -788,7 +836,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               </div>
             )}
           </div>
-          
+
           <div className="space-y-4">
             {/* Schedule Display */}
             <div>
@@ -797,11 +845,10 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                 {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
                   const daySchedule = profile.availability?.schedule?.find((s: ScheduleDay) => s.day === day);
                   return (
-                    <div 
+                    <div
                       key={day}
-                      className={`flex items-center justify-between p-3 rounded ${
-                        daySchedule ? 'bg-blue-50 text-blue-900' : 'bg-gray-50 text-gray-500'
-                      }`}
+                      className={`flex items-center justify-between p-3 rounded ${daySchedule ? 'bg-blue-50 text-blue-900' : 'bg-gray-50 text-gray-500'
+                        }`}
                     >
                       <span className="font-medium">{day}</span>
                       {daySchedule ? (
@@ -842,7 +889,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
         {/* About Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-4">About</h2>
-          
+
           {/* Profile Description */}
           <div className="mb-6">
             {profile.professionalSummary?.profileDescription ? (
@@ -855,7 +902,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
           {/* Introduction Video Section */}
           <div className="border-t pt-6">
             <h3 className="text-lg font-medium text-gray-800 mb-4">Introduction Video</h3>
-            
+
             {profile.personalInfo?.presentationVideo && profile.personalInfo.presentationVideo.url ? (
               <div className="space-y-4">
                 {/* Video Player - Responsive with proper aspect ratio */}
@@ -878,7 +925,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                     Your browser does not support the video tag.
                   </video>
                 </div>
-                
+
                 {/* Video Information */}
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="text-sm text-gray-600 space-y-2">
@@ -893,7 +940,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                         <Calendar className="w-4 h-4" />
                         <span>
                           Recorded: {new Date(profile.personalInfo.presentationVideo.recordedAt).toLocaleDateString()}
-                                                </span>
+                        </span>
                       </div>
                     )}
                   </div>
@@ -903,7 +950,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
               <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+                </svg>
                 Presentation video is required. Please record a video introduction to complete your profile.
               </div>
             )}
@@ -1011,7 +1058,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
             <p className="text-gray-500 italic">No technical skills listed</p>
           )}
         </div>
-        
+
         {/* Professional Skills Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-4">Professional Skills</h2>
@@ -1034,7 +1081,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
             <p className="text-gray-500 italic">No professional skills listed</p>
           )}
         </div>
-        
+
         {/* Soft Skills Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-4">Soft Skills</h2>
@@ -1057,7 +1104,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
             <p className="text-gray-500 italic">No soft skills listed</p>
           )}
         </div>
-        
+
         {/* Contact Center Skills Section */}
         <div className="bg-white rounded-lg p-6">
           <h2 className="text-2xl font-semibold mb-6">Contact Center Skills</h2>
@@ -1076,7 +1123,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                 <div className="space-y-4">
                   {category.skills.map((skillName) => {
                     const skillData = findSkillData(skillName);
-                    
+
                     return (
                       <div key={skillName} className="bg-gray-50 rounded-lg p-4">
                         <div className="flex justify-between items-center mb-3">
@@ -1098,7 +1145,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                             </span>
                           )}
                         </div>
-                        
+
                         <div className="flex justify-between items-center">
                           {skillData?.assessmentResults ? (
                             <div className="mt-3">
@@ -1131,8 +1178,8 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                               Complete an assessment to see your KPI metrics
                             </div>
                           )}
-                          
-                          <button 
+
+                          <button
                             onClick={() => takeContactCenterSkillAssessment(skillName)}
                             className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
                           >
@@ -1170,16 +1217,16 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
             <div className="space-y-4">
               {profile.personalInfo.languages.map((lang: any, index: number) => {
                 const stars = getProficiencyStars(lang.proficiency);
-                
+
                 // Get language name and code based on whether it's populated or not
-                const languageName = typeof lang.language === 'object' && lang.language 
-                  ? lang.language.name 
+                const languageName = typeof lang.language === 'object' && lang.language
+                  ? lang.language.name
                   : (typeof lang.language === 'string' ? 'Unknown Language' : 'Unknown Language');
-                
-                const languageCode = typeof lang.language === 'object' && lang.language 
-                  ? lang.language.code 
+
+                const languageCode = typeof lang.language === 'object' && lang.language
+                  ? lang.language.code
                   : (typeof lang.language === 'string' ? '' : '');
-                
+
                 return (
                   <div key={index} className="bg-gray-50 rounded-lg p-4">
                     <div className="flex justify-between items-center mb-4">
@@ -1191,11 +1238,10 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                         {[...Array(6)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`w-4 h-4 ${
-                              i < stars
-                                ? 'text-yellow-400 fill-current'
-                                : 'text-gray-300'
-                            }`}
+                            className={`w-4 h-4 ${i < stars
+                              ? 'text-yellow-400 fill-current'
+                              : 'text-gray-300'
+                              }`}
                           />
                         ))}
                       </div>
@@ -1204,14 +1250,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                       <span className="text-sm font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded">
                         {lang.proficiency}
                       </span>
-                      <button 
+                      <button
                         onClick={() => takeLanguageAssessment(languageName, languageCode)}
                         className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
                       >
                         {lang.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
                       </button>
                     </div>
-                    
+
                     {/* Always show assessment criteria */}
                     <div className="grid grid-cols-3 gap-4 mt-4">
                       {!lang.assessmentResults ? (
@@ -1271,7 +1317,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                       return dateString; // Return as is if parsing fails
                     }
                   }
-                  
+
                   // Parse ISO date
                   try {
                     const date = new Date(dateString);
@@ -1280,12 +1326,12 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                     return dateString;
                   }
                 };
-                
+
                 const startDate = formatDateToDD_MM_YYYY(exp.startDate);
                 // Handle endDate specifically - could be 'present' or a Date
-                let endDate = exp.endDate === 'present' ? 'Present' : 
-                              exp.endDate ? formatDateToDD_MM_YYYY(exp.endDate) : 'Present';
-                
+                let endDate = exp.endDate === 'present' ? 'Present' :
+                  exp.endDate ? formatDateToDD_MM_YYYY(exp.endDate) : 'Present';
+
                 return (
                   <div key={index} className="border-l-2 border-blue-500 pl-4">
                     <div className="flex justify-between items-start mb-2">
@@ -1300,7 +1346,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                     {exp.description && (
                       <p className="text-gray-700 mt-2">{exp.description}</p>
                     )}
-                    
+
                     {/* Responsibilities section */}
                     {exp.responsibilities?.length > 0 && (
                       <div className="mt-3">
@@ -1312,7 +1358,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
                         </ul>
                       </div>
                     )}
-                    
+
                     {/* Achievements section */}
                     {exp.achievements?.length > 0 && (
                       <div className="mt-3">
@@ -1336,11 +1382,11 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void }> = 
 
       {/* Updated Image Modal */}
       {showImageModal && profile.personalInfo?.photo?.url && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
           onClick={() => setShowImageModal(false)}
         >
-          <div 
+          <div
             className="relative w-[30%] min-w-[300px] bg-white rounded-lg overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >

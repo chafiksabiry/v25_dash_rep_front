@@ -1323,7 +1323,7 @@ export function GigDetails() {
                     {gig.seniority.level}
                   </span>
                   <span className="text-sm text-gray-600">
-                    at <span className="font-medium text-gray-900">{gig.companyId?.name || 'Unknown Company'}</span>
+                    at <span className="font-medium text-gray-900">{gig.companyId?.name || (gig as any).company || gig.userId?.fullName || 'Unknown'}</span>
                   </span>
                 </div>
               </div>
@@ -1752,7 +1752,7 @@ export function GigDetails() {
                   <Building className="w-5 h-5 mr-2 text-gray-400" />
                   <span className="font-medium">{(() => {
                     console.log('Company data:', gig.companyId);
-                    return gig.companyId?.name || 'Unknown';
+                    return gig.companyId?.name || (gig as any).company || gig.userId?.fullName || 'Unknown';
                   })()}</span>
                 </div>
                 {gig.companyId?.industry && (
