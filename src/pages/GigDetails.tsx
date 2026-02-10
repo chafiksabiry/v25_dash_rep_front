@@ -204,21 +204,20 @@ interface PopulatedGig {
 
   // 💰 Commission
   commission: {
-    base: string;
-    baseAmount: string;
-    bonus?: string;
+    commission_per_call: number;
     bonusAmount?: string;
-    structure?: string;
-    currency: string;
+    currency: {
+      _id: string;
+      code?: string;
+      symbol?: string;
+      name?: string;
+    } | string;
     minimumVolume: {
       amount: string;
       period: string;
       unit: string;
     };
-    transactionCommission?: {
-      type: string;
-      amount: string;
-    };
+    transactionCommission?: number;
     additionalDetails?: string;
   };
 
@@ -1311,11 +1310,6 @@ export function GigDetails() {
                       ✉ Invited
                     </span>
                   )}
-                  {getAgentStatus() === 'pending' && (
-                    <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-700 border border-yellow-300">
-                      ⏳ Pending
-                    </span>
-                  )}
                 </div>
                 <p className="text-lg text-gray-600 mb-2">{gig.category}</p>
                 <div className="flex items-center gap-3 mb-3">
@@ -1385,8 +1379,8 @@ export function GigDetails() {
               <div className="flex items-center text-gray-600">
                 <DollarSign className="w-5 h-5 mr-2" />
                 <div>
-                  <p className="text-sm font-medium">{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr</p>
-                  <p className="text-xs">Base Salary</p>
+                  <p className="text-sm font-medium">{gig.commission.commission_per_call} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/call</p>
+                  <p className="text-xs">Commission per Call</p>
                 </div>
               </div>
 
@@ -1569,19 +1563,13 @@ export function GigDetails() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Compensation</h2>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Base Salary:</span>
-                  <span className="font-medium">{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/year</span>
+                  <span className="text-gray-600">Commission per Call:</span>
+                  <span className="font-medium">{gig.commission.commission_per_call} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}</span>
                 </div>
-                {gig.commission.bonus && (
+                {gig.commission.bonusAmount && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Bonus:</span>
-                    <span className="font-medium text-green-600">{gig.commission.bonusAmount || 'Available'}</span>
-                  </div>
-                )}
-                {gig.commission.structure && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Structure:</span>
-                    <span className="font-medium">{gig.commission.structure}</span>
+                    <span className="font-medium text-green-600">{gig.commission.bonusAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}</span>
                   </div>
                 )}
                 {gig.commission.minimumVolume && (
@@ -1590,10 +1578,10 @@ export function GigDetails() {
                     <span className="font-medium">{gig.commission.minimumVolume.amount} {gig.commission.minimumVolume.unit}/{gig.commission.minimumVolume.period}</span>
                   </div>
                 )}
-                {gig.commission.transactionCommission && (
+                {gig.commission.transactionCommission !== undefined && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Transaction Commission:</span>
-                    <span className="font-medium">{gig.commission.transactionCommission.amount} ({gig.commission.transactionCommission.type})</span>
+                    <span className="font-medium">{gig.commission.transactionCommission} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}</span>
                   </div>
                 )}
                 {gig.commission.additionalDetails && (
