@@ -1379,7 +1379,7 @@ export function GigDetails() {
               <div className="flex items-center text-gray-600">
                 <DollarSign className="w-5 h-5 mr-2" />
                 <div>
-                  <p className="text-sm font-medium">{gig.commission.commission_per_call} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/call</p>
+                  <p className="text-sm font-medium">{gig.commission.commission_per_call} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}</p>
                   <p className="text-xs">Commission per Call</p>
                 </div>
               </div>
