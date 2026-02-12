@@ -39,46 +39,46 @@ export function Sidebar({ phases }: SidebarProps) {
   };
 
   const navItems = [
-    { 
-      icon: UserCircle, 
-      label: 'Profile', 
-      path: '/profile', 
+    {
+      icon: UserCircle,
+      label: 'Profile',
+      path: '/profile',
       isAccessible: () => true // Always accessible
     },
-    { 
-      icon: LayoutDashboard, 
-      label: 'Dashboard', 
-      path: '/dashboard', 
+    {
+      icon: LayoutDashboard,
+      label: 'Dashboard',
+      path: '/dashboard',
       isAccessible: () => isPhaseCompleted(5)
     },
-    { 
-      icon: Briefcase, 
-      label: 'Marketplace', 
-      path: '/gigs-marketplace', 
+    {
+      icon: Briefcase,
+      label: 'Marketplace',
+      path: '/gigs-marketplace',
       isAccessible: () => isPhaseCompleted(4)
     },
-    { 
-      icon: Monitor, 
-      label: 'Workspace', 
-      path: '/workspace', 
+    {
+      icon: Monitor,
+      label: 'Workspace',
+      path: '/workspace',
       isAccessible: () => isPhaseCompleted(5)
     },
-    { 
-      icon: Calendar, 
-      label: 'Session Planning', 
-      path: '/session-planning', 
-      isAccessible: () => isPhaseCompleted(4)
+    {
+      icon: Calendar,
+      label: 'Session Planning',
+      path: '/session-planning',
+      isAccessible: () => true // Temporarily enabled for testing
     },
-    { 
-      icon: Users, 
-      label: 'Leads', 
-      path: '/import-leads', 
+    {
+      icon: Users,
+      label: 'Leads',
+      path: '/import-leads',
       isAccessible: () => isPhaseCompleted(5)
     },
-    { 
-      icon: Settings, 
-      label: 'Operations', 
-      path: '/operations', 
+    {
+      icon: Settings,
+      label: 'Operations',
+      path: '/operations',
       isAccessible: () => isPhaseCompleted(5)
     },
   ];
@@ -98,9 +98,9 @@ export function Sidebar({ phases }: SidebarProps) {
   return (
     <div className="w-64 bg-white border-r border-gray-200">
       <div className="h-16 flex items-center justify-center border-b border-gray-200">
-        <img 
+        <img
           src={`${import.meta.env.VITE_FRONT_URL}logo_harx.jpg`}
-          alt="HARX.AI Logo" 
+          alt="HARX.AI Logo"
           className="h-8 w-auto object-contain"
         />
       </div>
@@ -110,8 +110,7 @@ export function Sidebar({ phases }: SidebarProps) {
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${
-                isActive ? 'bg-blue-50 text-blue-600' : ''
+              `flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${isActive ? 'bg-blue-50 text-blue-600' : ''
               }`
             }
           >
@@ -119,7 +118,7 @@ export function Sidebar({ phases }: SidebarProps) {
             <span>{item.label}</span>
           </NavLink>
         ))}
-        <button 
+        <button
           onClick={logout}
           className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors mt-auto"
         >

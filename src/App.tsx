@@ -65,7 +65,7 @@ function AppContent() {
 
   useEffect(() => {
     console.log('🚀 App component mounted - initializing application');
-    
+
     // Log routing information
     console.log('📍 ROUTE INFO:', {
       url: window.location.href,
@@ -74,24 +74,24 @@ function AppContent() {
       hash: window.location.hash,
       isQiankun: qiankunWindow.__POWERED_BY_QIANKUN__,
       basename: qiankunWindow.__POWERED_BY_QIANKUN__ ? '/repdashboard' : '/',
-      effectivePath: qiankunWindow.__POWERED_BY_QIANKUN__ 
-        ? window.location.pathname.replace('/repdashboard', '') 
+      effectivePath: qiankunWindow.__POWERED_BY_QIANKUN__
+        ? window.location.pathname.replace('/repdashboard', '')
         : window.location.pathname
     });
-    
+
     const initializeProfileData = async () => {
       console.log('🔄 Starting profile data initialization');
       try {
         // Check if profile data is valid and not expired now
         console.log('🔍 Checking profile data validity');
         const isValid = false; //isProfileDataValid();
-        
+
         if (!isValid) {
           console.log('🌐 Profile data invalid or expired, fetching from API');
           // Fetch fresh data if needed
           const profileData = await fetchProfileFromAPI();
           setUserProfile(profileData);
-          
+
           // Log detailed onboarding progress
           console.log('👤 User Onboarding Status:', {
             currentPhase: profileData.onboardingProgress.currentPhase,
@@ -115,12 +115,12 @@ function AppContent() {
             },
             lastUpdated: profileData.onboardingProgress.lastUpdated
           });
-          
+
           console.log('✅ Fresh profile data loaded successfully');
         } else {
           console.log('✅ Using existing profile data from cache');
         }
-        
+
         setLoading(false);
         console.log('✅ Application initialization complete');
       } catch (err) {
@@ -131,7 +131,7 @@ function AppContent() {
     };
 
     initializeProfileData();
-    
+
     // Set up routing change listener
     const handleRouteChange = () => {
       console.log('📍 ROUTE CHANGED:', {
@@ -142,14 +142,14 @@ function AppContent() {
         // Check if running inside Qiankun micro-frontend framework
         isQiankun: !!qiankunWindow.__POWERED_BY_QIANKUN__,
         basename: !!qiankunWindow.__POWERED_BY_QIANKUN__ ? '/repdashboard' : '/',
-        effectivePath: !!qiankunWindow.__POWERED_BY_QIANKUN__ 
-          ? window.location.pathname.replace('/repdashboard', '') 
+        effectivePath: !!qiankunWindow.__POWERED_BY_QIANKUN__
+          ? window.location.pathname.replace('/repdashboard', '')
           : window.location.pathname
       });
     };
-    
+
     window.addEventListener('popstate', handleRouteChange);
-    
+
     // Clean up event listener
     return () => {
       window.removeEventListener('popstate', handleRouteChange);
@@ -168,7 +168,7 @@ function AppContent() {
   console.log('🖥️ Rendering main application interface');
   const isStandaloneMode = import.meta.env.VITE_RUN_MODE === 'standalone';
   const basename = isStandaloneMode ? '/' : '/repdashboard';
-  
+
   return (
     <Router basename={basename}>
       <ProtectedRoute>
@@ -229,11 +229,7 @@ function AppContent() {
                     <Community />
                   </PhaseProtectedRoute>
                 } />
-                <Route path="/session-planning" element={
-                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
-                    <SessionPlanning />
-                  </PhaseProtectedRoute>
-                } />
+                <Route path="/session-planning" element={<SessionPlanning />} />
                 <Route path="/call-report" element={
                   <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                     <CallReportCard />
