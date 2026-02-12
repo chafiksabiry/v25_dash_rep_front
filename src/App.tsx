@@ -15,6 +15,7 @@ import { Workspace } from './pages/Workspace';
 import { Community } from './pages/Community';
 import { WalletPage } from './pages/Wallet';
 import { ImportLeads } from './pages/ImportLeads';
+import { SessionPlanning } from './pages/SessionPlanning';
 import CallReportCard from './components/CallReport';
 import { fetchProfileFromAPI } from './utils/profileUtils';
 import ProtectedRoute, { PhaseProtectedRoute } from './components/ProtectedRoute';
@@ -226,6 +227,11 @@ function AppContent() {
                 <Route path="/community" element={
                   <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                     <Community />
+                  </PhaseProtectedRoute>
+                } />
+                <Route path="/session-planning" element={
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
+                    <SessionPlanning />
                   </PhaseProtectedRoute>
                 } />
                 <Route path="/call-report" element={
