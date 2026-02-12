@@ -88,8 +88,8 @@ export function AIRecommendations({ rep, projects, slots, onSelectProject }: AIR
                                                 s.toLowerCase().includes(skill.toLowerCase()) ||
                                                 skill.toLowerCase().includes(s.toLowerCase())
                                             )
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-gray-100 text-gray-800'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-gray-100 text-gray-800'
                                                 }`}
                                         >
                                             {skill}

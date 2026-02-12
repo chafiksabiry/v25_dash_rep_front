@@ -61,10 +61,10 @@ export function AttendanceTracker({ slots, reps, selectedDate, onAttendanceUpdat
                         <div key={slot.id} className="border rounded-lg overflow-hidden">
                             <div
                                 className={`p-3 flex items-center justify-between cursor-pointer ${slot.attended === true
-                                        ? 'bg-green-50'
-                                        : slot.attended === false
-                                            ? 'bg-red-50'
-                                            : 'bg-white'
+                                    ? 'bg-green-50'
+                                    : slot.attended === false
+                                        ? 'bg-red-50'
+                                        : 'bg-white'
                                     }`}
                                 onClick={() => setExpandedSlot(isExpanded ? null : slot.id)}
                             >
