@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Calendar } from '../components/scheduler/Calendar';
 import { TimeSlotGrid } from '../components/scheduler/TimeSlotGrid';
 import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company, AttendanceRecord } from '../types/scheduler';
-import { Building, Clock, Briefcase, AlertCircle, Users, LayoutDashboard, Brain, DollarSign, MapPin } from 'lucide-react';
+import { Building, Clock, Briefcase, AlertCircle, Users, LayoutDashboard, Brain } from 'lucide-react';
 import { SlotActionPanel } from '../components/scheduler/SlotActionPanel';
 import { RepSelector } from '../components/scheduler/RepSelector';
 import { CompanyView } from '../components/scheduler/CompanyView';
@@ -172,14 +172,10 @@ export function SessionPlanning() {
     const [gigs, setGigs] = useState<Gig[]>([]);
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
 
-    const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
-    const [loadingEnrolledGigs, setLoadingEnrolledGigs] = useState<boolean>(false);
-
     useEffect(() => {
         const fetchGigs = async () => {
             const companyId = Cookies.get('companyId');
             if (!companyId) {
-                setNotification({ message: 'Company ID not found. Gigs cannot be loaded.', type: 'error' });
                 setLoadingGigs(false);
                 return;
             }
@@ -221,9 +217,9 @@ export function SessionPlanning() {
                 const response = await axios.get(`${matchingApiUrl}/gig-agents/agent/${selectedRepId}`);
 
                 if (response.data) {
-                    setEnrolledGigs(response.data);
+                    const enrolledOnly = response.data.filter((ga: EnrolledGig) => ga.status === 'enrolled');
 
-                    const mappedGigs: Gig[] = response.data.map((gigAgent: EnrolledGig) => ({
+                    const mappedGigs: Gig[] = enrolledOnly.map((gigAgent: EnrolledGig) => ({
                         id: gigAgent.gigId._id,
                         name: gigAgent.gigId.title,
                         description: gigAgent.gigId.description || '',
@@ -243,7 +239,7 @@ export function SessionPlanning() {
             } catch (error) {
                 console.error('Error fetching enrolled gigs:', error);
             } finally {
-                setLoadingEnrolledGigs(false);
+                // Done
             }
         };
 
@@ -588,166 +584,89 @@ export function SessionPlanning() {
                         )}
                     </div>
                 ) : userRole === 'rep' ? (
-                    <div className="grid grid-cols-1 gap-8">
-                        <RepSelector
-                            reps={reps}
-                            selectedRepId={selectedRepId}
-                            onSelectRep={setSelectedRepId}
-                        />
+                    <div className="space-y-10">
+                        <div className="grid grid-cols-1 gap-8">
+                            <RepSelector
+                                reps={reps}
+                                selectedRepId={selectedRepId}
+                                onSelectRep={setSelectedRepId}
+                            />
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2">
-                                <Calendar
-                                    selectedDate={selectedDate}
-                                    onDateSelect={setSelectedDate}
-                                    slots={slots.filter(slot => slot.repId === selectedRepId)}
-                                />
-
-                                <div className="mt-10">
-                                    <TimeSlotGrid
-                                        date={selectedDate}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div className="lg:col-span-2">
+                                    <Calendar
+                                        selectedDate={selectedDate}
+                                        onDateSelect={setSelectedDate}
                                         slots={slots.filter(slot => slot.repId === selectedRepId)}
-                                        gigs={gigs}
-                                        onSlotUpdate={handleSlotUpdate}
-                                        onSlotCancel={handleSlotCancel}
-                                        onSlotSelect={handleSlotSelect}
-                                        selectedSlot={selectedSlot}
                                     />
-                                </div>
-                            </div>
 
-                            <div className="space-y-8">
-                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                                    <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                                        <div className="w-2 h-6 bg-indigo-600 rounded-full mr-3"></div>
-                                        Weekly Overview
-                                    </h2>
-                                    <div className="grid grid-cols-2 gap-4 mb-8">
-                                        <div className="p-4 bg-green-50 rounded-xl text-center">
-                                            <p className="text-xs text-green-600 font-bold uppercase mb-1">Available</p>
-                                            <p className="text-2xl font-black text-green-900">{weeklyStats.availableSlots}</p>
-                                        </div>
-                                        <div className="p-4 bg-blue-50 rounded-xl text-center">
-                                            <p className="text-xs text-blue-600 font-bold uppercase mb-1">Reserved</p>
-                                            <p className="text-2xl font-black text-blue-900">{weeklyStats.reservedSlots}</p>
-                                        </div>
-                                    </div>
-
-                                    <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest">Gig Hours Breakdown</h3>
-                                    <div className="space-y-3">
-                                        {Object.entries(weeklyStats.gigBreakdown).map(([gigId, hours]) => {
-                                            const gig = gigs.find(g => g.id === gigId);
-                                            return (
-                                                <div key={gigId} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl group transition-all hover:bg-gray-100">
-                                                    <div className="flex items-center">
-                                                        <div
-                                                            className="w-4 h-4 rounded-full mr-3 shadow-sm"
-                                                            style={{ backgroundColor: gig?.color || '#ccc' }}
-                                                        ></div>
-                                                        <span className="text-sm font-bold text-gray-700">{gig?.name || 'Unknown Gig'}</span>
-                                                    </div>
-                                                    <span className="text-lg font-black text-gray-900">{hours}h</span>
-                                                </div>
-                                            );
-                                        })}
-                                        {Object.keys(weeklyStats.gigBreakdown).length === 0 && (
-                                            <p className="text-xs text-gray-400 italic text-center py-4 bg-gray-50 rounded-xl">No gig hours recorded this week.</p>
-                                        )}
+                                    <div className="mt-10">
+                                        <TimeSlotGrid
+                                            date={selectedDate}
+                                            slots={slots.filter(slot => slot.repId === selectedRepId)}
+                                            gigs={gigs}
+                                            onSlotUpdate={handleSlotUpdate}
+                                            onSlotCancel={handleSlotCancel}
+                                            onSlotSelect={handleSlotSelect}
+                                            selectedSlot={selectedSlot}
+                                        />
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                                    <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                                        <div className="w-2 h-6 bg-blue-600 rounded-full mr-3"></div>
-                                        Quick Options
-                                    </h2>
-                                    <SlotActionPanel
-                                        maxHours={10}
-                                        slot={selectedSlot || (slots.find(s => s.repId === selectedRepId) || {} as any)}
-                                        availableGigs={gigs}
-                                        onUpdate={handleSlotUpdate}
-                                        onClear={() => handleSlotCancel(selectedSlot?.id || '')}
-                                    />
-                                </div>
-
-                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 overflow-hidden">
-                                    <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                                        <div className="w-2 h-6 bg-purple-600 rounded-full mr-3"></div>
-                                        Enrolled Gigs
-                                    </h2>
-                                    {loadingEnrolledGigs ? (
-                                        <div className="space-y-4">
-                                            {[1, 2].map(i => (
-                                                <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse"></div>
-                                            ))}
+                                <div className="space-y-8">
+                                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                                        <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                                            <div className="w-2 h-6 bg-indigo-600 rounded-full mr-3"></div>
+                                            Weekly Overview
+                                        </h2>
+                                        <div className="grid grid-cols-2 gap-4 mb-8">
+                                            <div className="p-4 bg-green-50 rounded-xl text-center">
+                                                <p className="text-xs text-green-600 font-bold uppercase mb-1">Available</p>
+                                                <p className="text-2xl font-black text-green-900">{weeklyStats.availableSlots}</p>
+                                            </div>
+                                            <div className="p-4 bg-blue-50 rounded-xl text-center">
+                                                <p className="text-xs text-blue-600 font-bold uppercase mb-1">Reserved</p>
+                                                <p className="text-2xl font-black text-blue-900">{weeklyStats.reservedSlots}</p>
+                                            </div>
                                         </div>
-                                    ) : enrolledGigs.length === 0 ? (
-                                        <div className="text-sm text-gray-500 italic p-8 bg-gray-50 rounded-xl text-center border border-dashed border-gray-300">
-                                            No active enrollments.
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-6">
-                                            {enrolledGigs.map((gigAgent) => (
-                                                <div key={gigAgent._id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-200 transition-all group relative">
-                                                    <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-xl text-[10px] font-black uppercase tracking-tighter ${gigAgent.status === 'enrolled' ? 'bg-green-100 text-green-700' :
-                                                        gigAgent.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                                                            'bg-gray-100 text-gray-700'
-                                                        }`}>
-                                                        {gigAgent.status}
-                                                    </div>
 
-                                                    <div className="flex items-start space-x-4 mb-4">
-                                                        <div className="p-3 bg-blue-50 rounded-2xl group-hover:scale-110 transition-transform">
-                                                            {gigAgent.gigId.companyId?.logo ? (
-                                                                <img
-                                                                    src={gigAgent.gigId.companyId.logo}
-                                                                    alt={gigAgent.gigId.companyId.name}
-                                                                    className="w-6 h-6 object-contain"
-                                                                />
-                                                            ) : (
-                                                                <Building className="w-6 h-6 text-blue-600" />
-                                                            )}
+                                        <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest">Gig Hours Breakdown</h3>
+                                        <div className="space-y-3">
+                                            {Object.entries(weeklyStats.gigBreakdown).map(([gigId, hours]) => {
+                                                const gig = gigs.find(g => g.id === gigId);
+                                                return (
+                                                    <div key={gigId} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl group transition-all hover:bg-gray-100">
+                                                        <div className="flex items-center">
+                                                            <div
+                                                                className="w-4 h-4 rounded-full mr-3 shadow-sm"
+                                                                style={{ backgroundColor: gig?.color || '#ccc' }}
+                                                            ></div>
+                                                            <span className="text-sm font-bold text-gray-700">{gig?.name || 'Unknown Gig'}</span>
                                                         </div>
-                                                        <div className="pr-12">
-                                                            <h4 className="font-extrabold text-gray-900 leading-tight mb-1">{gigAgent.gigId.title}</h4>
-                                                            <p className="text-xs text-gray-500 font-bold">{gigAgent.gigId.companyId?.name || 'Partner Company'}</p>
-                                                        </div>
+                                                        <span className="text-lg font-black text-gray-900">{hours}h</span>
                                                     </div>
-
-                                                    <div className="grid grid-cols-1 gap-2 mb-4">
-                                                        {gigAgent.gigId.destination_zone && (
-                                                            <div className="flex items-center text-[11px] font-bold text-gray-600 bg-gray-50 px-2.5 py-1.5 rounded-lg">
-                                                                <MapPin className="w-3 h-3 mr-2 text-red-500" />
-                                                                {gigAgent.gigId.destination_zone.name?.common}
-                                                            </div>
-                                                        )}
-                                                        {gigAgent.gigId.commission?.commission_per_call && (
-                                                            <div className="flex items-center text-[11px] font-bold text-gray-600 bg-gray-50 px-2.5 py-1.5 rounded-lg">
-                                                                <DollarSign className="w-3 h-3 mr-2 text-green-600" />
-                                                                {gigAgent.gigId.commission.currency?.symbol || '$'}{gigAgent.gigId.commission.commission_per_call} per call
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="pt-4 border-t border-gray-100">
-                                                        <p className="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest">Availability Schedule</p>
-                                                        {gigAgent.gigId.availability?.schedule && gigAgent.gigId.availability.schedule.length > 0 ? (
-                                                            <div className="space-y-1.5">
-                                                                {gigAgent.gigId.availability.schedule.map((sch, idx) => (
-                                                                    <div key={idx} className="flex justify-between items-center text-[11px] bg-indigo-50/50 p-2 rounded-lg border border-indigo-100/50">
-                                                                        <span className="font-bold text-indigo-900 capitalize">{sch.day}</span>
-                                                                        <span className="font-black text-indigo-600">{sch.hours?.start} - {sch.hours?.end}</span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="text-[10px] text-gray-400 italic font-bold text-center py-2">Flexible Schedule</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
+                                            {Object.keys(weeklyStats.gigBreakdown).length === 0 && (
+                                                <p className="text-xs text-gray-400 italic text-center py-4 bg-gray-50 rounded-xl">No gig hours recorded this week.</p>
+                                            )}
                                         </div>
-                                    )}
+                                    </div>
+
+                                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                                        <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                                            <div className="w-2 h-6 bg-blue-600 rounded-full mr-3"></div>
+                                            Quick Options
+                                        </h2>
+                                        <SlotActionPanel
+                                            maxHours={10}
+                                            slot={selectedSlot || (slots.find(s => s.repId === selectedRepId) || {} as any)}
+                                            availableGigs={gigs}
+                                            onUpdate={handleSlotUpdate}
+                                            onClear={() => handleSlotCancel(selectedSlot?.id || '')}
+                                        />
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -921,8 +840,9 @@ export function SessionPlanning() {
                             </div>
                         </div>
                     </div>
-                )}
-            </main>
-        </div>
+                )
+                }
+            </main >
+        </div >
     );
 }
