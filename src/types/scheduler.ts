@@ -11,6 +11,8 @@ export interface TimeSlot {
     agentId?: string; // Map to backend agentId
     attended?: boolean; // Whether the REP attended this slot
     attendanceNotes?: string; // Notes about attendance
+    agent?: any; // Populated agent data
+    gig?: any; // Populated gig data
 }
 
 export interface Gig {

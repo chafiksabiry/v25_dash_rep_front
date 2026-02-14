@@ -15,7 +15,7 @@ import { schedulerApi } from '../services/api/scheduler';
 
 // Define ExternalGig type locally for API response mapping
 interface ExternalGig {
-    _id: string;
+    _id: string | { $oid: string };
     title: string;
     description: string;
     companyName?: string;
@@ -33,15 +33,42 @@ const stringToColor = (str: string) => {
     return '#' + '00000'.substring(0, 6 - c.length) + c;
 };
 
+// Map Slot from backend to frontend TimeSlot type
+const mapBackendSlotToSlot = (slot: any): TimeSlot => {
+    const agentData = slot.agentId && typeof slot.agentId === 'object' ? slot.agentId : null;
+    const gigData = slot.gigId && typeof slot.gigId === 'object' ? slot.gigId : null;
+
+    const id = (slot._id as any)?.$oid || slot._id?.toString() || crypto.randomUUID();
+    const repId = (agentData as any)?._id || (agentData as any)?.$oid || slot.agentId?.toString() || slot.repId?.toString() || '';
+    const gigId = (gigData as any)?._id || (gigData as any)?.$oid || slot.gigId?.toString() || '';
+
+    return {
+        id,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        date: slot.date,
+        gigId,
+        repId,
+        status: slot.status,
+        duration: slot.duration || 1,
+        notes: slot.notes,
+        attended: slot.attended,
+        attendanceNotes: slot.attendanceNotes,
+        agent: agentData, // Store populated agent data
+        gig: gigData // Store populated gig data
+    };
+};
+
 // Map ExternalGig to scheduler Gig type
 const mapExternalGigToSchedulerGig = (gig: ExternalGig): Gig => {
+    const id = (gig._id as any)?.$oid || gig._id?.toString() || crypto.randomUUID();
     return {
-        id: gig._id || crypto.randomUUID(),
+        id,
         name: gig.title,
         description: gig.description,
         company: gig.companyName || 'Unknown Company',
-        color: stringToColor(gig._id || gig.title),
-        skills: gig.requiredSkills?.map(s => s.name) || [],
+        color: stringToColor(id),
+        skills: gig.requiredSkills?.map((s: any) => typeof s === 'string' ? s : s.name) || [],
         priority: 'medium', // Default priority, could be derived
         availability: gig.availability
     };
@@ -242,7 +269,8 @@ export function SessionPlanning() {
             if (!selectedRepId || userRole !== 'rep') return;
             try {
                 const fetchedSlots = await schedulerApi.getTimeSlots(selectedRepId);
-                setSlots(fetchedSlots);
+                const mappedSlots = Array.isArray(fetchedSlots) ? fetchedSlots.map(mapBackendSlotToSlot) : [];
+                setSlots(mappedSlots);
             } catch (error) {
                 console.error('Error fetching slots:', error);
             }
