@@ -45,6 +45,10 @@ export function TimeSlotGrid({
         return draftSlots.some(s => s.date === format(date, 'yyyy-MM-dd') && s.startTime === time);
     };
 
+    const getDraftSlotForTime = (time: string): Partial<TimeSlot> | undefined => {
+        return draftSlots.find(s => s.date === format(date, 'yyyy-MM-dd') && s.startTime === time);
+    };
+
     const isHourAvailable = (hour: string) => {
         const gig = gigs.find(p => p.id === selectedGigId);
         if (!gig || !gig.availability?.schedule) return true;
@@ -255,27 +259,54 @@ export function TimeSlotGrid({
                                                 <X className="w-5 h-5" />
                                             </button>
                                         </div>
-                                    ) : (
-                                        <div className="flex items-center justify-between">
-                                            {isPreviewed(time) ? (
-                                                <div className="flex items-center justify-between w-full">
-                                                    <div className="flex items-center text-blue-600 animate-pulse">
-                                                        <Clock className="w-4 h-4 mr-2" />
-                                                        <span className="text-xs font-black uppercase tracking-wider">Ready to reserve</span>
+                                    ) : isPreviewed(time) ? (
+                                        (() => {
+                                            const draftSlot = getDraftSlotForTime(time);
+                                            const draftGigId = draftSlot?.gigId || selectedGigId;
+                                            const draftGig = gigs.find(g => g.id === draftGigId);
+                                            return (
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1 space-y-3">
+                                                        <div className="flex items-center space-x-4">
+                                                            <div className="relative flex-1 max-w-sm">
+                                                                <div className="w-full bg-white border border-blue-200 rounded-xl text-sm font-bold text-gray-800 py-2 pl-4 pr-10 shadow-sm">
+                                                                    {draftGig ? draftGig.name : 'Select a gig'}
+                                                                </div>
+                                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-blue-600 rounded-r-lg" />
+                                                            </div>
+                                                            <div className="flex items-center bg-white border border-blue-100 rounded-xl px-3 py-2 shadow-sm">
+                                                                <Clock className="w-4 h-4 text-gray-400 mr-2" />
+                                                                <span className="text-sm font-bold text-gray-700">
+                                                                    {draftSlot?.duration ?? 1} hour{(draftSlot?.duration ?? 1) > 1 ? 's' : ''}
+                                                                </span>
+                                                            </div>
+                                                            <button
+                                                                className="px-4 py-2 text-xs font-black rounded-xl flex items-center border shadow-sm bg-blue-100/50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                                                            >
+                                                                <Check className="w-3.5 h-3.5 mr-1.5" />
+                                                                Reserved
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex items-center text-gray-400 pl-1">
+                                                            <MessageSquare className="w-4 h-4 mr-3 opacity-60" />
+                                                            <span className="text-sm font-bold text-gray-400">Draft — click Reserve Time Block to save</span>
+                                                        </div>
                                                     </div>
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             onTimeSelect?.(time);
                                                         }}
-                                                        className="p-1 px-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all text-xs font-black flex items-center"
+                                                        className="ml-6 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                                     >
-                                                        <X className="w-3.5 h-3.5 mr-1" />
-                                                        Cancel
+                                                        <X className="w-5 h-5" />
                                                     </button>
                                                 </div>
-                                            ) : (
-                                                <button
+                                            );
+                                        })()
+                                    ) : (
+                                        <div className="flex items-center justify-between">
+                                            <button
                                                     onClick={(e) => {
                                                         if (!available && !showAllHours) return;
                                                         e.stopPropagation();
@@ -292,7 +323,6 @@ export function TimeSlotGrid({
                                                         Add slot
                                                     </span>
                                                 </button>
-                                            )}
                                         </div>
                                     )}
                                 </div>
