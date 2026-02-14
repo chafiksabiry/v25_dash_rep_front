@@ -734,6 +734,21 @@ export function SessionPlanning() {
                                                 </div>
                                             );
 
+                                            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+                                            const takenHours = new Set<number>();
+                                            [...slots.filter(s => s.repId === selectedRepId && s.date === dateStr && s.status === 'reserved'), ...draftSlots.filter(s => s.date === dateStr)].forEach(slot => {
+                                                const startH = parseInt(slot.startTime?.split(':')[0] ?? '0');
+                                                const endH = parseInt(slot.endTime?.split(':')[0] ?? '0');
+                                                for (let h = startH; h < endH; h++) takenHours.add(h);
+                                            });
+
+                                            const startH = parseInt(daySchedule.hours.start.split(':')[0]);
+                                            const endH = parseInt(daySchedule.hours.end.split(':')[0]);
+                                            const availableStartOptions = Array.from({ length: endH - startH + 1 }, (_, i) => {
+                                                const h = startH + i;
+                                                return `${h.toString().padStart(2, '0')}:00`;
+                                            }).filter(hStr => !takenHours.has(parseInt(hStr.split(':')[0])));
+
                                             return (
                                                 <div className="space-y-4">
                                                     <div className="grid grid-cols-2 gap-4">
@@ -749,16 +764,9 @@ export function SessionPlanning() {
                                                                 }}
                                                             >
                                                                 <option value="">Start</option>
-                                                                {(() => {
-                                                                    const startH = parseInt(daySchedule.hours.start.split(':')[0]);
-                                                                    const endH = parseInt(daySchedule.hours.end.split(':')[0]);
-                                                                    return Array.from({ length: endH - startH + 1 }, (_, i) => {
-                                                                        const h = startH + i;
-                                                                        return `${h.toString().padStart(2, '0')}:00`;
-                                                                    }).map(h => (
-                                                                        <option key={h} value={h}>{h}</option>
-                                                                    ));
-                                                                })()}
+                                                                {availableStartOptions.map(h => (
+                                                                    <option key={h} value={h}>{h}</option>
+                                                                ))}
                                                             </select>
                                                         </div>
                                                         <div>
@@ -773,28 +781,24 @@ export function SessionPlanning() {
                                                                 }}
                                                             >
                                                                 <option value="">End</option>
-                                                                {(() => {
-                                                                    const startH = parseInt(daySchedule.hours.start.split(':')[0]);
-                                                                    const endH = parseInt(daySchedule.hours.end.split(':')[0]);
+                                                                {Array.from({ length: endH - startH + 1 }, (_, i) => {
+                                                                    const h = startH + i;
+                                                                    const hStr = `${h.toString().padStart(2, '0')}:00`;
                                                                     const selectedStartH = quickStart ? parseInt(quickStart.split(':')[0]) : -1;
-
-                                                                    return Array.from({ length: endH - startH + 1 }, (_, i) => {
-                                                                        const h = startH + i;
-                                                                        const hStr = `${h.toString().padStart(2, '0')}:00`;
-                                                                        const isBeforeStart = selectedStartH !== -1 && h <= selectedStartH;
-
-                                                                        return (
-                                                                            <option
-                                                                                key={hStr}
-                                                                                value={hStr}
-                                                                                disabled={isBeforeStart}
-                                                                                className={isBeforeStart ? 'text-gray-300' : ''}
-                                                                            >
-                                                                                {hStr}
-                                                                            </option>
-                                                                        );
-                                                                    });
-                                                                })()}
+                                                                    const isBeforeOrSameStart = selectedStartH !== -1 && h <= selectedStartH;
+                                                                    const rangeOverlapsTaken = selectedStartH !== -1 && Array.from({ length: h - selectedStartH }, (_, i) => selectedStartH + i).some(t => takenHours.has(t));
+                                                                    const disabled = isBeforeOrSameStart || rangeOverlapsTaken;
+                                                                    return (
+                                                                        <option
+                                                                            key={hStr}
+                                                                            value={hStr}
+                                                                            disabled={disabled}
+                                                                            className={disabled ? 'text-gray-300' : ''}
+                                                                        >
+                                                                            {hStr}
+                                                                        </option>
+                                                                    );
+                                                                })}
                                                             </select>
                                                         </div>
                                                     </div>
