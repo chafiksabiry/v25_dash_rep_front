@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { getAgentId } from '../utils/authUtils';
+import { schedulerApi } from '../services/api/scheduler';
 
 // Define ExternalGig type locally for API response mapping
 interface ExternalGig {
@@ -165,6 +166,8 @@ export function SessionPlanning() {
 
     const [gigs, setGigs] = useState<Gig[]>([]);
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
+    const [quickStart, setQuickStart] = useState<string>('');
+    const [quickEnd, setQuickEnd] = useState<string>('');
 
     useEffect(() => {
         const fetchGigs = async () => {
@@ -236,6 +239,19 @@ export function SessionPlanning() {
         }
     }, [selectedRepId, userRole]);
 
+    useEffect(() => {
+        const fetchSlots = async () => {
+            if (!selectedRepId) return;
+            try {
+                const fetchedSlots = await schedulerApi.getTimeSlots(selectedRepId);
+                setSlots(fetchedSlots);
+            } catch (error) {
+                console.error('Error fetching slots:', error);
+            }
+        };
+        fetchSlots();
+    }, [selectedRepId]);
+
     const selectedRep = useMemo(() => {
         return reps.find(rep => rep.id === selectedRepId) || reps[0];
     }, [selectedRepId, reps]);
@@ -271,7 +287,7 @@ export function SessionPlanning() {
         return stats;
     }, [slots, userRole, selectedRepId]);
 
-    const handleSlotUpdate = (updates: Partial<TimeSlot>) => {
+    const handleSlotUpdate = async (updates: Partial<TimeSlot>) => {
         let slotWithRep: TimeSlot;
 
         if (updates.id) {
@@ -287,44 +303,89 @@ export function SessionPlanning() {
             return;
         }
 
-        const existingSlotIndex = slots.findIndex((slot) => slot.id === slotWithRep.id);
-        if (existingSlotIndex >= 0) {
-            setSlots((prev) => [
-                ...prev.slice(0, existingSlotIndex),
-                slotWithRep,
-                ...prev.slice(existingSlotIndex + 1),
-            ]);
+        try {
+            await schedulerApi.upsertTimeSlot(slotWithRep);
+            const updatedSlots = await schedulerApi.getTimeSlots(selectedRepId);
+            setSlots(updatedSlots);
+
             setNotification({
-                message: 'Time slot updated successfully',
+                message: updates.id ? 'Time slot updated successfully' : 'New time slot created',
                 type: 'success'
             });
-        } else {
-            setSlots((prev) => [...prev, slotWithRep]);
+        } catch (error) {
+            console.error('Error saving slot:', error);
             setNotification({
-                message: 'New time slot created',
-                type: 'success'
+                message: 'Failed to save time slot',
+                type: 'error'
             });
         }
 
         setTimeout(() => setNotification(null), 3000);
     };
 
-    const handleSlotCancel = (slotId: string) => {
-        setSlots((prev) =>
-            prev.map((slot) =>
-                slot.id === slotId ? { ...slot, status: 'cancelled' } : slot
-            )
-        );
-        setNotification({
-            message: 'Time slot cancelled',
-            type: 'success'
-        });
+    const handleSlotCancel = async (slotId: string) => {
+        try {
+            await schedulerApi.cancelTimeSlot(slotId);
+            const updatedSlots = await schedulerApi.getTimeSlots(selectedRepId);
+            setSlots(updatedSlots);
+
+            setNotification({
+                message: 'Time slot cancelled',
+                type: 'success'
+            });
+        } catch (error) {
+            console.error('Error cancelling slot:', error);
+            setNotification({
+                message: 'Failed to cancel time slot',
+                type: 'error'
+            });
+        }
 
         setTimeout(() => setNotification(null), 3000);
 
         if (selectedSlot?.id === slotId) {
             setSelectedSlot(null);
         }
+    };
+
+    const handleQuickReserve = async () => {
+        if (!selectedGigId || !quickStart || !quickEnd) return;
+
+        const newSlot: Partial<TimeSlot> = {
+            id: crypto.randomUUID(),
+            agentId: selectedRepId, // Map to backend agentId
+            repId: selectedRepId,
+            gigId: selectedGigId,
+            date: format(selectedDate, 'yyyy-MM-dd'),
+            startTime: quickStart,
+            endTime: quickEnd,
+            duration: parseInt(quickEnd) - parseInt(quickStart),
+            status: 'reserved',
+            notes: 'Created via Quick Reserve'
+        };
+
+        try {
+            await schedulerApi.upsertTimeSlot(newSlot);
+            const updatedSlots = await schedulerApi.getTimeSlots(selectedRepId);
+            setSlots(updatedSlots);
+
+            setNotification({
+                message: 'Time block reserved successfully',
+                type: 'success'
+            });
+
+            // Reset quick reserve selection
+            setQuickStart('');
+            setQuickEnd('');
+        } catch (error) {
+            console.error('Error in quick reserve:', error);
+            setNotification({
+                message: 'Failed to reserve time block',
+                type: 'error'
+            });
+        }
+
+        setTimeout(() => setNotification(null), 3000);
     };
 
     const handleSlotSelect = (slot: TimeSlot) => {
@@ -562,7 +623,12 @@ export function SessionPlanning() {
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
                                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Start Time</p>
-                                                        <select className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100">
+                                                        <select
+                                                            className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
+                                                            value={quickStart}
+                                                            onChange={(e) => setQuickStart(e.target.value)}
+                                                        >
+                                                            <option value="">Start</option>
                                                             {availableHours.slice(0, -1).map(h => (
                                                                 <option key={h} value={h}>{h}</option>
                                                             ))}
@@ -570,7 +636,12 @@ export function SessionPlanning() {
                                                     </div>
                                                     <div>
                                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">End Time</p>
-                                                        <select className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100">
+                                                        <select
+                                                            className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
+                                                            value={quickEnd}
+                                                            onChange={(e) => setQuickEnd(e.target.value)}
+                                                        >
+                                                            <option value="">End</option>
                                                             {availableHours.slice(1).map(h => (
                                                                 <option key={h} value={h}>{h}</option>
                                                             ))}
@@ -579,8 +650,10 @@ export function SessionPlanning() {
                                                 </div>
                                             );
                                         })()}
-                                        <button className="w-full py-4 bg-blue-600 text-white rounded-xl text-sm font-black shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                            disabled={!selectedGigId || !gigs.find(g => g.id === selectedGigId)?.availability?.schedule?.some(s => s.day.toLowerCase() === format(selectedDate, 'EEEE').toLowerCase())}
+                                        <button
+                                            onClick={handleQuickReserve}
+                                            className="w-full py-4 bg-blue-600 text-white rounded-xl text-sm font-black shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled={!selectedGigId || !quickStart || !quickEnd || !gigs.find(g => g.id === selectedGigId)?.availability?.schedule?.some(s => s.day.toLowerCase() === format(selectedDate, 'EEEE').toLowerCase())}
                                         >
                                             Reserve Time Block
                                         </button>

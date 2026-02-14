@@ -8,6 +8,7 @@ export interface TimeSlot {
     duration: number; // in hours
     notes?: string;
     repId: string; // Added to track which REP owns this slot
+    agentId?: string; // Map to backend agentId
     attended?: boolean; // Whether the REP attended this slot
     attendanceNotes?: string; // Notes about attendance
 }
