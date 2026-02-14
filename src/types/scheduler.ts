@@ -20,6 +20,13 @@ export interface Project {
     color: string; // for visual identification
     skills: string[]; // Skills required for this project
     priority: 'low' | 'medium' | 'high';
+    availability?: {
+        schedule?: {
+            day: string;
+            hours: { start: string; end: string; };
+        }[];
+        time_zone?: string | { name: string };
+    };
 }
 
 export interface Rep {

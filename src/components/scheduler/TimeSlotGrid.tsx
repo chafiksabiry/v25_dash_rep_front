@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { TimeSlot, Project } from '../../types/scheduler';
 import { Clock, X, MessageSquare, Timer, Check, Calendar, AlertTriangle } from 'lucide-react';
@@ -35,6 +35,27 @@ export function TimeSlotGrid({
     const displaySlots = showCancelled
         ? filteredSlots
         : filteredSlots.filter(slot => slot.status !== 'cancelled');
+
+    // Get availability for the selected project on the current day
+    const isHourAvailable = (hour: string) => {
+        if (selectedProject === 'all') return true;
+
+        const project = projects.find(p => p.id === selectedProject);
+        if (!project || !project.availability?.schedule) return true;
+
+        const dayName = format(date, 'EEEE'); // e.g., "Monday"
+        const daySchedule = project.availability.schedule.find(
+            s => s.day.toLowerCase() === dayName.toLowerCase()
+        );
+
+        if (!daySchedule) return false;
+
+        const slotHour = parseInt(hour.split(':')[0]);
+        const startHour = parseInt(daySchedule.hours.start.split(':')[0]);
+        const endHour = parseInt(daySchedule.hours.end.split(':')[0]);
+
+        return slotHour >= startHour && slotHour < endHour;
+    };
 
     return (
         <div className="bg-white rounded-lg shadow p-4 mt-4">
@@ -140,10 +161,10 @@ export function TimeSlotGrid({
                                                         });
                                                     }}
                                                     className={`px-3 py-1 rounded-full text-sm font-medium flex items-center ${slot.status === 'available'
-                                                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                                            : slot.status === 'reserved'
-                                                                ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                                                                : 'bg-red-100 text-red-800'
+                                                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                                        : slot.status === 'reserved'
+                                                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                                                            : 'bg-red-100 text-red-800'
                                                         }`}
                                                     disabled={slot.status === 'cancelled'}
                                                 >
@@ -190,8 +211,8 @@ export function TimeSlotGrid({
                                             onSlotCancel(slot.id);
                                         }}
                                         className={`ml-4 ${slot.status === 'cancelled'
-                                                ? 'text-gray-400 cursor-not-allowed'
-                                                : 'text-red-600 hover:text-red-800'
+                                            ? 'text-gray-400 cursor-not-allowed'
+                                            : 'text-red-600 hover:text-red-800'
                                             }`}
                                         disabled={slot.status === 'cancelled'}
                                         title={slot.status === 'cancelled' ? 'Already cancelled' : 'Cancel slot'}
@@ -202,6 +223,7 @@ export function TimeSlotGrid({
                             ) : (
                                 <button
                                     onClick={(e) => {
+                                        if (!isHourAvailable(time)) return;
                                         e.stopPropagation();
                                         onSlotUpdate({
                                             id: crypto.randomUUID(),
@@ -211,17 +233,31 @@ export function TimeSlotGrid({
                                             status: 'available',
                                             duration: 1,
                                             repId: selectedRepId,
+                                            projectId: selectedProject !== 'all' ? selectedProject : undefined
                                         });
                                     }}
-                                    className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+                                    className={`${isHourAvailable(time)
+                                        ? 'text-blue-600 hover:text-blue-800'
+                                        : 'text-gray-400 cursor-not-allowed'
+                                        } text-sm font-medium flex items-center`}
+                                    disabled={!isHourAvailable(time)}
                                 >
-                                    <span className="mr-1">+</span> Add slot
+                                    {isHourAvailable(time) ? (
+                                        <>
+                                            <span className="mr-1">+</span> Add slot
+                                        </>
+                                    ) : (
+                                        <span className="text-gray-400 flex items-center">
+                                            <AlertTriangle className="w-3 h-3 mr-1" />
+                                            Outside availability
+                                        </span>
+                                    )}
                                 </button>
                             )}
                         </div>
                     );
                 })}
             </div>
-        </div>
+        </div >
     );
 }

@@ -47,7 +47,8 @@ const mapGigToProject = (gig: Gig): Project => {
         company: gig.companyName || 'Unknown Company',
         color: stringToColor(gig._id || gig.title),
         skills: gig.requiredSkills?.map(s => s.name) || [],
-        priority: 'medium' // Default priority, could be derived
+        priority: 'medium', // Default priority, could be derived
+        availability: gig.availability
     };
 };
 
@@ -243,7 +244,8 @@ export function SessionPlanning() {
                         company: gigAgent.gigId.companyId?.name || 'Unknown Company',
                         color: stringToColor(gigAgent.gigId._id || gigAgent.gigId.title),
                         skills: [], // Skills might not be in the lightweight gig object
-                        priority: 'medium'
+                        priority: 'medium',
+                        availability: gigAgent.gigId.availability
                     }));
 
                     setProjects(mappedProjects);
