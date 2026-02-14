@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Calendar } from '../components/scheduler/Calendar';
+import { HorizontalCalendar } from '../components/scheduler/HorizontalCalendar';
 import { TimeSlotGrid } from '../components/scheduler/TimeSlotGrid';
-import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company, AttendanceRecord } from '../types/scheduler';
+import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company } from '../types/scheduler';
 import { Building, Clock, Briefcase, AlertCircle, Users, LayoutDashboard, Brain } from 'lucide-react';
 import { RepSelector } from '../components/scheduler/RepSelector';
 import { CompanyView } from '../components/scheduler/CompanyView';
@@ -465,61 +465,104 @@ export function SessionPlanning() {
                             onSelectRep={setSelectedRepId}
                         />
 
-                        {/* Top Section: Calendar + Stats */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
-                                <Calendar
+                        {/* Top Section: Schedule + Weekly Overview */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                            <div className="lg:col-span-2">
+                                <HorizontalCalendar
                                     selectedDate={selectedDate}
                                     onDateSelect={setSelectedDate}
-                                    slots={slots.filter(slot => slot.repId === selectedRepId)}
+                                    slots={slots.filter((slot: TimeSlot) => slot.repId === selectedRepId)}
                                 />
                             </div>
 
-                            <div className="space-y-8">
-                                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
-                                    <h3 className="text-lg font-black text-gray-900 mb-6 flex items-center">
-                                        <div className="w-1.5 h-5 bg-blue-600 rounded-full mr-3"></div>
-                                        Weekly Overview
-                                    </h3>
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-8">
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-900 mb-6">Weekly Overview</h3>
                                     <div className="space-y-4">
-                                        <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100/50">
-                                            <p className="text-xs font-bold text-blue-600 uppercase mb-1">Available Slots</p>
-                                            <p className="text-2xl font-black text-blue-900">
-                                                {slots.filter(s => s.repId === selectedRepId && s.status === 'available').length}
-                                            </p>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-400 font-medium">Available Slots</span>
+                                            <span className="text-gray-900 font-black">
+                                                {slots.filter((s: TimeSlot) => s.repId === selectedRepId && s.status === 'available').length}
+                                            </span>
                                         </div>
-                                        <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100/50">
-                                            <p className="text-xs font-bold text-emerald-600 uppercase mb-1">Reserved Gigs</p>
-                                            <p className="text-2xl font-black text-emerald-900">
-                                                {slots.filter(s => s.repId === selectedRepId && s.status === 'reserved').length}
-                                            </p>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-400 font-medium">Reserved Slots</span>
+                                            <span className="text-gray-900 font-black">
+                                                {slots.filter((s: TimeSlot) => s.repId === selectedRepId && s.status === 'reserved').length}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-xl p-8 text-white">
-                                    <h3 className="text-lg font-black mb-4">Quick Options</h3>
-                                    <div className="space-y-3">
-                                        <button className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-bold transition-all text-left">
-                                            Set Default Hours
-                                        </button>
-                                        <button className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-bold transition-all text-left">
-                                            Sync with Google
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-900 mb-6">Project Hours</h3>
+                                    <div className="space-y-4">
+                                        {gigs.slice(0, 1).map((gig: Gig) => (
+                                            <div key={gig.id} className="flex justify-between items-center text-sm">
+                                                <div className="flex items-center">
+                                                    <div className="w-2 h-2 rounded-full bg-blue-600 mr-3"></div>
+                                                    <span className="text-gray-500 font-medium">{gig.name}</span>
+                                                </div>
+                                                <span className="text-gray-900 font-black">
+                                                    {slots
+                                                        .filter((s: TimeSlot) => s.repId === selectedRepId && s.gigId === gig.id && s.status === 'reserved')
+                                                        .reduce((sum: number, s: TimeSlot) => sum + (s.duration || 1), 0)}h
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-900 mb-6">Quick Reserve</h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Project</p>
+                                            <select
+                                                className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
+                                                value={selectedGigId || ''}
+                                                onChange={(e) => setSelectedGigId(e.target.value)}
+                                            >
+                                                {gigs.map((gig: Gig) => (
+                                                    <option key={gig.id} value={gig.id}>{gig.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Start Time</p>
+                                                <select className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100">
+                                                    <option>09:00</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">End Time</p>
+                                                <select className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100">
+                                                    <option>17:00</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <button className="w-full py-4 bg-blue-600 text-white rounded-xl text-sm font-black shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
+                                            Reserve Time Block
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Bottom Section: Full Width Slot Grid */}
-                        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
-                            <h3 className="text-xl font-black text-gray-900 mb-8 flex items-center">
-                                <div className="w-2 h-7 bg-blue-600 rounded-full mr-4"></div>
-                                Daily Schedule Details
-                            </h3>
+                        {/* Bottom Section: Slot Grid */}
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center text-gray-700">
+                                    <Clock className="w-5 h-5 mr-3" />
+                                    <h3 className="text-lg font-bold">
+                                        Time Slots for {format(selectedDate, 'MMMM d, yyyy')}
+                                    </h3>
+                                </div>
+                            </div>
                             <TimeSlotGrid
                                 date={selectedDate}
-                                slots={slots.filter(slot => slot.repId === selectedRepId)}
+                                slots={slots.filter((slot: TimeSlot) => slot.repId === selectedRepId)}
                                 gigs={gigs}
                                 onSlotUpdate={handleSlotUpdate}
                                 onSlotCancel={handleSlotCancel}
