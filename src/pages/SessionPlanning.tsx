@@ -353,7 +353,10 @@ export function SessionPlanning() {
         return stats;
     }, [slots, userRole, selectedRepId, draftSlots]);
 
+    const isPastDate = format(selectedDate, 'yyyy-MM-dd') < format(new Date(), 'yyyy-MM-dd');
+
     const handleTimeSelect = (time: string) => {
+        if (isPastDate) return;
         const hour = parseInt(time.split(':')[0]);
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
         const isAlreadyDrafted = draftSlots.some(s => s.date === dateStr && s.startTime === time);
@@ -379,7 +382,7 @@ export function SessionPlanning() {
     };
 
     const updateDraftRange = (start: string, end: string) => {
-        if (!start || !end) return;
+        if (isPastDate || !start || !end) return;
         const startH = parseInt(start.split(':')[0]);
         const endH = parseInt(end.split(':')[0]);
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -675,6 +678,12 @@ export function SessionPlanning() {
                                 <div className="pt-5 border-t border-gray-100">
                                     <h3 className="text-base font-semibold text-gray-900 mb-4">Quick Reserve</h3>
                                     <div className="space-y-4">
+                                        {isPastDate ? (
+                                            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm text-amber-800">
+                                                You can only reserve slots for today or future dates. This day is in the past; existing reserved slots are still shown below.
+                                            </div>
+                                        ) : (
+                                        <>
                                         <div>
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Project</p>
                                             <select
@@ -830,6 +839,8 @@ export function SessionPlanning() {
                                         >
                                             Reserve Time Block
                                         </button>
+                                        </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -838,6 +849,7 @@ export function SessionPlanning() {
                         <div className="space-y-4">
                             <TimeSlotGrid
                                 date={selectedDate}
+                                allowAddSlots={!isPastDate}
                                 slots={slots.filter((slot: TimeSlot) => slot.repId === selectedRepId)}
                                 gigs={gigs}
                                 onSlotUpdate={handleSlotUpdate}

@@ -16,6 +16,7 @@ interface TimeSlotGridProps {
     onTimeSelect?: (time: string) => void;
     draftSlotNotes?: Record<string, string>;
     onDraftNotesChange?: (time: string, value: string) => void;
+    allowAddSlots?: boolean;
 }
 
 export function TimeSlotGrid({
@@ -31,6 +32,7 @@ export function TimeSlotGrid({
     onTimeSelect,
     draftSlotNotes,
     onDraftNotesChange,
+    allowAddSlots = true,
 }: TimeSlotGridProps) {
     const timeSlots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
     const daySlots = slots.filter((slot) => slot.date === format(date, 'yyyy-MM-dd'));
@@ -320,6 +322,10 @@ export function TimeSlotGrid({
                                                 </div>
                                             );
                                         })()
+                                    ) : !allowAddSlots ? (
+                                        <div className="flex items-center text-gray-400 text-sm">
+                                            Past day — viewing only
+                                        </div>
                                     ) : (
                                         <div className="flex items-center justify-between">
                                             <button
