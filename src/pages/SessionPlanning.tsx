@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { HorizontalCalendar } from '../components/scheduler/HorizontalCalendar';
 import { TimeSlotGrid } from '../components/scheduler/TimeSlotGrid';
 import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company } from '../types/scheduler';
-import { Building, Clock, Briefcase, AlertCircle, Users, LayoutDashboard, Brain, X } from 'lucide-react';
+import { Building, Clock, Briefcase, AlertCircle, Users, Brain, X } from 'lucide-react';
 import { RepSelector } from '../components/scheduler/RepSelector';
 import { CompanyView } from '../components/scheduler/CompanyView';
 import { WorkloadPredictionComponent as WorkloadPrediction } from '../components/scheduler/WorkloadPrediction';
@@ -151,7 +151,7 @@ export function SessionPlanning() {
     const [slots, setSlots] = useState<TimeSlot[]>([]);
     const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
-    const [userRole, setUserRole] = useState<UserRole>('rep');
+    const [userRole] = useState<UserRole>('rep');
 
     const [selectedRepId, setSelectedRepId] = useState<string>(() => {
         const agendId = getAgentId();
@@ -448,7 +448,7 @@ export function SessionPlanning() {
                 schedulerApi.upsertTimeSlot({
                     ...slot,
                     gigId: selectedGigId,
-                    notes: 'Created via Multi-Slot Selection'
+                    notes: slot.notes || ''
                 })
             ));
 
@@ -522,25 +522,7 @@ export function SessionPlanning() {
                         </div>
                     </div>
 
-                    <div className="mt-8 flex space-x-4 bg-gray-50 p-1 rounded-xl w-fit border border-gray-200">
-                        {[
-                            { id: 'rep', name: 'REP View', icon: Users },
-                            { id: 'company', name: 'Company View', icon: Building },
-                            { id: 'admin', name: 'Admin View', icon: LayoutDashboard }
-                        ].map(role => (
-                            <button
-                                key={role.id}
-                                onClick={() => setUserRole(role.id as UserRole)}
-                                className={`px-4 py-2 rounded-lg flex items-center transition-all duration-200 ${userRole === role.id
-                                    ? 'bg-white text-blue-600 shadow-sm font-bold border border-gray-100'
-                                    : 'bg-transparent text-gray-500 hover:text-gray-900 font-medium'
-                                    }`}
-                            >
-                                <role.icon className={`w-4 h-4 mr-2 ${userRole === role.id ? 'text-blue-600' : 'text-gray-400'}`} />
-                                {role.name}
-                            </button>
-                        ))}
-                    </div>
+                    {/* Role Switcher Removed */}
                 </div>
             </header>
 
