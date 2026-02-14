@@ -212,12 +212,11 @@ export function SessionPlanning() {
             if (!selectedRepId) return;
 
             try {
-                setLoadingEnrolledGigs(true);
                 const matchingApiUrl = import.meta.env.VITE_MATCHING_API_URL || 'https://v25matchingbackend-production.up.railway.app/api';
                 const response = await axios.get(`${matchingApiUrl}/gig-agents/agent/${selectedRepId}`);
 
                 if (response.data) {
-                    const enrolledOnly = response.data.filter((ga: EnrolledGig) => ga.status === 'enrolled');
+                    const enrolledOnly = response.data.filter((ga: EnrolledGig) => ga.status?.toLowerCase() === 'enrolled');
 
                     const mappedGigs: Gig[] = enrolledOnly.map((gigAgent: EnrolledGig) => ({
                         id: gigAgent.gigId._id,
