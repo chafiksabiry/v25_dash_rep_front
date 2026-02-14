@@ -330,6 +330,10 @@ export function SessionPlanning() {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
         const isAlreadyDrafted = draftSlots.some(s => s.date === dateStr && s.startTime === time);
 
+        // Reset quick dropdowns when selecting manually
+        setQuickStart('');
+        setQuickEnd('');
+
         if (isAlreadyDrafted) {
             setDraftSlots(prev => prev.filter(s => !(s.date === dateStr && s.startTime === time)));
         } else {
