@@ -765,12 +765,24 @@ export function SessionPlanning() {
                                                                 {(() => {
                                                                     const startH = parseInt(daySchedule.hours.start.split(':')[0]);
                                                                     const endH = parseInt(daySchedule.hours.end.split(':')[0]);
+                                                                    const selectedStartH = quickStart ? parseInt(quickStart.split(':')[0]) : -1;
+
                                                                     return Array.from({ length: endH - startH + 1 }, (_, i) => {
                                                                         const h = startH + i;
-                                                                        return `${h.toString().padStart(2, '0')}:00`;
-                                                                    }).map(h => (
-                                                                        <option key={h} value={h}>{h}</option>
-                                                                    ));
+                                                                        const hStr = `${h.toString().padStart(2, '0')}:00`;
+                                                                        const isBeforeStart = selectedStartH !== -1 && h <= selectedStartH;
+
+                                                                        return (
+                                                                            <option
+                                                                                key={hStr}
+                                                                                value={hStr}
+                                                                                disabled={isBeforeStart}
+                                                                                className={isBeforeStart ? 'text-gray-300' : ''}
+                                                                            >
+                                                                                {hStr}
+                                                                            </option>
+                                                                        );
+                                                                    });
                                                                 })()}
                                                             </select>
                                                         </div>
