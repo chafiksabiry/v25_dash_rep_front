@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Rep, TimeSlot } from '../../types/scheduler';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-import { FileText, Download, Filter, CheckCircle, XCircle } from 'lucide-react';
+import { FileText, Download, Filter, CheckCircle, XCircle, Users, BarChart3, TrendingUp } from 'lucide-react';
 
 interface AttendanceReportProps {
     reps: Rep[];
@@ -12,7 +12,6 @@ export function AttendanceReport({ reps, slots }: AttendanceReportProps) {
     const [timeframe, setTimeframe] = useState<'all' | 'month' | 'week'>('month');
     const [sortBy, setSortBy] = useState<'name' | 'score'>('score');
 
-    // Filter slots based on timeframe
     const filteredSlots = slots.filter(slot => {
         const slotDate = parseISO(slot.date);
         const now = new Date();
@@ -29,10 +28,9 @@ export function AttendanceReport({ reps, slots }: AttendanceReportProps) {
             return isWithinInterval(slotDate, { start: weekStart, end: weekEnd });
         }
 
-        return true; // 'all' timeframe
+        return true;
     });
 
-    // Calculate attendance scores for each rep
     const repScores = reps.map(rep => {
         const repSlots = filteredSlots.filter(slot =>
             slot.repId === rep.id &&
@@ -55,7 +53,6 @@ export function AttendanceReport({ reps, slots }: AttendanceReportProps) {
         };
     });
 
-    // Sort reps based on selected sort option
     const sortedReps = [...repScores].sort((a, b) => {
         if (sortBy === 'name') {
             return a.name.localeCompare(b.name);
@@ -64,16 +61,14 @@ export function AttendanceReport({ reps, slots }: AttendanceReportProps) {
         }
     });
 
-    // Get color class based on score
-    const getScoreColorClass = (score: number | undefined): string => {
-        const safeScore = score || 0;
-        if (safeScore >= 90) return 'text-green-600';
-        if (safeScore >= 80) return 'text-blue-600';
-        if (safeScore >= 70) return 'text-yellow-600';
-        return 'text-red-600';
+    const getScoreStyles = (score: number | undefined) => {
+        const s = score || 0;
+        if (s >= 90) return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+        if (s >= 80) return 'bg-blue-50 text-blue-700 border-blue-100';
+        if (s >= 70) return 'bg-amber-50 text-amber-700 border-amber-100';
+        return 'bg-rose-50 text-rose-700 border-rose-100';
     };
 
-    // Generate CSV data for export
     const generateCSV = () => {
         const headers = ['REP Name', 'Email', 'Attendance Score', 'Sessions Attended', 'Total Sessions', 'Specialties'];
         const rows = sortedReps.map(rep => [
@@ -99,110 +94,105 @@ export function AttendanceReport({ reps, slots }: AttendanceReportProps) {
     };
 
     return (
-        <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-8 border-b border-gray-50 flex flex-wrap items-center justify-between gap-6">
                 <div className="flex items-center">
-                    <FileText className="w-5 h-5 text-blue-600 mr-2" />
-                    <h2 className="text-lg font-semibold text-gray-800">Attendance Report</h2>
+                    <div className="p-2.5 bg-blue-600 rounded-2xl mr-4 shadow-lg shadow-blue-100 text-white">
+                        <BarChart3 className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">HARX ATTENDANCE ANALYTICS</h2>
+                        <p className="text-xs font-bold text-gray-400 mt-0.5 uppercase tracking-widest">Performance Insights & Compliance</p>
+                    </div>
                 </div>
-                <button
-                    onClick={generateCSV}
-                    className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm font-medium flex items-center"
-                >
-                    <Download className="w-4 h-4 mr-1" />
-                    Export
-                </button>
-            </div>
 
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                    <Filter className="w-4 h-4 text-gray-500" />
-                    <select
-                        value={timeframe}
-                        onChange={(e) => setTimeframe(e.target.value as 'all' | 'month' | 'week')}
-                        className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                <div className="flex items-center space-x-3">
+                    <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100">
+                        {['all', 'month', 'week'].map((t) => (
+                            <button
+                                key={t}
+                                onClick={() => setTimeframe(t as any)}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${timeframe === t
+                                        ? 'bg-white text-blue-600 shadow-sm border border-gray-100'
+                                        : 'text-gray-400 hover:text-gray-600'
+                                    }`}
+                            >
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+                    <button
+                        onClick={generateCSV}
+                        className="p-2 bg-white border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-200 rounded-xl transition-all shadow-sm group"
+                        title="Download CSV Report"
                     >
-                        <option value="all">All Time</option>
-                        <option value="month">This Month</option>
-                        <option value="week">This Week</option>
-                    </select>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">Sort by:</span>
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as 'name' | 'score')}
-                        className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >
-                        <option value="score">Attendance Score</option>
-                        <option value="name">Name</option>
-                    </select>
+                        <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    </button>
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                REP
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Attendance Score
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Sessions
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Specialties
-                            </th>
+            <div className="overflow-x-auto no-scrollbar">
+                <table className="min-w-full">
+                    <thead>
+                        <tr className="bg-gray-50/50">
+                            {[
+                                { label: 'REP IDENTITY', width: '40%' },
+                                { label: 'COMPLIANCE SCORE', width: '20%' },
+                                { label: 'SESSSION STATS', width: '20%' },
+                                { label: 'TAGS', width: '20%' }
+                            ].map((header, idx) => (
+                                <th key={header.label} className={`px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest ${idx > 0 ? 'text-center' : ''}`} style={{ width: header.width }}>
+                                    {header.label}
+                                </th>
+                            ))}
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-50">
                         {sortedReps.map(rep => (
-                            <tr key={rep.id}>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                            <tr key={rep.id} className="group hover:bg-blue-50/20 transition-colors">
+                                <td className="px-8 py-6">
                                     <div className="flex items-center">
-                                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                            {rep.avatar ? (
-                                                <img
-                                                    src={rep.avatar}
-                                                    alt={rep.name}
-                                                    className="h-10 w-10 rounded-full"
-                                                />
-                                            ) : (
-                                                <span className="text-gray-500 text-sm">{rep.name.charAt(0)}</span>
-                                            )}
+                                        <div className="relative">
+                                            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform duration-300">
+                                                {rep.avatar ? (
+                                                    <img src={rep.avatar} alt={rep.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Users className="w-6 h-6 text-gray-200" />
+                                                )}
+                                            </div>
+                                            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white" />
                                         </div>
-                                        <div className="ml-4">
-                                            <div className="text-sm font-medium text-gray-900">{rep.name}</div>
-                                            <div className="text-sm text-gray-500">{rep.email}</div>
+                                        <div className="ml-5">
+                                            <div className="text-sm font-black text-gray-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{rep.name}</div>
+                                            <div className="text-[10px] font-bold text-gray-400 tracking-wider mt-0.5">{rep.email}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className={`text-lg font-bold ${getScoreColorClass(rep.attendanceScore)}`}>
+                                <td className="px-8 py-6 text-center">
+                                    <div className={`inline-flex items-center px-4 py-1.5 rounded-full border text-xs font-black tracking-widest ${getScoreStyles(rep.attendanceScore)}`}>
+                                        <TrendingUp className="w-3.5 h-3.5 mr-2" />
                                         {rep.attendanceScore}%
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
-                                        <div className="flex items-center mr-2">
-                                            <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
-                                            <span className="text-sm">{rep.attended}</span>
+                                <td className="px-8 py-6 text-center">
+                                    <div className="flex items-center justify-center space-x-4">
+                                        <div className="flex items-center">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2" />
+                                            <span className="text-sm font-black text-gray-700">{rep.attended}</span>
                                         </div>
                                         <div className="flex items-center">
-                                            <XCircle className="w-4 h-4 text-red-500 mr-1" />
-                                            <span className="text-sm">{rep.totalTracked - rep.attended}</span>
+                                            <div className="w-2 h-2 rounded-full bg-rose-400 mr-2" />
+                                            <span className="text-sm font-black text-gray-400">{rep.totalTracked - rep.attended}</span>
                                         </div>
                                     </div>
+                                    <div className="text-[9px] font-black text-gray-300 uppercase tracking-tighter mt-1">ATTENDED / MISSED</div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <div className="flex flex-wrap gap-1">
-                                        {rep.specialties.map(specialty => (
+                                <td className="px-8 py-6">
+                                    <div className="flex flex-wrap gap-1.5 justify-center">
+                                        {rep.specialties.slice(0, 2).map((specialty, i) => (
                                             <span
-                                                key={specialty}
-                                                className="px-2 py-0.5 rounded-full text-xs bg-gray-100"
+                                                key={i}
+                                                className="px-2 py-0.5 rounded-md text-[9px] font-black bg-white border border-gray-100 text-gray-500 uppercase tracking-tighter"
                                             >
                                                 {specialty}
                                             </span>
@@ -214,13 +204,26 @@ export function AttendanceReport({ reps, slots }: AttendanceReportProps) {
 
                         {sortedReps.length === 0 && (
                             <tr>
-                                <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                                    No attendance data available for the selected timeframe
+                                <td colSpan={4} className="px-8 py-16 text-center">
+                                    <div className="flex flex-col items-center">
+                                        <FileText className="w-12 h-12 text-gray-100 mb-4" />
+                                        <p className="text-sm font-bold text-gray-300 uppercase tracking-widest">No Compliance Data for this Window</p>
+                                    </div>
                                 </td>
                             </tr>
                         )}
                     </tbody>
                 </table>
+            </div>
+
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                <div className="flex items-center text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mr-3 animate-pulse" />
+                    Live Analytics Feed Active
+                </div>
+                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    Last Updated: {format(new Date(), 'HH:mm:ss')}
+                </div>
             </div>
         </div>
     );

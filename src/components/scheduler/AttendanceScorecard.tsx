@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Rep, TimeSlot } from '../../types/scheduler';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-import { Award, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Award, AlertCircle, CheckCircle, XCircle, TrendingUp, Target } from 'lucide-react';
 
 interface AttendanceScoreCardProps {
     rep: Rep;
@@ -9,7 +9,6 @@ interface AttendanceScoreCardProps {
 }
 
 export function AttendanceScorecard({ rep, slots }: AttendanceScoreCardProps) {
-    // Calculate attendance metrics
     const metrics = useMemo(() => {
         const repSlots = slots.filter(slot =>
             slot.repId === rep.id &&
@@ -20,7 +19,6 @@ export function AttendanceScorecard({ rep, slots }: AttendanceScoreCardProps) {
         const totalTracked = repSlots.length;
         const attended = repSlots.filter(slot => slot.attended === true).length;
 
-        // Get current month slots
         const now = new Date();
         const monthStart = startOfMonth(now);
         const monthEnd = endOfMonth(now);
@@ -33,7 +31,6 @@ export function AttendanceScorecard({ rep, slots }: AttendanceScoreCardProps) {
         const currentMonthTotal = currentMonthSlots.length;
         const currentMonthAttended = currentMonthSlots.filter(slot => slot.attended === true).length;
 
-        // Calculate scores
         const attendanceScore = totalTracked > 0
             ? Math.round((attended / totalTracked) * 100)
             : 0;
@@ -42,13 +39,12 @@ export function AttendanceScorecard({ rep, slots }: AttendanceScoreCardProps) {
             ? Math.round((currentMonthAttended / currentMonthTotal) * 100)
             : 0;
 
-        // Calculate reliability tier
-        let reliabilityTier = 'Unknown';
+        let reliabilityTier = 'INITIALIZING';
         if (totalTracked >= 5) {
-            if (attendanceScore >= 95) reliabilityTier = 'Excellent';
-            else if (attendanceScore >= 85) reliabilityTier = 'Good';
-            else if (attendanceScore >= 75) reliabilityTier = 'Average';
-            else reliabilityTier = 'Needs Improvement';
+            if (attendanceScore >= 95) reliabilityTier = 'ELITE';
+            else if (attendanceScore >= 85) reliabilityTier = 'PROFESSIONAL';
+            else if (attendanceScore >= 75) reliabilityTier = 'STABLE';
+            else reliabilityTier = 'UNDER REVIEW';
         }
 
         return {
@@ -62,91 +58,108 @@ export function AttendanceScorecard({ rep, slots }: AttendanceScoreCardProps) {
         };
     }, [rep, slots]);
 
-    // Get color class based on score
-    const getScoreColorClass = (score: number): string => {
-        if (score >= 90) return 'text-green-600';
-        if (score >= 80) return 'text-blue-600';
-        if (score >= 70) return 'text-yellow-600';
-        return 'text-red-600';
+    const getScoreStyles = (score: number) => {
+        if (score >= 90) return 'text-emerald-500 border-emerald-100 bg-emerald-50/20';
+        if (score >= 80) return 'text-blue-500 border-blue-100 bg-blue-50/20';
+        if (score >= 70) return 'text-amber-500 border-amber-100 bg-amber-50/20';
+        return 'text-rose-500 border-rose-100 bg-rose-50/20';
     };
 
-    // Get tier color class
-    const getTierColorClass = (tier: string): string => {
+    const getTierBadgeStyles = (tier: string) => {
         switch (tier) {
-            case 'Excellent': return 'bg-green-100 text-green-800';
-            case 'Good': return 'bg-blue-100 text-blue-800';
-            case 'Average': return 'bg-yellow-100 text-yellow-800';
-            case 'Needs Improvement': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'ELITE': return 'bg-emerald-600 text-white shadow-emerald-100';
+            case 'PROFESSIONAL': return 'bg-blue-600 text-white shadow-blue-100';
+            case 'STABLE': return 'bg-amber-600 text-white shadow-amber-100';
+            case 'UNDER REVIEW': return 'bg-rose-600 text-white shadow-rose-100';
+            default: return 'bg-gray-400 text-white';
         }
     };
 
     return (
-        <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center mb-4">
-                <Award className="w-5 h-5 text-blue-600 mr-2" />
-                <h2 className="text-lg font-semibold text-gray-800">Attendance Scorecard</h2>
-            </div>
-
-            <div className="flex justify-center mb-6">
-                <div className="w-32 h-32 rounded-full border-8 border-blue-100 flex items-center justify-center">
-                    <div className="text-center">
-                        <div className={`text-3xl font-bold ${getScoreColorClass(metrics.attendanceScore)}`}>
-                            {metrics.attendanceScore}%
-                        </div>
-                        <div className="text-sm text-gray-500">Overall Score</div>
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8">
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center">
+                    <div className="p-2.5 bg-blue-50 rounded-2xl mr-4 shadow-sm text-blue-600">
+                        <Award className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">SCORECARD</h2>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Reliability & Compliance Audit</p>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gray-50 p-3 rounded-lg text-center">
-                    <div className="text-sm text-gray-500">Current Month</div>
-                    <div className={`text-xl font-bold ${getScoreColorClass(metrics.currentMonthScore)}`}>
+            <div className="flex flex-col items-center mb-10">
+                <div className="relative group">
+                    <div className="absolute inset-0 bg-blue-100 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" />
+                    <div className={`relative w-40 h-40 rounded-full border-[10px] flex items-center justify-center transition-all duration-500 shadow-inner ${getScoreStyles(metrics.attendanceScore).split(' ')[1]}`}>
+                        <div className="text-center">
+                            <div className={`text-4xl font-black tracking-tighter ${getScoreStyles(metrics.attendanceScore).split(' ')[0]}`}>
+                                {metrics.attendanceScore}%
+                            </div>
+                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">COMPLIANCE</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 text-center">
+                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 text-center">CURRENT MONTH</div>
+                    <div className={`text-2xl font-black ${getScoreStyles(metrics.currentMonthScore).split(' ')[0]}`}>
                         {metrics.currentMonthScore}%
                     </div>
-                    <div className="text-xs text-gray-500">
-                        {metrics.currentMonthAttended} of {metrics.currentMonthTotal} sessions
+                    <div className="text-[9px] font-bold text-gray-400 mt-1 uppercase">
+                        {metrics.currentMonthAttended} / {metrics.currentMonthTotal} SESSIONS
                     </div>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-lg text-center">
-                    <div className="text-sm text-gray-500">Reliability Tier</div>
-                    <div className={`text-sm font-medium px-2 py-1 rounded-full inline-block mt-1 ${getTierColorClass(metrics.reliabilityTier)}`}>
+                <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex flex-col items-center justify-center">
+                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 text-center">TRUST TIER</div>
+                    <div className={`text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg transition-all ${getTierBadgeStyles(metrics.reliabilityTier)}`}>
                         {metrics.reliabilityTier}
                     </div>
                 </div>
             </div>
 
             <div className="space-y-3">
-                <div className="flex justify-between items-center p-2 bg-green-50 rounded-lg">
+                <div className="flex justify-between items-center p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 group hover:bg-emerald-50 transition-colors">
                     <div className="flex items-center">
-                        <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
-                        <span className="text-sm">Sessions Attended</span>
+                        <CheckCircle className="w-4 h-4 text-emerald-600 mr-3" />
+                        <span className="text-xs font-black text-emerald-900 uppercase tracking-tight">Present</span>
                     </div>
-                    <span className="font-medium">{metrics.attended}</span>
+                    <span className="text-sm font-black text-emerald-700">{metrics.attended}</span>
                 </div>
-                <div className="flex justify-between items-center p-2 bg-red-50 rounded-lg">
+                <div className="flex justify-between items-center p-4 bg-rose-50/50 rounded-2xl border border-rose-100 group hover:bg-rose-50 transition-colors">
                     <div className="flex items-center">
-                        <XCircle className="w-4 h-4 text-red-600 mr-2" />
-                        <span className="text-sm">Sessions Missed</span>
+                        <XCircle className="w-4 h-4 text-rose-600 mr-3" />
+                        <span className="text-xs font-black text-rose-900 uppercase tracking-tight">Missed</span>
                     </div>
-                    <span className="font-medium">{metrics.totalTracked - metrics.attended}</span>
+                    <span className="text-sm font-black text-rose-700">{metrics.totalTracked - metrics.attended}</span>
                 </div>
-                <div className="flex justify-between items-center p-2 bg-blue-50 rounded-lg">
+                <div className="flex justify-between items-center p-4 bg-blue-50/50 rounded-2xl border border-blue-100 group hover:bg-blue-50 transition-colors">
                     <div className="flex items-center">
-                        <AlertCircle className="w-4 h-4 text-blue-600 mr-2" />
-                        <span className="text-sm">Total Tracked</span>
+                        <TrendingUp className="w-4 h-4 text-blue-600 mr-3" />
+                        <span className="text-xs font-black text-blue-900 uppercase tracking-tight">Total Volume</span>
                     </div>
-                    <span className="font-medium">{metrics.totalTracked}</span>
+                    <span className="text-sm font-black text-blue-700">{metrics.totalTracked}</span>
                 </div>
             </div>
 
             {metrics.totalTracked < 5 && (
-                <div className="mt-4 text-sm text-gray-500 bg-yellow-50 p-2 rounded-lg">
-                    <AlertCircle className="w-4 h-4 text-yellow-600 inline mr-1" />
-                    Not enough data for reliable scoring (minimum 5 sessions)
+                <div className="mt-8 flex items-start p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                    <AlertCircle className="w-4 h-4 text-amber-600 mr-3 mt-0.5 shrink-0" />
+                    <p className="text-[10px] font-bold text-amber-800 leading-relaxed uppercase tracking-tight">
+                        Insufficient data for Tier Calibration. A minimum of 5 verified sessions is required.
+                    </p>
                 </div>
             )}
+
+            <div className="mt-6 flex flex-col items-center">
+                <div className="flex items-center text-[9px] font-bold text-gray-400 italic">
+                    <Target className="w-3 h-3 mr-1.5 text-blue-400" />
+                    Target Score: 95% for Elite status
+                </div>
+            </div>
         </div>
     );
 }

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Calendar } from '../components/scheduler/Calendar';
 import { TimeSlotGrid } from '../components/scheduler/TimeSlotGrid';
-import { TimeSlot, Project, WeeklyStats, Rep, UserRole, Company, AttendanceRecord } from '../types/scheduler';
+import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company, AttendanceRecord } from '../types/scheduler';
 import { Building, Clock, Briefcase, AlertCircle, Users, LayoutDashboard, Brain, DollarSign, MapPin } from 'lucide-react';
 import { SlotActionPanel } from '../components/scheduler/SlotActionPanel';
 import { RepSelector } from '../components/scheduler/RepSelector';
@@ -17,9 +17,10 @@ import { initializeAI } from '../services/schedulerAiService';
 import { format } from 'date-fns';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { getAgentId } from '../utils/authUtils';
 
-// Define Gig type locally if not available, or import if shared
-interface Gig {
+// Define ExternalGig type locally for API response mapping
+interface ExternalGig {
     _id: string;
     title: string;
     description: string;
@@ -38,8 +39,8 @@ const stringToColor = (str: string) => {
     return '#' + '00000'.substring(0, 6 - c.length) + c;
 };
 
-// Map Gig to scheduler Project type
-const mapGigToProject = (gig: Gig): Project => {
+// Map ExternalGig to scheduler Gig type
+const mapExternalGigToSchedulerGig = (gig: ExternalGig): Gig => {
     return {
         id: gig._id || crypto.randomUUID(),
         name: gig.title,
@@ -120,7 +121,6 @@ const sampleCompanies: Company[] = [
     },
 ];
 
-// Interface for Enrolled Gig (GigAgent)
 interface EnrolledGig {
     _id: string;
     status: string;
@@ -151,8 +151,6 @@ interface EnrolledGig {
     matchScore?: number;
 }
 
-import { getAgentId } from '../utils/authUtils';
-
 export function SessionPlanning() {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [slots, setSlots] = useState<TimeSlot[]>([]);
@@ -160,24 +158,20 @@ export function SessionPlanning() {
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
     const [userRole, setUserRole] = useState<UserRole>('rep');
 
-    // Initialize with real agent ID if available, otherwise fallback to sample
     const [selectedRepId, setSelectedRepId] = useState<string>(() => {
         const agendId = getAgentId();
         return agendId || sampleReps[0].id;
     });
 
-    // Replaced selectedCompany with selectedProjectId
-    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+    const [selectedGigId, setSelectedGigId] = useState<string | null>(null);
 
     const [showAIPanel, setShowAIPanel] = useState<boolean>(false);
     const [showAttendancePanel, setShowAttendancePanel] = useState<boolean>(false);
     const [reps, setReps] = useState<Rep[]>(sampleReps);
 
-    // Real Gigs Data
-    const [projects, setProjects] = useState<Project[]>([]);
+    const [gigs, setGigs] = useState<Gig[]>([]);
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
 
-    // Enrolled Gigs Data
     const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
     const [loadingEnrolledGigs, setLoadingEnrolledGigs] = useState<boolean>(false);
 
@@ -192,16 +186,14 @@ export function SessionPlanning() {
 
             try {
                 setLoadingGigs(true);
-                // Using the API URL from environment matching the user's request
                 const apiUrl = import.meta.env.VITE_API_URL_GIGS || 'https://v25gigsmanualcreationbackend-production.up.railway.app/api';
                 const response = await axios.get(`${apiUrl}/gigs/company/${companyId}`);
 
                 if (response.data && response.data.data) {
-                    const mappedProjects = response.data.data.map(mapGigToProject);
-                    setProjects(mappedProjects);
-                    // Set default selected project
-                    if (mappedProjects.length > 0) {
-                        setSelectedProjectId(mappedProjects[0].id);
+                    const mappedGigs = response.data.data.map(mapExternalGigToSchedulerGig);
+                    setGigs(mappedGigs);
+                    if (mappedGigs.length > 0) {
+                        setSelectedGigId(mappedGigs[0].id);
                     }
                 }
             } catch (error) {
@@ -212,16 +204,13 @@ export function SessionPlanning() {
             }
         };
 
-        // Initialize AI services
         const initAI = async () => {
             await initializeAI();
-
         };
         initAI();
         fetchGigs();
     }, [userRole]);
 
-    // Fetch Enrolled Gigs when selectedRepId changes
     useEffect(() => {
         const fetchEnrolledGigs = async () => {
             if (!selectedRepId) return;
@@ -229,30 +218,26 @@ export function SessionPlanning() {
             try {
                 setLoadingEnrolledGigs(true);
                 const matchingApiUrl = import.meta.env.VITE_MATCHING_API_URL || 'https://v25matchingbackend-production.up.railway.app/api';
-                console.log('Fetching enrolled gigs for:', selectedRepId, 'from', matchingApiUrl);
                 const response = await axios.get(`${matchingApiUrl}/gig-agents/agent/${selectedRepId}`);
-                console.log('Enrolled gigs response:', response.data);
 
                 if (response.data) {
                     setEnrolledGigs(response.data);
 
-                    // Map enrolled gigs to projects for the dropdown
-                    const mappedProjects: Project[] = response.data.map((gigAgent: EnrolledGig) => ({
+                    const mappedGigs: Gig[] = response.data.map((gigAgent: EnrolledGig) => ({
                         id: gigAgent.gigId._id,
                         name: gigAgent.gigId.title,
                         description: gigAgent.gigId.description || '',
                         company: gigAgent.gigId.companyId?.name || 'Unknown Company',
                         color: stringToColor(gigAgent.gigId._id || gigAgent.gigId.title),
-                        skills: [], // Skills might not be in the lightweight gig object
+                        skills: [],
                         priority: 'medium',
                         availability: gigAgent.gigId.availability
                     }));
 
-                    setProjects(mappedProjects);
+                    setGigs(mappedGigs);
 
-                    // Set default selected project if none selected
-                    if (mappedProjects.length > 0 && !selectedProjectId) {
-                        setSelectedProjectId(mappedProjects[0].id);
+                    if (mappedGigs.length > 0 && !selectedGigId) {
+                        setSelectedGigId(mappedGigs[0].id);
                     }
                 }
             } catch (error) {
@@ -274,12 +259,11 @@ export function SessionPlanning() {
     const weeklyStats = useMemo<WeeklyStats>(() => {
         const stats: WeeklyStats = {
             totalHours: 0,
-            projectBreakdown: {},
+            gigBreakdown: {},
             availableSlots: 0,
             reservedSlots: 0,
         };
 
-        // Filter slots by selected REP if in REP view
         const filteredSlots = userRole === 'rep'
             ? slots.filter(slot => slot.repId === selectedRepId)
             : slots;
@@ -294,8 +278,8 @@ export function SessionPlanning() {
                     stats.reservedSlots++;
                 }
 
-                if (slot.projectId) {
-                    stats.projectBreakdown[slot.projectId] = (stats.projectBreakdown[slot.projectId] || 0) + (slot.duration || 1);
+                if (slot.gigId) {
+                    stats.gigBreakdown[slot.gigId] = (stats.gigBreakdown[slot.gigId] || 0) + (slot.duration || 1);
                 }
             }
         });
@@ -338,7 +322,6 @@ export function SessionPlanning() {
             });
         }
 
-        // Clear notification after 3 seconds
         setTimeout(() => setNotification(null), 3000);
     };
 
@@ -353,10 +336,8 @@ export function SessionPlanning() {
             type: 'success'
         });
 
-        // Clear notification after 3 seconds
         setTimeout(() => setNotification(null), 3000);
 
-        // Clear selected slot if it was cancelled
         if (selectedSlot?.id === slotId) {
             setSelectedSlot(null);
         }
@@ -366,11 +347,8 @@ export function SessionPlanning() {
         setSelectedSlot(slot);
     };
 
-    const handleProjectSelect = (projectId: string) => {
-        // Find the optimal time for this project based on AI recommendations
+    const handleGigSelect = (gigId: string) => {
         const optimalHour = selectedRep.preferredHours?.start || 9;
-
-        // Check if the slot already exists
         const timeString = `${optimalHour.toString().padStart(2, '0')}:00`;
         const existingSlot = slots.find(
             (s) =>
@@ -380,14 +358,12 @@ export function SessionPlanning() {
         );
 
         if (existingSlot) {
-            // Update existing slot
             handleSlotUpdate({
                 ...existingSlot,
-                projectId,
+                gigId,
                 status: 'reserved' as const
             });
         } else {
-            // Create new slot
             handleSlotUpdate({
                 id: crypto.randomUUID(),
                 startTime: timeString,
@@ -395,20 +371,18 @@ export function SessionPlanning() {
                 date: format(selectedDate, 'yyyy-MM-dd'),
                 status: 'reserved' as const,
                 duration: 1,
-                projectId,
+                gigId,
                 repId: selectedRepId,
             } as TimeSlot);
         }
     };
 
     const handleOptimalHourSelect = (hour: number) => {
-        // Scroll to that hour in the time slot grid
         const element = document.getElementById(`time-slot-${hour}`);
         if (element) {
             element.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Check if there's already a slot at this hour
         const timeString = `${hour.toString().padStart(2, '0')}:00`;
         const existingSlot = slots.find(
             (s) =>
@@ -420,7 +394,6 @@ export function SessionPlanning() {
         if (existingSlot) {
             setSelectedSlot(existingSlot);
         } else {
-            // Create a new available slot
             const newSlot = {
                 id: crypto.randomUUID(),
                 startTime: timeString,
@@ -437,21 +410,17 @@ export function SessionPlanning() {
     };
 
     const handleAttendanceUpdate = (slotId: string, attended: boolean, notes?: string) => {
-        // Update the slot with attendance information
         setSlots(prev => prev.map(slot =>
             slot.id === slotId
                 ? { ...slot, attended, attendanceNotes: notes }
                 : slot
         ));
 
-        // Update the rep's attendance history
         const slot = slots.find(s => s.id === slotId);
         if (slot) {
             const repIndex = reps.findIndex(r => r.id === slot.repId);
             if (repIndex >= 0) {
                 const rep = reps[repIndex];
-
-                // Create attendance record
                 const attendanceRecord: AttendanceRecord = {
                     date: slot.date,
                     slotId,
@@ -459,20 +428,17 @@ export function SessionPlanning() {
                     reason: notes
                 };
 
-                // Update rep's attendance history
                 const updatedRep = {
                     ...rep,
                     attendanceHistory: [...(rep.attendanceHistory || []), attendanceRecord]
                 };
 
-                // Recalculate attendance score
                 const attendedCount = updatedRep.attendanceHistory.filter(record => record.attended).length;
                 const totalCount = updatedRep.attendanceHistory.length;
                 const attendanceScore = totalCount > 0 ? Math.round((attendedCount / totalCount) * 100) : 0;
 
                 updatedRep.attendanceScore = attendanceScore;
 
-                // Update reps array
                 setReps(prev => [
                     ...prev.slice(0, repIndex),
                     updatedRep,
@@ -482,14 +448,14 @@ export function SessionPlanning() {
         }
 
         setNotification({
-            message: `Attendance ${attended ? 'confirmed' : 'marked as missed'}`,
+            message: `Attendance marked as ${attended ? 'present' : 'missed'}`,
             type: 'success'
         });
         setTimeout(() => setNotification(null), 3000);
     };
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-100 font-sans">
             {notification && (
                 <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center ${notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                     }`}>
@@ -498,111 +464,85 @@ export function SessionPlanning() {
                 </div>
             )}
 
-            <header className="bg-white shadow">
+            <header className="bg-white shadow relative z-10">
                 <div className="max-w-7xl mx-auto px-4 py-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center">
-                            <Building className="w-8 h-8 text-blue-600 mr-3" />
-                            <h1 className="text-3xl font-bold text-gray-900">HARX Scheduling</h1>
-                            {loadingGigs && <span className="ml-4 text-sm text-gray-500 animate-pulse">Loading Gigs...</span>}
+                            <div className="bg-blue-600 p-2 rounded-xl mr-3 shadow-lg shadow-blue-200">
+                                <Building className="w-8 h-8 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">HARX Scheduling</h1>
+                                {loadingGigs && <span className="text-xs text-blue-500 font-medium animate-pulse">Updating Gigs...</span>}
+                            </div>
                         </div>
-                        <div className="flex items-center space-x-8">
+                        <div className="flex items-center space-x-12">
                             <div className="flex items-center">
-                                <Clock className="w-5 h-5 text-gray-600 mr-2" />
+                                <div className="p-2 bg-blue-50 rounded-lg mr-3">
+                                    <Clock className="w-5 h-5 text-blue-600" />
+                                </div>
                                 <div>
-                                    <p className="text-sm text-gray-600">Weekly Hours</p>
-                                    <p className="text-lg font-semibold">{weeklyStats.totalHours}h</p>
+                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Weekly Hours</p>
+                                    <p className="text-xl font-bold text-gray-900">{weeklyStats.totalHours}h</p>
                                 </div>
                             </div>
                             <div className="flex items-center">
-                                <Briefcase className="w-5 h-5 text-gray-600 mr-2" />
+                                <div className="p-2 bg-indigo-50 rounded-lg mr-3">
+                                    <Briefcase className="w-5 h-5 text-indigo-600" />
+                                </div>
                                 <div>
-                                    <p className="text-sm text-gray-600">Active Gigs</p>
-                                    <p className="text-lg font-semibold">{Object.keys(weeklyStats.projectBreakdown).length}</p>
+                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Active Gigs</p>
+                                    <p className="text-xl font-bold text-gray-900">{Object.keys(weeklyStats.gigBreakdown).length}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Role Switcher */}
-                    <div className="mt-6 flex space-x-4">
-                        <button
-                            onClick={() => setUserRole('rep')}
-                            className={`px-4 py-2 rounded-md flex items-center ${userRole === 'rep'
-                                ? 'bg-blue-100 text-blue-800 font-medium'
-                                : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                        >
-                            <Users className="w-4 h-4 mr-2" />
-                            REP View
-                        </button>
-                        <button
-                            onClick={() => setUserRole('company')}
-                            className={`px-4 py-2 rounded-md flex items-center ${userRole === 'company'
-                                ? 'bg-blue-100 text-blue-800 font-medium'
-                                : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                        >
-                            <Building className="w-4 h-4 mr-2" />
-                            Company View
-                        </button>
-                        <button
-                            onClick={() => setUserRole('admin')}
-                            className={`px-4 py-2 rounded-md flex items-center ${userRole === 'admin'
-                                ? 'bg-blue-100 text-blue-800 font-medium'
-                                : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                        >
-                            <LayoutDashboard className="w-4 h-4 mr-2" />
-                            Admin View
-                        </button>
-                        <button
-                            onClick={() => setShowAIPanel(!showAIPanel)}
-                            className={`px-4 py-2 rounded-md flex items-center ${showAIPanel
-                                ? 'bg-purple-100 text-purple-800 font-medium'
-                                : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                        >
-                            <Brain className="w-4 h-4 mr-2" />
-                            AI Assistant {showAIPanel ? 'On' : 'Off'}
-                        </button>
-                        <button
-                            onClick={() => setShowAttendancePanel(!showAttendancePanel)}
-                            className={`px-4 py-2 rounded-md flex items-center ${showAttendancePanel
-                                ? 'bg-green-100 text-green-800 font-medium'
-                                : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                        >
-                            <Clock className="w-4 h-4 mr-2" />
-                            Attendance {showAttendancePanel ? 'On' : 'Off'}
-                        </button>
+                    <div className="mt-8 flex space-x-4 bg-gray-50 p-1 rounded-xl w-fit border border-gray-200">
+                        {[
+                            { id: 'rep', name: 'REP View', icon: Users },
+                            { id: 'company', name: 'Company View', icon: Building },
+                            { id: 'admin', name: 'Admin View', icon: LayoutDashboard }
+                        ].map(role => (
+                            <button
+                                key={role.id}
+                                onClick={() => setUserRole(role.id as UserRole)}
+                                className={`px-4 py-2 rounded-lg flex items-center transition-all duration-200 ${userRole === role.id
+                                        ? 'bg-white text-blue-600 shadow-sm font-bold border border-gray-100'
+                                        : 'bg-transparent text-gray-500 hover:text-gray-900 font-medium'
+                                    }`}
+                            >
+                                <role.icon className={`w-4 h-4 mr-2 ${userRole === role.id ? 'text-blue-600' : 'text-gray-400'}`} />
+                                {role.name}
+                            </button>
+                        ))}
                     </div>
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-4 py-6">
+            <main className="max-w-7xl mx-auto px-4 py-8">
                 {userRole === 'company' ? (
-                    <div className="grid grid-cols-1 gap-6">
-                        <div className="flex space-x-4 overflow-x-auto pb-2">
-                            {projects.length === 0 ? (
-                                <div className="text-gray-500 italic px-4 py-2">No active gigs found.</div>
+                    <div className="grid grid-cols-1 gap-8">
+                        <div className="flex space-x-3 overflow-x-auto pb-4 no-scrollbar">
+                            {gigs.length === 0 ? (
+                                <div className="text-gray-400 italic px-4 py-2 bg-gray-50 rounded-lg border border-dashed border-gray-300 w-full text-center">No active gigs found.</div>
                             ) : (
-                                projects.map(project => (
+                                gigs.map(gig => (
                                     <button
-                                        key={project.id}
-                                        onClick={() => setSelectedProjectId(project.id)}
-                                        className={`px-4 py-2 rounded-md whitespace-nowrap ${selectedProjectId === project.id
-                                            ? 'bg-blue-100 text-blue-800 font-medium'
-                                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                                        key={gig.id}
+                                        onClick={() => setSelectedGigId(gig.id)}
+                                        className={`px-5 py-2.5 rounded-full whitespace-nowrap transition-all duration-200 shadow-sm ${selectedGigId === gig.id
+                                                ? 'bg-blue-600 text-white font-bold ring-4 ring-blue-100'
+                                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 font-medium'
                                             }`}
                                     >
-                                        {project.name}
+                                        {gig.name}
                                     </button>
                                 ))
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             <div className="lg:col-span-2">
                                 <Calendar
                                     selectedDate={selectedDate}
@@ -610,80 +550,52 @@ export function SessionPlanning() {
                                     slots={slots}
                                 />
                             </div>
-                            <div className="bg-white rounded-lg shadow p-4">
-                                <h2 className="text-lg font-semibold text-gray-800 mb-4">Gig Overview</h2>
-                                <div className="space-y-4">
-                                    {/* Gig stats */}
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-600">Total REPs Scheduled</span>
-                                        <span className="font-medium">
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                                <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                                    <div className="w-2 h-6 bg-blue-600 rounded-full mr-3"></div>
+                                    Gig Overview
+                                </h2>
+                                <div className="space-y-6">
+                                    <div className="p-4 bg-gray-50 rounded-xl">
+                                        <p className="text-sm text-gray-500 mb-1">REPs Scheduled</p>
+                                        <p className="text-2xl font-black text-gray-900">
                                             {new Set(slots
-                                                .filter(slot => slot.projectId === selectedProjectId && slot.status === 'reserved')
+                                                .filter(slot => slot.gigId === selectedGigId && slot.status === 'reserved')
                                                 .map(slot => slot.repId)
                                             ).size}
-                                        </span>
+                                        </p>
                                     </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-600">Total Hours</span>
-                                        <span className="font-medium">
+                                    <div className="p-4 bg-gray-50 rounded-xl">
+                                        <p className="text-sm text-gray-500 mb-1">Total Hours Commited</p>
+                                        <p className="text-2xl font-black text-gray-900">
                                             {slots
-                                                .filter(slot => slot.projectId === selectedProjectId && slot.status === 'reserved')
+                                                .filter(slot => slot.gigId === selectedGigId && slot.status === 'reserved')
                                                 .reduce((sum, slot) => sum + slot.duration, 0)}h
-                                        </span>
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {selectedProjectId && (
+                        {selectedGigId && (
                             <CompanyView
-                                // Hack: Pass Gig Name as 'company' to trick CompanyView into being a GigView
-                                company={projects.find(p => p.id === selectedProjectId)?.name || ''}
+                                company={gigs.find(g => g.id === selectedGigId)?.name || ''}
+                                gigs={gigs.filter(g => g.id === selectedGigId).map(g => ({ ...g, company: g.name }))}
                                 slots={slots}
-                                // Hack: Override project.company with project.name so strict equal check passes in CompanyView
-                                projects={projects.filter(p => p.id === selectedProjectId).map(p => ({ ...p, company: p.name }))}
                                 reps={reps}
                                 selectedDate={selectedDate}
                             />
                         )}
-
-                        {showAttendancePanel && (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <AttendanceTracker
-                                    slots={slots}
-                                    reps={reps}
-                                    selectedDate={selectedDate}
-                                    onAttendanceUpdate={handleAttendanceUpdate}
-                                />
-                                <AttendanceReport
-                                    reps={reps}
-                                    slots={slots}
-                                />
-                            </div>
-                        )}
-
-                        {showAIPanel && (
-                            <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
-                                <div className="flex items-center mb-4">
-                                    <Brain className="w-6 h-6 text-purple-600 mr-2" />
-                                    <h2 className="text-xl font-bold text-gray-800">AI Insights</h2>
-                                </div>
-
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <WorkloadPrediction slots={slots} />
-                                </div>
-                            </div>
-                        )}
                     </div>
                 ) : userRole === 'rep' ? (
-                    <div className="grid grid-cols-1 gap-6">
+                    <div className="grid grid-cols-1 gap-8">
                         <RepSelector
                             reps={reps}
                             selectedRepId={selectedRepId}
                             onSelectRep={setSelectedRepId}
                         />
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             <div className="lg:col-span-2">
                                 <Calendar
                                     selectedDate={selectedDate}
@@ -691,11 +603,11 @@ export function SessionPlanning() {
                                     slots={slots.filter(slot => slot.repId === selectedRepId)}
                                 />
 
-                                <div className="mt-8">
+                                <div className="mt-10">
                                     <TimeSlotGrid
                                         date={selectedDate}
                                         slots={slots.filter(slot => slot.repId === selectedRepId)}
-                                        projects={projects}
+                                        gigs={gigs}
                                         onSlotUpdate={handleSlotUpdate}
                                         onSlotCancel={handleSlotCancel}
                                         onSlotSelect={handleSlotSelect}
@@ -703,141 +615,133 @@ export function SessionPlanning() {
                                     />
                                 </div>
                             </div>
-                            <div className="bg-white rounded-lg shadow p-4">
-                                <h2 className="text-lg font-semibold text-gray-800 mb-4">Weekly Overview</h2>
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-600">Available Slots</span>
-                                        <span className="font-medium">{weeklyStats.availableSlots}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-600">Reserved Slots</span>
-                                        <span className="font-medium">{weeklyStats.reservedSlots}</span>
-                                    </div>
-                                    <hr className="my-4" />
-                                    <h3 className="font-medium text-gray-800">Gig Hours</h3>
-                                    {Object.entries(weeklyStats.projectBreakdown).map(([projectId, hours]) => {
-                                        const project = projects.find(p => p.id === projectId);
-                                        return (
-                                            <div key={projectId} className="flex justify-between items-center">
-                                                <div className="flex items-center">
-                                                    <div
-                                                        className="w-3 h-3 rounded-full mr-2"
-                                                        style={{ backgroundColor: project?.color || '#ccc' }}
-                                                    ></div>
-                                                    <span className="text-gray-600">{project?.name || 'Unknown Gig'}</span>
-                                                </div>
-                                                <span className="font-medium">{hours}h</span>
-                                            </div>
-                                        );
-                                    })}
 
-                                    <hr className="my-4" />
-                                    <h3 className="font-medium text-gray-800 mb-2">Quick Reserve</h3>
+                            <div className="space-y-8">
+                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                                    <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                                        <div className="w-2 h-6 bg-indigo-600 rounded-full mr-3"></div>
+                                        Weekly Overview
+                                    </h2>
+                                    <div className="grid grid-cols-2 gap-4 mb-8">
+                                        <div className="p-4 bg-green-50 rounded-xl text-center">
+                                            <p className="text-xs text-green-600 font-bold uppercase mb-1">Available</p>
+                                            <p className="text-2xl font-black text-green-900">{weeklyStats.availableSlots}</p>
+                                        </div>
+                                        <div className="p-4 bg-blue-50 rounded-xl text-center">
+                                            <p className="text-xs text-blue-600 font-bold uppercase mb-1">Reserved</p>
+                                            <p className="text-2xl font-black text-blue-900">{weeklyStats.reservedSlots}</p>
+                                        </div>
+                                    </div>
+
+                                    <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest">Gig Hours Breakdown</h3>
+                                    <div className="space-y-3">
+                                        {Object.entries(weeklyStats.gigBreakdown).map(([gigId, hours]) => {
+                                            const gig = gigs.find(g => g.id === gigId);
+                                            return (
+                                                <div key={gigId} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl group transition-all hover:bg-gray-100">
+                                                    <div className="flex items-center">
+                                                        <div
+                                                            className="w-4 h-4 rounded-full mr-3 shadow-sm"
+                                                            style={{ backgroundColor: gig?.color || '#ccc' }}
+                                                        ></div>
+                                                        <span className="text-sm font-bold text-gray-700">{gig?.name || 'Unknown Gig'}</span>
+                                                    </div>
+                                                    <span className="text-lg font-black text-gray-900">{hours}h</span>
+                                                </div>
+                                            );
+                                        })}
+                                        {Object.keys(weeklyStats.gigBreakdown).length === 0 && (
+                                            <p className="text-xs text-gray-400 italic text-center py-4 bg-gray-50 rounded-xl">No gig hours recorded this week.</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                                    <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                                        <div className="w-2 h-6 bg-blue-600 rounded-full mr-3"></div>
+                                        Quick Options
+                                    </h2>
                                     <SlotActionPanel
                                         maxHours={10}
-                                        slot={selectedSlot || slots[0] || {} as any}
-                                        availableProjects={projects}
+                                        slot={selectedSlot || (slots.find(s => s.repId === selectedRepId) || {} as any)}
+                                        availableGigs={gigs}
                                         onUpdate={handleSlotUpdate}
                                         onClear={() => handleSlotCancel(selectedSlot?.id || '')}
                                     />
+                                </div>
 
-                                    <hr className="my-4" />
-                                    <h3 className="font-medium text-gray-800 mb-3 flex items-center">
-                                        <Briefcase className="w-4 h-4 mr-2" />
-                                        Enrolled Gigs & Schedule
-                                    </h3>
+                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 overflow-hidden">
+                                    <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                                        <div className="w-2 h-6 bg-purple-600 rounded-full mr-3"></div>
+                                        Enrolled Gigs
+                                    </h2>
                                     {loadingEnrolledGigs ? (
-                                        <div className="text-sm text-gray-500 animate-pulse">Loading enrolled gigs...</div>
+                                        <div className="space-y-4">
+                                            {[1, 2].map(i => (
+                                                <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse"></div>
+                                            ))}
+                                        </div>
                                     ) : enrolledGigs.length === 0 ? (
-                                        <div className="text-sm text-gray-500 italic p-4 bg-gray-50 rounded-lg text-center border border-dashed border-gray-300">
-                                            No enrolled gigs found.
+                                        <div className="text-sm text-gray-500 italic p-8 bg-gray-50 rounded-xl text-center border border-dashed border-gray-300">
+                                            No active enrollments.
                                         </div>
                                     ) : (
-                                        <div className="space-y-4">
+                                        <div className="space-y-6">
                                             {enrolledGigs.map((gigAgent) => (
-                                                <div key={gigAgent._id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow relative overflow-hidden group">
-                                                    {/* Status Badge */}
-                                                    <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-lg text-xs font-semibold uppercase tracking-wide ${gigAgent.status === 'enrolled' ? 'bg-green-100 text-green-800' :
-                                                        gigAgent.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                            'bg-gray-100 text-gray-800'
+                                                <div key={gigAgent._id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-200 transition-all group relative">
+                                                    <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-xl text-[10px] font-black uppercase tracking-tighter ${gigAgent.status === 'enrolled' ? 'bg-green-100 text-green-700' :
+                                                            gigAgent.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                                                                'bg-gray-100 text-gray-700'
                                                         }`}>
                                                         {gigAgent.status}
                                                     </div>
 
-                                                    <div className="flex items-start space-x-3 mb-3 pr-16">
-                                                        <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
+                                                    <div className="flex items-start space-x-4 mb-4">
+                                                        <div className="p-3 bg-blue-50 rounded-2xl group-hover:scale-110 transition-transform">
                                                             {gigAgent.gigId.companyId?.logo ? (
                                                                 <img
                                                                     src={gigAgent.gigId.companyId.logo}
                                                                     alt={gigAgent.gigId.companyId.name}
-                                                                    className="w-5 h-5 object-contain"
+                                                                    className="w-6 h-6 object-contain"
                                                                 />
                                                             ) : (
-                                                                <Building className="w-5 h-5 text-blue-600" />
+                                                                <Building className="w-6 h-6 text-blue-600" />
                                                             )}
                                                         </div>
-                                                        <div>
-                                                            <h4 className="font-semibold text-gray-900 leading-tight mb-1">{gigAgent.gigId.title}</h4>
-                                                            <p className="text-xs text-gray-500 flex items-center">
-                                                                <Building className="w-3 h-3 mr-1" />
-                                                                {gigAgent.gigId.companyId?.name || 'Unknown Company'}
-                                                            </p>
+                                                        <div className="pr-12">
+                                                            <h4 className="font-extrabold text-gray-900 leading-tight mb-1">{gigAgent.gigId.title}</h4>
+                                                            <p className="text-xs text-gray-500 font-bold">{gigAgent.gigId.companyId?.name || 'Partner Company'}</p>
                                                         </div>
                                                     </div>
 
-                                                    {gigAgent.gigId.description && (
-                                                        <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                                                            {gigAgent.gigId.description}
-                                                        </p>
-                                                    )}
-
-                                                    <div className="grid grid-cols-2 gap-2 mb-3">
+                                                    <div className="grid grid-cols-1 gap-2 mb-4">
                                                         {gigAgent.gigId.destination_zone && (
-                                                            <div className="flex items-center text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
-                                                                <MapPin className="w-3 h-3 mr-1.5 text-gray-400" />
-                                                                <span className="truncate">{gigAgent.gigId.destination_zone.name?.common || 'Unknown Zone'}</span>
+                                                            <div className="flex items-center text-[11px] font-bold text-gray-600 bg-gray-50 px-2.5 py-1.5 rounded-lg">
+                                                                <MapPin className="w-3 h-3 mr-2 text-red-500" />
+                                                                {gigAgent.gigId.destination_zone.name?.common}
                                                             </div>
                                                         )}
                                                         {gigAgent.gigId.commission?.commission_per_call && (
-                                                            <div className="flex items-center text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
-                                                                <DollarSign className="w-3 h-3 mr-1.5 text-green-600" />
-                                                                <span className="font-medium text-gray-900">
-                                                                    {gigAgent.gigId.commission.currency?.symbol || '$'}
-                                                                    {gigAgent.gigId.commission.commission_per_call}/call
-                                                                </span>
+                                                            <div className="flex items-center text-[11px] font-bold text-gray-600 bg-gray-50 px-2.5 py-1.5 rounded-lg">
+                                                                <DollarSign className="w-3 h-3 mr-2 text-green-600" />
+                                                                {gigAgent.gigId.commission.currency?.symbol || '$'}{gigAgent.gigId.commission.commission_per_call} per call
                                                             </div>
                                                         )}
                                                     </div>
 
-                                                    {/* Schedule Section */}
-                                                    <div className="border-t border-gray-100 pt-3 mt-2">
-                                                        <div className="flex items-center justify-between mb-2">
-                                                            <p className="text-xs font-semibold text-gray-700 flex items-center">
-                                                                <Clock className="w-3 h-3 mr-1.5 text-blue-600" />
-                                                                Schedule ({
-                                                                    typeof gigAgent.gigId.availability?.time_zone === 'object'
-                                                                        ? (gigAgent.gigId.availability?.time_zone as any).name || 'UTC'
-                                                                        : gigAgent.gigId.availability?.time_zone || 'UTC'
-                                                                })
-                                                            </p>
-                                                        </div>
-
+                                                    <div className="pt-4 border-t border-gray-100">
+                                                        <p className="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest">Availability Schedule</p>
                                                         {gigAgent.gigId.availability?.schedule && gigAgent.gigId.availability.schedule.length > 0 ? (
-                                                            <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar pr-1">
+                                                            <div className="space-y-1.5">
                                                                 {gigAgent.gigId.availability.schedule.map((sch, idx) => (
-                                                                    <div key={idx} className="flex justify-between items-center text-xs bg-blue-50/50 p-1.5 rounded hover:bg-blue-50 transition-colors">
-                                                                        <span className="font-medium text-gray-700 w-24 capitalize">{sch.day}</span>
-                                                                        <span className="text-gray-600 font-mono text-[10px] bg-white px-1.5 py-0.5 rounded border border-blue-100">
-                                                                            {sch.hours?.start} - {sch.hours?.end}
-                                                                        </span>
+                                                                    <div key={idx} className="flex justify-between items-center text-[11px] bg-indigo-50/50 p-2 rounded-lg border border-indigo-100/50">
+                                                                        <span className="font-bold text-indigo-900 capitalize">{sch.day}</span>
+                                                                        <span className="font-black text-indigo-600">{sch.hours?.start} - {sch.hours?.end}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
                                                         ) : (
-                                                            <div className="text-xs text-gray-400 italic flex items-center justify-center p-2 bg-gray-50 rounded border border-dashed border-gray-200">
-                                                                No specific schedule set
-                                                            </div>
+                                                            <div className="text-[10px] text-gray-400 italic font-bold text-center py-2">Flexible Schedule</div>
                                                         )}
                                                     </div>
                                                 </div>
@@ -849,10 +753,10 @@ export function SessionPlanning() {
                         </div>
 
                         {showAttendancePanel && (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <AttendanceScorecard
                                     rep={selectedRep}
-                                    slots={slots}
+                                    slots={slots.filter(s => s.repId === selectedRepId)}
                                 />
                                 <AttendanceTracker
                                     slots={slots.filter(slot => slot.repId === selectedRepId)}
@@ -864,48 +768,44 @@ export function SessionPlanning() {
                         )}
 
                         {showAIPanel && (
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                <div>
-                                    <AIRecommendations
-                                        rep={selectedRep}
-                                        projects={projects}
-                                        slots={slots}
-                                        onSelectProject={handleProjectSelect}
-                                    />
-                                </div>
-                                <div>
-                                    <OptimalTimeHeatmap
-                                        rep={selectedRep}
-                                        slots={slots}
-                                        onSelectHour={handleOptimalHourSelect}
-                                    />
-                                </div>
-                                <div>
-                                    <PerformanceMetrics
-                                        rep={selectedRep}
-                                        slots={slots}
-                                    />
-                                </div>
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <AIRecommendations
+                                    rep={selectedRep}
+                                    gigs={gigs}
+                                    slots={slots.filter(s => s.repId === selectedRepId)}
+                                    onSelectGig={handleGigSelect}
+                                />
+                                <OptimalTimeHeatmap
+                                    rep={selectedRep}
+                                    slots={slots.filter(s => s.repId === selectedRepId)}
+                                    onSelectHour={handleOptimalHourSelect}
+                                />
+                                <PerformanceMetrics
+                                    rep={selectedRep}
+                                    slots={slots.filter(s => s.repId === selectedRepId)}
+                                />
                             </div>
                         )}
                     </div>
                 ) : (
-                    // Admin view
-                    <div className="grid grid-cols-1 gap-6">
-                        <div className="bg-white rounded-lg shadow p-4">
-                            <h2 className="text-lg font-semibold text-gray-800 mb-4">Admin Dashboard</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="bg-blue-50 p-4 rounded-lg">
-                                    <h3 className="font-medium text-blue-800 mb-2">Total REPs</h3>
-                                    <p className="text-2xl font-bold text-blue-900">{reps.length}</p>
+                    <div className="grid grid-cols-1 gap-8">
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                            <h2 className="text-xl font-black text-gray-900 mb-8 flex items-center">
+                                <div className="w-2 h-7 bg-blue-600 rounded-full mr-4"></div>
+                                Admin Command Center
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="bg-blue-600 p-6 rounded-3xl text-white shadow-xl shadow-blue-100">
+                                    <h3 className="text-sm font-bold opacity-80 uppercase mb-2">Total REPs</h3>
+                                    <p className="text-4xl font-black">{reps.length}</p>
                                 </div>
-                                <div className="bg-green-50 p-4 rounded-lg">
-                                    <h3 className="font-medium text-green-800 mb-2">Total Companies</h3>
-                                    <p className="text-2xl font-bold text-green-900">{sampleCompanies.length}</p>
+                                <div className="bg-emerald-500 p-6 rounded-3xl text-white shadow-xl shadow-emerald-100">
+                                    <h3 className="text-sm font-bold opacity-80 uppercase mb-2">Total Partners</h3>
+                                    <p className="text-4xl font-black">{sampleCompanies.length}</p>
                                 </div>
-                                <div className="bg-purple-50 p-4 rounded-lg">
-                                    <h3 className="font-medium text-purple-800 mb-2">Total Gigs</h3>
-                                    <p className="text-2xl font-bold text-purple-900">{projects.length}</p>
+                                <div className="bg-indigo-600 p-6 rounded-3xl text-white shadow-xl shadow-indigo-100">
+                                    <h3 className="text-sm font-bold opacity-80 uppercase mb-2">Total Active Gigs</h3>
+                                    <p className="text-4xl font-black">{gigs.length}</p>
                                 </div>
                             </div>
                         </div>
@@ -918,36 +818,28 @@ export function SessionPlanning() {
                         )}
 
                         {showAIPanel && (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <WorkloadPrediction slots={slots} />
-                                <div className="bg-white rounded-lg shadow p-4">
-                                    <div className="flex items-center mb-4">
-                                        <Brain className="w-5 h-5 text-purple-600 mr-2" />
-                                        <h2 className="text-lg font-semibold text-gray-800">AI Insights</h2>
+                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                                    <div className="flex items-center mb-8">
+                                        <div className="p-3 bg-purple-100 rounded-2xl mr-4">
+                                            <Brain className="w-6 h-6 text-purple-600" />
+                                        </div>
+                                        <h2 className="text-xl font-extrabold text-gray-900">AI Global Insights</h2>
                                     </div>
-                                    <div className="space-y-4">
-                                        <div className="p-3 bg-purple-50 rounded-lg">
-                                            <h3 className="font-medium text-purple-800 mb-2">Scheduling Efficiency</h3>
-                                            <p className="text-sm text-gray-700">
-                                                Based on current scheduling patterns, the system is operating at
-                                                <span className="font-bold text-purple-800"> 78% </span>
-                                                efficiency. Consider optimizing REP assignments based on AI recommendations.
+                                    <div className="space-y-6">
+                                        <div className="p-5 bg-purple-50 rounded-2xl border border-purple-100">
+                                            <h3 className="font-black text-purple-900 mb-2 uppercase text-xs">Scheduling Efficiency</h3>
+                                            <p className="text-sm text-purple-800 leading-relaxed font-medium">
+                                                Global operation efficiency is at <span className="text-xl font-black">78%</span>.
+                                                Predicted optimization could increase output by 14% next week.
                                             </p>
                                         </div>
-                                        <div className="p-3 bg-blue-50 rounded-lg">
-                                            <h3 className="font-medium text-blue-800 mb-2">Resource Allocation</h3>
-                                            <p className="text-sm text-gray-700">
-                                                Tech Co projects are currently overallocated by
-                                                <span className="font-bold text-blue-800"> 12% </span>
-                                                while Acme Corp is underallocated. Consider rebalancing resources.
-                                            </p>
-                                        </div>
-                                        <div className="p-3 bg-green-50 rounded-lg">
-                                            <h3 className="font-medium text-green-800 mb-2">Performance Insights</h3>
-                                            <p className="text-sm text-gray-700">
-                                                REPs with diverse project assignments show
-                                                <span className="font-bold text-green-800"> 23% higher </span>
-                                                satisfaction scores. Consider rotating assignments more frequently.
+                                        <div className="p-5 bg-blue-50 rounded-2xl border border-blue-100">
+                                            <h3 className="font-black text-blue-900 mb-2 uppercase text-xs">Resource Allocation</h3>
+                                            <p className="text-sm text-blue-800 leading-relaxed font-medium">
+                                                Resource utilization is peak during 10:00 - 15:00 UTC.
+                                                Recommended shift re-distribution for evening gigs.
                                             </p>
                                         </div>
                                     </div>
@@ -955,46 +847,35 @@ export function SessionPlanning() {
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="bg-white rounded-lg shadow p-4">
-                                <h2 className="text-lg font-semibold text-gray-800 mb-4">REP Overview</h2>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                                <h2 className="text-lg font-black text-gray-900 mb-6 uppercase tracking-wider">REP Performance List</h2>
                                 <div className="space-y-4">
                                     {reps.map(rep => {
                                         const repSlots = slots.filter(slot => slot.repId === rep.id && slot.status === 'reserved');
                                         const totalHours = repSlots.reduce((sum, slot) => sum + slot.duration, 0);
 
                                         return (
-                                            <div key={rep.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div key={rep.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl group hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100">
                                                 <div className="flex items-center">
-                                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                                    <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mr-4 overflow-hidden border border-gray-100">
                                                         {rep.avatar ? (
-                                                            <img
-                                                                src={rep.avatar}
-                                                                alt={rep.name}
-                                                                className="w-full h-full rounded-full object-cover"
-                                                            />
+                                                            <img src={rep.avatar} alt={rep.name} className="w-full h-full object-cover" />
                                                         ) : (
-                                                            <Users className="w-5 h-5 text-gray-500" />
+                                                            <Users className="w-6 h-6 text-gray-400" />
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <h4 className="font-medium">{rep.name}</h4>
-                                                        <p className="text-sm text-gray-500">{rep.email}</p>
+                                                        <h4 className="font-black text-gray-900">{rep.name}</h4>
+                                                        <p className="text-xs text-gray-500 font-bold">{rep.email}</p>
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-lg font-bold">{totalHours}h</p>
-                                                    <p className="text-sm text-gray-500">{repSlots.length} slots</p>
-                                                    {rep.performanceScore && (
-                                                        <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                            Score: {rep.performanceScore}
-                                                        </div>
-                                                    )}
-                                                    {rep.attendanceScore && (
-                                                        <div className="mt-1 ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                            Attendance: {rep.attendanceScore}%
-                                                        </div>
-                                                    )}
+                                                    <p className="text-xl font-black text-blue-600">{totalHours}h</p>
+                                                    <div className="flex space-x-2 mt-1">
+                                                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-black rounded-lg">P: {rep.performanceScore}</span>
+                                                        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-black rounded-lg">A: {rep.attendanceScore}%</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
@@ -1002,45 +883,36 @@ export function SessionPlanning() {
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-lg shadow p-4">
-                                <h2 className="text-lg font-semibold text-gray-800 mb-4">Company Overview</h2>
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                                <h2 className="text-lg font-black text-gray-900 mb-6 uppercase tracking-wider">Partner Presence</h2>
                                 <div className="space-y-4">
                                     {sampleCompanies.map(company => {
                                         const companySlots = slots.filter(slot => {
-                                            const project = projects.find(p => p.id === slot.projectId);
-                                            return project?.company === company.name && slot.status === 'reserved';
+                                            const gig = gigs.find(g => g.id === slot.gigId);
+                                            return gig?.company === company.name && slot.status === 'reserved';
                                         });
 
                                         const totalHours = companySlots.reduce((sum, slot) => sum + slot.duration, 0);
                                         const uniqueReps = new Set(companySlots.map(slot => slot.repId)).size;
 
                                         return (
-                                            <div key={company.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div key={company.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl group hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100">
                                                 <div className="flex items-center">
-                                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                                    <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mr-4 overflow-hidden border border-gray-100">
                                                         {company.logo ? (
-                                                            <img
-                                                                src={company.logo}
-                                                                alt={company.name}
-                                                                className="w-full h-full rounded-full object-cover"
-                                                            />
+                                                            <img src={company.logo} alt={company.name} className="w-full h-full object-contain p-1" />
                                                         ) : (
-                                                            <Building className="w-5 h-5 text-gray-500" />
+                                                            <Building className="w-6 h-6 text-gray-400" />
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <h4 className="font-medium">{company.name}</h4>
-                                                        <p className="text-sm text-gray-500">{uniqueReps} REPs assigned</p>
+                                                        <h4 className="font-black text-gray-900">{company.name}</h4>
+                                                        <p className="text-xs text-gray-500 font-bold">{uniqueReps} REPs Active</p>
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-lg font-bold">{totalHours}h</p>
-                                                    <p className="text-sm text-gray-500">{companySlots.length} slots</p>
-                                                    {company.priority && (
-                                                        <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                                                            Priority: {company.priority}
-                                                        </div>
-                                                    )}
+                                                    <p className="text-xl font-black text-indigo-600">{totalHours}h</p>
+                                                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-lg mt-1 inline-block">Priority {company.priority}</span>
                                                 </div>
                                             </div>
                                         );

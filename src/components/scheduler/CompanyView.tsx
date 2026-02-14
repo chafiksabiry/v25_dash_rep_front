@@ -1,27 +1,25 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { format } from 'date-fns';
-import { TimeSlot, Project, Rep } from '../../types/scheduler';
-import { Building, Clock, User } from 'lucide-react';
+import { TimeSlot, Gig, Rep } from '../../types/scheduler';
+import { Building, Clock, Users, ChevronRight, Layout } from 'lucide-react';
 
 interface CompanyViewProps {
     company: string;
     slots: TimeSlot[];
-    projects: Project[];
+    gigs: Gig[];
     reps: Rep[];
     selectedDate: Date;
 }
 
-export function CompanyView({ company, slots, projects, reps, selectedDate }: CompanyViewProps) {
-    const companyProjects = projects.filter(p => p.company === company);
-
+export function CompanyView({ company, slots, gigs, reps, selectedDate }: CompanyViewProps) {
     const relevantSlots = useMemo(() => {
         return slots.filter(slot => {
-            const project = projects.find(p => p.id === slot.projectId);
-            return project?.company === company &&
+            const gig = gigs.find(p => p.id === slot.gigId);
+            return gig?.company === company &&
                 slot.date === format(selectedDate, 'yyyy-MM-dd') &&
                 slot.status === 'reserved';
         });
-    }, [slots, projects, company, selectedDate]);
+    }, [slots, gigs, company, selectedDate]);
 
     const repHours = useMemo(() => {
         const hours: Record<string, number> = {};
@@ -39,26 +37,37 @@ export function CompanyView({ company, slots, projects, reps, selectedDate }: Co
     const totalHours = Object.values(repHours).reduce((sum, hours) => sum + hours, 0);
 
     return (
-        <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center mb-6">
-                <Building className="w-6 h-6 text-blue-600 mr-2" />
-                <h2 className="text-xl font-bold text-gray-800">{company} Dashboard</h2>
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-8 border-b border-gray-50 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
+                <div className="flex items-center">
+                    <div className="p-3 bg-blue-600 rounded-2xl mr-4 shadow-xl shadow-blue-100">
+                        <Building className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight uppercase">{company}</h2>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Partner Operations Dashboard</p>
+                    </div>
+                </div>
+                <div className="flex items-center space-x-6">
+                    <div className="text-right">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Daily Hours</p>
+                        <p className="text-3xl font-black text-blue-600 leading-none mt-1">{totalHours}<span className="text-sm ml-1">HRS</span></p>
+                    </div>
+                </div>
             </div>
 
-            <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                    Schedule for {format(selectedDate, 'MMMM d, yyyy')}
-                </h3>
-
-                <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg mb-4">
-                    <div className="flex items-center">
-                        <Clock className="w-5 h-5 text-blue-600 mr-2" />
-                        <span className="text-blue-800 font-medium">Total Hours Scheduled</span>
+            <div className="p-8">
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center">
+                        <Clock className="w-4 h-4 mr-2 text-blue-600" />
+                        Live Schedule • {format(selectedDate, 'MMMM d')}
+                    </h3>
+                    <div className="px-3 py-1 bg-green-50 text-green-700 text-[10px] font-black rounded-full border border-green-100">
+                        {relevantSlots.length} ACTIVE SESSIONS
                     </div>
-                    <span className="text-xl font-bold text-blue-800">{totalHours}h</span>
                 </div>
 
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-6">
                     {Object.entries(repHours).map(([repId, hours]) => {
                         const rep = reps.find(r => r.id === repId);
                         if (!rep) return null;
@@ -66,52 +75,59 @@ export function CompanyView({ company, slots, projects, reps, selectedDate }: Co
                         const repSlots = relevantSlots.filter(slot => slot.repId === repId);
 
                         return (
-                            <div key={repId} className="border rounded-lg p-4">
-                                <div className="flex items-center justify-between mb-3">
+                            <div key={repId} className="group bg-gray-50 rounded-3xl p-6 border border-transparent hover:border-blue-100 hover:bg-white hover:shadow-xl hover:shadow-blue-50/50 transition-all duration-300">
+                                <div className="flex items-center justify-between mb-6">
                                     <div className="flex items-center">
-                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                                            {rep.avatar ? (
-                                                <img
-                                                    src={rep.avatar}
-                                                    alt={rep.name}
-                                                    className="w-full h-full rounded-full object-cover"
-                                                />
-                                            ) : (
-                                                <User className="w-5 h-5 text-gray-500" />
-                                            )}
+                                        <div className="relative">
+                                            <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform duration-300">
+                                                {rep.avatar ? (
+                                                    <img src={rep.avatar} alt={rep.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Users className="w-6 h-6 text-gray-200" />
+                                                )}
+                                            </div>
+                                            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-4 border-gray-50 group-hover:border-white transition-colors" />
                                         </div>
-                                        <div>
-                                            <h4 className="font-medium text-gray-800">{rep.name}</h4>
-                                            <p className="text-sm text-gray-500">{rep.specialties.join(', ')}</p>
+                                        <div className="ml-5">
+                                            <h4 className="text-lg font-black text-gray-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{rep.name}</h4>
+                                            <div className="flex flex-wrap gap-2 mt-1">
+                                                {rep.specialties.slice(0, 2).map((s, i) => (
+                                                    <span key={i} className="text-[10px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded-lg border border-gray-100 uppercase tracking-tighter">{s}</span>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-lg font-bold text-gray-800">{hours}h</span>
-                                        <p className="text-sm text-gray-500">{repSlots.length} slots</p>
+                                        <div className="text-2xl font-black text-gray-900">{hours}<span className="text-xs ml-1 font-bold text-gray-400">H</span></div>
+                                        <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1 bg-blue-50 px-2 py-0.5 rounded-lg">{repSlots.length} SLOTS</div>
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     {repSlots.map(slot => {
-                                        const project = projects.find(p => p.id === slot.projectId);
+                                        const gig = gigs.find(p => p.id === slot.gigId);
 
                                         return (
                                             <div
                                                 key={slot.id}
-                                                className="flex items-center justify-between p-2 rounded bg-gray-50"
-                                                style={{ borderLeft: `4px solid ${project?.color || '#ccc'}` }}
+                                                className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 group-hover:border-blue-50 transition-all shadow-sm group/slot hover:shadow-md"
                                             >
-                                                <div>
-                                                    <p className="font-medium">{project?.name}</p>
-                                                    <p className="text-sm text-gray-500">
-                                                        {slot.startTime} - {slot.endTime} ({slot.duration}h)
-                                                    </p>
+                                                <div className="flex items-center">
+                                                    <div className="w-1 h-8 rounded-full mr-4" style={{ backgroundColor: gig?.color || '#3b82f6' }} />
+                                                    <div>
+                                                        <div className="text-xs font-black text-gray-900 uppercase tracking-tight">{gig?.name}</div>
+                                                        <div className="text-[10px] font-bold text-gray-400 mt-0.5 flex items-center">
+                                                            <Clock className="w-3 h-3 mr-1" />
+                                                            {slot.startTime} - {slot.endTime}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                                 {slot.notes && (
-                                                    <p className="text-sm text-gray-600 italic max-w-xs truncate">
+                                                    <div className="hidden md:flex items-center px-4 py-1.5 bg-gray-50 rounded-xl text-[10px] font-medium text-gray-500 italic border border-transparent group-hover/slot:border-gray-100 transition-all">
                                                         "{slot.notes}"
-                                                    </p>
+                                                    </div>
                                                 )}
+                                                <ChevronRight className="w-4 h-4 text-gray-200 group-hover/slot:text-blue-300 transition-colors" />
                                             </div>
                                         );
                                     })}
@@ -121,24 +137,28 @@ export function CompanyView({ company, slots, projects, reps, selectedDate }: Co
                     })}
 
                     {Object.keys(repHours).length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
-                            No REPs scheduled for this date
+                        <div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                            <Users className="w-12 h-12 text-gray-200 mb-4" />
+                            <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No REPs Active in this Window</p>
                         </div>
                     )}
                 </div>
             </div>
 
-            <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Projects</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {companyProjects.map(project => (
+            <div className="px-8 py-8 bg-gray-50/50 border-t border-gray-100">
+                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center">
+                    <Layout className="w-4 h-4 mr-2" />
+                    Associated Gigs
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {gigs.slice(0, 3).map(gig => (
                         <div
-                            key={project.id}
-                            className="border rounded-lg p-4"
-                            style={{ borderLeft: `4px solid ${project.color}` }}
+                            key={gig.id}
+                            className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all relative overflow-hidden group"
                         >
-                            <h4 className="font-medium text-gray-800">{project.name}</h4>
-                            <p className="text-sm text-gray-600 mt-1">{project.description}</p>
+                            <div className="absolute top-0 right-0 w-16 h-1 bg-gradient-to-l from-blue-600 to-indigo-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-right duration-300" />
+                            <h4 className="text-sm font-black text-gray-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{gig.name}</h4>
+                            <p className="text-[10px] font-medium text-gray-500 mt-2 line-clamp-2 leading-relaxed">{gig.description}</p>
                         </div>
                     ))}
                 </div>

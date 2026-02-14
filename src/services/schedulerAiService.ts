@@ -1,7 +1,7 @@
 import * as tf from '@tensorflow/tfjs';
-import { Rep, Project, TimeSlot, AIRecommendation, PerformanceMetric, WorkloadPrediction } from '../types/scheduler';
+import { Rep, Gig, TimeSlot, AIRecommendation, PerformanceMetric, WorkloadPrediction } from '../types/scheduler';
 
-// Simple model for rep-project matching
+// Simple model for rep-gig matching
 let matchingModel: tf.LayersModel | null = null;
 
 // Initialize the TensorFlow.js model
@@ -9,12 +9,12 @@ export async function initializeAI() {
     try {
         // Load pre-trained model or create a new one
         try {
-            matchingModel = await tf.loadLayersModel('indexeddb://rep-project-matching-model');
+            matchingModel = await tf.loadLayersModel('indexeddb://rep-gig-matching-model');
             console.log('Loaded existing model from IndexedDB');
         } catch (e) {
             console.log('Creating new model');
             matchingModel = createMatchingModel();
-            await matchingModel.save('indexeddb://rep-project-matching-model');
+            await matchingModel.save('indexeddb://rep-gig-matching-model');
         }
 
         return true;
@@ -24,11 +24,11 @@ export async function initializeAI() {
     }
 }
 
-// Create a simple neural network for rep-project matching
+// Create a simple neural network for rep-gig matching
 function createMatchingModel(): tf.LayersModel {
     const model = tf.sequential();
 
-    // Input: rep specialties (one-hot) + project skills (one-hot)
+    // Input: rep specialties (one-hot) + gig skills (one-hot)
     model.add(tf.layers.dense({
         units: 16,
         activation: 'relu',
@@ -55,10 +55,10 @@ function createMatchingModel(): tf.LayersModel {
     return model;
 }
 
-// Get rep-project recommendations
-export function getProjectRecommendations(
+// Get rep-gig recommendations
+export function getGigRecommendations(
     rep: Rep,
-    availableProjects: Project[],
+    availableGigs: Gig[],
     historicalSlots: TimeSlot[]
 ): AIRecommendation[] {
     // This is a simplified recommendation algorithm
@@ -66,29 +66,29 @@ export function getProjectRecommendations(
 
     const recommendations: AIRecommendation[] = [];
 
-    // Calculate rep's historical project distribution
-    const projectCounts: Record<string, number> = {};
+    // Calculate rep's historical gig distribution
+    const gigCounts: Record<string, number> = {};
     historicalSlots
-        .filter(slot => slot.repId === rep.id && slot.status === 'reserved' && slot.projectId)
+        .filter(slot => slot.repId === rep.id && slot.status === 'reserved' && slot.gigId)
         .forEach(slot => {
-            if (slot.projectId) {
-                projectCounts[slot.projectId] = (projectCounts[slot.projectId] || 0) + 1;
+            if (slot.gigId) {
+                gigCounts[slot.gigId] = (gigCounts[slot.gigId] || 0) + 1;
             }
         });
 
     // Calculate match scores based on specialties and historical data
-    availableProjects.forEach(project => {
-        // Calculate specialty match (how many of the rep's specialties match project skills)
-        const skillMatch = project.skills.filter(skill =>
+    availableGigs.forEach(gig => {
+        // Calculate specialty match (how many of the rep's specialties match gig skills)
+        const skillMatch = gig.skills.filter(skill =>
             rep.specialties.some(specialty =>
                 specialty.toLowerCase().includes(skill.toLowerCase()) ||
                 skill.toLowerCase().includes(specialty.toLowerCase())
             )
-        ).length / Math.max(project.skills.length, 1);
+        ).length / Math.max(gig.skills.length, 1);
 
         // Calculate historical preference
-        const historicalPreference = projectCounts[project.id]
-            ? projectCounts[project.id] / Object.values(projectCounts).reduce((a, b) => a + b, 0)
+        const historicalPreference = gigCounts[gig.id]
+            ? gigCounts[gig.id] / Object.values(gigCounts).reduce((a, b) => a + b, 0)
             : 0;
 
         // Combine factors for final confidence score
@@ -99,17 +99,17 @@ export function getProjectRecommendations(
         if (skillMatch > 0.7) {
             reason = 'Strong skill match with your specialties';
         } else if (historicalPreference > 0.3) {
-            reason = 'Based on your previous project history';
+            reason = 'Based on your previous gig history';
         } else {
             reason = 'New opportunity that might match your skills';
         }
 
         // Add priority boost
-        const priorityBoost = project.priority === 'high' ? 0.2 : project.priority === 'medium' ? 0.1 : 0;
+        const priorityBoost = gig.priority === 'high' ? 0.2 : gig.priority === 'medium' ? 0.1 : 0;
 
         recommendations.push({
             repId: rep.id,
-            projectId: project.id,
+            gigId: gig.id,
             confidence: Math.min(confidence + priorityBoost, 1),
             reason
         });
@@ -174,9 +174,9 @@ export function calculatePerformanceMetrics(
 
     // Calculate metrics (in a real system, these would come from actual data)
 
-    // Satisfaction: based on project diversity (more diverse = higher satisfaction)
-    const uniqueProjects = new Set(repSlots.map(slot => slot.projectId).filter(Boolean)).size;
-    const satisfactionScore = Math.min(uniqueProjects * 20, 100); // 5+ projects = 100%
+    // Satisfaction: based on gig diversity (more diverse = higher satisfaction)
+    const uniqueGigs = new Set(repSlots.map(slot => slot.gigId).filter(Boolean)).size;
+    const satisfactionScore = Math.min(uniqueGigs * 20, 100); // 5+ gigs = 100%
 
     // Efficiency: based on number of slots and notes (more notes = more detailed work)
     const slotsWithNotes = repSlots.filter(slot => slot.notes && slot.notes.length > 0).length;
