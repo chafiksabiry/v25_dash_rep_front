@@ -886,13 +886,6 @@ export function SessionPlanning() {
                                 </div>
                             </div>
                         )}
-
-                        <TimeSlotGrid
-                            selectedSlotId={selectedSlot?.id || null}
-                            slots={slots.filter(slot => slot.repId === selectedRepId)}
-                            projects={projects}
-                            onSlotClick={(id) => handleSlotSelect(slots.find(s => s.id === id)!)}
-                        />
                     </div>
                 ) : (
                     // Admin view
