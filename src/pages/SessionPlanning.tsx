@@ -688,6 +688,18 @@ export function SessionPlanning() {
                                     onDateSelect={setSelectedDate}
                                     slots={slots.filter(slot => slot.repId === selectedRepId)}
                                 />
+
+                                <div className="mt-8">
+                                    <TimeSlotGrid
+                                        date={selectedDate}
+                                        slots={slots.filter(slot => slot.repId === selectedRepId)}
+                                        projects={projects}
+                                        onSlotUpdate={handleSlotUpdate}
+                                        onSlotCancel={handleSlotCancel}
+                                        onSlotSelect={handleSlotSelect}
+                                        selectedSlot={selectedSlot}
+                                    />
+                                </div>
                             </div>
                             <div className="bg-white rounded-lg shadow p-4">
                                 <h2 className="text-lg font-semibold text-gray-800 mb-4">Weekly Overview</h2>
