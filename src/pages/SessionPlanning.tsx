@@ -369,6 +369,9 @@ export function SessionPlanning() {
                 });
             }
             setDraftSlots(newRange);
+            // Reset dropdowns to placeholders as requested
+            setQuickStart('');
+            setQuickEnd('');
         }
     };
 
