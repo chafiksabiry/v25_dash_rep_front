@@ -652,28 +652,6 @@ export function SessionPlanning() {
                                                 ).length}
                                             </span>
                                         </div>
-
-                                        {/* Reserved Slots Detail List (Ranges) */}
-                                        <div className="space-y-1 pt-2">
-                                            {slots
-                                                .filter(s => s.repId === selectedRepId && s.date === format(selectedDate, 'yyyy-MM-dd') && s.status === 'reserved')
-                                                .sort((a, b) => a.startTime.localeCompare(b.startTime))
-                                                .map(s => (
-                                                    <div key={s.id} className="flex justify-between items-center text-[10px] bg-gray-50/50 p-2 rounded-lg border border-gray-100 group">
-                                                        <span className="text-gray-500 font-bold">{s.startTime} - {s.endTime}</span>
-                                                        <div className="flex items-center space-x-2">
-                                                            <span className="text-green-600 font-black uppercase text-[8px] tracking-widest">Reserved</span>
-                                                            <button
-                                                                onClick={() => handleSlotCancel(s.id)}
-                                                                className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-all"
-                                                            >
-                                                                <X className="w-2.5 h-2.5" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            }
-                                        </div>
                                     </div>
                                 </div>
 
