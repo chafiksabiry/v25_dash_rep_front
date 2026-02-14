@@ -425,7 +425,8 @@ export function SessionPlanning() {
         try {
             await schedulerApi.upsertTimeSlot(slotWithRep);
             const updatedSlots = await schedulerApi.getTimeSlots(selectedRepId);
-            setSlots(updatedSlots);
+            const mappedSlots = Array.isArray(updatedSlots) ? updatedSlots.map(mapBackendSlotToSlot) : [];
+            setSlots(mappedSlots);
 
             setNotification({
                 message: updates.id ? 'Time slot updated successfully' : 'New time slot created',
@@ -446,7 +447,8 @@ export function SessionPlanning() {
         try {
             await schedulerApi.cancelTimeSlot(slotId);
             const updatedSlots = await schedulerApi.getTimeSlots(selectedRepId);
-            setSlots(updatedSlots);
+            const mappedSlots = Array.isArray(updatedSlots) ? updatedSlots.map(mapBackendSlotToSlot) : [];
+            setSlots(mappedSlots);
 
             setNotification({
                 message: 'Time slot cancelled',
@@ -480,7 +482,8 @@ export function SessionPlanning() {
             ));
 
             const updatedSlots = await schedulerApi.getTimeSlots(selectedRepId);
-            setSlots(updatedSlots);
+            const mappedSlots = Array.isArray(updatedSlots) ? updatedSlots.map(mapBackendSlotToSlot) : [];
+            setSlots(mappedSlots);
 
             setNotification({
                 message: `${draftSlots.length} time block(s) reserved successfully`,
