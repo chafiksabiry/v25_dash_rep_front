@@ -738,9 +738,16 @@ export function SessionPlanning() {
                                                                 }}
                                                             >
                                                                 <option value="">Start</option>
-                                                                {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(h => (
-                                                                    <option key={h} value={h}>{h}</option>
-                                                                ))}
+                                                                {(() => {
+                                                                    const startH = parseInt(daySchedule.hours.start.split(':')[0]);
+                                                                    const endH = parseInt(daySchedule.hours.end.split(':')[0]);
+                                                                    return Array.from({ length: endH - startH + 1 }, (_, i) => {
+                                                                        const h = startH + i;
+                                                                        return `${h.toString().padStart(2, '0')}:00`;
+                                                                    }).map(h => (
+                                                                        <option key={h} value={h}>{h}</option>
+                                                                    ));
+                                                                })()}
                                                             </select>
                                                         </div>
                                                         <div>
@@ -755,9 +762,16 @@ export function SessionPlanning() {
                                                                 }}
                                                             >
                                                                 <option value="">End</option>
-                                                                {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(h => (
-                                                                    <option key={h} value={h}>{h}</option>
-                                                                ))}
+                                                                {(() => {
+                                                                    const startH = parseInt(daySchedule.hours.start.split(':')[0]);
+                                                                    const endH = parseInt(daySchedule.hours.end.split(':')[0]);
+                                                                    return Array.from({ length: endH - startH + 1 }, (_, i) => {
+                                                                        const h = startH + i;
+                                                                        return `${h.toString().padStart(2, '0')}:00`;
+                                                                    }).map(h => (
+                                                                        <option key={h} value={h}>{h}</option>
+                                                                    ));
+                                                                })()}
                                                             </select>
                                                         </div>
                                                     </div>
