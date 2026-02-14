@@ -12,8 +12,7 @@ interface TimeSlotGridProps {
     onSlotSelect?: (slot: TimeSlot) => void;
     selectedGigId: string;
     onGigFilterChange: (gigId: string) => void;
-    previewStart?: string;
-    previewEnd?: string;
+    draftSlots?: Partial<TimeSlot>[];
     onTimeSelect?: (time: string) => void;
 }
 
@@ -26,8 +25,7 @@ export function TimeSlotGrid({
     onSlotSelect,
     selectedGigId,
     onGigFilterChange,
-    previewStart,
-    previewEnd,
+    draftSlots = [],
     onTimeSelect,
 }: TimeSlotGridProps) {
     const timeSlots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
@@ -42,13 +40,7 @@ export function TimeSlotGrid({
         : filteredSlots.filter(slot => slot.status !== 'cancelled');
 
     const isPreviewed = (time: string) => {
-        if (!previewStart || !previewEnd) return false;
-
-        const currentH = parseInt(time.split(':')[0]);
-        const startH = parseInt(previewStart.split(':')[0]);
-        const endH = parseInt(previewEnd.split(':')[0]);
-
-        return currentH >= startH && currentH < endH;
+        return draftSlots.some(s => s.date === format(date, 'yyyy-MM-dd') && s.startTime === time);
     };
 
     const isHourAvailable = (hour: string) => {

@@ -158,16 +158,10 @@ export function SessionPlanning() {
         return agendId || sampleReps[0].id;
     });
 
-    const [selectedGigId, setSelectedGigId] = useState<string | null>(null);
-
-    const [reps, setReps] = useState<Rep[]>(sampleReps);
-    const showAIPanel = false;
-    const showAttendancePanel = false;
-
     const [gigs, setGigs] = useState<Gig[]>([]);
+    const [reps, setReps] = useState<Rep[]>(sampleReps);
+    const [draftSlots, setDraftSlots] = useState<Partial<TimeSlot>[]>([]);
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
-    const [quickStart, setQuickStart] = useState<string>('');
-    const [quickEnd, setQuickEnd] = useState<string>('');
 
     useEffect(() => {
         const fetchGigs = async () => {
@@ -285,31 +279,29 @@ export function SessionPlanning() {
             }
         });
 
-        // Add pending hours from quick reserve selection
-        if (quickStart && quickEnd) {
-            const startH = parseInt(quickStart.split(':')[0]);
-            const endH = parseInt(quickEnd.split(':')[0]);
-            if (endH > startH) {
-                stats.pendingHours = endH - startH;
-            }
-        }
+        // Add pending hours from all draft slots
+        stats.pendingHours = draftSlots.reduce((sum, s) => sum + (s.duration || 1), 0);
 
         return stats;
-    }, [slots, userRole, selectedRepId, quickStart, quickEnd]);
+    }, [slots, userRole, selectedRepId, draftSlots]);
 
     const handleTimeSelect = (time: string) => {
-        const hour = parseInt(time.split(':')[0]);
-        if (!quickStart || (quickStart && quickEnd)) {
-            setQuickStart(time);
-            setQuickEnd(`${(hour + 1).toString().padStart(2, '0')}:00`);
+        const isAlreadyDrafted = draftSlots.some(s => s.date === format(selectedDate, 'yyyy-MM-dd') && s.startTime === time);
+
+        if (isAlreadyDrafted) {
+            setDraftSlots(prev => prev.filter(s => !(s.date === format(selectedDate, 'yyyy-MM-dd') && s.startTime === time)));
         } else {
-            const startHour = parseInt(quickStart.split(':')[0]);
-            if (hour >= startHour) {
-                setQuickEnd(`${(hour + 1).toString().padStart(2, '0')}:00`);
-            } else {
-                setQuickStart(time);
-                setQuickEnd(`${(startHour + 1).toString().padStart(2, '0')}:00`);
-            }
+            const newDraft: Partial<TimeSlot> = {
+                id: crypto.randomUUID(),
+                date: format(selectedDate, 'yyyy-MM-dd'),
+                startTime: time,
+                endTime: `${(parseInt(time.split(':')[0]) + 1).toString().padStart(2, '0')}:00`,
+                duration: 1,
+                repId: selectedRepId,
+                status: 'reserved',
+                gigId: selectedGigId || undefined
+            };
+            setDraftSlots(prev => [...prev, newDraft]);
         }
     };
 
@@ -375,38 +367,31 @@ export function SessionPlanning() {
     };
 
     const handleQuickReserve = async () => {
-        if (!selectedGigId || !quickStart || !quickEnd) return;
-
-        const newSlot: Partial<TimeSlot> = {
-            id: crypto.randomUUID(),
-            agentId: selectedRepId, // Map to backend agentId
-            repId: selectedRepId,
-            gigId: selectedGigId,
-            date: format(selectedDate, 'yyyy-MM-dd'),
-            startTime: quickStart,
-            endTime: quickEnd,
-            duration: parseInt(quickEnd) - parseInt(quickStart),
-            status: 'reserved',
-            notes: 'Created via Quick Reserve'
-        };
+        if (!selectedGigId || draftSlots.length === 0) return;
 
         try {
-            await schedulerApi.upsertTimeSlot(newSlot);
+            await Promise.all(draftSlots.map(slot =>
+                schedulerApi.upsertTimeSlot({
+                    ...slot,
+                    gigId: selectedGigId,
+                    notes: 'Created via Multi-Slot Selection'
+                })
+            ));
+
             const updatedSlots = await schedulerApi.getTimeSlots(selectedRepId);
             setSlots(updatedSlots);
 
             setNotification({
-                message: 'Time block reserved successfully',
+                message: `${draftSlots.length} time block(s) reserved successfully`,
                 type: 'success'
             });
 
-            // Reset quick reserve selection
-            setQuickStart('');
-            setQuickEnd('');
+            // Reset draft selection
+            setDraftSlots([]);
         } catch (error) {
-            console.error('Error in quick reserve:', error);
+            console.error('Error in multi-reserve:', error);
             setNotification({
-                message: 'Failed to reserve time block',
+                message: 'Failed to reserve time blocks',
                 type: 'error'
             });
         }
@@ -646,48 +631,31 @@ export function SessionPlanning() {
                                                 </div>
                                             );
 
-                                            const startH = parseInt(daySchedule.hours.start.split(':')[0]);
-                                            const endH = parseInt(daySchedule.hours.end.split(':')[0]);
-                                            const availableHours = Array.from({ length: endH - startH + 1 }, (_, i) => {
-                                                const h = startH + i;
-                                                return `${h.toString().padStart(2, '0')}:00`;
-                                            });
-
                                             return (
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Start Time</p>
-                                                        <select
-                                                            className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
-                                                            value={quickStart}
-                                                            onChange={(e) => setQuickStart(e.target.value)}
-                                                        >
-                                                            <option value="">Start</option>
-                                                            {availableHours.slice(0, -1).map(h => (
-                                                                <option key={h} value={h}>{h}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">End Time</p>
-                                                        <select
-                                                            className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
-                                                            value={quickEnd}
-                                                            onChange={(e) => setQuickEnd(e.target.value)}
-                                                        >
-                                                            <option value="">End</option>
-                                                            {availableHours.slice(1).map(h => (
-                                                                <option key={h} value={h}>{h}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
+                                                <div className="space-y-3">
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Current Selection</p>
+                                                    {draftSlots.length === 0 ? (
+                                                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 italic text-[10px] text-gray-400 font-bold">
+                                                            Select time slots directly in the grid below.
+                                                        </div>
+                                                    ) : (
+                                                        <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto no-scrollbar py-1">
+                                                            {draftSlots
+                                                                .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
+                                                                .map(s => (
+                                                                    <div key={`${s.date}:${s.startTime}`} className="flex items-center justify-center bg-blue-50 text-blue-600 px-2 py-2 rounded-lg border border-blue-100 text-[10px] font-black shadow-sm">
+                                                                        {s.startTime}
+                                                                    </div>
+                                                                ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })()}
                                         <button
                                             onClick={handleQuickReserve}
                                             className="w-full py-4 bg-blue-600 text-white rounded-xl text-sm font-black shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                            disabled={!selectedGigId || !quickStart || !quickEnd || !gigs.find(g => g.id === selectedGigId)?.availability?.schedule?.some(s => s.day.toLowerCase() === format(selectedDate, 'EEEE').toLowerCase())}
+                                            disabled={!selectedGigId || draftSlots.length === 0}
                                         >
                                             Reserve Time Block
                                         </button>
@@ -715,8 +683,7 @@ export function SessionPlanning() {
                                 onSlotSelect={handleSlotSelect}
                                 selectedGigId={selectedGigId || ''}
                                 onGigFilterChange={(id) => setSelectedGigId(id)}
-                                previewStart={quickStart}
-                                previewEnd={quickEnd}
+                                draftSlots={draftSlots}
                                 onTimeSelect={handleTimeSelect}
                             />
                         </div>
