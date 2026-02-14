@@ -10,6 +10,8 @@ interface TimeSlotGridProps {
     onSlotUpdate: (slot: TimeSlot) => void;
     onSlotCancel: (slotId: string) => void;
     onSlotSelect?: (slot: TimeSlot) => void;
+    selectedGigId: string;
+    onGigFilterChange: (gigId: string) => void;
 }
 
 export function TimeSlotGrid({
@@ -19,24 +21,21 @@ export function TimeSlotGrid({
     onSlotUpdate,
     onSlotCancel,
     onSlotSelect,
+    selectedGigId,
+    onGigFilterChange,
 }: TimeSlotGridProps) {
     const timeSlots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
     const daySlots = slots.filter((slot) => slot.date === format(date, 'yyyy-MM-dd'));
-    const [selectedGigId, setSelectedGigId] = useState<string>('all');
     const [showCancelled, setShowCancelled] = useState<boolean>(false);
     const selectedRepId = slots.length > 0 ? slots[0].repId : '';
 
-    const filteredSlots = selectedGigId === 'all'
-        ? daySlots
-        : daySlots.filter(slot => slot.gigId === selectedGigId);
+    const filteredSlots = daySlots.filter(slot => slot.gigId === selectedGigId);
 
     const displaySlots = showCancelled
         ? filteredSlots
         : filteredSlots.filter(slot => slot.status !== 'cancelled');
 
     const isHourAvailable = (hour: string) => {
-        if (selectedGigId === 'all') return true;
-
         const gig = gigs.find(p => p.id === selectedGigId);
         if (!gig || !gig.availability?.schedule) return true;
 
@@ -67,10 +66,9 @@ export function TimeSlotGrid({
                     <div className="relative group">
                         <select
                             value={selectedGigId}
-                            onChange={(e) => setSelectedGigId(e.target.value)}
+                            onChange={(e) => onGigFilterChange(e.target.value)}
                             className="bg-transparent border-none text-sm font-bold text-gray-700 focus:ring-0 appearance-none pr-8 cursor-pointer"
                         >
-                            <option value="all">All Projects</option>
                             {gigs.map((gig) => (
                                 <option key={gig.id} value={gig.id}>
                                     {gig.name}

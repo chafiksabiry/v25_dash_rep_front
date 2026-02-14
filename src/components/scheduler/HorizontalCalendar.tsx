@@ -6,9 +6,10 @@ interface HorizontalCalendarProps {
     selectedDate: Date;
     onDateSelect: (date: Date) => void;
     slots: TimeSlot[];
+    selectedGigId: string | null;
 }
 
-export function HorizontalCalendar({ selectedDate, onDateSelect, slots }: HorizontalCalendarProps) {
+export function HorizontalCalendar({ selectedDate, onDateSelect, slots, selectedGigId }: HorizontalCalendarProps) {
     const startDate = startOfWeek(selectedDate);
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
 
@@ -22,7 +23,10 @@ export function HorizontalCalendar({ selectedDate, onDateSelect, slots }: Horizo
             <div className="grid grid-cols-7 gap-2">
                 {weekDays.map((day) => {
                     const isSelected = isSameDay(day, selectedDate);
-                    const daySlots = slots.filter(s => s.date === format(day, 'yyyy-MM-dd'));
+                    const daySlots = slots.filter(s =>
+                        s.date === format(day, 'yyyy-MM-dd') &&
+                        (!selectedGigId || s.gigId === selectedGigId)
+                    );
                     const totalSlots = daySlots.length;
 
                     return (

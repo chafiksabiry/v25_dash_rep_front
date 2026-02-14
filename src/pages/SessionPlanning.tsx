@@ -472,6 +472,7 @@ export function SessionPlanning() {
                                     selectedDate={selectedDate}
                                     onDateSelect={setSelectedDate}
                                     slots={slots.filter((slot: TimeSlot) => slot.repId === selectedRepId)}
+                                    selectedGigId={selectedGigId}
                                 />
                             </div>
 
@@ -482,13 +483,21 @@ export function SessionPlanning() {
                                         <div className="flex justify-between items-center text-sm">
                                             <span className="text-gray-400 font-medium">Available Slots</span>
                                             <span className="text-gray-900 font-black">
-                                                {slots.filter((s: TimeSlot) => s.repId === selectedRepId && s.status === 'available').length}
+                                                {slots.filter((s: TimeSlot) =>
+                                                    s.repId === selectedRepId &&
+                                                    s.status === 'available' &&
+                                                    (!selectedGigId || s.gigId === selectedGigId)
+                                                ).length}
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-center text-sm">
                                             <span className="text-gray-400 font-medium">Reserved Slots</span>
                                             <span className="text-gray-900 font-black">
-                                                {slots.filter((s: TimeSlot) => s.repId === selectedRepId && s.status === 'reserved').length}
+                                                {slots.filter((s: TimeSlot) =>
+                                                    s.repId === selectedRepId &&
+                                                    s.status === 'reserved' &&
+                                                    (!selectedGigId || s.gigId === selectedGigId)
+                                                ).length}
                                             </span>
                                         </div>
                                     </div>
@@ -528,21 +537,50 @@ export function SessionPlanning() {
                                                 ))}
                                             </select>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Start Time</p>
-                                                <select className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100">
-                                                    <option>09:00</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">End Time</p>
-                                                <select className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100">
-                                                    <option>17:00</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <button className="w-full py-4 bg-blue-600 text-white rounded-xl text-sm font-black shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
+                                        {(() => {
+                                            const selectedGig = gigs.find(g => g.id === selectedGigId);
+                                            const dayName = format(selectedDate, 'EEEE');
+                                            const daySchedule = selectedGig?.availability?.schedule?.find(
+                                                s => s.day.toLowerCase() === dayName.toLowerCase()
+                                            );
+
+                                            if (!daySchedule) return (
+                                                <div className="p-4 bg-orange-50 rounded-xl border border-orange-100 italic text-[10px] text-orange-600 font-bold">
+                                                    No availability found for this day.
+                                                </div>
+                                            );
+
+                                            const startH = parseInt(daySchedule.hours.start.split(':')[0]);
+                                            const endH = parseInt(daySchedule.hours.end.split(':')[0]);
+                                            const availableHours = Array.from({ length: endH - startH + 1 }, (_, i) => {
+                                                const h = startH + i;
+                                                return `${h.toString().padStart(2, '0')}:00`;
+                                            });
+
+                                            return (
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Start Time</p>
+                                                        <select className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100">
+                                                            {availableHours.slice(0, -1).map(h => (
+                                                                <option key={h} value={h}>{h}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">End Time</p>
+                                                        <select className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100">
+                                                            {availableHours.slice(1).map(h => (
+                                                                <option key={h} value={h}>{h}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                        <button className="w-full py-4 bg-blue-600 text-white rounded-xl text-sm font-black shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled={!gigs.find(g => g.id === selectedGigId)?.availability?.schedule?.some(s => s.day.toLowerCase() === format(selectedDate, 'EEEE').toLowerCase())}
+                                        >
                                             Reserve Time Block
                                         </button>
                                     </div>
@@ -567,6 +605,8 @@ export function SessionPlanning() {
                                 onSlotUpdate={handleSlotUpdate}
                                 onSlotCancel={handleSlotCancel}
                                 onSlotSelect={handleSlotSelect}
+                                selectedGigId={selectedGigId || ''}
+                                onGigFilterChange={(id) => setSelectedGigId(id)}
                             />
                         </div>
                     </div>
