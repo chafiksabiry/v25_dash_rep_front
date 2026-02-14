@@ -259,9 +259,10 @@ export function SessionPlanning() {
     const weeklyStats = useMemo<WeeklyStats>(() => {
         const stats: WeeklyStats = {
             totalHours: 0,
-            gigBreakdown: {},
+            gigBreakdown: {} as Record<string, number>,
             availableSlots: 0,
             reservedSlots: 0,
+            pendingHours: 0
         };
 
         const filteredSlots = userRole === 'rep'
@@ -284,8 +285,33 @@ export function SessionPlanning() {
             }
         });
 
+        // Add pending hours from quick reserve selection
+        if (quickStart && quickEnd) {
+            const startH = parseInt(quickStart.split(':')[0]);
+            const endH = parseInt(quickEnd.split(':')[0]);
+            if (endH > startH) {
+                stats.pendingHours = endH - startH;
+            }
+        }
+
         return stats;
-    }, [slots, userRole, selectedRepId]);
+    }, [slots, userRole, selectedRepId, quickStart, quickEnd]);
+
+    const handleTimeSelect = (time: string) => {
+        const hour = parseInt(time.split(':')[0]);
+        if (!quickStart || (quickStart && quickEnd)) {
+            setQuickStart(time);
+            setQuickEnd(`${(hour + 1).toString().padStart(2, '0')}:00`);
+        } else {
+            const startHour = parseInt(quickStart.split(':')[0]);
+            if (hour >= startHour) {
+                setQuickEnd(`${(hour + 1).toString().padStart(2, '0')}:00`);
+            } else {
+                setQuickStart(time);
+                setQuickEnd(`${(startHour + 1).toString().padStart(2, '0')}:00`);
+            }
+        }
+    };
 
     const handleSlotUpdate = async (updates: Partial<TimeSlot>) => {
         let slotWithRep: TimeSlot;
@@ -547,7 +573,7 @@ export function SessionPlanning() {
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-400 font-medium">Reserved Slots</span>
+                                            <span className="text-gray-400 font-medium tracking-tight">Reserved Slots</span>
                                             <span className="text-gray-900 font-black">
                                                 {slots.filter((s: TimeSlot) =>
                                                     s.repId === selectedRepId &&
@@ -556,6 +582,14 @@ export function SessionPlanning() {
                                                 ).length}
                                             </span>
                                         </div>
+                                        {weeklyStats.pendingHours > 0 && (
+                                            <div className="flex justify-between items-center text-sm bg-blue-50/50 p-2 rounded-lg border border-blue-100 animate-pulse">
+                                                <span className="text-blue-600 font-bold uppercase text-[9px] tracking-widest">Pending Selection</span>
+                                                <span className="text-blue-700 font-black">
+                                                    +{weeklyStats.pendingHours}h
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -683,6 +717,7 @@ export function SessionPlanning() {
                                 onGigFilterChange={(id) => setSelectedGigId(id)}
                                 previewStart={quickStart}
                                 previewEnd={quickEnd}
+                                onTimeSelect={handleTimeSelect}
                             />
                         </div>
                     </div>

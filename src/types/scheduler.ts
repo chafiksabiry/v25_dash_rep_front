@@ -61,6 +61,7 @@ export interface WeeklyStats {
     gigBreakdown: Record<string, number>;
     availableSlots: number;
     reservedSlots: number;
+    pendingHours: number;
 }
 
 export type UserRole = 'rep' | 'company' | 'admin';

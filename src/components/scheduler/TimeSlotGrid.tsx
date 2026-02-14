@@ -14,6 +14,7 @@ interface TimeSlotGridProps {
     onGigFilterChange: (gigId: string) => void;
     previewStart?: string;
     previewEnd?: string;
+    onTimeSelect?: (time: string) => void;
 }
 
 export function TimeSlotGrid({
@@ -27,12 +28,12 @@ export function TimeSlotGrid({
     onGigFilterChange,
     previewStart,
     previewEnd,
+    onTimeSelect,
 }: TimeSlotGridProps) {
     const timeSlots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
     const daySlots = slots.filter((slot) => slot.date === format(date, 'yyyy-MM-dd'));
     const [showCancelled, setShowCancelled] = useState<boolean>(false);
     const [showAllHours, setShowAllHours] = useState<boolean>(false);
-    const selectedRepId = slots.length > 0 ? slots[0].repId : '';
 
     const filteredSlots = daySlots.filter(slot => slot.gigId === selectedGigId);
 
@@ -251,16 +252,7 @@ export function TimeSlotGrid({
                                                     onClick={(e) => {
                                                         if (!available && !showAllHours) return;
                                                         e.stopPropagation();
-                                                        onSlotUpdate({
-                                                            id: crypto.randomUUID(),
-                                                            startTime: time,
-                                                            endTime: `${(parseInt(time) + 1).toString().padStart(2, '0')}:00`,
-                                                            date: format(date, 'yyyy-MM-dd'),
-                                                            status: 'available',
-                                                            duration: 1,
-                                                            repId: selectedRepId,
-                                                            gigId: selectedGigId || undefined
-                                                        });
+                                                        onTimeSelect?.(time);
                                                     }}
                                                     className={`flex items-center transition-all ${available || showAllHours
                                                         ? 'text-blue-600 hover:text-blue-800'
