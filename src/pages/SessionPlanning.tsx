@@ -165,8 +165,8 @@ export function SessionPlanning() {
 
     const [selectedGigId, setSelectedGigId] = useState<string | null>(null);
 
-    const [showAIPanel, setShowAIPanel] = useState<boolean>(false);
-    const [showAttendancePanel, setShowAttendancePanel] = useState<boolean>(false);
+    const [showAIPanel] = useState<boolean>(false);
+    const [showAttendancePanel] = useState<boolean>(false);
     const [reps, setReps] = useState<Rep[]>(sampleReps);
 
     const [gigs, setGigs] = useState<Gig[]>([]);
@@ -508,8 +508,8 @@ export function SessionPlanning() {
                                 key={role.id}
                                 onClick={() => setUserRole(role.id as UserRole)}
                                 className={`px-4 py-2 rounded-lg flex items-center transition-all duration-200 ${userRole === role.id
-                                        ? 'bg-white text-blue-600 shadow-sm font-bold border border-gray-100'
-                                        : 'bg-transparent text-gray-500 hover:text-gray-900 font-medium'
+                                    ? 'bg-white text-blue-600 shadow-sm font-bold border border-gray-100'
+                                    : 'bg-transparent text-gray-500 hover:text-gray-900 font-medium'
                                     }`}
                             >
                                 <role.icon className={`w-4 h-4 mr-2 ${userRole === role.id ? 'text-blue-600' : 'text-gray-400'}`} />
@@ -532,8 +532,8 @@ export function SessionPlanning() {
                                         key={gig.id}
                                         onClick={() => setSelectedGigId(gig.id)}
                                         className={`px-5 py-2.5 rounded-full whitespace-nowrap transition-all duration-200 shadow-sm ${selectedGigId === gig.id
-                                                ? 'bg-blue-600 text-white font-bold ring-4 ring-blue-100'
-                                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 font-medium'
+                                            ? 'bg-blue-600 text-white font-bold ring-4 ring-blue-100'
+                                            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 font-medium'
                                             }`}
                                     >
                                         {gig.name}
@@ -690,8 +690,8 @@ export function SessionPlanning() {
                                             {enrolledGigs.map((gigAgent) => (
                                                 <div key={gigAgent._id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:border-blue-200 transition-all group relative">
                                                     <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-xl text-[10px] font-black uppercase tracking-tighter ${gigAgent.status === 'enrolled' ? 'bg-green-100 text-green-700' :
-                                                            gigAgent.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                                                                'bg-gray-100 text-gray-700'
+                                                        gigAgent.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                                                            'bg-gray-100 text-gray-700'
                                                         }`}>
                                                         {gigAgent.status}
                                                     </div>
