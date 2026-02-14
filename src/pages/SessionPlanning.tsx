@@ -229,6 +229,24 @@ export function SessionPlanning() {
 
                 if (response.data) {
                     setEnrolledGigs(response.data);
+
+                    // Map enrolled gigs to projects for the dropdown
+                    const mappedProjects: Project[] = response.data.map((gigAgent: EnrolledGig) => ({
+                        id: gigAgent.gigId._id,
+                        name: gigAgent.gigId.title,
+                        description: gigAgent.gigId.description || '',
+                        company: 'Unknown Company', // Placeholder as company name might not be directly in gigId
+                        color: stringToColor(gigAgent.gigId._id || gigAgent.gigId.title),
+                        skills: [], // Skills might not be in the lightweight gig object
+                        priority: 'medium'
+                    }));
+
+                    setProjects(mappedProjects);
+
+                    // Set default selected project if none selected
+                    if (mappedProjects.length > 0 && !selectedProjectId) {
+                        setSelectedProjectId(mappedProjects[0].id);
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching enrolled gigs:', error);
