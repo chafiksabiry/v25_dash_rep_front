@@ -3,7 +3,6 @@ import { HorizontalCalendar } from '../components/scheduler/HorizontalCalendar';
 import { TimeSlotGrid } from '../components/scheduler/TimeSlotGrid';
 import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company } from '../types/scheduler';
 import { Building, Clock, Briefcase, AlertCircle, Users, Brain, X } from 'lucide-react';
-import { RepSelector } from '../components/scheduler/RepSelector';
 import { CompanyView } from '../components/scheduler/CompanyView';
 import { WorkloadPredictionComponent as WorkloadPrediction } from '../components/scheduler/WorkloadPrediction';
 import { AttendanceReport } from '../components/scheduler/AttendanceReport';
@@ -153,7 +152,7 @@ export function SessionPlanning() {
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
     const [userRole] = useState<UserRole>('rep');
 
-    const [selectedRepId, setSelectedRepId] = useState<string>(() => {
+    const [selectedRepId] = useState<string>(() => {
         const agendId = getAgentId();
         return agendId || sampleReps[0].id;
     });
@@ -582,12 +581,6 @@ export function SessionPlanning() {
                     </div>
                 ) : userRole === 'rep' ? (
                     <div className="space-y-12">
-                        <RepSelector
-                            reps={reps}
-                            selectedRepId={selectedRepId}
-                            onSelectRep={setSelectedRepId}
-                        />
-
                         {/* Top Section: Schedule + Weekly Overview */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                             <div className="lg:col-span-2">
