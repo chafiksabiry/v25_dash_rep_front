@@ -145,13 +145,21 @@ interface EnrolledGig {
     matchScore?: number;
 }
 
+import { getAgentId } from '../utils/authUtils';
+
 export function SessionPlanning() {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [slots, setSlots] = useState<TimeSlot[]>([]);
     const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
     const [userRole, setUserRole] = useState<UserRole>('rep');
-    const [selectedRepId, setSelectedRepId] = useState<string>(sampleReps[0].id);
+
+    // Initialize with real agent ID if available, otherwise fallback to sample
+    const [selectedRepId, setSelectedRepId] = useState<string>(() => {
+        const agendId = getAgentId();
+        return agendId || sampleReps[0].id;
+    });
+
     // Replaced selectedCompany with selectedProjectId
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
@@ -212,20 +220,18 @@ export function SessionPlanning() {
         const fetchEnrolledGigs = async () => {
             if (!selectedRepId) return;
 
-            // Optional: Skip if using mock IDs (1, 2, 3, 4) if backend only accepts ObjectIds
-            // But let's try anyway, maybe the backend is mocked or handles it.
-
             try {
                 setLoadingEnrolledGigs(true);
                 const matchingApiUrl = import.meta.env.VITE_MATCHING_API_URL || 'https://v25matchingbackend-production.up.railway.app/api';
+                console.log('Fetching enrolled gigs for:', selectedRepId, 'from', matchingApiUrl);
                 const response = await axios.get(`${matchingApiUrl}/gig-agents/agent/${selectedRepId}`);
+                console.log('Enrolled gigs response:', response.data);
 
                 if (response.data) {
                     setEnrolledGigs(response.data);
                 }
             } catch (error) {
                 console.error('Error fetching enrolled gigs:', error);
-                // Don't show error notification to avoid spamming if ID is invalid (mock ID)
             } finally {
                 setLoadingEnrolledGigs(false);
             }
