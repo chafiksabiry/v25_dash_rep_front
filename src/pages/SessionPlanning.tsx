@@ -465,15 +465,58 @@ export function SessionPlanning() {
                             onSelectRep={setSelectedRepId}
                         />
 
-                        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
-                            <Calendar
-                                selectedDate={selectedDate}
-                                onDateSelect={setSelectedDate}
-                                slots={slots.filter(slot => slot.repId === selectedRepId)}
-                            />
+                        {/* Top Section: Calendar + Stats */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                                <Calendar
+                                    selectedDate={selectedDate}
+                                    onDateSelect={setSelectedDate}
+                                    slots={slots.filter(slot => slot.repId === selectedRepId)}
+                                />
+                            </div>
+
+                            <div className="space-y-8">
+                                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                                    <h3 className="text-lg font-black text-gray-900 mb-6 flex items-center">
+                                        <div className="w-1.5 h-5 bg-blue-600 rounded-full mr-3"></div>
+                                        Weekly Overview
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100/50">
+                                            <p className="text-xs font-bold text-blue-600 uppercase mb-1">Available Slots</p>
+                                            <p className="text-2xl font-black text-blue-900">
+                                                {slots.filter(s => s.repId === selectedRepId && s.status === 'available').length}
+                                            </p>
+                                        </div>
+                                        <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100/50">
+                                            <p className="text-xs font-bold text-emerald-600 uppercase mb-1">Reserved Gigs</p>
+                                            <p className="text-2xl font-black text-emerald-900">
+                                                {slots.filter(s => s.repId === selectedRepId && s.status === 'reserved').length}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-xl p-8 text-white">
+                                    <h3 className="text-lg font-black mb-4">Quick Options</h3>
+                                    <div className="space-y-3">
+                                        <button className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-bold transition-all text-left">
+                                            Set Default Hours
+                                        </button>
+                                        <button className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-bold transition-all text-left">
+                                            Sync with Google
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
+                        {/* Bottom Section: Full Width Slot Grid */}
                         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                            <h3 className="text-xl font-black text-gray-900 mb-8 flex items-center">
+                                <div className="w-2 h-7 bg-blue-600 rounded-full mr-4"></div>
+                                Daily Schedule Details
+                            </h3>
                             <TimeSlotGrid
                                 date={selectedDate}
                                 slots={slots.filter(slot => slot.repId === selectedRepId)}
