@@ -58,5 +58,20 @@ export const schedulerApi = {
             console.error('Error cancelling time slot:', error);
             throw error;
         }
+    },
+
+    /**
+     * Get all agents associated with a gig
+     */
+    getGigAgents: async (gigId: string, status?: string): Promise<any[]> => {
+        try {
+            const params: any = {};
+            if (status) params.status = status;
+            const response = await axios.get(`${MATCHING_API_URL}/gig-agents/gigs/${gigId}/agents`, { params });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching gig agents:', error);
+            throw error;
+        }
     }
 };

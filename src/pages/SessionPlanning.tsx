@@ -159,13 +159,13 @@ export function SessionPlanning() {
     });
 
     const [selectedGigId, setSelectedGigId] = useState<string | null>(null);
-
     const [gigs, setGigs] = useState<Gig[]>([]);
-    const [reps] = useState<Rep[]>(sampleReps);
+    const [reps, setReps] = useState<Rep[]>([]);
     const [draftSlots, setDraftSlots] = useState<Partial<TimeSlot>[]>([]);
     const [quickStart, setQuickStart] = useState<string>('');
     const [quickEnd, setQuickEnd] = useState<string>('');
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
+    const [loadingReps, setLoadingReps] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchGigs = async () => {
@@ -237,9 +237,10 @@ export function SessionPlanning() {
         }
     }, [selectedRepId, userRole]);
 
+    // Fetch specific REP's slots (for REP view)
     useEffect(() => {
         const fetchSlots = async () => {
-            if (!selectedRepId) return;
+            if (!selectedRepId || userRole !== 'rep') return;
             try {
                 const fetchedSlots = await schedulerApi.getTimeSlots(selectedRepId);
                 setSlots(fetchedSlots);
@@ -248,10 +249,57 @@ export function SessionPlanning() {
             }
         };
         fetchSlots();
-    }, [selectedRepId]);
+    }, [selectedRepId, userRole]);
+
+    // Fetch Global Gig Data (for Company/Admin view)
+    useEffect(() => {
+        const fetchGlobalGigData = async () => {
+            if (!selectedGigId || userRole === 'rep') return;
+
+            try {
+                setLoadingReps(true);
+                // 1. Fetch all agents enrolled in this gig
+                const gigAgents = await schedulerApi.getGigAgents(selectedGigId, 'enrolled');
+                const mappedReps = gigAgents.map(ga => ({
+                    id: ga.agentId._id,
+                    name: ga.agentId.personalInfo?.firstName + ' ' + ga.agentId.personalInfo?.lastName,
+                    email: ga.agentId.personalInfo?.email || '',
+                    avatar: ga.agentId.personalInfo?.avatar,
+                    specialties: ga.agentId.professionalSummary?.industries || [],
+                    performanceScore: 85, // Placeholder
+                    attendanceScore: 90 // Placeholder
+                }));
+                setReps(mappedReps);
+
+                // 2. Fetch all slots for this gig (Global View)
+                const globalSlots = await schedulerApi.getTimeSlots(undefined, selectedGigId);
+                setSlots(globalSlots);
+            } catch (error) {
+                console.error('Error fetching global gig data:', error);
+            } finally {
+                setLoadingReps(false);
+            }
+        };
+
+        fetchGlobalGigData();
+    }, [selectedGigId, userRole, selectedDate]);
+
+    // Sync Dropdowns with Draft Range
+    useEffect(() => {
+        if (draftSlots.length > 0) {
+            const sorted = [...draftSlots].sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+            const minStart = sorted[0].startTime || '';
+            const maxEnd = sorted[sorted.length - 1].endTime || '';
+            setQuickStart(minStart);
+            setQuickEnd(maxEnd);
+        } else {
+            setQuickStart('');
+            setQuickEnd('');
+        }
+    }, [draftSlots]);
 
     const selectedRep = useMemo(() => {
-        return reps.find(rep => rep.id === selectedRepId) || reps[0];
+        return reps.find(rep => rep.id === selectedRepId) || reps[0] || sampleReps[0];
     }, [selectedRepId, reps]);
 
     const weeklyStats = useMemo<WeeklyStats>(() => {
