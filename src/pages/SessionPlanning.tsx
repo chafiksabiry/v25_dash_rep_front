@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Calendar } from '../components/scheduler/Calendar';
 import { TimeSlotGrid } from '../components/scheduler/TimeSlotGrid';
 import { TimeSlot, Project, WeeklyStats, Rep, UserRole, Company, AttendanceRecord } from '../types/scheduler';
-import { Building, Clock, Briefcase, AlertCircle, Users, LayoutDashboard, Brain } from 'lucide-react';
+import { Building, Clock, Briefcase, AlertCircle, Users, LayoutDashboard, Brain, DollarSign, MapPin } from 'lucide-react';
 import { SlotActionPanel } from '../components/scheduler/SlotActionPanel';
 import { RepSelector } from '../components/scheduler/RepSelector';
 import { CompanyView } from '../components/scheduler/CompanyView';
@@ -126,12 +126,20 @@ interface EnrolledGig {
     gigId: {
         _id: string;
         title: string;
+        description?: string;
         availability?: {
             schedule?: {
                 day: string;
                 hours: { start: string; end: string; };
             }[];
             time_zone?: string | { name: string };
+        };
+        commission?: {
+            commission_per_call?: number;
+            currency?: { symbol?: string; code?: string };
+        };
+        destination_zone?: {
+            name: { common: string };
         };
     };
     matchScore?: number;
@@ -692,263 +700,314 @@ export function SessionPlanning() {
                                     />
 
                                     <hr className="my-4" />
-                                    <h3 className="font-medium text-gray-800 mb-2">Enrolled Gigs & Schedule</h3>
+                                    <h3 className="font-medium text-gray-800 mb-3 flex items-center">
+                                        <Briefcase className="w-4 h-4 mr-2" />
+                                        Enrolled Gigs & Schedule
+                                    </h3>
                                     {loadingEnrolledGigs ? (
                                         <div className="text-sm text-gray-500 animate-pulse">Loading enrolled gigs...</div>
                                     ) : enrolledGigs.length === 0 ? (
-                                        <div className="text-sm text-gray-500 italic">No enrolled gigs found.</div>
+                                        <div className="text-sm text-gray-500 italic p-4 bg-gray-50 rounded-lg text-center border border-dashed border-gray-300">
+                                            No enrolled gigs found.
+                                        </div>
                                     ) : (
-                                        <div className="space-y-3">
+                                        <div className="space-y-4">
                                             {enrolledGigs.map((gigAgent) => (
-                                                <div key={gigAgent._id} className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                                                    <div className="flex justify-between items-start mb-1">
-                                                        <h4 className="font-medium text-sm text-blue-800">{gigAgent.gigId.title}</h4>
-                                                        <span className={`text-xs px-2 py-0.5 rounded-full ${gigAgent.status === 'enrolled' ? 'bg-green-100 text-green-800' :
-                                                            gigAgent.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                                'bg-gray-100 text-gray-800'
-                                                            }`}>
-                                                            {gigAgent.status}
-                                                        </span>
+                                                <div key={gigAgent._id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow relative overflow-hidden group">
+                                                    {/* Status Badge */}
+                                                    <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-lg text-xs font-semibold uppercase tracking-wide ${gigAgent.status === 'enrolled' ? 'bg-green-100 text-green-800' :
+                                                        gigAgent.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                            'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                        {gigAgent.status}
                                                     </div>
 
-                                                    {gigAgent.gigId.availability?.schedule && gigAgent.gigId.availability.schedule.length > 0 ? (
-                                                        <div className="mt-2 text-xs">
-                                                            <p className="text-gray-600 font-medium mb-1">Schedule:</p>
-                                                            {gigAgent.gigId.availability.schedule.map((sch, idx) => (
-                                                                <div key={idx} className="flex justify-between text-gray-500">
-                                                                    <span>{sch.day}</span>
-                                                                    <span>{sch.hours?.start} - {sch.hours?.end}</span>
-                                                                </div>
-                                                            ))}
+                                                    <div className="flex items-start space-x-3 mb-3 pr-16">
+                                                        <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
+                                                            <Briefcase className="w-5 h-5 text-blue-600" />
                                                         </div>
-                                                    ) : (
-                                                        <p className="text-xs text-gray-400 mt-1">No specific schedule</p>
-                                                    )}
+                                                        <div>
+                                                            <h4 className="font-semibold text-gray-900 leading-tight mb-1">{gigAgent.gigId.title}</h4>
+                                                            {/* Placeholder for Company if available */}
+                                                            {/* <p className="text-xs text-gray-500 flex items-center">
+                                                                <Building className="w-3 h-3 mr-1" />
+                                                                Unknown Company
+                                                            </p> */}
+                                                        </div>
+                                                    </div>
 
-                                                    {gigAgent.gigId.availability?.time_zone && (
-                                                        <p className="text-xs text-gray-400 mt-1 italic">
-                                                            Zone: {typeof gigAgent.gigId.availability.time_zone === 'object'
-                                                                ? (gigAgent.gigId.availability.time_zone as any).name || 'Unknown'
-                                                                : gigAgent.gigId.availability.time_zone}
+                                                    {gigAgent.gigId.description && (
+                                                        <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+                                                            {gigAgent.gigId.description}
                                                         </p>
                                                     )}
+
+                                                    <div className="grid grid-cols-2 gap-2 mb-3">
+                                                        {gigAgent.gigId.destination_zone && (
+                                                            <div className="flex items-center text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                                                                <MapPin className="w-3 h-3 mr-1.5 text-gray-400" />
+                                                                <span className="truncate">{gigAgent.gigId.destination_zone.name?.common || 'Unknown Zone'}</span>
+                                                            </div>
+                                                        )}
+                                                        {gigAgent.gigId.commission?.commission_per_call && (
+                                                            <div className="flex items-center text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                                                                <DollarSign className="w-3 h-3 mr-1.5 text-green-600" />
+                                                                <span className="font-medium text-gray-900">
+                                                                    {gigAgent.gigId.commission.currency?.symbol || '$'}
+                                                                    {gigAgent.gigId.commission.commission_per_call}/call
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Schedule Section */}
+                                                    <div className="border-t border-gray-100 pt-3 mt-2">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <p className="text-xs font-semibold text-gray-700 flex items-center">
+                                                                <Clock className="w-3 h-3 mr-1.5 text-blue-600" />
+                                                                Schedule ({
+                                                                    typeof gigAgent.gigId.availability?.time_zone === 'object'
+                                                                        ? (gigAgent.gigId.availability?.time_zone as any).name || 'UTC'
+                                                                        : gigAgent.gigId.availability?.time_zone || 'UTC'
+                                                                })
+                                                            </p>
+                                                        </div>
+
+                                                        {gigAgent.gigId.availability?.schedule && gigAgent.gigId.availability.schedule.length > 0 ? (
+                                                            <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar pr-1">
+                                                                {gigAgent.gigId.availability.schedule.map((sch, idx) => (
+                                                                    <div key={idx} className="flex justify-between items-center text-xs bg-blue-50/50 p-1.5 rounded hover:bg-blue-50 transition-colors">
+                                                                        <span className="font-medium text-gray-700 w-24 capitalize">{sch.day}</span>
+                                                                        <span className="text-gray-600 font-mono text-[10px] bg-white px-1.5 py-0.5 rounded border border-blue-100">
+                                                                            {sch.hours?.start} - {sch.hours?.end}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-xs text-gray-400 italic flex items-center justify-center p-2 bg-gray-50 rounded border border-dashed border-gray-200">
+                                                                No specific schedule set
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
                                     )}
                                 </div>
                             </div>
+                        </div>
 
-                            {showAttendancePanel && (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <AttendanceScorecard
+                        {showAttendancePanel && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <AttendanceScorecard
+                                    rep={selectedRep}
+                                    slots={slots}
+                                />
+                                <AttendanceTracker
+                                    slots={slots.filter(slot => slot.repId === selectedRepId)}
+                                    reps={reps}
+                                    selectedDate={selectedDate}
+                                    onAttendanceUpdate={handleAttendanceUpdate}
+                                />
+                            </div>
+                        )}
+
+                        {showAIPanel && (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div>
+                                    <AIRecommendations
+                                        rep={selectedRep}
+                                        projects={projects}
+                                        slots={slots}
+                                        onSelectProject={handleProjectSelect}
+                                    />
+                                </div>
+                                <div>
+                                    <OptimalTimeHeatmap
+                                        rep={selectedRep}
+                                        slots={slots}
+                                        onSelectHour={handleOptimalHourSelect}
+                                    />
+                                </div>
+                                <div>
+                                    <PerformanceMetrics
                                         rep={selectedRep}
                                         slots={slots}
                                     />
-                                    <AttendanceTracker
-                                        slots={slots.filter(slot => slot.repId === selectedRepId)}
-                                        reps={reps}
-                                        selectedDate={selectedDate}
-                                        onAttendanceUpdate={handleAttendanceUpdate}
-                                    />
                                 </div>
-                            )}
+                            </div>
+                        )}
 
-                            {showAIPanel && (
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    <div>
-                                        <AIRecommendations
-                                            rep={selectedRep}
-                                            projects={projects}
-                                            slots={slots}
-                                            onSelectProject={handleProjectSelect}
-                                        />
-                                    </div>
-                                    <div>
-                                        <OptimalTimeHeatmap
-                                            rep={selectedRep}
-                                            slots={slots}
-                                            onSelectHour={handleOptimalHourSelect}
-                                        />
-                                    </div>
-                                    <div>
-                                        <PerformanceMetrics
-                                            rep={selectedRep}
-                                            slots={slots}
-                                        />
-                                    </div>
+                        <TimeSlotGrid
+                            selectedSlotId={selectedSlot?.id || null}
+                            slots={slots.filter(slot => slot.repId === selectedRepId)}
+                            projects={projects}
+                            onSlotClick={(id) => handleSlotSelect(slots.find(s => s.id === id)!)}
+                        />
+                    </div>
+                ) : (
+                    // Admin view
+                    <div className="grid grid-cols-1 gap-6">
+                        <div className="bg-white rounded-lg shadow p-4">
+                            <h2 className="text-lg font-semibold text-gray-800 mb-4">Admin Dashboard</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <h3 className="font-medium text-blue-800 mb-2">Total REPs</h3>
+                                    <p className="text-2xl font-bold text-blue-900">{reps.length}</p>
                                 </div>
-                            )}
+                                <div className="bg-green-50 p-4 rounded-lg">
+                                    <h3 className="font-medium text-green-800 mb-2">Total Companies</h3>
+                                    <p className="text-2xl font-bold text-green-900">{sampleCompanies.length}</p>
+                                </div>
+                                <div className="bg-purple-50 p-4 rounded-lg">
+                                    <h3 className="font-medium text-purple-800 mb-2">Total Gigs</h3>
+                                    <p className="text-2xl font-bold text-purple-900">{projects.length}</p>
+                                </div>
+                            </div>
+                        </div>
 
-                            <TimeSlotGrid
-                                selectedSlotId={selectedSlot?.id || null}
-                                slots={slots.filter(slot => slot.repId === selectedRepId)}
-                                projects={projects}
-                                onSlotClick={(id) => handleSlotSelect(slots.find(s => s.id === id)!)}
+                        {showAttendancePanel && (
+                            <AttendanceReport
+                                reps={reps}
+                                slots={slots}
                             />
-                        </div>
-                        ) : (
-                        // Admin view
-                        <div className="grid grid-cols-1 gap-6">
-                            <div className="bg-white rounded-lg shadow p-4">
-                                <h2 className="text-lg font-semibold text-gray-800 mb-4">Admin Dashboard</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="bg-blue-50 p-4 rounded-lg">
-                                        <h3 className="font-medium text-blue-800 mb-2">Total REPs</h3>
-                                        <p className="text-2xl font-bold text-blue-900">{reps.length}</p>
-                                    </div>
-                                    <div className="bg-green-50 p-4 rounded-lg">
-                                        <h3 className="font-medium text-green-800 mb-2">Total Companies</h3>
-                                        <p className="text-2xl font-bold text-green-900">{sampleCompanies.length}</p>
-                                    </div>
-                                    <div className="bg-purple-50 p-4 rounded-lg">
-                                        <h3 className="font-medium text-purple-800 mb-2">Total Gigs</h3>
-                                        <p className="text-2xl font-bold text-purple-900">{projects.length}</p>
-                                    </div>
-                                </div>
-                            </div>
+                        )}
 
-                            {showAttendancePanel && (
-                                <AttendanceReport
-                                    reps={reps}
-                                    slots={slots}
-                                />
-                            )}
-
-                            {showAIPanel && (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <WorkloadPrediction slots={slots} />
-                                    <div className="bg-white rounded-lg shadow p-4">
-                                        <div className="flex items-center mb-4">
-                                            <Brain className="w-5 h-5 text-purple-600 mr-2" />
-                                            <h2 className="text-lg font-semibold text-gray-800">AI Insights</h2>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div className="p-3 bg-purple-50 rounded-lg">
-                                                <h3 className="font-medium text-purple-800 mb-2">Scheduling Efficiency</h3>
-                                                <p className="text-sm text-gray-700">
-                                                    Based on current scheduling patterns, the system is operating at
-                                                    <span className="font-bold text-purple-800"> 78% </span>
-                                                    efficiency. Consider optimizing REP assignments based on AI recommendations.
-                                                </p>
-                                            </div>
-                                            <div className="p-3 bg-blue-50 rounded-lg">
-                                                <h3 className="font-medium text-blue-800 mb-2">Resource Allocation</h3>
-                                                <p className="text-sm text-gray-700">
-                                                    Tech Co projects are currently overallocated by
-                                                    <span className="font-bold text-blue-800"> 12% </span>
-                                                    while Acme Corp is underallocated. Consider rebalancing resources.
-                                                </p>
-                                            </div>
-                                            <div className="p-3 bg-green-50 rounded-lg">
-                                                <h3 className="font-medium text-green-800 mb-2">Performance Insights</h3>
-                                                <p className="text-sm text-gray-700">
-                                                    REPs with diverse project assignments show
-                                                    <span className="font-bold text-green-800"> 23% higher </span>
-                                                    satisfaction scores. Consider rotating assignments more frequently.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
+                        {showAIPanel && (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <WorkloadPrediction slots={slots} />
                                 <div className="bg-white rounded-lg shadow p-4">
-                                    <h2 className="text-lg font-semibold text-gray-800 mb-4">REP Overview</h2>
-                                    <div className="space-y-4">
-                                        {reps.map(rep => {
-                                            const repSlots = slots.filter(slot => slot.repId === rep.id && slot.status === 'reserved');
-                                            const totalHours = repSlots.reduce((sum, slot) => sum + slot.duration, 0);
-
-                                            return (
-                                                <div key={rep.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                                    <div className="flex items-center">
-                                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                                                            {rep.avatar ? (
-                                                                <img
-                                                                    src={rep.avatar}
-                                                                    alt={rep.name}
-                                                                    className="w-full h-full rounded-full object-cover"
-                                                                />
-                                                            ) : (
-                                                                <Users className="w-5 h-5 text-gray-500" />
-                                                            )}
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-medium">{rep.name}</h4>
-                                                            <p className="text-sm text-gray-500">{rep.email}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-lg font-bold">{totalHours}h</p>
-                                                        <p className="text-sm text-gray-500">{repSlots.length} slots</p>
-                                                        {rep.performanceScore && (
-                                                            <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                                Score: {rep.performanceScore}
-                                                            </div>
-                                                        )}
-                                                        {rep.attendanceScore && (
-                                                            <div className="mt-1 ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                                Attendance: {rep.attendanceScore}%
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                    <div className="flex items-center mb-4">
+                                        <Brain className="w-5 h-5 text-purple-600 mr-2" />
+                                        <h2 className="text-lg font-semibold text-gray-800">AI Insights</h2>
                                     </div>
-                                </div>
-
-                                <div className="bg-white rounded-lg shadow p-4">
-                                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Company Overview</h2>
                                     <div className="space-y-4">
-                                        {sampleCompanies.map(company => {
-                                            const companySlots = slots.filter(slot => {
-                                                const project = projects.find(p => p.id === slot.projectId);
-                                                return project?.company === company.name && slot.status === 'reserved';
-                                            });
-
-                                            const totalHours = companySlots.reduce((sum, slot) => sum + slot.duration, 0);
-                                            const uniqueReps = new Set(companySlots.map(slot => slot.repId)).size;
-
-                                            return (
-                                                <div key={company.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                                    <div className="flex items-center">
-                                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                                                            {company.logo ? (
-                                                                <img
-                                                                    src={company.logo}
-                                                                    alt={company.name}
-                                                                    className="w-full h-full rounded-full object-cover"
-                                                                />
-                                                            ) : (
-                                                                <Building className="w-5 h-5 text-gray-500" />
-                                                            )}
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-medium">{company.name}</h4>
-                                                            <p className="text-sm text-gray-500">{uniqueReps} REPs assigned</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-lg font-bold">{totalHours}h</p>
-                                                        <p className="text-sm text-gray-500">{companySlots.length} slots</p>
-                                                        {company.priority && (
-                                                            <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                                                                Priority: {company.priority}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                        <div className="p-3 bg-purple-50 rounded-lg">
+                                            <h3 className="font-medium text-purple-800 mb-2">Scheduling Efficiency</h3>
+                                            <p className="text-sm text-gray-700">
+                                                Based on current scheduling patterns, the system is operating at
+                                                <span className="font-bold text-purple-800"> 78% </span>
+                                                efficiency. Consider optimizing REP assignments based on AI recommendations.
+                                            </p>
+                                        </div>
+                                        <div className="p-3 bg-blue-50 rounded-lg">
+                                            <h3 className="font-medium text-blue-800 mb-2">Resource Allocation</h3>
+                                            <p className="text-sm text-gray-700">
+                                                Tech Co projects are currently overallocated by
+                                                <span className="font-bold text-blue-800"> 12% </span>
+                                                while Acme Corp is underallocated. Consider rebalancing resources.
+                                            </p>
+                                        </div>
+                                        <div className="p-3 bg-green-50 rounded-lg">
+                                            <h3 className="font-medium text-green-800 mb-2">Performance Insights</h3>
+                                            <p className="text-sm text-gray-700">
+                                                REPs with diverse project assignments show
+                                                <span className="font-bold text-green-800"> 23% higher </span>
+                                                satisfaction scores. Consider rotating assignments more frequently.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                        )}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="bg-white rounded-lg shadow p-4">
+                                <h2 className="text-lg font-semibold text-gray-800 mb-4">REP Overview</h2>
+                                <div className="space-y-4">
+                                    {reps.map(rep => {
+                                        const repSlots = slots.filter(slot => slot.repId === rep.id && slot.status === 'reserved');
+                                        const totalHours = repSlots.reduce((sum, slot) => sum + slot.duration, 0);
+
+                                        return (
+                                            <div key={rep.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                                <div className="flex items-center">
+                                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                                        {rep.avatar ? (
+                                                            <img
+                                                                src={rep.avatar}
+                                                                alt={rep.name}
+                                                                className="w-full h-full rounded-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <Users className="w-5 h-5 text-gray-500" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-medium">{rep.name}</h4>
+                                                        <p className="text-sm text-gray-500">{rep.email}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-lg font-bold">{totalHours}h</p>
+                                                    <p className="text-sm text-gray-500">{repSlots.length} slots</p>
+                                                    {rep.performanceScore && (
+                                                        <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                            Score: {rep.performanceScore}
+                                                        </div>
+                                                    )}
+                                                    {rep.attendanceScore && (
+                                                        <div className="mt-1 ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                            Attendance: {rep.attendanceScore}%
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-lg shadow p-4">
+                                <h2 className="text-lg font-semibold text-gray-800 mb-4">Company Overview</h2>
+                                <div className="space-y-4">
+                                    {sampleCompanies.map(company => {
+                                        const companySlots = slots.filter(slot => {
+                                            const project = projects.find(p => p.id === slot.projectId);
+                                            return project?.company === company.name && slot.status === 'reserved';
+                                        });
+
+                                        const totalHours = companySlots.reduce((sum, slot) => sum + slot.duration, 0);
+                                        const uniqueReps = new Set(companySlots.map(slot => slot.repId)).size;
+
+                                        return (
+                                            <div key={company.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                                <div className="flex items-center">
+                                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                                        {company.logo ? (
+                                                            <img
+                                                                src={company.logo}
+                                                                alt={company.name}
+                                                                className="w-full h-full rounded-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <Building className="w-5 h-5 text-gray-500" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-medium">{company.name}</h4>
+                                                        <p className="text-sm text-gray-500">{uniqueReps} REPs assigned</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-lg font-bold">{totalHours}h</p>
+                                                    <p className="text-sm text-gray-500">{companySlots.length} slots</p>
+                                                    {company.priority && (
+                                                        <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                                            Priority: {company.priority}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
+                    </div>
                 )}
-                    </main>
+            </main>
         </div>
     );
 }
