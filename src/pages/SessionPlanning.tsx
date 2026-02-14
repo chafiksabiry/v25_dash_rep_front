@@ -284,19 +284,7 @@ export function SessionPlanning() {
         fetchGlobalGigData();
     }, [selectedGigId, userRole, selectedDate]);
 
-    // Sync Dropdowns with Draft Range
-    useEffect(() => {
-        if (draftSlots.length > 0) {
-            const sorted = [...draftSlots].sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
-            const minStart = sorted[0].startTime || '';
-            const maxEnd = sorted[sorted.length - 1].endTime || '';
-            setQuickStart(minStart);
-            setQuickEnd(maxEnd);
-        } else {
-            setQuickStart('');
-            setQuickEnd('');
-        }
-    }, [draftSlots]);
+
 
     const selectedRep = useMemo(() => {
         return reps.find(rep => rep.id === selectedRepId) || reps[0] || sampleReps[0];
@@ -339,58 +327,48 @@ export function SessionPlanning() {
 
     const handleTimeSelect = (time: string) => {
         const hour = parseInt(time.split(':')[0]);
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        const isAlreadyDrafted = draftSlots.some(s => s.date === dateStr && s.startTime === time);
 
-        // Strategy: First click sets Start, second sets End (if later)
-        if (!quickStart || (quickStart && quickEnd)) {
-            setQuickStart(time);
-            setQuickEnd(`${(hour + 1).toString().padStart(2, '0')}:00`);
+        if (isAlreadyDrafted) {
+            setDraftSlots(prev => prev.filter(s => !(s.date === dateStr && s.startTime === time)));
+        } else {
+            setDraftSlots(prev => [...prev, {
+                id: crypto.randomUUID(),
+                date: dateStr,
+                startTime: time,
+                endTime: `${(hour + 1).toString().padStart(2, '0')}:00`,
+                duration: 1,
+                repId: selectedRepId,
+                status: 'reserved',
+                gigId: selectedGigId || undefined
+            }]);
+        }
+    };
 
-            // For multi-slot support, we also toggle the individual block
-            const isAlreadyDrafted = draftSlots.some(s => s.date === format(selectedDate, 'yyyy-MM-dd') && s.startTime === time);
-            if (isAlreadyDrafted) {
-                setDraftSlots(prev => prev.filter(s => !(s.date === format(selectedDate, 'yyyy-MM-dd') && s.startTime === time)));
-            } else {
-                setDraftSlots(prev => [...prev, {
+    const updateDraftRange = (start: string, end: string) => {
+        if (!start || !end) return;
+        const startH = parseInt(start.split(':')[0]);
+        const endH = parseInt(end.split(':')[0]);
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+
+        if (endH > startH) {
+            const newRange: Partial<TimeSlot>[] = [];
+            for (let h = startH; h < endH; h++) {
+                const hStr = `${h.toString().padStart(2, '0')}:00`;
+                const endHStr = `${(h + 1).toString().padStart(2, '0')}:00`;
+                newRange.push({
                     id: crypto.randomUUID(),
-                    date: format(selectedDate, 'yyyy-MM-dd'),
-                    startTime: time,
-                    endTime: `${(hour + 1).toString().padStart(2, '0')}:00`,
+                    date: dateStr,
+                    startTime: hStr,
+                    endTime: endHStr,
                     duration: 1,
                     repId: selectedRepId,
                     status: 'reserved',
                     gigId: selectedGigId || undefined
-                }]);
+                });
             }
-        } else {
-            const startH = parseInt(quickStart.split(':')[0]);
-            if (hour >= startH) {
-                const newEnd = `${(hour + 1).toString().padStart(2, '0')}:00`;
-                setQuickEnd(newEnd);
-
-                // Add all slots in the range to draftSlots
-                const newRange: Partial<TimeSlot>[] = [];
-                for (let h = startH; h <= hour; h++) {
-                    const hStr = `${h.toString().padStart(2, '0')}:00`;
-                    const endHStr = `${(h + 1).toString().padStart(2, '0')}:00`;
-                    if (!draftSlots.some(s => s.date === format(selectedDate, 'yyyy-MM-dd') && s.startTime === hStr)) {
-                        newRange.push({
-                            id: crypto.randomUUID(),
-                            date: format(selectedDate, 'yyyy-MM-dd'),
-                            startTime: hStr,
-                            endTime: endHStr,
-                            duration: 1,
-                            repId: selectedRepId,
-                            status: 'reserved',
-                            gigId: selectedGigId || undefined
-                        });
-                    }
-                }
-                setDraftSlots(prev => [...prev, ...newRange]);
-            } else {
-                // Clicked earlier, reset start
-                setQuickStart(time);
-                setQuickEnd(`${(hour + 1).toString().padStart(2, '0')}:00`);
-            }
+            setDraftSlots(newRange);
         }
     };
 
@@ -749,7 +727,7 @@ export function SessionPlanning() {
                                                                 onChange={(e) => {
                                                                     const time = e.target.value;
                                                                     setQuickStart(time);
-                                                                    // Update draft or sync
+                                                                    if (time && quickEnd) updateDraftRange(time, quickEnd);
                                                                 }}
                                                             >
                                                                 <option value="">Start</option>
@@ -763,7 +741,11 @@ export function SessionPlanning() {
                                                             <select
                                                                 className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
                                                                 value={quickEnd}
-                                                                onChange={(e) => setQuickEnd(e.target.value)}
+                                                                onChange={(e) => {
+                                                                    const time = e.target.value;
+                                                                    setQuickEnd(time);
+                                                                    if (quickStart && time) updateDraftRange(quickStart, time);
+                                                                }}
                                                             >
                                                                 <option value="">End</option>
                                                                 {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(h => (
