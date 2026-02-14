@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { TimeSlot, Gig } from '../../types/scheduler';
-import { X, MessageSquare, Timer, Check, Calendar, AlertTriangle } from 'lucide-react';
+import { X, MessageSquare, Clock, Check, Calendar } from 'lucide-react';
 
 interface TimeSlotGridProps {
     date: Date;
@@ -103,7 +103,6 @@ export function TimeSlotGrid({
                     .filter(time => isHourAvailable(time) || displaySlots.some(s => s.startTime === time))
                     .map((time) => {
                         const slot = displaySlots.find((s) => s.startTime === time);
-                        const gig = slot?.gigId ? gigs.find(p => p.id === slot.gigId) : null;
                         const isSelected = selectedSlot?.id === slot?.id;
                         const available = isHourAvailable(time);
 
@@ -123,70 +122,54 @@ export function TimeSlotGrid({
 
                                 <div className="flex-1">
                                     {slot ? (
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex-1 flex items-center space-x-4">
-                                                <div className="relative group">
-                                                    <div
-                                                        className="absolute -left-4 top-0 bottom-0 w-1 rounded-full transition-all group-hover:w-2"
-                                                        style={{ backgroundColor: gig?.color || '#3b82f6' }}
-                                                    />
-                                                    <select
-                                                        value={slot.gigId || ''}
-                                                        onChange={(e) =>
-                                                            onSlotUpdate({ ...slot, gigId: e.target.value || undefined })
-                                                        }
-                                                        className="bg-transparent border-none text-sm font-black text-gray-900 focus:ring-0 cursor-pointer py-1"
-                                                        disabled={slot.status === 'cancelled'}
-                                                    >
-                                                        <option value="">No Gig Assigned</option>
-                                                        {gigs.map((g) => (
-                                                            <option key={g.id} value={g.id}>
-                                                                {g.name}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                        <div className="flex items-center justify-between group">
+                                            <div className="flex-1">
+                                                <div className="flex items-center space-x-4 mb-2">
+                                                    <div className="relative">
+                                                        <select
+                                                            value={slot.gigId || ''}
+                                                            onChange={(e) =>
+                                                                onSlotUpdate({ ...slot, gigId: e.target.value || undefined })
+                                                            }
+                                                            className="bg-transparent border border-gray-100 rounded-lg text-sm font-bold text-gray-900 focus:ring-2 focus:ring-blue-100 py-1 pl-2 pr-8 cursor-pointer"
+                                                            disabled={slot.status === 'cancelled'}
+                                                        >
+                                                            <option value="">No Gig Assigned</option>
+                                                            {gigs.map((g) => (
+                                                                <option key={g.id} value={g.id}>
+                                                                    {g.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-full" />
+                                                    </div>
+
+                                                    <div className="flex items-center text-gray-500">
+                                                        <Clock className="w-4 h-4 mr-2" />
+                                                        <select
+                                                            value={slot.duration}
+                                                            onChange={(e) =>
+                                                                onSlotUpdate({ ...slot, duration: parseInt(e.target.value) })
+                                                            }
+                                                            className="bg-transparent border-none text-sm font-bold text-gray-600 focus:ring-0 p-0 cursor-pointer"
+                                                            disabled={slot.status === 'cancelled'}
+                                                        >
+                                                            {[1, 2, 3, 4].map((hours) => (
+                                                                <option key={hours} value={hours}>
+                                                                    {hours} hour{hours > 1 ? 's' : ''}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    <div className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-full flex items-center border border-blue-100">
+                                                        <Check className="w-3 h-3 mr-1.5" />
+                                                        Reserved
+                                                    </div>
                                                 </div>
 
-                                                <div className="flex items-center bg-white px-3 py-1 rounded-full border border-gray-100 shadow-sm">
-                                                    <Timer className="w-3.5 h-3.5 text-gray-400 mr-2" />
-                                                    <select
-                                                        value={slot.duration}
-                                                        onChange={(e) =>
-                                                            onSlotUpdate({ ...slot, duration: parseInt(e.target.value) })
-                                                        }
-                                                        className="bg-transparent border-none text-xs font-bold text-gray-600 focus:ring-0 p-0"
-                                                        disabled={slot.status === 'cancelled'}
-                                                    >
-                                                        {[1, 2, 3, 4].map((hours) => (
-                                                            <option key={hours} value={hours}>
-                                                                {hours} hr{hours > 1 ? 's' : ''}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onSlotUpdate({
-                                                            ...slot,
-                                                            status: slot.status === 'available' ? 'reserved' : 'available'
-                                                        });
-                                                    }}
-                                                    className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center shadow-sm transition-all hover:scale-105 ${slot.status === 'available'
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : slot.status === 'reserved'
-                                                            ? 'bg-blue-600 text-white'
-                                                            : 'bg-gray-100 text-gray-500'
-                                                        }`}
-                                                    disabled={slot.status === 'cancelled'}
-                                                >
-                                                    {slot.status === 'available' ? <Calendar className="w-3 h-3 mr-1.5" /> : <Check className="w-3 h-3 mr-1.5" />}
-                                                    {slot.status}
-                                                </button>
-
-                                                <div className="flex-1 max-w-xs group flex items-center bg-gray-50 px-3 py-1 rounded-xl border border-transparent hover:border-gray-200 transition-all">
-                                                    <MessageSquare className="w-3.5 h-3.5 text-gray-400 mr-2" />
+                                                <div className="flex items-center text-gray-400 pl-1">
+                                                    <MessageSquare className="w-3.5 h-3.5 mr-2" />
                                                     <input
                                                         type="text"
                                                         value={slot.notes || ''}
@@ -194,8 +177,8 @@ export function TimeSlotGrid({
                                                         onChange={(e) =>
                                                             onSlotUpdate({ ...slot, notes: e.target.value })
                                                         }
-                                                        placeholder="Internal notes..."
-                                                        className="bg-transparent border-none text-xs font-medium text-gray-600 placeholder-gray-400 focus:ring-0 w-full p-0"
+                                                        placeholder="Add notes..."
+                                                        className="bg-transparent border-none text-sm font-medium text-gray-500 placeholder-gray-300 focus:ring-0 w-full p-0"
                                                         disabled={slot.status === 'cancelled'}
                                                     />
                                                 </div>
@@ -206,7 +189,7 @@ export function TimeSlotGrid({
                                                     e.stopPropagation();
                                                     onSlotCancel(slot.id);
                                                 }}
-                                                className="ml-4 p-2 text-gray-300 hover:text-red-500 transition-colors"
+                                                className="ml-4 p-2 text-red-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
                                                 disabled={slot.status === 'cancelled'}
                                             >
                                                 <X className="w-5 h-5" />
@@ -228,23 +211,16 @@ export function TimeSlotGrid({
                                                     gigId: selectedGigId !== 'all' ? selectedGigId : undefined
                                                 });
                                             }}
-                                            className={`group flex items-center px-4 py-2 rounded-xl transition-all ${available
-                                                ? 'text-blue-600 hover:bg-blue-50 font-bold'
-                                                : 'text-gray-300 cursor-not-allowed italic font-medium'
+                                            className={`group flex items-center transition-all ${available
+                                                ? 'text-blue-500 hover:text-blue-700'
+                                                : 'text-gray-200 cursor-not-allowed'
                                                 }`}
                                             disabled={!available}
                                         >
-                                            {available ? (
-                                                <>
-                                                    <span className="text-xl mr-3 group-hover:scale-125 transition-transform">+</span>
-                                                    <span className="text-sm">Quick Add Slot</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <AlertTriangle className="w-4 h-4 mr-2 text-amber-300" />
-                                                    <span className="text-xs uppercase tracking-tighter">Outside Availability Window</span>
-                                                </>
-                                            )}
+                                            <span className="text-sm font-bold flex items-center">
+                                                <span className="text-blue-400 mr-2">+</span>
+                                                Add slot
+                                            </span>
                                         </button>
                                     )}
                                 </div>
