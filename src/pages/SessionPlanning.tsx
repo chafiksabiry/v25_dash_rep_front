@@ -3,15 +3,9 @@ import { Calendar } from '../components/scheduler/Calendar';
 import { TimeSlotGrid } from '../components/scheduler/TimeSlotGrid';
 import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company, AttendanceRecord } from '../types/scheduler';
 import { Building, Clock, Briefcase, AlertCircle, Users, LayoutDashboard, Brain } from 'lucide-react';
-import { SlotActionPanel } from '../components/scheduler/SlotActionPanel';
 import { RepSelector } from '../components/scheduler/RepSelector';
 import { CompanyView } from '../components/scheduler/CompanyView';
-import { AIRecommendations } from '../components/scheduler/AIRecommendations';
-import { OptimalTimeHeatmap } from '../components/scheduler/OptimalTimeHeatmap';
-import { PerformanceMetrics } from '../components/scheduler/PerformanceMetrics';
 import { WorkloadPredictionComponent as WorkloadPrediction } from '../components/scheduler/WorkloadPrediction';
-import { AttendanceTracker } from '../components/scheduler/AttendanceTracker';
-import { AttendanceScorecard } from '../components/scheduler/AttendanceScorecard';
 import { AttendanceReport } from '../components/scheduler/AttendanceReport';
 import { initializeAI } from '../services/schedulerAiService';
 import { format } from 'date-fns';
@@ -165,9 +159,9 @@ export function SessionPlanning() {
 
     const [selectedGigId, setSelectedGigId] = useState<string | null>(null);
 
-    const [showAIPanel] = useState<boolean>(false);
-    const [showAttendancePanel] = useState<boolean>(false);
     const [reps, setReps] = useState<Rep[]>(sampleReps);
+    const showAIPanel = false;
+    const showAttendancePanel = false;
 
     const [gigs, setGigs] = useState<Gig[]>([]);
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
@@ -342,112 +336,6 @@ export function SessionPlanning() {
         setSelectedSlot(slot);
     };
 
-    const handleGigSelect = (gigId: string) => {
-        const optimalHour = selectedRep.preferredHours?.start || 9;
-        const timeString = `${optimalHour.toString().padStart(2, '0')}:00`;
-        const existingSlot = slots.find(
-            (s) =>
-                s.date === format(selectedDate, 'yyyy-MM-dd') &&
-                s.startTime === timeString &&
-                s.repId === selectedRepId
-        );
-
-        if (existingSlot) {
-            handleSlotUpdate({
-                ...existingSlot,
-                gigId,
-                status: 'reserved' as const
-            });
-        } else {
-            handleSlotUpdate({
-                id: crypto.randomUUID(),
-                startTime: timeString,
-                endTime: `${(optimalHour + 1).toString().padStart(2, '0')}:00`,
-                date: format(selectedDate, 'yyyy-MM-dd'),
-                status: 'reserved' as const,
-                duration: 1,
-                gigId,
-                repId: selectedRepId,
-            } as TimeSlot);
-        }
-    };
-
-    const handleOptimalHourSelect = (hour: number) => {
-        const element = document.getElementById(`time-slot-${hour}`);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        const timeString = `${hour.toString().padStart(2, '0')}:00`;
-        const existingSlot = slots.find(
-            (s) =>
-                s.date === format(selectedDate, 'yyyy-MM-dd') &&
-                s.startTime === timeString &&
-                s.repId === selectedRepId
-        );
-
-        if (existingSlot) {
-            setSelectedSlot(existingSlot);
-        } else {
-            const newSlot = {
-                id: crypto.randomUUID(),
-                startTime: timeString,
-                endTime: `${(hour + 1).toString().padStart(2, '0')}:00`,
-                date: format(selectedDate, 'yyyy-MM-dd'),
-                status: 'available' as const,
-                duration: 1,
-                repId: selectedRepId,
-            } as TimeSlot;
-
-            handleSlotUpdate(newSlot);
-            setSelectedSlot(newSlot);
-        }
-    };
-
-    const handleAttendanceUpdate = (slotId: string, attended: boolean, notes?: string) => {
-        setSlots(prev => prev.map(slot =>
-            slot.id === slotId
-                ? { ...slot, attended, attendanceNotes: notes }
-                : slot
-        ));
-
-        const slot = slots.find(s => s.id === slotId);
-        if (slot) {
-            const repIndex = reps.findIndex(r => r.id === slot.repId);
-            if (repIndex >= 0) {
-                const rep = reps[repIndex];
-                const attendanceRecord: AttendanceRecord = {
-                    date: slot.date,
-                    slotId,
-                    attended,
-                    reason: notes
-                };
-
-                const updatedRep = {
-                    ...rep,
-                    attendanceHistory: [...(rep.attendanceHistory || []), attendanceRecord]
-                };
-
-                const attendedCount = updatedRep.attendanceHistory.filter(record => record.attended).length;
-                const totalCount = updatedRep.attendanceHistory.length;
-                const attendanceScore = totalCount > 0 ? Math.round((attendedCount / totalCount) * 100) : 0;
-
-                updatedRep.attendanceScore = attendanceScore;
-
-                setReps(prev => [
-                    ...prev.slice(0, repIndex),
-                    updatedRep,
-                    ...prev.slice(repIndex + 1)
-                ]);
-            }
-        }
-
-        setNotification({
-            message: `Attendance marked as ${attended ? 'present' : 'missed'}`,
-            type: 'success'
-        });
-        setTimeout(() => setNotification(null), 3000);
-    };
 
     return (
         <div className="min-h-screen bg-gray-100 font-sans">
@@ -517,7 +405,7 @@ export function SessionPlanning() {
 
             <main className="w-full px-8 py-8">
                 {userRole === 'company' ? (
-                    <div className="grid grid-cols-1 gap-8">
+                    <div className="space-y-8">
                         <div className="flex space-x-3 overflow-x-auto pb-4 no-scrollbar">
                             {gigs.length === 0 ? (
                                 <div className="text-gray-400 italic px-4 py-2 bg-gray-50 rounded-lg border border-dashed border-gray-300 w-full text-center">No active gigs found.</div>
@@ -537,173 +425,65 @@ export function SessionPlanning() {
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2">
-                                <Calendar
-                                    selectedDate={selectedDate}
-                                    onDateSelect={setSelectedDate}
-                                    slots={slots}
-                                />
-                            </div>
-                            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                                <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                                    <div className="w-2 h-6 bg-blue-600 rounded-full mr-3"></div>
-                                    Gig Overview
-                                </h2>
-                                <div className="space-y-6">
-                                    <div className="p-4 bg-gray-50 rounded-xl">
-                                        <p className="text-sm text-gray-500 mb-1">REPs Scheduled</p>
-                                        <p className="text-2xl font-black text-gray-900">
+                        {selectedGigId && (
+                            <div className="space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-200">
+                                        <p className="text-sm text-gray-500 mb-1 font-bold uppercase tracking-wider">REPs Scheduled</p>
+                                        <p className="text-3xl font-black text-gray-900">
                                             {new Set(slots
                                                 .filter(slot => slot.gigId === selectedGigId && slot.status === 'reserved')
                                                 .map(slot => slot.repId)
                                             ).size}
                                         </p>
                                     </div>
-                                    <div className="p-4 bg-gray-50 rounded-xl">
-                                        <p className="text-sm text-gray-500 mb-1">Total Hours Commited</p>
-                                        <p className="text-2xl font-black text-gray-900">
+                                    <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-200">
+                                        <p className="text-sm text-gray-500 mb-1 font-bold uppercase tracking-wider">Total Hours Committed</p>
+                                        <p className="text-3xl font-black text-gray-900">
                                             {slots
                                                 .filter(slot => slot.gigId === selectedGigId && slot.status === 'reserved')
                                                 .reduce((sum, slot) => sum + slot.duration, 0)}h
                                         </p>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        {selectedGigId && (
-                            <CompanyView
-                                company={gigs.find(g => g.id === selectedGigId)?.name || ''}
-                                gigs={gigs.filter(g => g.id === selectedGigId).map(g => ({ ...g, company: g.name }))}
-                                slots={slots}
-                                reps={reps}
-                                selectedDate={selectedDate}
-                            />
+                                <CompanyView
+                                    company={gigs.find(g => g.id === selectedGigId)?.name || ''}
+                                    gigs={gigs.filter(g => g.id === selectedGigId).map(g => ({ ...g, company: g.name }))}
+                                    slots={slots}
+                                    reps={reps}
+                                    selectedDate={selectedDate}
+                                />
+                            </div>
                         )}
                     </div>
                 ) : userRole === 'rep' ? (
-                    <div className="space-y-10">
-                        <div className="grid grid-cols-1 gap-8">
-                            <RepSelector
-                                reps={reps}
-                                selectedRepId={selectedRepId}
-                                onSelectRep={setSelectedRepId}
+                    <div className="space-y-12">
+                        <RepSelector
+                            reps={reps}
+                            selectedRepId={selectedRepId}
+                            onSelectRep={setSelectedRepId}
+                        />
+
+                        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                            <Calendar
+                                selectedDate={selectedDate}
+                                onDateSelect={setSelectedDate}
+                                slots={slots.filter(slot => slot.repId === selectedRepId)}
                             />
-
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <div className="lg:col-span-2">
-                                    <Calendar
-                                        selectedDate={selectedDate}
-                                        onDateSelect={setSelectedDate}
-                                        slots={slots.filter(slot => slot.repId === selectedRepId)}
-                                    />
-
-                                    <div className="mt-10">
-                                        <TimeSlotGrid
-                                            date={selectedDate}
-                                            slots={slots.filter(slot => slot.repId === selectedRepId)}
-                                            gigs={gigs}
-                                            onSlotUpdate={handleSlotUpdate}
-                                            onSlotCancel={handleSlotCancel}
-                                            onSlotSelect={handleSlotSelect}
-                                            selectedSlot={selectedSlot}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-8">
-                                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                                        <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                                            <div className="w-2 h-6 bg-indigo-600 rounded-full mr-3"></div>
-                                            Weekly Overview
-                                        </h2>
-                                        <div className="grid grid-cols-2 gap-4 mb-8">
-                                            <div className="p-4 bg-green-50 rounded-xl text-center">
-                                                <p className="text-xs text-green-600 font-bold uppercase mb-1">Available</p>
-                                                <p className="text-2xl font-black text-green-900">{weeklyStats.availableSlots}</p>
-                                            </div>
-                                            <div className="p-4 bg-blue-50 rounded-xl text-center">
-                                                <p className="text-xs text-blue-600 font-bold uppercase mb-1">Reserved</p>
-                                                <p className="text-2xl font-black text-blue-900">{weeklyStats.reservedSlots}</p>
-                                            </div>
-                                        </div>
-
-                                        <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest">Gig Hours Breakdown</h3>
-                                        <div className="space-y-3">
-                                            {Object.entries(weeklyStats.gigBreakdown).map(([gigId, hours]) => {
-                                                const gig = gigs.find(g => g.id === gigId);
-                                                return (
-                                                    <div key={gigId} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl group transition-all hover:bg-gray-100">
-                                                        <div className="flex items-center">
-                                                            <div
-                                                                className="w-4 h-4 rounded-full mr-3 shadow-sm"
-                                                                style={{ backgroundColor: gig?.color || '#ccc' }}
-                                                            ></div>
-                                                            <span className="text-sm font-bold text-gray-700">{gig?.name || 'Unknown Gig'}</span>
-                                                        </div>
-                                                        <span className="text-lg font-black text-gray-900">{hours}h</span>
-                                                    </div>
-                                                );
-                                            })}
-                                            {Object.keys(weeklyStats.gigBreakdown).length === 0 && (
-                                                <p className="text-xs text-gray-400 italic text-center py-4 bg-gray-50 rounded-xl">No gig hours recorded this week.</p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                                        <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                                            <div className="w-2 h-6 bg-blue-600 rounded-full mr-3"></div>
-                                            Quick Options
-                                        </h2>
-                                        <SlotActionPanel
-                                            maxHours={10}
-                                            slot={selectedSlot || (slots.find(s => s.repId === selectedRepId) || {} as any)}
-                                            availableGigs={gigs}
-                                            onUpdate={handleSlotUpdate}
-                                            onClear={() => handleSlotCancel(selectedSlot?.id || '')}
-                                        />
-                                    </div>
-
-                                </div>
-                            </div>
                         </div>
 
-                        {showAttendancePanel && (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <AttendanceScorecard
-                                    rep={selectedRep}
-                                    slots={slots.filter(s => s.repId === selectedRepId)}
-                                />
-                                <AttendanceTracker
-                                    slots={slots.filter(slot => slot.repId === selectedRepId)}
-                                    reps={reps}
-                                    selectedDate={selectedDate}
-                                    onAttendanceUpdate={handleAttendanceUpdate}
-                                />
-                            </div>
-                        )}
-
-                        {showAIPanel && (
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <AIRecommendations
-                                    rep={selectedRep}
-                                    gigs={gigs}
-                                    slots={slots.filter(s => s.repId === selectedRepId)}
-                                    onSelectGig={handleGigSelect}
-                                />
-                                <OptimalTimeHeatmap
-                                    rep={selectedRep}
-                                    slots={slots.filter(s => s.repId === selectedRepId)}
-                                    onSelectHour={handleOptimalHourSelect}
-                                />
-                                <PerformanceMetrics
-                                    rep={selectedRep}
-                                    slots={slots.filter(s => s.repId === selectedRepId)}
-                                />
-                            </div>
-                        )}
+                        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                            <TimeSlotGrid
+                                date={selectedDate}
+                                slots={slots.filter(slot => slot.repId === selectedRepId)}
+                                gigs={gigs}
+                                onSlotUpdate={handleSlotUpdate}
+                                onSlotCancel={handleSlotCancel}
+                                onSlotSelect={handleSlotSelect}
+                                selectedSlot={selectedSlot}
+                            />
+                        </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-8">
@@ -839,9 +619,8 @@ export function SessionPlanning() {
                             </div>
                         </div>
                     </div>
-                )
-                }
-            </main >
+                )}
+            </main>
         </div >
     );
 }
