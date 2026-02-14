@@ -17,7 +17,6 @@ import { initializeAI } from '../services/schedulerAiService';
 import { format } from 'date-fns';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { fetchProfileFromAPI } from '../utils/profileUtils';
 
 // Define Gig type locally if not available, or import if shared
 interface Gig {
@@ -28,7 +27,6 @@ interface Gig {
     requiredSkills?: { name: string }[];
     [key: string]: any;
 }
-
 
 // Helper to generate a consistent color from a string
 const stringToColor = (str: string) => {
@@ -53,33 +51,72 @@ const mapGigToProject = (gig: Gig): Project => {
     };
 };
 
-// Placeholder stats for demo purposes in REP view
-const CURRENT_REP_ID = '1';
-
 const sampleReps: Rep[] = [
     {
         id: '1',
-        name: 'Current User', // Will be updated with profile data
-        email: 'user@harx.com',
+        name: 'Alex Johnson',
+        email: 'alex@harx.com',
         avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-        specialties: ['General'],
-        performanceScore: 88,
+        specialties: ['Customer Support', 'Technical Troubleshooting'],
+        performanceScore: 87,
         preferredHours: { start: 9, end: 17 },
-        attendanceScore: 95,
+        attendanceScore: 92,
         attendanceHistory: []
     },
-    // Add dummy reps for comparison views if needed
     {
         id: '2',
-        name: 'Team Member 1',
-        email: 'team1@harx.com',
-        avatar: '',
-        specialties: ['Sales'],
-        performanceScore: 90,
+        name: 'Jamie Smith',
+        email: 'jamie@harx.com',
+        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+        specialties: ['Sales', 'Product Demos'],
+        performanceScore: 92,
         preferredHours: { start: 8, end: 16 },
+        attendanceScore: 85,
+        attendanceHistory: []
+    },
+    {
+        id: '3',
+        name: 'Taylor Wilson',
+        email: 'taylor@harx.com',
+        avatar: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+        specialties: ['Training', 'Onboarding'],
+        performanceScore: 78,
+        preferredHours: { start: 10, end: 18 },
+        attendanceScore: 78,
+        attendanceHistory: []
+    },
+    {
+        id: '4',
+        name: 'Morgan Lee',
+        email: 'morgan@harx.com',
+        avatar: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+        specialties: ['Technical Support', 'Product Expertise'],
+        performanceScore: 85,
+        preferredHours: { start: 9, end: 17 },
         attendanceScore: 88,
         attendanceHistory: []
-    }
+    },
+];
+
+const sampleCompanies: Company[] = [
+    {
+        id: '1',
+        name: 'Tech Co',
+        logo: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=128&h=128&q=80',
+        priority: 3
+    },
+    {
+        id: '2',
+        name: 'Marketing Inc',
+        logo: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=128&h=128&q=80',
+        priority: 2
+    },
+    {
+        id: '3',
+        name: 'Acme Corp',
+        logo: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=128&h=128&q=80',
+        priority: 1
+    },
 ];
 
 export function SessionPlanning() {
@@ -87,10 +124,9 @@ export function SessionPlanning() {
     const [slots, setSlots] = useState<TimeSlot[]>([]);
     const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
-
-    // Default to REP view for DashRepFront
     const [userRole, setUserRole] = useState<UserRole>('rep');
-    const [selectedRepId, setSelectedRepId] = useState<string>(CURRENT_REP_ID);
+    const [selectedRepId, setSelectedRepId] = useState<string>(sampleReps[0].id);
+    // Replaced selectedCompany with selectedProjectId
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const [aiInitialized, setAiInitialized] = useState<boolean>(false);
     const [showAIPanel, setShowAIPanel] = useState<boolean>(false);
@@ -101,48 +137,29 @@ export function SessionPlanning() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
 
-    // Fetch gigs tailored for the REP (Active gigs)
     useEffect(() => {
         const fetchGigs = async () => {
-            // In DashRepFront, we usually fetch gigs assigned to the REP
-            // For now, we'll try to fetch all gigs to show availability, or rely on a specific endpoint
+            const companyId = Cookies.get('companyId');
+            if (!companyId) {
+                setNotification({ message: 'Company ID not found. Gigs cannot be loaded.', type: 'error' });
+                setLoadingGigs(false);
+                return;
+            }
 
             try {
                 setLoadingGigs(true);
+                // Using the API URL from environment matching the user's request
                 const apiUrl = import.meta.env.VITE_API_URL_GIGS || 'https://v25gigsmanualcreationbackend-production.up.railway.app/api';
-
-                let fetchedProjects: Project[] = [];
-
-                // Strategy 1: Try to get gigs for specific rep if endpoint exists (mocking logic here)
-                // const response = await axios.get(`${apiUrl}/gigs/rep/${repId}`);
-
-                // Strategy 2: Get all gigs as fallback (or "My Gigs" logic)
-                // Since we don't have a guaranteed "My Gigs" endpoint in context, we might reuse 'company' endpoint with a placeholder or just fetch all
-                // For SAFETY: Let's assume we can fetch gigs relevant to the user or a default set.
-                // Trying to fetch from a known company ID for demo if no specific Rep endpoint
-                const companyId = Cookies.get('companyId');
-
-                let response;
-                if (companyId) {
-                    response = await axios.get(`${apiUrl}/gigs/company/${companyId}`);
-                } else {
-                    // Fallback: Fetch all gigs or a sample if no context
-                    response = await axios.get(`${apiUrl}/gigs`); // assuming list endpoint exists
-                }
+                const response = await axios.get(`${apiUrl}/gigs/company/${companyId}`);
 
                 if (response.data && response.data.data) {
-                    // Handle array or paginated response
-                    const rawData = Array.isArray(response.data.data) ? response.data.data : response.data.data.gigs || [];
-                    fetchedProjects = rawData.map(mapGigToProject);
-                } else if (Array.isArray(response.data)) {
-                    fetchedProjects = response.data.map(mapGigToProject);
+                    const mappedProjects = response.data.data.map(mapGigToProject);
+                    setProjects(mappedProjects);
+                    // Set default selected project
+                    if (mappedProjects.length > 0) {
+                        setSelectedProjectId(mappedProjects[0].id);
+                    }
                 }
-
-                setProjects(fetchedProjects);
-                if (fetchedProjects.length > 0) {
-                    setSelectedProjectId(fetchedProjects[0].id);
-                }
-
             } catch (error) {
                 console.error('Error fetching gigs:', error);
                 setNotification({ message: 'Failed to load Gigs', type: 'error' });
@@ -157,26 +174,9 @@ export function SessionPlanning() {
             setAiInitialized(initialized);
         };
 
-        // Update current rep info from profile
-        const updateRepProfile = async () => {
-            try {
-                const profile = await fetchProfileFromAPI();
-                if (profile) {
-                    setReps(prev => prev.map(r => r.id === CURRENT_REP_ID ? {
-                        ...r,
-                        name: `${profile.firstName} ${profile.lastName}`.trim() || 'Me',
-                        avatar: profile.profilePicture || r.avatar
-                    } : r));
-                }
-            } catch (e) {
-                console.warn("Could not load profile for scheduler", e);
-            }
-        }
-
         initAI();
-        updateRepProfile();
         fetchGigs();
-    }, []);
+    }, [userRole]);
 
     const selectedRep = useMemo(() => {
         return reps.find(rep => rep.id === selectedRepId) || reps[0];
@@ -240,6 +240,7 @@ export function SessionPlanning() {
             });
         }
 
+        // Clear notification after 3 seconds
         setTimeout(() => setNotification(null), 3000);
     };
 
@@ -254,8 +255,10 @@ export function SessionPlanning() {
             type: 'success'
         });
 
+        // Clear notification after 3 seconds
         setTimeout(() => setNotification(null), 3000);
 
+        // Clear selected slot if it was cancelled
         if (selectedSlot?.id === slotId) {
             setSelectedSlot(null);
         }
@@ -266,7 +269,10 @@ export function SessionPlanning() {
     };
 
     const handleProjectSelect = (projectId: string) => {
+        // Find the optimal time for this project based on AI recommendations
         const optimalHour = selectedRep.preferredHours?.start || 9;
+
+        // Check if the slot already exists
         const timeString = `${optimalHour.toString().padStart(2, '0')}:00`;
         const existingSlot = slots.find(
             (s) =>
@@ -276,12 +282,14 @@ export function SessionPlanning() {
         );
 
         if (existingSlot) {
+            // Update existing slot
             handleSlotUpdate({
                 ...existingSlot,
                 projectId,
                 status: 'reserved'
             });
         } else {
+            // Create new slot
             handleSlotUpdate({
                 id: crypto.randomUUID(),
                 startTime: timeString,
@@ -296,11 +304,13 @@ export function SessionPlanning() {
     };
 
     const handleOptimalHourSelect = (hour: number) => {
+        // Scroll to that hour in the time slot grid
         const element = document.getElementById(`time-slot-${hour}`);
         if (element) {
             element.scrollIntoView({ behavior: 'smooth' });
         }
 
+        // Check if there's already a slot at this hour
         const timeString = `${hour.toString().padStart(2, '0')}:00`;
         const existingSlot = slots.find(
             (s) =>
@@ -312,6 +322,7 @@ export function SessionPlanning() {
         if (existingSlot) {
             setSelectedSlot(existingSlot);
         } else {
+            // Create a new available slot
             const newSlot = {
                 id: crypto.randomUUID(),
                 startTime: timeString,
@@ -328,11 +339,49 @@ export function SessionPlanning() {
     };
 
     const handleAttendanceUpdate = (slotId: string, attended: boolean, notes?: string) => {
+        // Update the slot with attendance information
         setSlots(prev => prev.map(slot =>
             slot.id === slotId
                 ? { ...slot, attended, attendanceNotes: notes }
                 : slot
         ));
+
+        // Update the rep's attendance history
+        const slot = slots.find(s => s.id === slotId);
+        if (slot) {
+            const repIndex = reps.findIndex(r => r.id === slot.repId);
+            if (repIndex >= 0) {
+                const rep = reps[repIndex];
+
+                // Create attendance record
+                const attendanceRecord: AttendanceRecord = {
+                    date: slot.date,
+                    slotId,
+                    attended,
+                    reason: notes
+                };
+
+                // Update rep's attendance history
+                const updatedRep = {
+                    ...rep,
+                    attendanceHistory: [...(rep.attendanceHistory || []), attendanceRecord]
+                };
+
+                // Recalculate attendance score
+                const attendedCount = updatedRep.attendanceHistory.filter(record => record.attended).length;
+                const totalCount = updatedRep.attendanceHistory.length;
+                const attendanceScore = totalCount > 0 ? Math.round((attendedCount / totalCount) * 100) : 0;
+
+                updatedRep.attendanceScore = attendanceScore;
+
+                // Update reps array
+                setReps(prev => [
+                    ...prev.slice(0, repIndex),
+                    updatedRep,
+                    ...prev.slice(repIndex + 1)
+                ]);
+            }
+        }
 
         setNotification({
             message: `Attendance ${attended ? 'confirmed' : 'marked as missed'}`,
@@ -342,167 +391,460 @@ export function SessionPlanning() {
     };
 
     return (
-        <div className="h-full bg-gray-50 overflow-y-auto">
+        <div className="min-h-screen bg-gray-100">
             {notification && (
-                <div className={`fixed top-20 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center ${notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center ${notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                     }`}>
                     <AlertCircle className="w-5 h-5 mr-2" />
                     <p>{notification.message}</p>
                 </div>
             )}
 
-            <div className="max-w-7xl mx-auto px-4 py-6">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center">
-                        <Clock className="w-8 h-8 text-blue-600 mr-3" />
-                        <h1 className="text-3xl font-bold text-gray-900">Session Planning</h1>
-                        {loadingGigs && <span className="ml-4 text-sm text-gray-500 animate-pulse">Loading Gigs...</span>}
-                    </div>
-                    <div className="flex items-center space-x-6">
-                        <div className="text-right">
-                            <p className="text-sm text-gray-600">Weekly Hours</p>
-                            <p className="text-lg font-semibold">{weeklyStats.totalHours}h</p>
+            <header className="bg-white shadow">
+                <div className="max-w-7xl mx-auto px-4 py-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                            <Building className="w-8 h-8 text-blue-600 mr-3" />
+                            <h1 className="text-3xl font-bold text-gray-900">HARX Scheduling</h1>
+                            {loadingGigs && <span className="ml-4 text-sm text-gray-500 animate-pulse">Loading Gigs...</span>}
                         </div>
-                        <div className="text-right">
-                            <p className="text-sm text-gray-600">Active Gigs</p>
-                            <p className="text-lg font-semibold">{Object.keys(weeklyStats.projectBreakdown).length}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex space-x-4 mb-6">
-                    <button
-                        onClick={() => setShowAIPanel(!showAIPanel)}
-                        className={`px-4 py-2 rounded-md flex items-center shadow-sm transition-colors ${showAIPanel
-                                ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                            }`}
-                    >
-                        <Brain className="w-4 h-4 mr-2" />
-                        AI Assistant {showAIPanel ? 'On' : 'Off'}
-                    </button>
-                    <button
-                        onClick={() => setShowAttendancePanel(!showAttendancePanel)}
-                        className={`px-4 py-2 rounded-md flex items-center shadow-sm transition-colors ${showAttendancePanel
-                                ? 'bg-green-100 text-green-800 border border-green-200'
-                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                            }`}
-                    >
-                        <Clock className="w-4 h-4 mr-2" />
-                        Attendance {showAttendancePanel ? 'On' : 'Off'}
-                    </button>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6">
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2">
-                            <Calendar
-                                selectedDate={selectedDate}
-                                onDateSelect={setSelectedDate}
-                                slots={slots.filter(slot => slot.repId === selectedRepId)}
-                                view="month"
-                            />
-                        </div>
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h2 className="text-lg font-semibold text-gray-800 mb-4">My Schedule Stats</h2>
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                    <span className="text-gray-600">Available Slots</span>
-                                    <span className="font-medium text-lg">{weeklyStats.availableSlots}</span>
+                        <div className="flex items-center space-x-8">
+                            <div className="flex items-center">
+                                <Clock className="w-5 h-5 text-gray-600 mr-2" />
+                                <div>
+                                    <p className="text-sm text-gray-600">Weekly Hours</p>
+                                    <p className="text-lg font-semibold">{weeklyStats.totalHours}h</p>
                                 </div>
-                                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                    <span className="text-gray-600">Reserved Slots</span>
-                                    <span className="font-bold text-lg text-blue-600">{weeklyStats.reservedSlots}</span>
+                            </div>
+                            <div className="flex items-center">
+                                <Briefcase className="w-5 h-5 text-gray-600 mr-2" />
+                                <div>
+                                    <p className="text-sm text-gray-600">Active Gigs</p>
+                                    <p className="text-lg font-semibold">{Object.keys(weeklyStats.projectBreakdown).length}</p>
                                 </div>
-
-                                <hr className="my-2 border-gray-100" />
-
-                                <h3 className="font-medium text-gray-700">Gig Breakdown</h3>
-                                <div className="space-y-3">
-                                    {Object.entries(weeklyStats.projectBreakdown).length === 0 ? (
-                                        <p className="text-gray-400 text-sm italic">No hours scheduled yet</p>
-                                    ) : (
-                                        Object.entries(weeklyStats.projectBreakdown).map(([projectId, hours]) => {
-                                            const project = projects.find(p => p.id === projectId);
-                                            return (
-                                                <div key={projectId} className="flex justify-between items-center">
-                                                    <div className="flex items-center">
-                                                        <div
-                                                            className="w-3 h-3 rounded-full mr-2"
-                                                            style={{ backgroundColor: project?.color || '#ccc' }}
-                                                        ></div>
-                                                        <span className="text-gray-600 text-sm truncate max-w-[150px]">{project?.name || 'Unknown Gig'}</span>
-                                                    </div>
-                                                    <span className="font-medium">{hours}h</span>
-                                                </div>
-                                            );
-                                        })
-                                    )}
-                                </div>
-
-                                <hr className="my-2 border-gray-100" />
-                                <h3 className="font-medium text-gray-700">Quick Reserve</h3>
-                                <SlotActionPanel
-                                    maxHours={10}
-                                    slot={selectedSlot || slots[0] || {} as any}
-                                    availableProjects={projects}
-                                    onUpdate={handleSlotUpdate}
-                                    onClear={() => handleSlotCancel(selectedSlot?.id || '')}
-                                />
                             </div>
                         </div>
                     </div>
 
-                    {showAttendancePanel && (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <AttendanceScorecard
-                                rep={selectedRep}
+                    {/* Role Switcher */}
+                    <div className="mt-6 flex space-x-4">
+                        <button
+                            onClick={() => setUserRole('rep')}
+                            className={`px-4 py-2 rounded-md flex items-center ${userRole === 'rep'
+                                ? 'bg-blue-100 text-blue-800 font-medium'
+                                : 'bg-white text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <Users className="w-4 h-4 mr-2" />
+                            REP View
+                        </button>
+                        <button
+                            onClick={() => setUserRole('company')}
+                            className={`px-4 py-2 rounded-md flex items-center ${userRole === 'company'
+                                ? 'bg-blue-100 text-blue-800 font-medium'
+                                : 'bg-white text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <Building className="w-4 h-4 mr-2" />
+                            Company View
+                        </button>
+                        <button
+                            onClick={() => setUserRole('admin')}
+                            className={`px-4 py-2 rounded-md flex items-center ${userRole === 'admin'
+                                ? 'bg-blue-100 text-blue-800 font-medium'
+                                : 'bg-white text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <LayoutDashboard className="w-4 h-4 mr-2" />
+                            Admin View
+                        </button>
+                        <button
+                            onClick={() => setShowAIPanel(!showAIPanel)}
+                            className={`px-4 py-2 rounded-md flex items-center ${showAIPanel
+                                ? 'bg-purple-100 text-purple-800 font-medium'
+                                : 'bg-white text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <Brain className="w-4 h-4 mr-2" />
+                            AI Assistant {showAIPanel ? 'On' : 'Off'}
+                        </button>
+                        <button
+                            onClick={() => setShowAttendancePanel(!showAttendancePanel)}
+                            className={`px-4 py-2 rounded-md flex items-center ${showAttendancePanel
+                                ? 'bg-green-100 text-green-800 font-medium'
+                                : 'bg-white text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <Clock className="w-4 h-4 mr-2" />
+                            Attendance {showAttendancePanel ? 'On' : 'Off'}
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <main className="max-w-7xl mx-auto px-4 py-6">
+                {userRole === 'company' ? (
+                    <div className="grid grid-cols-1 gap-6">
+                        <div className="flex space-x-4 overflow-x-auto pb-2">
+                            {projects.length === 0 ? (
+                                <div className="text-gray-500 italic px-4 py-2">No active gigs found.</div>
+                            ) : (
+                                projects.map(project => (
+                                    <button
+                                        key={project.id}
+                                        onClick={() => setSelectedProjectId(project.id)}
+                                        className={`px-4 py-2 rounded-md whitespace-nowrap ${selectedProjectId === project.id
+                                            ? 'bg-blue-100 text-blue-800 font-medium'
+                                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        {project.name}
+                                    </button>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="lg:col-span-2">
+                                <Calendar
+                                    selectedDate={selectedDate}
+                                    onDateSelect={setSelectedDate}
+                                    slots={slots}
+                                />
+                            </div>
+                            <div className="bg-white rounded-lg shadow p-4">
+                                <h2 className="text-lg font-semibold text-gray-800 mb-4">Gig Overview</h2>
+                                <div className="space-y-4">
+                                    {/* Gig stats */}
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-600">Total REPs Scheduled</span>
+                                        <span className="font-medium">
+                                            {new Set(slots
+                                                .filter(slot => slot.projectId === selectedProjectId && slot.status === 'reserved')
+                                                .map(slot => slot.repId)
+                                            ).size}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-600">Total Hours</span>
+                                        <span className="font-medium">
+                                            {slots
+                                                .filter(slot => slot.projectId === selectedProjectId && slot.status === 'reserved')
+                                                .reduce((sum, slot) => sum + slot.duration, 0)}h
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {selectedProjectId && (
+                            <CompanyView
+                                // Hack: Pass Gig Name as 'company' to trick CompanyView into being a GigView
+                                company={projects.find(p => p.id === selectedProjectId)?.name || ''}
                                 slots={slots}
-                            />
-                            <AttendanceTracker
-                                slots={slots.filter(slot => slot.repId === selectedRepId)}
+                                // Hack: Override project.company with project.name so strict equal check passes in CompanyView
+                                projects={projects.filter(p => p.id === selectedProjectId).map(p => ({ ...p, company: p.name }))}
                                 reps={reps}
                                 selectedDate={selectedDate}
-                                onAttendanceUpdate={handleAttendanceUpdate}
                             />
-                        </div>
-                    )}
+                        )}
 
-                    {showAIPanel && (
+                        {showAttendancePanel && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <AttendanceTracker
+                                    slots={slots}
+                                    reps={reps}
+                                    selectedDate={selectedDate}
+                                    onAttendanceUpdate={handleAttendanceUpdate}
+                                />
+                                <AttendanceReport
+                                    reps={reps}
+                                    slots={slots}
+                                />
+                            </div>
+                        )}
+
+                        {showAIPanel && (
+                            <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
+                                <div className="flex items-center mb-4">
+                                    <Brain className="w-6 h-6 text-purple-600 mr-2" />
+                                    <h2 className="text-xl font-bold text-gray-800">AI Insights</h2>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <WorkloadPrediction slots={slots} />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : userRole === 'rep' ? (
+                    <div className="grid grid-cols-1 gap-6">
+                        <RepSelector
+                            reps={reps}
+                            selectedRepId={selectedRepId}
+                            onRepSelect={setSelectedRepId}
+                        />
+
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div>
-                                <AIRecommendations
-                                    rep={selectedRep}
-                                    projects={projects}
-                                    slots={slots}
-                                    onSelectProject={handleProjectSelect}
+                            <div className="lg:col-span-2">
+                                <Calendar
+                                    selectedDate={selectedDate}
+                                    onDateSelect={setSelectedDate}
+                                    slots={slots.filter(slot => slot.repId === selectedRepId)}
                                 />
                             </div>
-                            <div>
-                                <OptimalTimeHeatmap
-                                    rep={selectedRep}
-                                    slots={slots}
-                                    onSelectHour={handleOptimalHourSelect}
-                                />
-                            </div>
-                            <div>
-                                <PerformanceMetrics
-                                    rep={selectedRep}
-                                    slots={slots}
-                                />
+                            <div className="bg-white rounded-lg shadow p-4">
+                                <h2 className="text-lg font-semibold text-gray-800 mb-4">Weekly Overview</h2>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-600">Available Slots</span>
+                                        <span className="font-medium">{weeklyStats.availableSlots}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-600">Reserved Slots</span>
+                                        <span className="font-medium">{weeklyStats.reservedSlots}</span>
+                                    </div>
+                                    <hr className="my-4" />
+                                    <h3 className="font-medium text-gray-800">Gig Hours</h3>
+                                    {Object.entries(weeklyStats.projectBreakdown).map(([projectId, hours]) => {
+                                        const project = projects.find(p => p.id === projectId);
+                                        return (
+                                            <div key={projectId} className="flex justify-between items-center">
+                                                <div className="flex items-center">
+                                                    <div
+                                                        className="w-3 h-3 rounded-full mr-2"
+                                                        style={{ backgroundColor: project?.color || '#ccc' }}
+                                                    ></div>
+                                                    <span className="text-gray-600">{project?.name || 'Unknown Gig'}</span>
+                                                </div>
+                                                <span className="font-medium">{hours}h</span>
+                                            </div>
+                                        );
+                                    })}
+
+                                    <hr className="my-4" />
+                                    <h3 className="font-medium text-gray-800 mb-2">Quick Reserve</h3>
+                                    <SlotActionPanel
+                                        maxHours={10}
+                                        slot={selectedSlot || slots[0] || {} as any}
+                                        availableProjects={projects}
+                                        onUpdate={handleSlotUpdate}
+                                        onClear={() => handleSlotCancel(selectedSlot?.id || '')}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    )}
 
-                    <TimeSlotGrid
-                        selectedSlotId={selectedSlot?.id || null}
-                        slots={slots.filter(slot => slot.repId === selectedRepId)}
-                        projects={projects}
-                        onSlotClick={(id) => handleSlotSelect(slots.find(s => s.id === id)!)}
-                    />
-                </div>
-            </div>
+                        {showAttendancePanel && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <AttendanceScorecard
+                                    rep={selectedRep}
+                                    slots={slots}
+                                />
+                                <AttendanceTracker
+                                    slots={slots.filter(slot => slot.repId === selectedRepId)}
+                                    reps={reps}
+                                    selectedDate={selectedDate}
+                                    onAttendanceUpdate={handleAttendanceUpdate}
+                                />
+                            </div>
+                        )}
+
+                        {showAIPanel && (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div>
+                                    <AIRecommendations
+                                        rep={selectedRep}
+                                        projects={projects}
+                                        slots={slots}
+                                        onSelectProject={handleProjectSelect}
+                                    />
+                                </div>
+                                <div>
+                                    <OptimalTimeHeatmap
+                                        rep={selectedRep}
+                                        slots={slots}
+                                        onSelectHour={handleOptimalHourSelect}
+                                    />
+                                </div>
+                                <div>
+                                    <PerformanceMetrics
+                                        rep={selectedRep}
+                                        slots={slots}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        <TimeSlotGrid
+                            selectedSlotId={selectedSlot?.id || null}
+                            slots={slots.filter(slot => slot.repId === selectedRepId)}
+                            projects={projects}
+                            onSlotClick={(id) => handleSlotSelect(slots.find(s => s.id === id)!)}
+                        />
+                    </div>
+                ) : (
+                    // Admin view
+                    <div className="grid grid-cols-1 gap-6">
+                        <div className="bg-white rounded-lg shadow p-4">
+                            <h2 className="text-lg font-semibold text-gray-800 mb-4">Admin Dashboard</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <h3 className="font-medium text-blue-800 mb-2">Total REPs</h3>
+                                    <p className="text-2xl font-bold text-blue-900">{reps.length}</p>
+                                </div>
+                                <div className="bg-green-50 p-4 rounded-lg">
+                                    <h3 className="font-medium text-green-800 mb-2">Total Companies</h3>
+                                    <p className="text-2xl font-bold text-green-900">{sampleCompanies.length}</p>
+                                </div>
+                                <div className="bg-purple-50 p-4 rounded-lg">
+                                    <h3 className="font-medium text-purple-800 mb-2">Total Gigs</h3>
+                                    <p className="text-2xl font-bold text-purple-900">{projects.length}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {showAttendancePanel && (
+                            <AttendanceReport
+                                reps={reps}
+                                slots={slots}
+                            />
+                        )}
+
+                        {showAIPanel && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <WorkloadPrediction slots={slots} />
+                                <div className="bg-white rounded-lg shadow p-4">
+                                    <div className="flex items-center mb-4">
+                                        <Brain className="w-5 h-5 text-purple-600 mr-2" />
+                                        <h2 className="text-lg font-semibold text-gray-800">AI Insights</h2>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="p-3 bg-purple-50 rounded-lg">
+                                            <h3 className="font-medium text-purple-800 mb-2">Scheduling Efficiency</h3>
+                                            <p className="text-sm text-gray-700">
+                                                Based on current scheduling patterns, the system is operating at
+                                                <span className="font-bold text-purple-800"> 78% </span>
+                                                efficiency. Consider optimizing REP assignments based on AI recommendations.
+                                            </p>
+                                        </div>
+                                        <div className="p-3 bg-blue-50 rounded-lg">
+                                            <h3 className="font-medium text-blue-800 mb-2">Resource Allocation</h3>
+                                            <p className="text-sm text-gray-700">
+                                                Tech Co projects are currently overallocated by
+                                                <span className="font-bold text-blue-800"> 12% </span>
+                                                while Acme Corp is underallocated. Consider rebalancing resources.
+                                            </p>
+                                        </div>
+                                        <div className="p-3 bg-green-50 rounded-lg">
+                                            <h3 className="font-medium text-green-800 mb-2">Performance Insights</h3>
+                                            <p className="text-sm text-gray-700">
+                                                REPs with diverse project assignments show
+                                                <span className="font-bold text-green-800"> 23% higher </span>
+                                                satisfaction scores. Consider rotating assignments more frequently.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="bg-white rounded-lg shadow p-4">
+                                <h2 className="text-lg font-semibold text-gray-800 mb-4">REP Overview</h2>
+                                <div className="space-y-4">
+                                    {reps.map(rep => {
+                                        const repSlots = slots.filter(slot => slot.repId === rep.id && slot.status === 'reserved');
+                                        const totalHours = repSlots.reduce((sum, slot) => sum + slot.duration, 0);
+
+                                        return (
+                                            <div key={rep.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                                <div className="flex items-center">
+                                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                                        {rep.avatar ? (
+                                                            <img
+                                                                src={rep.avatar}
+                                                                alt={rep.name}
+                                                                className="w-full h-full rounded-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <Users className="w-5 h-5 text-gray-500" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-medium">{rep.name}</h4>
+                                                        <p className="text-sm text-gray-500">{rep.email}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-lg font-bold">{totalHours}h</p>
+                                                    <p className="text-sm text-gray-500">{repSlots.length} slots</p>
+                                                    {rep.performanceScore && (
+                                                        <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                            Score: {rep.performanceScore}
+                                                        </div>
+                                                    )}
+                                                    {rep.attendanceScore && (
+                                                        <div className="mt-1 ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                            Attendance: {rep.attendanceScore}%
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-lg shadow p-4">
+                                <h2 className="text-lg font-semibold text-gray-800 mb-4">Company Overview</h2>
+                                <div className="space-y-4">
+                                    {sampleCompanies.map(company => {
+                                        const companySlots = slots.filter(slot => {
+                                            const project = projects.find(p => p.id === slot.projectId);
+                                            return project?.company === company.name && slot.status === 'reserved';
+                                        });
+
+                                        const totalHours = companySlots.reduce((sum, slot) => sum + slot.duration, 0);
+                                        const uniqueReps = new Set(companySlots.map(slot => slot.repId)).size;
+
+                                        return (
+                                            <div key={company.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                                <div className="flex items-center">
+                                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                                        {company.logo ? (
+                                                            <img
+                                                                src={company.logo}
+                                                                alt={company.name}
+                                                                className="w-full h-full rounded-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <Building className="w-5 h-5 text-gray-500" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-medium">{company.name}</h4>
+                                                        <p className="text-sm text-gray-500">{uniqueReps} REPs assigned</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-lg font-bold">{totalHours}h</p>
+                                                    <p className="text-sm text-gray-500">{companySlots.length} slots</p>
+                                                    {company.priority && (
+                                                        <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                                            Priority: {company.priority}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </main>
         </div>
     );
 }
