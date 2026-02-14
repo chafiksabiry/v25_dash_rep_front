@@ -65,10 +65,11 @@ export function TimeSlotGrid({
                 <div className="flex items-center space-x-6">
                     <div className="relative group">
                         <select
-                            value={selectedGigId}
+                            value={selectedGigId || ''}
                             onChange={(e) => onGigFilterChange(e.target.value)}
                             className="bg-transparent border-none text-sm font-bold text-gray-700 focus:ring-0 appearance-none pr-8 cursor-pointer"
                         >
+                            <option value="">Select a Gig</option>
                             {gigs.map((gig) => (
                                 <option key={gig.id} value={gig.id}>
                                     {gig.name}
@@ -224,7 +225,7 @@ export function TimeSlotGrid({
                                                     status: 'available',
                                                     duration: 1,
                                                     repId: selectedRepId,
-                                                    gigId: selectedGigId !== 'all' ? selectedGigId : undefined
+                                                    gigId: selectedGigId || undefined
                                                 });
                                             }}
                                             className={`flex items-center transition-all ${available

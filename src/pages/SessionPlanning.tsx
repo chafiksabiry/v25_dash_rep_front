@@ -182,9 +182,7 @@ export function SessionPlanning() {
                 if (response.data && response.data.data) {
                     const mappedGigs = response.data.data.map(mapExternalGigToSchedulerGig);
                     setGigs(mappedGigs);
-                    if (mappedGigs.length > 0) {
-                        setSelectedGigId(mappedGigs[0].id);
-                    }
+                    // Removed auto-selection of first gig
                 }
             } catch (error) {
                 console.error('Error fetching gigs:', error);
@@ -224,10 +222,7 @@ export function SessionPlanning() {
                     }));
 
                     setGigs(mappedGigs);
-
-                    if (mappedGigs.length > 0 && !selectedGigId) {
-                        setSelectedGigId(mappedGigs[0].id);
-                    }
+                    // Removed auto-selection of first gig
                 }
             } catch (error) {
                 console.error('Error fetching enrolled gigs:', error);
@@ -504,7 +499,7 @@ export function SessionPlanning() {
                                 </div>
 
                                 <div>
-                                    <h3 className="text-sm font-bold text-gray-900 mb-6">Project Hours</h3>
+                                    <h3 className="text-sm font-bold text-gray-900 mb-6">Gig Hours</h3>
                                     <div className="space-y-4">
                                         {gigs.slice(0, 1).map((gig: Gig) => (
                                             <div key={gig.id} className="flex justify-between items-center text-sm">
@@ -526,18 +521,24 @@ export function SessionPlanning() {
                                     <h3 className="text-sm font-bold text-gray-900 mb-6">Quick Reserve</h3>
                                     <div className="space-y-4">
                                         <div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Project</p>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Gig</p>
                                             <select
                                                 className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
                                                 value={selectedGigId || ''}
-                                                onChange={(e) => setSelectedGigId(e.target.value)}
+                                                onChange={(e) => setSelectedGigId(e.target.value === '' ? null : e.target.value)}
                                             >
+                                                <option value="">Select a Gig</option>
                                                 {gigs.map((gig: Gig) => (
                                                     <option key={gig.id} value={gig.id}>{gig.name}</option>
                                                 ))}
                                             </select>
                                         </div>
                                         {(() => {
+                                            if (!selectedGigId) return (
+                                                <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 italic text-[10px] text-blue-600 font-bold">
+                                                    Please select a gig to see available times.
+                                                </div>
+                                            );
                                             const selectedGig = gigs.find(g => g.id === selectedGigId);
                                             const dayName = format(selectedDate, 'EEEE');
                                             const daySchedule = selectedGig?.availability?.schedule?.find(
@@ -579,7 +580,7 @@ export function SessionPlanning() {
                                             );
                                         })()}
                                         <button className="w-full py-4 bg-blue-600 text-white rounded-xl text-sm font-black shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                            disabled={!gigs.find(g => g.id === selectedGigId)?.availability?.schedule?.some(s => s.day.toLowerCase() === format(selectedDate, 'EEEE').toLowerCase())}
+                                            disabled={!selectedGigId || !gigs.find(g => g.id === selectedGigId)?.availability?.schedule?.some(s => s.day.toLowerCase() === format(selectedDate, 'EEEE').toLowerCase())}
                                         >
                                             Reserve Time Block
                                         </button>
