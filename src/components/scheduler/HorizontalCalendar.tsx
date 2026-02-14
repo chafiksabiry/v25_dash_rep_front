@@ -10,14 +10,20 @@ interface HorizontalCalendarProps {
 }
 
 export function HorizontalCalendar({ selectedDate, onDateSelect, slots, selectedGigId }: HorizontalCalendarProps) {
-    const startDate = startOfWeek(selectedDate);
-    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
+    const today = new Date();
+    const startDate = startOfWeek(today);
+    const weekDays = Array.from({ length: 14 }, (_, i) => addDays(startDate, i));
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center mb-6 px-2 text-gray-700">
-                <CalendarIcon className="w-5 h-5 mr-3" />
-                <h2 className="text-lg font-bold">Schedule</h2>
+            <div className="flex items-center justify-between mb-6 px-2 text-gray-700">
+                <div className="flex items-center">
+                    <CalendarIcon className="w-5 h-5 mr-3" />
+                    <h2 className="text-lg font-bold">Schedule Breakdown</h2>
+                </div>
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    14 Day Outlook
+                </div>
             </div>
 
             <div className="grid grid-cols-7 gap-2">
