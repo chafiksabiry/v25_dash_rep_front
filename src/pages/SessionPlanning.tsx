@@ -460,7 +460,7 @@ export function SessionPlanning() {
             )}
 
             <header className="bg-white shadow relative z-10">
-                <div className="max-w-7xl mx-auto px-4 py-6">
+                <div className="w-full px-8 py-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center">
                             <div className="bg-blue-600 p-2 rounded-xl mr-3 shadow-lg shadow-blue-200">
@@ -515,7 +515,7 @@ export function SessionPlanning() {
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-4 py-8">
+            <main className="w-full px-8 py-8">
                 {userRole === 'company' ? (
                     <div className="grid grid-cols-1 gap-8">
                         <div className="flex space-x-3 overflow-x-auto pb-4 no-scrollbar">
