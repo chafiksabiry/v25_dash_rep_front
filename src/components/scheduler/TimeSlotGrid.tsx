@@ -211,8 +211,8 @@ export function TimeSlotGrid({
                                                     </button>
                                                 </div>
 
-                                                <div className="flex items-center text-gray-400 pl-1 group gap-2 flex-wrap">
-                                                    <MessageSquare className="w-4 h-4 mr-1 opacity-60 shrink-0" />
+                                                <div className="flex items-center pl-1 group gap-2 flex-wrap">
+                                                    <MessageSquare className="w-4 h-4 mr-1 text-gray-500 shrink-0" />
                                                     <input
                                                         type="text"
                                                         value={draftNotes[slot.id] !== undefined ? draftNotes[slot.id] : (slot.notes || '')}
@@ -221,7 +221,7 @@ export function TimeSlotGrid({
                                                             setDraftNotes((prev) => ({ ...prev, [slot.id]: e.target.value }))
                                                         }
                                                         placeholder="Add notes..."
-                                                        className="bg-transparent border-none text-sm font-bold text-gray-600 placeholder-gray-400 focus:ring-0 flex-1 min-w-[120px] p-0"
+                                                        className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-200 focus:border-blue-300 flex-1 min-w-[140px] disabled:opacity-50 disabled:cursor-not-allowed"
                                                         disabled={slot.status === 'cancelled'}
                                                     />
                                                     {(draftNotes[slot.id] !== undefined && draftNotes[slot.id] !== (slot.notes || '')) && (
