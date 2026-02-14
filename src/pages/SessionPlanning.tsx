@@ -188,6 +188,7 @@ export function SessionPlanning() {
     const [gigs, setGigs] = useState<Gig[]>([]);
     const [reps, setReps] = useState<Rep[]>([]);
     const [draftSlots, setDraftSlots] = useState<Partial<TimeSlot>[]>([]);
+    const [draftSlotNotes, setDraftSlotNotes] = useState<Record<string, string>>({});
     const [quickStart, setQuickStart] = useState<string>('');
     const [quickEnd, setQuickEnd] = useState<string>('');
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
@@ -477,7 +478,7 @@ export function SessionPlanning() {
                 schedulerApi.upsertTimeSlot({
                     ...slot,
                     gigId: selectedGigId,
-                    notes: slot.notes || ''
+                    notes: draftSlotNotes[`${slot.date}:${slot.startTime}`] ?? slot.notes ?? ''
                 })
             ));
 
@@ -490,8 +491,12 @@ export function SessionPlanning() {
                 type: 'success'
             });
 
-            // Reset draft selection
             setDraftSlots([]);
+            setDraftSlotNotes(prev => {
+                const next = { ...prev };
+                draftSlots.forEach(s => { if (s.date && s.startTime) delete next[`${s.date}:${s.startTime}`]; });
+                return next;
+            });
         } catch (error) {
             console.error('Error in multi-reserve:', error);
             setNotification({
@@ -875,6 +880,8 @@ export function SessionPlanning() {
                                 onGigFilterChange={(id) => setSelectedGigId(id)}
                                 draftSlots={draftSlots}
                                 onTimeSelect={handleTimeSelect}
+                                draftSlotNotes={draftSlotNotes}
+                                onDraftNotesChange={(time, value) => setDraftSlotNotes(prev => ({ ...prev, [format(selectedDate, 'yyyy-MM-dd') + ':' + time]: value }))}
                             />
                         </div>
                     </div>

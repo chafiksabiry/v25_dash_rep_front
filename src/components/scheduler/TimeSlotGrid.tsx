@@ -14,6 +14,8 @@ interface TimeSlotGridProps {
     onGigFilterChange: (gigId: string) => void;
     draftSlots?: Partial<TimeSlot>[];
     onTimeSelect?: (time: string) => void;
+    draftSlotNotes?: Record<string, string>;
+    onDraftNotesChange?: (time: string, value: string) => void;
 }
 
 export function TimeSlotGrid({
@@ -27,6 +29,8 @@ export function TimeSlotGrid({
     onGigFilterChange,
     draftSlots = [],
     onTimeSelect,
+    draftSlotNotes,
+    onDraftNotesChange,
 }: TimeSlotGridProps) {
     const timeSlots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
     const daySlots = slots.filter((slot) => slot.date === format(date, 'yyyy-MM-dd'));
@@ -34,6 +38,7 @@ export function TimeSlotGrid({
     const [showAllHours, setShowAllHours] = useState<boolean>(false);
     const [draftNotes, setDraftNotes] = useState<Record<string, string>>({});
     const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
+    const [localDraftSlotNotes, setLocalDraftSlotNotes] = useState<Record<string, string>>({});
 
     const filteredSlots = daySlots.filter(slot => slot.gigId === selectedGigId);
 
@@ -287,9 +292,20 @@ export function TimeSlotGrid({
                                                                 Reserved
                                                             </button>
                                                         </div>
-                                                        <div className="flex items-center text-gray-400 pl-1">
-                                                            <MessageSquare className="w-4 h-4 mr-3 opacity-60" />
-                                                            <span className="text-sm font-bold text-gray-400">Draft — click Reserve Time Block to save</span>
+                                                        <div className="flex items-center pl-1 gap-2 flex-wrap">
+                                                            <MessageSquare className="w-4 h-4 mr-1 text-gray-500 shrink-0" />
+                                                            <input
+                                                                type="text"
+                                                                value={draftSlotNotes ? (draftSlotNotes[format(date, 'yyyy-MM-dd') + ':' + time] ?? '') : (localDraftSlotNotes[time] ?? '')}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    if (onDraftNotesChange) onDraftNotesChange(time, val);
+                                                                    else setLocalDraftSlotNotes(prev => ({ ...prev, [time]: val }));
+                                                                }}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                placeholder="Add notes..."
+                                                                className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-200 focus:border-blue-300 flex-1 min-w-[140px]"
+                                                            />
                                                         </div>
                                                     </div>
                                                     <button
