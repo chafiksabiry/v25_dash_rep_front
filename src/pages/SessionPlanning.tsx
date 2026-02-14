@@ -514,67 +514,62 @@ export function SessionPlanning() {
 
 
     return (
-        <div className="min-h-screen bg-gray-100 font-sans">
+        <div className="min-h-screen bg-gray-50 font-sans">
             {notification && (
-                <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center ${notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'
                     }`}>
-                    <AlertCircle className="w-5 h-5 mr-2" />
-                    <p>{notification.message}</p>
+                    <AlertCircle className="w-5 h-5 shrink-0" />
+                    <p className="font-medium">{notification.message}</p>
                 </div>
             )}
 
-            <header className="bg-white shadow relative z-10">
-                <div className="w-full px-8 py-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                            <div className="bg-blue-600 p-2 rounded-xl mr-3 shadow-lg shadow-blue-200">
-                                <Building className="w-8 h-8 text-white" />
+            <div className="space-y-6">
+                {/* Page title + stats (compatible with other dashboard pages) */}
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-blue-50 rounded-xl">
+                                <Building className="w-7 h-7 text-blue-600" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">HARX Scheduling</h1>
-                                {loadingGigs && <span className="text-xs text-blue-500 font-medium animate-pulse">Updating Gigs...</span>}
+                                <h1 className="text-2xl font-bold text-gray-900">Session Planning</h1>
+                                <p className="text-sm text-gray-500 mt-0.5">Plan and reserve your time slots</p>
                             </div>
+                            {loadingGigs && <span className="text-xs text-blue-500 font-medium animate-pulse">Updating Gigs...</span>}
                         </div>
-                        <div className="flex items-center space-x-12">
-                            <div className="flex items-center">
-                                <div className="p-2 bg-blue-50 rounded-lg mr-3">
-                                    <Clock className="w-5 h-5 text-blue-600" />
-                                </div>
+                        <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 rounded-xl border border-gray-100">
+                                <Clock className="w-5 h-5 text-blue-600" />
                                 <div>
-                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Weekly Hours</p>
-                                    <p className="text-xl font-bold text-gray-900">{weeklyStats.totalHours}h</p>
+                                    <p className="text-xs text-gray-500 font-medium">Weekly Hours</p>
+                                    <p className="text-lg font-bold text-gray-900">{weeklyStats.totalHours}h</p>
                                 </div>
                             </div>
-                            <div className="flex items-center">
-                                <div className="p-2 bg-indigo-50 rounded-lg mr-3">
-                                    <Briefcase className="w-5 h-5 text-indigo-600" />
-                                </div>
+                            <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 rounded-xl border border-gray-100">
+                                <Briefcase className="w-5 h-5 text-indigo-600" />
                                 <div>
-                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Active Gigs</p>
-                                    <p className="text-xl font-bold text-gray-900">{Object.keys(weeklyStats.gigBreakdown).length}</p>
+                                    <p className="text-xs text-gray-500 font-medium">Active Gigs</p>
+                                    <p className="text-lg font-bold text-gray-900">{Object.keys(weeklyStats.gigBreakdown).length}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    {/* Role Switcher Removed */}
                 </div>
-            </header>
 
-            <main className="w-full px-8 py-8">
+            <main className="w-full">
                 {userRole === 'company' ? (
                     <div className="space-y-8">
-                        <div className="flex space-x-3 overflow-x-auto pb-4 no-scrollbar">
+                        <div className="flex space-x-2 overflow-x-auto pb-2 no-scrollbar">
                             {gigs.length === 0 ? (
-                                <div className="text-gray-400 italic px-4 py-2 bg-gray-50 rounded-lg border border-dashed border-gray-300 w-full text-center">No active gigs found.</div>
+                                <div className="text-gray-500 italic px-4 py-3 bg-white rounded-xl border border-dashed border-gray-200 w-full text-center text-sm">No active gigs found.</div>
                             ) : (
                                 gigs.map(gig => (
                                     <button
                                         key={gig.id}
                                         onClick={() => setSelectedGigId(gig.id)}
-                                        className={`px-5 py-2.5 rounded-full whitespace-nowrap transition-all duration-200 shadow-sm ${selectedGigId === gig.id
-                                            ? 'bg-blue-600 text-white font-bold ring-4 ring-blue-100'
-                                            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 font-medium'
+                                        className={`px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-200 text-sm font-medium ${selectedGigId === gig.id
+                                            ? 'bg-blue-600 text-white shadow-sm'
+                                            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
                                             }`}
                                     >
                                         {gig.name}
@@ -586,18 +581,18 @@ export function SessionPlanning() {
                         {selectedGigId && (
                             <div className="space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-200">
-                                        <p className="text-sm text-gray-500 mb-1 font-bold uppercase tracking-wider">REPs Scheduled</p>
-                                        <p className="text-3xl font-black text-gray-900">
+                                    <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+                                        <p className="text-sm text-gray-500 mb-1 font-medium">REPs Scheduled</p>
+                                        <p className="text-2xl font-bold text-gray-900">
                                             {new Set(slots
                                                 .filter(slot => slot.gigId === selectedGigId && slot.status === 'reserved')
                                                 .map(slot => slot.repId)
                                             ).size}
                                         </p>
                                     </div>
-                                    <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-200">
-                                        <p className="text-sm text-gray-500 mb-1 font-bold uppercase tracking-wider">Total Hours Committed</p>
-                                        <p className="text-3xl font-black text-gray-900">
+                                    <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+                                        <p className="text-sm text-gray-500 mb-1 font-medium">Total Hours Committed</p>
+                                        <p className="text-2xl font-bold text-gray-900">
                                             {slots
                                                 .filter(slot => slot.gigId === selectedGigId && slot.status === 'reserved')
                                                 .reduce((sum, slot) => sum + slot.duration, 0)}h
@@ -616,9 +611,8 @@ export function SessionPlanning() {
                         )}
                     </div>
                 ) : userRole === 'rep' ? (
-                    <div className="space-y-12">
-                        {/* Top Section: Schedule + Weekly Overview */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                             <div className="lg:col-span-2">
                                 <HorizontalCalendar
                                     selectedDate={selectedDate}
@@ -628,9 +622,9 @@ export function SessionPlanning() {
                                 />
                             </div>
 
-                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-8">
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
                                 <div>
-                                    <h3 className="text-sm font-bold text-gray-900 mb-6 tracking-tight">Weekly Overview</h3>
+                                    <h3 className="text-base font-semibold text-gray-900 mb-4">Weekly Overview</h3>
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center text-sm">
                                             <span className="text-gray-500">Available Slots</span>
@@ -655,8 +649,8 @@ export function SessionPlanning() {
                                     </div>
                                 </div>
 
-                                <div className="pt-6 border-t border-gray-100">
-                                    <h3 className="text-sm font-bold text-gray-900 mb-6 tracking-tight">Project Hours</h3>
+                                <div className="pt-5 border-t border-gray-100">
+                                    <h3 className="text-base font-semibold text-gray-900 mb-4">Project Hours</h3>
                                     <div className="space-y-4">
                                         {gigs.filter(g => !selectedGigId || g.id === selectedGigId).slice(0, 3).map((gig: Gig) => {
                                             const gigHours = slots
@@ -678,8 +672,8 @@ export function SessionPlanning() {
                                     </div>
                                 </div>
 
-                                <div className="pt-6 border-t border-gray-100">
-                                    <h3 className="text-sm font-bold text-gray-900 mb-6 tracking-tight">Quick Reserve</h3>
+                                <div className="pt-5 border-t border-gray-100">
+                                    <h3 className="text-base font-semibold text-gray-900 mb-4">Quick Reserve</h3>
                                     <div className="space-y-4">
                                         <div>
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Project</p>
@@ -831,7 +825,7 @@ export function SessionPlanning() {
                                         })()}
                                         <button
                                             onClick={handleQuickReserve}
-                                            className="w-full py-4 bg-blue-600 text-white rounded-xl text-sm font-black shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="w-full py-3.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                             disabled={!selectedGigId || draftSlots.length === 0}
                                         >
                                             Reserve Time Block
@@ -841,16 +835,7 @@ export function SessionPlanning() {
                             </div>
                         </div>
 
-                        {/* Bottom Section: Slot Grid */}
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center text-gray-700">
-                                    <Clock className="w-5 h-5 mr-3" />
-                                    <h3 className="text-lg font-bold">
-                                        Time Slots for {format(selectedDate, 'MMMM d, yyyy')}
-                                    </h3>
-                                </div>
-                            </div>
+                        <div className="space-y-4">
                             <TimeSlotGrid
                                 date={selectedDate}
                                 slots={slots.filter((slot: TimeSlot) => slot.repId === selectedRepId)}
@@ -1003,6 +988,7 @@ export function SessionPlanning() {
                     </div>
                 )}
             </main>
-        </div >
+            </div>
+        </div>
     );
 }

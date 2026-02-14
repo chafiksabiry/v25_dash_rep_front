@@ -20,15 +20,15 @@ export function HorizontalCalendar({ selectedDate, onDateSelect, slots, selected
     const prevPeriod = () => setBaseDate(subWeeks(baseDate, 2));
 
     return (
-        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 transition-all duration-500 hover:shadow-blue-500/10">
-            <div className="flex items-center justify-between mb-8 px-2">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-6 px-1">
                 <div className="flex items-center space-x-3">
-                    <div className="p-2.5 bg-blue-600 rounded-2xl text-white shadow-lg shadow-blue-200">
-                        <CalendarIcon className="w-5 h-5" />
+                    <div className="p-2.5 bg-blue-50 rounded-xl">
+                        <CalendarIcon className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-gray-900 tracking-tight">Schedule Breakdown</h2>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">14 Day Interactive Outlook</p>
+                        <h2 className="text-lg font-semibold text-gray-900">Schedule</h2>
+                        <p className="text-xs text-gray-500 mt-0.5">14-day outlook</p>
                     </div>
                 </div>
                 <div className="flex items-center space-x-6">

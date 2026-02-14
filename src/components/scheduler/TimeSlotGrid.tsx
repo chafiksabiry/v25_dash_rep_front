@@ -73,7 +73,7 @@ export function TimeSlotGrid({
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-50 flex items-center justify-between flex-wrap gap-4 bg-white">
                 <div className="flex items-center text-gray-700">
                     <Clock className="w-5 h-5 mr-3 opacity-60" />
