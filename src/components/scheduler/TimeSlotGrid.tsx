@@ -10,7 +10,6 @@ interface TimeSlotGridProps {
     onSlotUpdate: (slot: TimeSlot) => void;
     onSlotCancel: (slotId: string) => void;
     onSlotSelect?: (slot: TimeSlot) => void;
-    selectedSlot: TimeSlot | null;
 }
 
 export function TimeSlotGrid({
@@ -20,7 +19,6 @@ export function TimeSlotGrid({
     onSlotUpdate,
     onSlotCancel,
     onSlotSelect,
-    selectedSlot
 }: TimeSlotGridProps) {
     const timeSlots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
     const daySlots = slots.filter((slot) => slot.date === format(date, 'yyyy-MM-dd'));
@@ -103,55 +101,54 @@ export function TimeSlotGrid({
                     .filter(time => isHourAvailable(time) || displaySlots.some(s => s.startTime === time))
                     .map((time) => {
                         const slot = displaySlots.find((s) => s.startTime === time);
-                        const isSelected = selectedSlot?.id === slot?.id;
                         const available = isHourAvailable(time);
 
                         return (
                             <div
                                 key={time}
                                 id={`time-slot-${parseInt(time)}`}
-                                className={`flex items-center p-4 transition-all duration-200 ${isSelected ? 'bg-blue-50/50' : 'hover:bg-gray-50/50'
+                                className={`flex items-start p-5 transition-all duration-200 border-b border-gray-50 last:border-0 ${slot ? 'bg-blue-50/40' : 'hover:bg-gray-50/30'
                                     }`}
                                 onClick={() => slot && onSlotSelect && onSlotSelect(slot)}
                             >
-                                <div className="w-20">
-                                    <span className={`text-sm font-black ${isSelected ? 'text-blue-600' : 'text-gray-400'}`}>
+                                <div className="w-20 pt-1">
+                                    <span className={`text-sm font-black ${slot ? 'text-blue-900' : 'text-gray-400'}`}>
                                         {time}
                                     </span>
                                 </div>
 
                                 <div className="flex-1">
                                     {slot ? (
-                                        <div className="flex items-center justify-between group">
-                                            <div className="flex-1">
-                                                <div className="flex items-center space-x-4 mb-2">
-                                                    <div className="relative">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1 space-y-3">
+                                                <div className="flex items-center space-x-4">
+                                                    <div className="relative flex-1 max-w-sm">
                                                         <select
                                                             value={slot.gigId || ''}
                                                             onChange={(e) =>
                                                                 onSlotUpdate({ ...slot, gigId: e.target.value || undefined })
                                                             }
-                                                            className="bg-transparent border border-gray-100 rounded-lg text-sm font-bold text-gray-900 focus:ring-2 focus:ring-blue-100 py-1 pl-2 pr-8 cursor-pointer"
+                                                            className="w-full bg-white border border-blue-200 rounded-xl text-sm font-bold text-gray-800 focus:ring-2 focus:ring-blue-400 py-2 pl-4 pr-10 appearance-none shadow-sm"
                                                             disabled={slot.status === 'cancelled'}
                                                         >
-                                                            <option value="">No Gig Assigned</option>
+                                                            <option value="">Select a gig...</option>
                                                             {gigs.map((g) => (
                                                                 <option key={g.id} value={g.id}>
                                                                     {g.name}
                                                                 </option>
                                                             ))}
                                                         </select>
-                                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-full" />
+                                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-blue-600 rounded-r-lg" />
                                                     </div>
 
-                                                    <div className="flex items-center text-gray-500">
-                                                        <Clock className="w-4 h-4 mr-2" />
+                                                    <div className="flex items-center bg-white border border-blue-100 rounded-xl px-3 py-2 shadow-sm">
+                                                        <Clock className="w-4 h-4 text-gray-400 mr-2" />
                                                         <select
                                                             value={slot.duration}
                                                             onChange={(e) =>
                                                                 onSlotUpdate({ ...slot, duration: parseInt(e.target.value) })
                                                             }
-                                                            className="bg-transparent border-none text-sm font-bold text-gray-600 focus:ring-0 p-0 cursor-pointer"
+                                                            className="bg-transparent border-none text-sm font-bold text-gray-700 focus:ring-0 p-0 appearance-none pr-6"
                                                             disabled={slot.status === 'cancelled'}
                                                         >
                                                             {[1, 2, 3, 4].map((hours) => (
@@ -162,14 +159,14 @@ export function TimeSlotGrid({
                                                         </select>
                                                     </div>
 
-                                                    <div className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-full flex items-center border border-blue-100">
-                                                        <Check className="w-3 h-3 mr-1.5" />
+                                                    <div className="px-4 py-2 bg-blue-100/50 text-blue-600 text-xs font-black rounded-xl flex items-center border border-blue-200 shadow-sm">
+                                                        <Check className="w-3.5 h-3.5 mr-1.5" />
                                                         Reserved
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center text-gray-400 pl-1">
-                                                    <MessageSquare className="w-3.5 h-3.5 mr-2" />
+                                                <div className="flex items-center text-gray-400 pl-1 group">
+                                                    <MessageSquare className="w-4 h-4 mr-3 opacity-60" />
                                                     <input
                                                         type="text"
                                                         value={slot.notes || ''}
@@ -178,7 +175,7 @@ export function TimeSlotGrid({
                                                             onSlotUpdate({ ...slot, notes: e.target.value })
                                                         }
                                                         placeholder="Add notes..."
-                                                        className="bg-transparent border-none text-sm font-medium text-gray-500 placeholder-gray-300 focus:ring-0 w-full p-0"
+                                                        className="bg-transparent border-none text-sm font-bold text-gray-600 placeholder-gray-400 focus:ring-0 w-full p-0"
                                                         disabled={slot.status === 'cancelled'}
                                                     />
                                                 </div>
@@ -189,7 +186,7 @@ export function TimeSlotGrid({
                                                     e.stopPropagation();
                                                     onSlotCancel(slot.id);
                                                 }}
-                                                className="ml-4 p-2 text-red-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                                                className="ml-6 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                                 disabled={slot.status === 'cancelled'}
                                             >
                                                 <X className="w-5 h-5" />
@@ -211,14 +208,14 @@ export function TimeSlotGrid({
                                                     gigId: selectedGigId !== 'all' ? selectedGigId : undefined
                                                 });
                                             }}
-                                            className={`group flex items-center transition-all ${available
-                                                ? 'text-blue-500 hover:text-blue-700'
-                                                : 'text-gray-200 cursor-not-allowed'
+                                            className={`flex items-center transition-all ${available
+                                                ? 'text-blue-600 hover:text-blue-800'
+                                                : 'text-gray-200 cursor-not-allowed hidden'
                                                 }`}
                                             disabled={!available}
                                         >
-                                            <span className="text-sm font-bold flex items-center">
-                                                <span className="text-blue-400 mr-2">+</span>
+                                            <span className="text-sm font-black flex items-center">
+                                                <span className="text-lg mr-2">+</span>
                                                 Add slot
                                             </span>
                                         </button>

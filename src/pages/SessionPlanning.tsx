@@ -524,7 +524,6 @@ export function SessionPlanning() {
                                 onSlotUpdate={handleSlotUpdate}
                                 onSlotCancel={handleSlotCancel}
                                 onSlotSelect={handleSlotSelect}
-                                selectedSlot={selectedSlot}
                             />
                         </div>
                     </div>
