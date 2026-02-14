@@ -235,9 +235,21 @@ export function TimeSlotGrid({
                                     ) : (
                                         <div className="flex items-center justify-between">
                                             {isPreviewed(time) ? (
-                                                <div className="flex items-center text-blue-600 animate-pulse">
-                                                    <Clock className="w-4 h-4 mr-2" />
-                                                    <span className="text-xs font-black uppercase tracking-wider">Ready to reserve</span>
+                                                <div className="flex items-center justify-between w-full">
+                                                    <div className="flex items-center text-blue-600 animate-pulse">
+                                                        <Clock className="w-4 h-4 mr-2" />
+                                                        <span className="text-xs font-black uppercase tracking-wider">Ready to reserve</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onTimeSelect?.(time);
+                                                        }}
+                                                        className="p-1 px-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all text-xs font-black flex items-center"
+                                                    >
+                                                        <X className="w-3.5 h-3.5 mr-1" />
+                                                        Cancel
+                                                    </button>
                                                 </div>
                                             ) : (
                                                 <button

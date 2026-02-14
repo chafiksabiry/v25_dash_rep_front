@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { HorizontalCalendar } from '../components/scheduler/HorizontalCalendar';
 import { TimeSlotGrid } from '../components/scheduler/TimeSlotGrid';
 import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company } from '../types/scheduler';
-import { Building, Clock, Briefcase, AlertCircle, Users, LayoutDashboard, Brain } from 'lucide-react';
+import { Building, Clock, Briefcase, AlertCircle, Users, LayoutDashboard, Brain, X } from 'lucide-react';
 import { RepSelector } from '../components/scheduler/RepSelector';
 import { CompanyView } from '../components/scheduler/CompanyView';
 import { WorkloadPredictionComponent as WorkloadPrediction } from '../components/scheduler/WorkloadPrediction';
@@ -568,12 +568,32 @@ export function SessionPlanning() {
                                                 ).length}
                                             </span>
                                         </div>
-                                        {weeklyStats.pendingHours > 0 && (
-                                            <div className="flex justify-between items-center text-sm bg-blue-50/50 p-2 rounded-lg border border-blue-100 animate-pulse">
-                                                <span className="text-blue-600 font-bold uppercase text-[9px] tracking-widest">Pending Selection</span>
-                                                <span className="text-blue-700 font-black">
-                                                    +{weeklyStats.pendingHours}h
-                                                </span>
+                                        {draftSlots.length > 0 && (
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center text-sm bg-blue-50/50 p-2 rounded-lg border border-blue-100 animate-pulse">
+                                                    <span className="text-blue-600 font-bold uppercase text-[9px] tracking-widest">Pending Selection</span>
+                                                    <span className="text-blue-700 font-black">
+                                                        +{weeklyStats.pendingHours}h
+                                                    </span>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-1 px-1">
+                                                    {draftSlots
+                                                        .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
+                                                        .map(s => (
+                                                            <div key={`${s.date}:${s.startTime}`} className="flex items-center justify-between bg-white border border-blue-100 rounded-md py-1 px-2 text-[10px] text-blue-500 font-bold">
+                                                                <span>{s.startTime} - {s.endTime}</span>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleTimeSelect(s.startTime || '');
+                                                                    }}
+                                                                    className="hover:text-red-500 transition-colors"
+                                                                >
+                                                                    <X className="w-2.5 h-2.5" />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -640,12 +660,21 @@ export function SessionPlanning() {
                                                             Select time slots directly in the grid below.
                                                         </div>
                                                     ) : (
-                                                        <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto no-scrollbar py-1">
+                                                        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto no-scrollbar py-1">
                                                             {draftSlots
                                                                 .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
                                                                 .map(s => (
-                                                                    <div key={`${s.date}:${s.startTime}`} className="flex items-center justify-center bg-blue-50 text-blue-600 px-2 py-2 rounded-lg border border-blue-100 text-[10px] font-black shadow-sm">
-                                                                        {s.startTime}
+                                                                    <div key={`${s.date}:${s.startTime}`} className="group relative flex items-center justify-between bg-blue-50 text-blue-600 px-3 py-2 rounded-lg border border-blue-100 text-[10px] font-black shadow-sm transition-all hover:bg-blue-100">
+                                                                        <span>{s.startTime} - {s.endTime}</span>
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleTimeSelect(s.startTime || '');
+                                                                            }}
+                                                                            className="ml-2 text-blue-400 hover:text-red-500 transition-colors"
+                                                                        >
+                                                                            <X className="w-3 h-3" />
+                                                                        </button>
                                                                     </div>
                                                                 ))}
                                                         </div>
