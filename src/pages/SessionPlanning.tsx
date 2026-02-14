@@ -159,9 +159,12 @@ export function SessionPlanning() {
     });
 
     const [selectedGigId, setSelectedGigId] = useState<string | null>(null);
+
     const [gigs, setGigs] = useState<Gig[]>([]);
     const [reps] = useState<Rep[]>(sampleReps);
     const [draftSlots, setDraftSlots] = useState<Partial<TimeSlot>[]>([]);
+    const [quickStart, setQuickStart] = useState<string>('');
+    const [quickEnd, setQuickEnd] = useState<string>('');
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
 
     useEffect(() => {
@@ -287,22 +290,59 @@ export function SessionPlanning() {
     }, [slots, userRole, selectedRepId, draftSlots]);
 
     const handleTimeSelect = (time: string) => {
-        const isAlreadyDrafted = draftSlots.some(s => s.date === format(selectedDate, 'yyyy-MM-dd') && s.startTime === time);
+        const hour = parseInt(time.split(':')[0]);
 
-        if (isAlreadyDrafted) {
-            setDraftSlots(prev => prev.filter(s => !(s.date === format(selectedDate, 'yyyy-MM-dd') && s.startTime === time)));
+        // Strategy: First click sets Start, second sets End (if later)
+        if (!quickStart || (quickStart && quickEnd)) {
+            setQuickStart(time);
+            setQuickEnd(`${(hour + 1).toString().padStart(2, '0')}:00`);
+
+            // For multi-slot support, we also toggle the individual block
+            const isAlreadyDrafted = draftSlots.some(s => s.date === format(selectedDate, 'yyyy-MM-dd') && s.startTime === time);
+            if (isAlreadyDrafted) {
+                setDraftSlots(prev => prev.filter(s => !(s.date === format(selectedDate, 'yyyy-MM-dd') && s.startTime === time)));
+            } else {
+                setDraftSlots(prev => [...prev, {
+                    id: crypto.randomUUID(),
+                    date: format(selectedDate, 'yyyy-MM-dd'),
+                    startTime: time,
+                    endTime: `${(hour + 1).toString().padStart(2, '0')}:00`,
+                    duration: 1,
+                    repId: selectedRepId,
+                    status: 'reserved',
+                    gigId: selectedGigId || undefined
+                }]);
+            }
         } else {
-            const newDraft: Partial<TimeSlot> = {
-                id: crypto.randomUUID(),
-                date: format(selectedDate, 'yyyy-MM-dd'),
-                startTime: time,
-                endTime: `${(parseInt(time.split(':')[0]) + 1).toString().padStart(2, '0')}:00`,
-                duration: 1,
-                repId: selectedRepId,
-                status: 'reserved',
-                gigId: selectedGigId || undefined
-            };
-            setDraftSlots(prev => [...prev, newDraft]);
+            const startH = parseInt(quickStart.split(':')[0]);
+            if (hour >= startH) {
+                const newEnd = `${(hour + 1).toString().padStart(2, '0')}:00`;
+                setQuickEnd(newEnd);
+
+                // Add all slots in the range to draftSlots
+                const newRange: Partial<TimeSlot>[] = [];
+                for (let h = startH; h <= hour; h++) {
+                    const hStr = `${h.toString().padStart(2, '0')}:00`;
+                    const endHStr = `${(h + 1).toString().padStart(2, '0')}:00`;
+                    if (!draftSlots.some(s => s.date === format(selectedDate, 'yyyy-MM-dd') && s.startTime === hStr)) {
+                        newRange.push({
+                            id: crypto.randomUUID(),
+                            date: format(selectedDate, 'yyyy-MM-dd'),
+                            startTime: hStr,
+                            endTime: endHStr,
+                            duration: 1,
+                            repId: selectedRepId,
+                            status: 'reserved',
+                            gigId: selectedGigId || undefined
+                        });
+                    }
+                }
+                setDraftSlots(prev => [...prev, ...newRange]);
+            } else {
+                // Clicked earlier, reset start
+                setQuickStart(time);
+                setQuickEnd(`${(hour + 1).toString().padStart(2, '0')}:00`);
+            }
         }
     };
 
@@ -546,10 +586,10 @@ export function SessionPlanning() {
 
                             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-8">
                                 <div>
-                                    <h3 className="text-sm font-bold text-gray-900 mb-6">Weekly Overview</h3>
+                                    <h3 className="text-sm font-bold text-gray-900 mb-6 tracking-tight">Weekly Overview</h3>
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-400 font-medium">Available Slots</span>
+                                            <span className="text-gray-500">Available Slots</span>
                                             <span className="text-gray-900 font-black">
                                                 {slots.filter((s: TimeSlot) =>
                                                     s.repId === selectedRepId &&
@@ -559,7 +599,7 @@ export function SessionPlanning() {
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-400 font-medium tracking-tight">Reserved Slots</span>
+                                            <span className="text-gray-500">Reserved Slots</span>
                                             <span className="text-gray-900 font-black">
                                                 {slots.filter((s: TimeSlot) =>
                                                     s.repId === selectedRepId &&
@@ -568,67 +608,65 @@ export function SessionPlanning() {
                                                 ).length}
                                             </span>
                                         </div>
-                                        {draftSlots.length > 0 && (
-                                            <div className="space-y-2">
-                                                <div className="flex justify-between items-center text-sm bg-blue-50/50 p-2 rounded-lg border border-blue-100 animate-pulse">
-                                                    <span className="text-blue-600 font-bold uppercase text-[9px] tracking-widest">Pending Selection</span>
-                                                    <span className="text-blue-700 font-black">
-                                                        +{weeklyStats.pendingHours}h
-                                                    </span>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-1 px-1">
-                                                    {draftSlots
-                                                        .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
-                                                        .map(s => (
-                                                            <div key={`${s.date}:${s.startTime}`} className="flex items-center justify-between bg-white border border-blue-100 rounded-md py-1 px-2 text-[10px] text-blue-500 font-bold">
-                                                                <span>{s.startTime} - {s.endTime}</span>
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleTimeSelect(s.startTime || '');
-                                                                    }}
-                                                                    className="hover:text-red-500 transition-colors"
-                                                                >
-                                                                    <X className="w-2.5 h-2.5" />
-                                                                </button>
-                                                            </div>
-                                                        ))}
-                                                </div>
-                                            </div>
-                                        )}
+
+                                        {/* Reserved Slots Detail List (Ranges) */}
+                                        <div className="space-y-1 pt-2">
+                                            {slots
+                                                .filter(s => s.repId === selectedRepId && s.date === format(selectedDate, 'yyyy-MM-dd') && s.status === 'reserved')
+                                                .sort((a, b) => a.startTime.localeCompare(b.startTime))
+                                                .map(s => (
+                                                    <div key={s.id} className="flex justify-between items-center text-[10px] bg-gray-50/50 p-2 rounded-lg border border-gray-100 group">
+                                                        <span className="text-gray-500 font-bold">{s.startTime} - {s.endTime}</span>
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="text-green-600 font-black uppercase text-[8px] tracking-widest">Reserved</span>
+                                                            <button
+                                                                onClick={() => handleSlotCancel(s.id)}
+                                                                className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-all"
+                                                            >
+                                                                <X className="w-2.5 h-2.5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            }
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div>
-                                    <h3 className="text-sm font-bold text-gray-900 mb-6">Gig Hours</h3>
+                                <div className="pt-6 border-t border-gray-100">
+                                    <h3 className="text-sm font-bold text-gray-900 mb-6 tracking-tight">Project Hours</h3>
                                     <div className="space-y-4">
-                                        {gigs.slice(0, 1).map((gig: Gig) => (
-                                            <div key={gig.id} className="flex justify-between items-center text-sm">
-                                                <div className="flex items-center">
-                                                    <div className="w-2 h-2 rounded-full bg-blue-600 mr-3"></div>
-                                                    <span className="text-gray-500 font-medium">{gig.name}</span>
+                                        {gigs.filter(g => !selectedGigId || g.id === selectedGigId).slice(0, 3).map((gig: Gig) => {
+                                            const gigHours = slots
+                                                .filter((s: TimeSlot) => s.repId === selectedRepId && s.gigId === gig.id && s.status === 'reserved')
+                                                .reduce((sum: number, s: TimeSlot) => sum + (s.duration || 1), 0);
+
+                                            if (gigHours === 0 && selectedGigId) return null;
+
+                                            return (
+                                                <div key={gig.id} className="flex justify-between items-center text-sm">
+                                                    <div className="flex items-center">
+                                                        <div className="w-2.5 h-2.5 rounded-full mr-3" style={{ backgroundColor: stringToColor(gig.name) }}></div>
+                                                        <span className="text-gray-500 font-medium truncate max-w-[140px]">{gig.name}</span>
+                                                    </div>
+                                                    <span className="text-gray-900 font-black">{gigHours}h</span>
                                                 </div>
-                                                <span className="text-gray-900 font-black">
-                                                    {slots
-                                                        .filter((s: TimeSlot) => s.repId === selectedRepId && s.gigId === gig.id && s.status === 'reserved')
-                                                        .reduce((sum: number, s: TimeSlot) => sum + (s.duration || 1), 0)}h
-                                                </span>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
 
-                                <div>
-                                    <h3 className="text-sm font-bold text-gray-900 mb-6">Quick Reserve</h3>
+                                <div className="pt-6 border-t border-gray-100">
+                                    <h3 className="text-sm font-bold text-gray-900 mb-6 tracking-tight">Quick Reserve</h3>
                                     <div className="space-y-4">
                                         <div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Gig</p>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Project</p>
                                             <select
                                                 className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
                                                 value={selectedGigId || ''}
                                                 onChange={(e) => setSelectedGigId(e.target.value === '' ? null : e.target.value)}
                                             >
-                                                <option value="">Select a Gig</option>
+                                                <option value="">Select a Project</option>
                                                 {gigs.map((gig: Gig) => (
                                                     <option key={gig.id} value={gig.id}>{gig.name}</option>
                                                 ))}
@@ -653,30 +691,62 @@ export function SessionPlanning() {
                                             );
 
                                             return (
-                                                <div className="space-y-3">
-                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Current Selection</p>
-                                                    {draftSlots.length === 0 ? (
-                                                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 italic text-[10px] text-gray-400 font-bold">
-                                                            Select time slots directly in the grid below.
-                                                        </div>
-                                                    ) : (
-                                                        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto no-scrollbar py-1">
-                                                            {draftSlots
-                                                                .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
-                                                                .map(s => (
-                                                                    <div key={`${s.date}:${s.startTime}`} className="group relative flex items-center justify-between bg-blue-50 text-blue-600 px-3 py-2 rounded-lg border border-blue-100 text-[10px] font-black shadow-sm transition-all hover:bg-blue-100">
-                                                                        <span>{s.startTime} - {s.endTime}</span>
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleTimeSelect(s.startTime || '');
-                                                                            }}
-                                                                            className="ml-2 text-blue-400 hover:text-red-500 transition-colors"
-                                                                        >
-                                                                            <X className="w-3 h-3" />
-                                                                        </button>
-                                                                    </div>
+                                                <div className="space-y-4">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Start Time</p>
+                                                            <select
+                                                                className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
+                                                                value={quickStart}
+                                                                onChange={(e) => {
+                                                                    const time = e.target.value;
+                                                                    setQuickStart(time);
+                                                                    // Update draft or sync
+                                                                }}
+                                                            >
+                                                                <option value="">Start</option>
+                                                                {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(h => (
+                                                                    <option key={h} value={h}>{h}</option>
                                                                 ))}
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">End Time</p>
+                                                            <select
+                                                                className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
+                                                                value={quickEnd}
+                                                                onChange={(e) => setQuickEnd(e.target.value)}
+                                                            >
+                                                                <option value="">End</option>
+                                                                {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(h => (
+                                                                    <option key={h} value={h}>{h}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Pending Selection List with cancellation */}
+                                                    {draftSlots.length > 0 && (
+                                                        <div className="space-y-2 py-2 border-t border-blue-50">
+                                                            <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest px-1">Pending Draft</p>
+                                                            <div className="grid grid-cols-1 gap-1">
+                                                                {draftSlots
+                                                                    .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
+                                                                    .map(s => (
+                                                                        <div key={`${s.date}:${s.startTime}`} className="flex items-center justify-between bg-white border border-blue-100 rounded-md py-1 px-2 text-[10px] text-blue-500 font-bold transition-all hover:border-red-200 group">
+                                                                            <span>{s.startTime} - {s.endTime}</span>
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setDraftSlots(prev => prev.filter(ds => ds.startTime !== s.startTime));
+                                                                                }}
+                                                                                className="text-blue-300 group-hover:text-red-500 transition-colors"
+                                                                            >
+                                                                                <X className="w-2.5 h-2.5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    ))}
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>
