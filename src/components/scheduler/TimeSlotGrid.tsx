@@ -107,7 +107,7 @@ export function TimeSlotGrid({
                             <div
                                 key={time}
                                 id={`time-slot-${parseInt(time)}`}
-                                className={`flex items-start p-5 transition-all duration-200 border-b border-gray-50 last:border-0 ${slot ? 'bg-blue-50/40' : 'hover:bg-gray-50/30'
+                                className={`flex items-start p-5 transition-all duration-200 border-b border-gray-50 last:border-0 ${slot?.status === 'reserved' ? 'bg-blue-50/40' : slot?.status === 'available' ? 'bg-emerald-50/20' : 'hover:bg-gray-50/30'
                                     }`}
                                 onClick={() => slot && onSlotSelect && onSlotSelect(slot)}
                             >
@@ -159,10 +159,31 @@ export function TimeSlotGrid({
                                                         </select>
                                                     </div>
 
-                                                    <div className="px-4 py-2 bg-blue-100/50 text-blue-600 text-xs font-black rounded-xl flex items-center border border-blue-200 shadow-sm">
-                                                        <Check className="w-3.5 h-3.5 mr-1.5" />
-                                                        Reserved
-                                                    </div>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onSlotUpdate({
+                                                                ...slot,
+                                                                status: slot.status === 'reserved' ? 'available' : 'reserved'
+                                                            });
+                                                        }}
+                                                        className={`px-4 py-2 text-xs font-black rounded-xl flex items-center border shadow-sm transition-all ${slot.status === 'reserved'
+                                                            ? 'bg-blue-100/50 text-blue-600 border-blue-200 hover:bg-blue-100'
+                                                            : 'bg-emerald-100/50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
+                                                            }`}
+                                                    >
+                                                        {slot.status === 'reserved' ? (
+                                                            <>
+                                                                <Check className="w-3.5 h-3.5 mr-1.5" />
+                                                                Reserved
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                                                                Available
+                                                            </>
+                                                        )}
+                                                    </button>
                                                 </div>
 
                                                 <div className="flex items-center text-gray-400 pl-1 group">
