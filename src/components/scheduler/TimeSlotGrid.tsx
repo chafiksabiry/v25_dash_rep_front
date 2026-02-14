@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { TimeSlot, Gig } from '../../types/scheduler';
-import { X, MessageSquare, Clock, Check, Calendar } from 'lucide-react';
+import { X, MessageSquare, Clock, Check, Calendar, Save } from 'lucide-react';
 
 interface TimeSlotGridProps {
     date: Date;
@@ -32,6 +32,8 @@ export function TimeSlotGrid({
     const daySlots = slots.filter((slot) => slot.date === format(date, 'yyyy-MM-dd'));
     const [showCancelled, setShowCancelled] = useState<boolean>(false);
     const [showAllHours, setShowAllHours] = useState<boolean>(false);
+    const [draftNotes, setDraftNotes] = useState<Record<string, string>>({});
+    const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
 
     const filteredSlots = daySlots.filter(slot => slot.gigId === selectedGigId);
 
@@ -205,19 +207,40 @@ export function TimeSlotGrid({
                                                     </button>
                                                 </div>
 
-                                                <div className="flex items-center text-gray-400 pl-1 group">
-                                                    <MessageSquare className="w-4 h-4 mr-3 opacity-60" />
+                                                <div className="flex items-center text-gray-400 pl-1 group gap-2 flex-wrap">
+                                                    <MessageSquare className="w-4 h-4 mr-1 opacity-60 shrink-0" />
                                                     <input
                                                         type="text"
-                                                        value={slot.notes || ''}
+                                                        value={draftNotes[slot.id] !== undefined ? draftNotes[slot.id] : (slot.notes || '')}
                                                         onClick={(e) => e.stopPropagation()}
                                                         onChange={(e) =>
-                                                            onSlotUpdate({ ...slot, notes: e.target.value })
+                                                            setDraftNotes((prev) => ({ ...prev, [slot.id]: e.target.value }))
                                                         }
                                                         placeholder="Add notes..."
-                                                        className="bg-transparent border-none text-sm font-bold text-gray-600 placeholder-gray-400 focus:ring-0 w-full p-0"
+                                                        className="bg-transparent border-none text-sm font-bold text-gray-600 placeholder-gray-400 focus:ring-0 flex-1 min-w-[120px] p-0"
                                                         disabled={slot.status === 'cancelled'}
                                                     />
+                                                    {(draftNotes[slot.id] !== undefined && draftNotes[slot.id] !== (slot.notes || '')) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSavingNotesId(slot.id);
+                                                                onSlotUpdate({ ...slot, notes: draftNotes[slot.id] ?? slot.notes ?? '' });
+                                                                setDraftNotes((prev) => {
+                                                                    const next = { ...prev };
+                                                                    delete next[slot.id];
+                                                                    return next;
+                                                                });
+                                                                setSavingNotesId(null);
+                                                            }}
+                                                            disabled={savingNotesId === slot.id}
+                                                            className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                                                        >
+                                                            <Save className="w-3 h-3" />
+                                                            Save
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
 

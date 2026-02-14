@@ -794,30 +794,51 @@ export function SessionPlanning() {
                                                         </div>
                                                     </div>
 
-                                                    {/* Pending Selection List with cancellation */}
-                                                    {draftSlots.length > 0 && (
-                                                        <div className="space-y-2 py-2 border-t border-blue-50">
-                                                            <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest px-1">Pending Draft</p>
-                                                            <div className="grid grid-cols-1 gap-1">
-                                                                {draftSlots
-                                                                    .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
-                                                                    .map(s => (
-                                                                        <div key={`${s.date}:${s.startTime}`} className="flex items-center justify-between bg-white border border-blue-100 rounded-md py-1 px-2 text-[10px] text-blue-500 font-bold transition-all hover:border-red-200 group">
-                                                                            <span>{s.startTime} - {s.endTime}</span>
-                                                                            <button
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    setDraftSlots(prev => prev.filter(ds => ds.startTime !== s.startTime));
-                                                                                }}
-                                                                                className="text-blue-300 group-hover:text-red-500 transition-colors"
-                                                                            >
-                                                                                <X className="w-2.5 h-2.5" />
-                                                                            </button>
-                                                                        </div>
-                                                                    ))}
+                                                    {/* Slots below Start Time / End Time: Pending Draft + Already Reserved */}
+                                                    <div className="space-y-3 py-2 border-t border-gray-100">
+                                                        {draftSlots.length > 0 && (
+                                                            <div className="space-y-2">
+                                                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest px-1">Pending Draft</p>
+                                                                <div className="grid grid-cols-1 gap-1">
+                                                                    {draftSlots
+                                                                        .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
+                                                                        .map(s => (
+                                                                            <div key={`draft-${s.date}:${s.startTime}`} className="flex items-center justify-between bg-white border border-blue-100 rounded-md py-1 px-2 text-[10px] text-blue-500 font-bold transition-all hover:border-red-200 group">
+                                                                                <span>{s.startTime} - {s.endTime}</span>
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setDraftSlots(prev => prev.filter(ds => ds.startTime !== s.startTime));
+                                                                                    }}
+                                                                                    className="text-blue-300 group-hover:text-red-500 transition-colors"
+                                                                                >
+                                                                                    <X className="w-2.5 h-2.5" />
+                                                                                </button>
+                                                                            </div>
+                                                                        ))}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )}
+                                                        )}
+                                                        {(() => {
+                                                            const reservedForDay = slots
+                                                                .filter(s => s.repId === selectedRepId && s.date === format(selectedDate, 'yyyy-MM-dd') && s.status === 'reserved' && (!selectedGigId || s.gigId === selectedGigId))
+                                                                .sort((a, b) => a.startTime.localeCompare(b.startTime));
+                                                            if (reservedForDay.length === 0) return null;
+                                                            return (
+                                                                <div className="space-y-2">
+                                                                    <p className="text-[9px] font-black text-green-600 uppercase tracking-widest px-1">Reserved</p>
+                                                                    <div className="grid grid-cols-1 gap-1">
+                                                                        {reservedForDay.map(s => (
+                                                                            <div key={s.id} className="flex items-center justify-between bg-green-50/80 border border-green-100 rounded-md py-1 px-2 text-[10px] text-green-700 font-bold">
+                                                                                <span>{s.startTime} - {s.endTime}</span>
+                                                                                <span className="text-[8px] text-green-500 uppercase">Saved</span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                    </div>
                                                 </div>
                                             );
                                         })()}
