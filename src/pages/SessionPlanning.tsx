@@ -141,6 +141,11 @@ interface EnrolledGig {
         destination_zone?: {
             name: { common: string };
         };
+        companyId?: {
+            _id: string;
+            name: string;
+            logo?: string;
+        };
     };
     matchScore?: number;
 }
@@ -235,7 +240,7 @@ export function SessionPlanning() {
                         id: gigAgent.gigId._id,
                         name: gigAgent.gigId.title,
                         description: gigAgent.gigId.description || '',
-                        company: 'Unknown Company', // Placeholder as company name might not be directly in gigId
+                        company: gigAgent.gigId.companyId?.name || 'Unknown Company',
                         color: stringToColor(gigAgent.gigId._id || gigAgent.gigId.title),
                         skills: [], // Skills might not be in the lightweight gig object
                         priority: 'medium'
@@ -748,15 +753,22 @@ export function SessionPlanning() {
 
                                                     <div className="flex items-start space-x-3 mb-3 pr-16">
                                                         <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
-                                                            <Briefcase className="w-5 h-5 text-blue-600" />
+                                                            {gigAgent.gigId.companyId?.logo ? (
+                                                                <img
+                                                                    src={gigAgent.gigId.companyId.logo}
+                                                                    alt={gigAgent.gigId.companyId.name}
+                                                                    className="w-5 h-5 object-contain"
+                                                                />
+                                                            ) : (
+                                                                <Building className="w-5 h-5 text-blue-600" />
+                                                            )}
                                                         </div>
                                                         <div>
                                                             <h4 className="font-semibold text-gray-900 leading-tight mb-1">{gigAgent.gigId.title}</h4>
-                                                            {/* Placeholder for Company if available */}
-                                                            {/* <p className="text-xs text-gray-500 flex items-center">
+                                                            <p className="text-xs text-gray-500 flex items-center">
                                                                 <Building className="w-3 h-3 mr-1" />
-                                                                Unknown Company
-                                                            </p> */}
+                                                                {gigAgent.gigId.companyId?.name || 'Unknown Company'}
+                                                            </p>
                                                         </div>
                                                     </div>
 
