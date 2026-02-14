@@ -158,8 +158,9 @@ export function SessionPlanning() {
         return agendId || sampleReps[0].id;
     });
 
+    const [selectedGigId, setSelectedGigId] = useState<string | null>(null);
     const [gigs, setGigs] = useState<Gig[]>([]);
-    const [reps, setReps] = useState<Rep[]>(sampleReps);
+    const [reps] = useState<Rep[]>(sampleReps);
     const [draftSlots, setDraftSlots] = useState<Partial<TimeSlot>[]>([]);
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
 
