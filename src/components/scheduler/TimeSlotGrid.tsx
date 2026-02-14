@@ -12,6 +12,8 @@ interface TimeSlotGridProps {
     onSlotSelect?: (slot: TimeSlot) => void;
     selectedGigId: string;
     onGigFilterChange: (gigId: string) => void;
+    previewStart?: string;
+    previewEnd?: string;
 }
 
 export function TimeSlotGrid({
@@ -23,6 +25,8 @@ export function TimeSlotGrid({
     onSlotSelect,
     selectedGigId,
     onGigFilterChange,
+    previewStart,
+    previewEnd,
 }: TimeSlotGridProps) {
     const timeSlots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
     const daySlots = slots.filter((slot) => slot.date === format(date, 'yyyy-MM-dd'));
@@ -34,6 +38,16 @@ export function TimeSlotGrid({
     const displaySlots = showCancelled
         ? filteredSlots
         : filteredSlots.filter(slot => slot.status !== 'cancelled');
+
+    const isPreviewed = (time: string) => {
+        if (!previewStart || !previewEnd) return false;
+
+        const currentH = parseInt(time.split(':')[0]);
+        const startH = parseInt(previewStart.split(':')[0]);
+        const endH = parseInt(previewEnd.split(':')[0]);
+
+        return currentH >= startH && currentH < endH;
+    };
 
     const isHourAvailable = (hour: string) => {
         const gig = gigs.find(p => p.id === selectedGigId);
@@ -106,12 +120,12 @@ export function TimeSlotGrid({
                             <div
                                 key={time}
                                 id={`time-slot-${parseInt(time)}`}
-                                className={`flex items-start p-5 transition-all duration-200 border-b border-gray-50 last:border-0 ${slot?.status === 'reserved' ? 'bg-blue-50/40' : slot?.status === 'available' ? 'bg-emerald-50/20' : 'hover:bg-gray-50/30'
+                                className={`flex items-start p-5 transition-all duration-200 border-b border-gray-50 last:border-0 ${slot?.status === 'reserved' ? 'bg-blue-50/40' : slot?.status === 'available' ? 'bg-emerald-50/20' : isPreviewed(time) ? 'bg-blue-50/60 ring-2 ring-blue-600/10 ring-inset' : 'hover:bg-gray-50/30'
                                     }`}
                                 onClick={() => slot && onSlotSelect && onSlotSelect(slot)}
                             >
                                 <div className="w-20 pt-1">
-                                    <span className={`text-sm font-black ${slot ? 'text-blue-900' : 'text-gray-400'}`}>
+                                    <span className={`text-sm font-black ${slot ? 'text-blue-900' : isPreviewed(time) ? 'text-blue-600' : 'text-gray-400'}`}>
                                         {time}
                                     </span>
                                 </div>
@@ -213,32 +227,41 @@ export function TimeSlotGrid({
                                             </button>
                                         </div>
                                     ) : (
-                                        <button
-                                            onClick={(e) => {
-                                                if (!available) return;
-                                                e.stopPropagation();
-                                                onSlotUpdate({
-                                                    id: crypto.randomUUID(),
-                                                    startTime: time,
-                                                    endTime: `${(parseInt(time) + 1).toString().padStart(2, '0')}:00`,
-                                                    date: format(date, 'yyyy-MM-dd'),
-                                                    status: 'available',
-                                                    duration: 1,
-                                                    repId: selectedRepId,
-                                                    gigId: selectedGigId || undefined
-                                                });
-                                            }}
-                                            className={`flex items-center transition-all ${available
-                                                ? 'text-blue-600 hover:text-blue-800'
-                                                : 'text-gray-200 cursor-not-allowed hidden'
-                                                }`}
-                                            disabled={!available}
-                                        >
-                                            <span className="text-sm font-black flex items-center">
-                                                <span className="text-lg mr-2">+</span>
-                                                Add slot
-                                            </span>
-                                        </button>
+                                        <div className="flex items-center justify-between">
+                                            {isPreviewed(time) ? (
+                                                <div className="flex items-center text-blue-600 animate-pulse">
+                                                    <Clock className="w-4 h-4 mr-2" />
+                                                    <span className="text-xs font-black uppercase tracking-wider">Ready to reserve</span>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={(e) => {
+                                                        if (!available) return;
+                                                        e.stopPropagation();
+                                                        onSlotUpdate({
+                                                            id: crypto.randomUUID(),
+                                                            startTime: time,
+                                                            endTime: `${(parseInt(time) + 1).toString().padStart(2, '0')}:00`,
+                                                            date: format(date, 'yyyy-MM-dd'),
+                                                            status: 'available',
+                                                            duration: 1,
+                                                            repId: selectedRepId,
+                                                            gigId: selectedGigId || undefined
+                                                        });
+                                                    }}
+                                                    className={`flex items-center transition-all ${available
+                                                        ? 'text-blue-600 hover:text-blue-800'
+                                                        : 'text-gray-200 cursor-not-allowed hidden'
+                                                        }`}
+                                                    disabled={!available}
+                                                >
+                                                    <span className="text-sm font-black flex items-center">
+                                                        <span className="text-lg mr-2">+</span>
+                                                        Add slot
+                                                    </span>
+                                                </button>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             </div>

@@ -681,6 +681,8 @@ export function SessionPlanning() {
                                 onSlotSelect={handleSlotSelect}
                                 selectedGigId={selectedGigId || ''}
                                 onGigFilterChange={(id) => setSelectedGigId(id)}
+                                previewStart={quickStart}
+                                previewEnd={quickEnd}
                             />
                         </div>
                     </div>
