@@ -5,7 +5,7 @@ import { slotApi, Slot, Reservation } from '../../services/api/slotApi';
 import { getAgentId } from '../../utils/authUtils';
 
 interface AvailableSlotsGridProps {
-    gigId: string;
+    gigId: string | null | undefined;
     selectedDate: Date;
     onReservationMade?: () => void;
 }
@@ -16,16 +16,22 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
     const [loading, setLoading] = useState<boolean>(false);
     const [reservingSlotId, setReservingSlotId] = useState<string | null>(null);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-    const repId = getAgentId() || '';
+    
+    let repId = '';
+    try {
+        repId = getAgentId() || '';
+    } catch (error) {
+        console.error('Error getting agent ID:', error);
+    }
 
     useEffect(() => {
-        if (!gigId) return;
+        if (!gigId || gigId === '') return;
         loadSlots();
         loadReservations();
     }, [gigId, selectedDate]);
 
     const loadSlots = async () => {
-        if (!gigId || !selectedDate) return;
+        if (!gigId || gigId === '' || !selectedDate) return;
         try {
             setLoading(true);
             const dateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -34,7 +40,7 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
         } catch (error: any) {
             console.error('Error loading slots:', error);
             setMessage({ 
-                text: error.response?.data?.message || 'Failed to load available slots', 
+                text: error.response?.data?.message || error.message || 'Failed to load available slots', 
                 type: 'error' 
             });
         } finally {
@@ -43,7 +49,7 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
     };
 
     const loadReservations = async () => {
-        if (!repId || !gigId) return;
+        if (!repId || repId === '' || !gigId || gigId === '') return;
         try {
             const fetchedReservations = await slotApi.getReservations(repId, gigId);
             setReservations(Array.isArray(fetchedReservations) ? fetchedReservations : []);
@@ -122,17 +128,30 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
         }
     };
 
-    if (!gigId || !selectedDate) {
+    if (!gigId || gigId === '' || !selectedDate) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center text-gray-500">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center text-gray-500 text-sm">
                 Select a gig to see available slots
             </div>
         );
     }
 
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    const daySlots = slots.filter(s => s.date === dateStr);
-    const isPastDate = dateStr < format(new Date(), 'yyyy-MM-dd');
+    let dateStr = '';
+    let daySlots: Slot[] = [];
+    let isPastDate = false;
+    
+    try {
+        dateStr = format(selectedDate, 'yyyy-MM-dd');
+        daySlots = Array.isArray(slots) ? slots.filter(s => s && s.date === dateStr) : [];
+        isPastDate = dateStr < format(new Date(), 'yyyy-MM-dd');
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center text-red-500 text-sm">
+                Error: Invalid date format
+            </div>
+        );
+    }
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -141,7 +160,7 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                     <div className="flex items-center gap-2">
                         <Calendar className="w-5 h-5 text-blue-600" />
                         <h3 className="text-lg font-semibold text-gray-900">
-                            Available Slots - {format(selectedDate, 'MMMM d, yyyy')}
+                            Available Slots - {dateStr ? format(selectedDate, 'MMMM d, yyyy') : 'Loading...'}
                         </h3>
                     </div>
                     {isPastDate && (

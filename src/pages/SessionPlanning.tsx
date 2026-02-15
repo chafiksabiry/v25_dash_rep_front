@@ -867,10 +867,11 @@ export function SessionPlanning() {
 
                         {selectedGigId && (
                             <AvailableSlotsGrid
-                                gigId={selectedGigId}
+                                gigId={selectedGigId || undefined}
                                 selectedDate={selectedDate}
                                 onReservationMade={() => {
                                     // Refresh slots after reservation
+                                    if (!selectedRepId) return;
                                     const fetchSlots = async () => {
                                         try {
                                             const fetchedSlots = await schedulerApi.getTimeSlots(selectedRepId);
