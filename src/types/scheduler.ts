@@ -7,6 +7,7 @@ export interface TimeSlot {
     status: 'available' | 'reserved' | 'cancelled';
     duration: number; // in hours
     notes?: string;
+    companyNotes?: string;
     repId: string; // Added to track which REP owns this slot
     agentId?: string; // Map to backend agentId
     attended?: boolean; // Whether the REP attended this slot

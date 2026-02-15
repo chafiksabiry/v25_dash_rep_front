@@ -46,6 +46,7 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
     // If it's a Slot with reservations array, check if current agent is in it
     let status = slot.status;
     let isReservation = !!slot.isMember; // From backend getReservations mapping
+    let repNotes = '';
 
     if (slot.reservations && Array.isArray(slot.reservations) && currentAgentId) {
         const myRes = slot.reservations.find((r: any) =>
@@ -55,6 +56,7 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
             status = 'reserved';
             isReservation = true;
             repId = currentAgentId;
+            repNotes = myRes.notes || '';
         }
     }
 
@@ -73,7 +75,8 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
         repId,
         status: status as 'available' | 'reserved' | 'cancelled',
         duration: slot.duration || 1,
-        notes: slot.notes,
+        notes: repNotes || slot.notes, // Default to repNotes if set, else compat
+        companyNotes: slot.notes,
         attended: slot.attended,
         attendanceNotes: slot.attendanceNotes,
         agent: agentData, // Store populated agent data

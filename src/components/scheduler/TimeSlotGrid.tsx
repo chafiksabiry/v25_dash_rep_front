@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { TimeSlot, Gig } from '../../types/scheduler';
-import { X, MessageSquare, Clock, Check, Calendar, Save } from 'lucide-react';
+import { X, MessageSquare, Clock, Check, Calendar, Save, Building } from 'lucide-react';
 
 interface TimeSlotGridProps {
     date: Date;
@@ -216,40 +216,55 @@ export function TimeSlotGrid({
                                                     </button>
                                                 </div>
 
-                                                <div className="flex items-center pl-1 group gap-2 flex-wrap">
-                                                    <MessageSquare className="w-4 h-4 mr-1 text-gray-500 shrink-0" />
-                                                    <input
-                                                        type="text"
-                                                        value={draftNotes[slot.id] !== undefined ? draftNotes[slot.id] : (slot.notes || '')}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        onChange={(e) =>
-                                                            setDraftNotes((prev) => ({ ...prev, [slot.id]: e.target.value }))
-                                                        }
-                                                        placeholder="Add notes..."
-                                                        className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-200 focus:border-blue-300 flex-1 min-w-[140px] disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        disabled={slot.status === 'cancelled'}
-                                                    />
-                                                    {(draftNotes[slot.id] !== undefined && draftNotes[slot.id] !== (slot.notes || '')) && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setSavingNotesId(slot.id);
-                                                                onSlotUpdate({ ...slot, notes: draftNotes[slot.id] ?? slot.notes ?? '' });
-                                                                setDraftNotes((prev) => {
-                                                                    const next = { ...prev };
-                                                                    delete next[slot.id];
-                                                                    return next;
-                                                                });
-                                                                setSavingNotesId(null);
-                                                            }}
-                                                            disabled={savingNotesId === slot.id}
-                                                            className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors disabled:opacity-50"
-                                                        >
-                                                            <Save className="w-3 h-3" />
-                                                            Save
-                                                        </button>
+                                                <div className="space-y-2 pl-1">
+                                                    {slot.companyNotes && (
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="p-1 bg-gray-100 rounded">
+                                                                <Building className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                                            </div>
+                                                            <div className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 flex-1 italic">
+                                                                {slot.companyNotes}
+                                                            </div>
+                                                        </div>
                                                     )}
+
+                                                    <div className="flex items-center group gap-2 flex-wrap">
+                                                        <div className="p-1 bg-blue-50 rounded">
+                                                            <MessageSquare className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                                        </div>
+                                                        <input
+                                                            type="text"
+                                                            value={draftNotes[slot.id] !== undefined ? draftNotes[slot.id] : (slot.notes || '')}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            onChange={(e) =>
+                                                                setDraftNotes((prev) => ({ ...prev, [slot.id]: e.target.value }))
+                                                            }
+                                                            placeholder="Add your note here..."
+                                                            className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-300 flex-1 min-w-[140px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            disabled={slot.status === 'cancelled'}
+                                                        />
+                                                        {(draftNotes[slot.id] !== undefined && draftNotes[slot.id] !== (slot.notes || '')) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSavingNotesId(slot.id);
+                                                                    onSlotUpdate({ ...slot, notes: draftNotes[slot.id] ?? slot.notes ?? '' });
+                                                                    setDraftNotes((prev) => {
+                                                                        const next = { ...prev };
+                                                                        delete next[slot.id];
+                                                                        return next;
+                                                                    });
+                                                                    setSavingNotesId(null);
+                                                                }}
+                                                                disabled={savingNotesId === slot.id}
+                                                                className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                                                            >
+                                                                <Save className="w-3 h-3" />
+                                                                Save
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
 
