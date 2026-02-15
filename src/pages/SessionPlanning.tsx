@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { HorizontalCalendar } from '../components/scheduler/HorizontalCalendar';
 import { TimeSlotGrid } from '../components/scheduler/TimeSlotGrid';
+import { AvailableSlotsGrid } from '../components/scheduler/AvailableSlotsGrid';
 import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company } from '../types/scheduler';
 import { Building, Clock, Briefcase, AlertCircle, Users, Brain, X } from 'lucide-react';
 import { CompanyView } from '../components/scheduler/CompanyView';
@@ -863,6 +864,26 @@ export function SessionPlanning() {
                                 onDraftNotesChange={(time, value) => setDraftSlotNotes(prev => ({ ...prev, [format(selectedDate, 'yyyy-MM-dd') + ':' + time]: value }))}
                             />
                         </div>
+
+                        {selectedGigId && (
+                            <AvailableSlotsGrid
+                                gigId={selectedGigId}
+                                selectedDate={selectedDate}
+                                onReservationMade={() => {
+                                    // Refresh slots after reservation
+                                    const fetchSlots = async () => {
+                                        try {
+                                            const fetchedSlots = await schedulerApi.getTimeSlots(selectedRepId);
+                                            const mappedSlots = Array.isArray(fetchedSlots) ? fetchedSlots.map(mapBackendSlotToSlot) : [];
+                                            setSlots(mappedSlots);
+                                        } catch (error) {
+                                            console.error('Error refreshing slots:', error);
+                                        }
+                                    };
+                                    fetchSlots();
+                                }}
+                            />
+                        )}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-8">
