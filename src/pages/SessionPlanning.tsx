@@ -216,7 +216,6 @@ export function SessionPlanning() {
     const [quickStart, setQuickStart] = useState<string>('');
     const [quickEnd, setQuickEnd] = useState<string>('');
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
-    const [loadingReps, setLoadingReps] = useState<boolean>(false);
     const [showAttendancePanel] = useState<boolean>(false);
     const [showAIPanel] = useState<boolean>(true);
 
@@ -257,7 +256,6 @@ export function SessionPlanning() {
                 // Fetch Global Gig Data (for Company/Admin view)
                 if (!selectedGigId) return;
 
-                setLoadingReps(true);
                 // 1. Fetch all agents enrolled in this gig
                 const gigAgents = await schedulerApi.getGigAgents(selectedGigId, 'enrolled');
                 const mappedReps = gigAgents.map(ga => ({
@@ -289,11 +287,9 @@ export function SessionPlanning() {
                 });
 
                 setSlots(allSlots);
-                setLoadingReps(false);
             }
         } catch (error) {
             console.error('Error refreshing data:', error);
-            setLoadingReps(false);
         }
     };
 
