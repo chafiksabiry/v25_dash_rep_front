@@ -854,23 +854,7 @@ export function SessionPlanning() {
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
-                                <TimeSlotGrid
-                                    date={selectedDate}
-                                    allowAddSlots={!isPastDate}
-                                    slots={slots.filter((slot: TimeSlot) => slot.repId === selectedRepId)}
-                                    gigs={gigs}
-                                    onSlotUpdate={handleSlotUpdate}
-                                    onSlotCancel={handleSlotCancel}
-                                    onSlotSelect={handleSlotSelect}
-                                    selectedGigId={selectedGigId || ''}
-                                    onGigFilterChange={(id) => setSelectedGigId(id)}
-                                    draftSlots={draftSlots}
-                                    onTimeSelect={handleTimeSelect}
-                                    draftSlotNotes={draftSlotNotes}
-                                    onDraftNotesChange={(time, value) => setDraftSlotNotes(prev => ({ ...prev, [format(selectedDate, 'yyyy-MM-dd') + ':' + time]: value }))}
-                                />
-                            </div>
+
 
                             {selectedGigId && (
                                 <AvailableSlotsGrid
