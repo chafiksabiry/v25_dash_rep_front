@@ -578,8 +578,11 @@ export function SessionPlanning() {
         try {
             const slot = slots.find(s => s.id === slotId);
 
-            if (slot && (slot as any).isReservation) {
+            if (slot && (slot as any).reservationId) {
                 // If it's a slotApi reservation
+                await slotApi.cancelReservation((slot as any).reservationId);
+            } else if (slot && (slot as any).isReservation) {
+                // Fallback for old mapping
                 await slotApi.cancelReservation(slotId);
             } else {
                 // If it's a schedulerApi time slot
