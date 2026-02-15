@@ -39,7 +39,8 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
     const agentData = slot.agentId && typeof slot.agentId === 'object' ? slot.agentId : null;
     const gigData = slot.gigId && typeof slot.gigId === 'object' ? slot.gigId : null;
 
-    const id = (slot._id as any)?.$oid || slot._id?.toString() || crypto.randomUUID();
+    // Use slot.slotId if available (for reservations), otherwise use _id
+    const id = slot.slotId || (slot._id as any)?.$oid || slot._id?.toString() || crypto.randomUUID();
     let repId = (agentData as any)?._id || (agentData as any)?.$oid || slot.agentId?.toString() || slot.repId?.toString() || '';
     const gigId = (gigData as any)?._id || (gigData as any)?.$oid || slot.gigId?.toString() || '';
 
@@ -245,13 +246,35 @@ export function SessionPlanning() {
                     isReservation: true // Flag to distinguish for cancellation
                 })) : [];
 
-                // Merge and deduplicate
-                let allSlots = [...mappedTimeSlots, ...mappedReservations];
-                mappedAvailableSlots.forEach(slot => {
-                    if (!allSlots.find(s => s.id === slot.id)) {
-                        allSlots.push(slot);
+                // Merge and deduplicate: Prioritize Reservations > Time Slots > Available Slots
+                const finalSlots: TimeSlot[] = [];
+                const seenIds = new Set<string>();
+
+                // 1. Add Reservations first
+                mappedReservations.forEach(slot => {
+                    if (!seenIds.has(slot.id)) {
+                        finalSlots.push(slot);
+                        seenIds.add(slot.id);
                     }
                 });
+
+                // 2. Add Time Slots (original time blocks)
+                mappedTimeSlots.forEach(slot => {
+                    if (!seenIds.has(slot.id)) {
+                        finalSlots.push(slot);
+                        seenIds.add(slot.id);
+                    }
+                });
+
+                // 3. Add Available Slots
+                mappedAvailableSlots.forEach(slot => {
+                    if (!seenIds.has(slot.id)) {
+                        finalSlots.push(slot);
+                        seenIds.add(slot.id);
+                    }
+                });
+
+                let allSlots = finalSlots;
 
                 // Filter by gig if a gig is selected
                 if (selectedGigId) {
@@ -286,14 +309,24 @@ export function SessionPlanning() {
                 const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map((s: any) => mapBackendSlotToSlot(s, selectedRepId)) : [];
 
                 // Merge and deduplicate
-                const allSlots = [...mappedTimeSlots];
-                mappedAvailableSlots.forEach(slot => {
-                    if (!allSlots.find(s => s.id === slot.id)) {
-                        allSlots.push(slot);
+                const finalSlots: TimeSlot[] = [];
+                const seenIds = new Set<string>();
+
+                mappedTimeSlots.forEach(slot => {
+                    if (!seenIds.has(slot.id)) {
+                        finalSlots.push(slot);
+                        seenIds.add(slot.id);
                     }
                 });
 
-                setSlots(allSlots);
+                mappedAvailableSlots.forEach(slot => {
+                    if (!seenIds.has(slot.id)) {
+                        finalSlots.push(slot);
+                        seenIds.add(slot.id);
+                    }
+                });
+
+                setSlots(finalSlots);
             }
         } catch (error) {
             console.error('Error refreshing data:', error);
