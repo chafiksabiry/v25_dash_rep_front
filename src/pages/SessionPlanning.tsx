@@ -186,7 +186,6 @@ export function SessionPlanning() {
     });
 
     const [selectedGigId, setSelectedGigId] = useState<string | null>(null);
-    const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
     const [gigs, setGigs] = useState<Gig[]>([]);
     const [reps, setReps] = useState<Rep[]>([]);
     const [draftSlots, setDraftSlots] = useState<Partial<TimeSlot>[]>([]);
@@ -231,20 +230,6 @@ export function SessionPlanning() {
 
 
 
-    // Update company ID when gig is selected
-    useEffect(() => {
-        if (selectedGigId) {
-            const gig = gigs.find(g => g.id === selectedGigId);
-            if (gig && gig.companyId) {
-                setSelectedCompanyId(gig.companyId);
-            } else {
-                // Try to find it in the raw data if possible, or fallback
-                setSelectedCompanyId(null);
-            }
-        } else {
-            setSelectedCompanyId(null);
-        }
-    }, [selectedGigId, gigs]);
 
     useEffect(() => {
         const fetchEnrolledGigs = async () => {
@@ -289,23 +274,9 @@ export function SessionPlanning() {
                 const fetchedSlots = await schedulerApi.getTimeSlots(selectedRepId);
                 let mappedSlots = Array.isArray(fetchedSlots) ? fetchedSlots.map(mapBackendSlotToSlot) : [];
 
-                // Filter by company if a gig is selected
-                if (selectedCompanyId) {
-                    mappedSlots = mappedSlots.filter(slot => {
-                        // If slot has embedded gig data with company
-                        if (slot.gig && (slot.gig.companyId === selectedCompanyId || (slot.gig.companyId && slot.gig.companyId._id === selectedCompanyId))) {
-                            return true;
-                        }
-
-                        // Fallback: check against loaded gigs
-                        if (slot.gigId) {
-                            const slotGig = gigs.find(g => g.id === slot.gigId);
-                            if (slotGig && slotGig.companyId === selectedCompanyId) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    });
+                // Filter by gig if a gig is selected
+                if (selectedGigId) {
+                    mappedSlots = mappedSlots.filter(slot => slot.gigId === selectedGigId);
                 }
 
                 setSlots(mappedSlots);
@@ -314,7 +285,7 @@ export function SessionPlanning() {
             }
         };
         fetchSlots();
-    }, [selectedRepId, userRole, selectedCompanyId, gigs]);
+    }, [selectedRepId, userRole, selectedGigId]);
 
     // Fetch Global Gig Data (for Company/Admin view)
     useEffect(() => {
