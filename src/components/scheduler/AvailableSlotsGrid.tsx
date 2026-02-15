@@ -16,7 +16,8 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
     const [loading, setLoading] = useState<boolean>(false);
     const [reservingSlotId, setReservingSlotId] = useState<string | null>(null);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-    
+    const [resNotes, setResNotes] = useState<Record<string, string>>({});
+
     let repId = '';
     try {
         repId = getAgentId() || '';
@@ -39,9 +40,9 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
             setSlots(Array.isArray(fetchedSlots) ? fetchedSlots : []);
         } catch (error: any) {
             console.error('Error loading slots:', error);
-            setMessage({ 
-                text: error.response?.data?.message || error.message || 'Failed to load available slots', 
-                type: 'error' 
+            setMessage({
+                text: error.response?.data?.message || error.message || 'Failed to load available slots',
+                type: 'error'
             });
         } finally {
             setLoading(false);
@@ -81,8 +82,17 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
         setMessage(null);
 
         try {
-            await slotApi.reserveSlot(slot._id, repId);
+            const note = resNotes[slot._id] || '';
+            await slotApi.reserveSlot(slot._id, repId, note);
             setMessage({ text: 'Slot reserved successfully!', type: 'success' });
+
+            // Clear the note for this slot
+            setResNotes(prev => {
+                const next = { ...prev };
+                delete next[slot._id!];
+                return next;
+            });
+
             await loadSlots();
             await loadReservations();
             if (onReservationMade) {
@@ -139,7 +149,7 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
     let dateStr = '';
     let daySlots: Slot[] = [];
     let isPastDate = false;
-    
+
     try {
         dateStr = format(selectedDate, 'yyyy-MM-dd');
         daySlots = Array.isArray(slots) ? slots.filter(s => s && s.date === dateStr) : [];
@@ -170,11 +180,10 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
             </div>
 
             {message && (
-                <div className={`mx-6 mt-4 p-3 rounded-xl flex items-center gap-2 ${
-                    message.type === 'success' 
-                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
-                        : 'bg-red-50 text-red-800 border border-red-200'
-                }`}>
+                <div className={`mx-6 mt-4 p-3 rounded-xl flex items-center gap-2 ${message.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}>
                     {message.type === 'success' ? (
                         <CheckCircle className="w-5 h-5" />
                     ) : (
@@ -184,7 +193,7 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                 </div>
             )}
 
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-gray-100">
                 {loading ? (
                     <div className="p-8 text-center text-gray-500">Loading slots...</div>
                 ) : daySlots.length === 0 ? (
@@ -203,62 +212,74 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                             return (
                                 <div
                                     key={slot._id}
-                                    className={`p-5 transition-all ${
-                                        isReserved 
-                                            ? 'bg-blue-50/50' 
-                                            : isAvailable 
-                                                ? 'bg-emerald-50/30' 
-                                                : 'bg-gray-50'
-                                    }`}
+                                    className={`p-5 transition-all ${isReserved
+                                        ? 'bg-blue-50/50'
+                                        : isAvailable
+                                            ? 'bg-white'
+                                            : 'bg-gray-50'
+                                        }`}
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-4 mb-2">
-                                                <span className="text-sm font-bold text-gray-900">
-                                                    {slot.startTime} - {slot.endTime}
-                                                </span>
-                                                <div className="flex items-center gap-2 text-xs">
-                                                    <Clock className="w-4 h-4 text-gray-400" />
-                                                    <span className="text-gray-600">{slot.duration}h</span>
-                                                </div>
-                                                <div className="flex items-center gap-2 text-xs">
-                                                    <Users className="w-4 h-4 text-gray-400" />
-                                                    <span className={`font-semibold ${
-                                                        remaining > 0 ? 'text-emerald-600' : 'text-red-600'
-                                                    }`}>
-                                                        {remaining} / {slot.capacity} available
+                                    <div className="flex flex-col gap-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-4 mb-2">
+                                                    <span className="text-sm font-bold text-gray-900">
+                                                        {slot.startTime} - {slot.endTime}
                                                     </span>
+                                                    <div className="flex items-center gap-2 text-xs">
+                                                        <Clock className="w-4 h-4 text-gray-400" />
+                                                        <span className="text-gray-600">{slot.duration}h</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-xs">
+                                                        <Users className="w-4 h-4 text-gray-400" />
+                                                        <span className={`font-semibold ${remaining > 0 ? 'text-emerald-600' : 'text-red-600'
+                                                            }`}>
+                                                            {remaining} / {slot.capacity} available
+                                                        </span>
+                                                    </div>
                                                 </div>
+                                                {isReserved && (
+                                                    <div className="flex items-center gap-2 text-sm text-blue-600">
+                                                        <CheckCircle className="w-4 h-4" />
+                                                        <span className="font-medium">You have reserved this slot</span>
+                                                    </div>
+                                                )}
                                             </div>
-                                            {isReserved && (
-                                                <div className="flex items-center gap-2 text-sm text-blue-600">
-                                                    <CheckCircle className="w-4 h-4" />
-                                                    <span className="font-medium">You have reserved this slot</span>
-                                                </div>
-                                            )}
+                                            <div className="flex items-center gap-2">
+                                                {isReserved ? (
+                                                    <button
+                                                        onClick={() => reservation && handleCancel(reservation)}
+                                                        className="px-4 py-2 text-xs font-semibold text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                ) : isAvailable && !isPastDate ? (
+                                                    <button
+                                                        onClick={() => handleReserve(slot)}
+                                                        disabled={reservingSlotId === slot._id}
+                                                        className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                    >
+                                                        {reservingSlotId === slot._id ? 'Reserving...' : 'Reserve'}
+                                                    </button>
+                                                ) : (
+                                                    <span className="px-4 py-2 text-xs font-semibold text-gray-400 bg-gray-100 rounded-xl">
+                                                        {slot.status === 'full' ? 'Full' : 'Unavailable'}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            {isReserved ? (
-                                                <button
-                                                    onClick={() => reservation && handleCancel(reservation)}
-                                                    className="px-4 py-2 text-xs font-semibold text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
-                                                >
-                                                    Cancel
-                                                </button>
-                                            ) : isAvailable && !isPastDate ? (
-                                                <button
-                                                    onClick={() => handleReserve(slot)}
-                                                    disabled={reservingSlotId === slot._id}
-                                                    className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                                >
-                                                    {reservingSlotId === slot._id ? 'Reserving...' : 'Reserve'}
-                                                </button>
-                                            ) : (
-                                                <span className="px-4 py-2 text-xs font-semibold text-gray-400 bg-gray-100 rounded-xl">
-                                                    {slot.status === 'full' ? 'Full' : 'Unavailable'}
-                                                </span>
-                                            )}
-                                        </div>
+
+                                        {isAvailable && !isPastDate && !isReserved && (
+                                            <div className="flex items-center gap-3">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Add a note (e.g., 'I want to work on this slot')..."
+                                                    className="flex-1 bg-gray-50 border border-gray-100 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                                                    value={resNotes[slot._id!] || ''}
+                                                    onChange={(e) => setResNotes(prev => ({ ...prev, [slot._id!]: e.target.value }))}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             );

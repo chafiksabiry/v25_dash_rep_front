@@ -215,6 +215,7 @@ export function SessionPlanning() {
     const [draftSlotNotes, setDraftSlotNotes] = useState<Record<string, string>>({});
     const [quickStart, setQuickStart] = useState<string>('');
     const [quickEnd, setQuickEnd] = useState<string>('');
+    const [globalNotes, setGlobalNotes] = useState<string>('');
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
     const [showAttendancePanel] = useState<boolean>(false);
     const [showAIPanel] = useState<boolean>(true);
@@ -545,7 +546,7 @@ export function SessionPlanning() {
                 schedulerApi.upsertTimeSlot({
                     ...slot,
                     gigId: selectedGigId,
-                    notes: draftSlotNotes[`${slot.date}:${slot.startTime}`] ?? slot.notes ?? ''
+                    notes: draftSlotNotes[`${slot.date}:${slot.startTime}`] ?? globalNotes ?? slot.notes ?? ''
                 })
             ));
 
@@ -562,6 +563,7 @@ export function SessionPlanning() {
                 draftSlots.forEach(s => { if (s.date && s.startTime) delete next[`${s.date}:${s.startTime}`]; });
                 return next;
             });
+            setGlobalNotes('');
         } catch (error) {
             console.error('Error in multi-reserve:', error);
             setNotification({
@@ -862,6 +864,16 @@ export function SessionPlanning() {
                                                                             })}
                                                                         </select>
                                                                     </div>
+                                                                </div>
+
+                                                                <div>
+                                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Reservation Notes</p>
+                                                                    <textarea
+                                                                        className="w-full bg-gray-50 border-none rounded-xl text-sm font-medium text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100 min-h-[80px] resize-none"
+                                                                        placeholder="Add a note to your reservation (optional)..."
+                                                                        value={globalNotes}
+                                                                        onChange={(e) => setGlobalNotes(e.target.value)}
+                                                                    />
                                                                 </div>
 
                                                                 {/* Slots below Start Time / End Time: Pending Draft + Already Reserved */}
