@@ -50,10 +50,18 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
     let reservationId = '';
 
     const reservations = slot.reservations || [];
-    const reservedCount = slot.reservedCount || reservations.length || 0;
+    const reservedCount = slot.reservedCount !== undefined ? slot.reservedCount : reservations.length;
     const capacity = slot.capacity || 1;
 
-    if (reservations.length > 0 && currentAgentId) {
+    // Handle new reservationSlot structure
+    if (slot.reservationId) {
+        status = 'reserved';
+        isReservation = true;
+        reservationId = slot.reservationId;
+        repNotes = slot.notes || '';
+        repId = currentAgentId || repId;
+    } else if (reservations.length > 0 && currentAgentId) {
+        // Fallback for old embedded structure during transition or hybrid views
         const myRes = reservations.find((r: any) =>
             (r.agentId?._id || r.agentId?.$oid || r.agentId)?.toString() === currentAgentId
         );
