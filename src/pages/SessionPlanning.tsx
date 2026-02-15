@@ -364,9 +364,6 @@ export function SessionPlanning() {
 
 
 
-    const selectedRep = useMemo(() => {
-        return reps.find(rep => rep.id === selectedRepId) || reps[0] || sampleReps[0];
-    }, [selectedRepId, reps]);
 
     const weeklyStats = useMemo<WeeklyStats>(() => {
         const stats: WeeklyStats = {
