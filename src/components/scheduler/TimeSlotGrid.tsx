@@ -186,9 +186,12 @@ export function TimeSlotGrid({
                                                                 status: slot.status === 'reserved' ? 'available' : 'reserved'
                                                             });
                                                         }}
+                                                        disabled={slot.status === 'cancelled' || (slot.status === 'available' && (slot as any).reservedCount >= (slot as any).capacity)}
                                                         className={`px-4 py-2 text-xs font-black rounded-xl flex items-center border shadow-sm transition-all ${slot.status === 'reserved'
                                                             ? 'bg-blue-100/50 text-blue-600 border-blue-200 hover:bg-blue-100'
-                                                            : 'bg-emerald-100/50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
+                                                            : slot.status === 'available'
+                                                                ? 'bg-emerald-100/50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
+                                                                : 'bg-gray-100 text-gray-500 border-gray-200'
                                                             }`}
                                                     >
                                                         {slot.status === 'reserved' ? (
@@ -196,11 +199,19 @@ export function TimeSlotGrid({
                                                                 <Check className="w-3.5 h-3.5 mr-1.5" />
                                                                 Reserved
                                                             </>
-                                                        ) : (
+                                                        ) : slot.status === 'available' ? (
                                                             <>
                                                                 <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                                                                Available
+                                                                {(slot as any).capacity > 1 ? (
+                                                                    <span>
+                                                                        Reserve ({(slot as any).capacity - (slot as any).reservedCount} left)
+                                                                    </span>
+                                                                ) : (
+                                                                    "Reserve"
+                                                                )}
                                                             </>
+                                                        ) : (
+                                                            "Full"
                                                         )}
                                                     </button>
                                                 </div>

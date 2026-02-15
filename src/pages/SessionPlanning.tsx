@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { HorizontalCalendar } from '../components/scheduler/HorizontalCalendar';
 import { TimeSlotGrid } from '../components/scheduler/TimeSlotGrid';
-import { AvailableSlotsGrid } from '../components/scheduler/AvailableSlotsGrid';
 import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company } from '../types/scheduler';
 import { Building, Clock, Briefcase, AlertCircle, Users, Brain, X } from 'lucide-react';
 import { CompanyView } from '../components/scheduler/CompanyView';
@@ -79,7 +78,9 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
         attendanceNotes: slot.attendanceNotes,
         agent: agentData, // Store populated agent data
         gig: gigData, // Store populated gig data
-        isMember: slot.isMember || isReservation // Compat for flag
+        isMember: slot.isMember || isReservation, // Compat for flag
+        capacity: slot.capacity ?? 1,
+        reservedCount: slot.reservedCount ?? 0
     } as any;
 };
 
@@ -485,10 +486,26 @@ export function SessionPlanning() {
         }
 
         try {
+            const existing = updates.id ? slots.find(s => s.id === updates.id) : null;
+
+            // NEW LOGIC: If it's a backend Slot (has capacity info) and we are reserving it
+            if (existing && (existing as any).capacity !== undefined && updates.status === 'reserved') {
+                await slotApi.reserveSlot(existing.id, selectedRepId, updates.notes || '');
+                await refreshData();
+                setNotification({ message: 'Slot reserved successfully', type: 'success' });
+                return;
+            }
+
+            // NEW LOGIC: If it's a backend Slot and we are trying to set it back to available (cancel)
+            if (existing && (existing as any).capacity !== undefined && updates.status === 'available') {
+                await slotApi.cancelReservation(existing.id);
+                await refreshData();
+                setNotification({ message: 'Reservation cancelled', type: 'success' });
+                return;
+            }
+
             await schedulerApi.upsertTimeSlot(slotWithRep);
-            const updatedSlots = await schedulerApi.getTimeSlots(selectedRepId);
-            const mappedSlots = Array.isArray(updatedSlots) ? updatedSlots.map((s: any) => mapBackendSlotToSlot(s, selectedRepId)) : [];
-            setSlots(mappedSlots);
+            await refreshData();
 
             setNotification({
                 message: updates.id ? 'Time slot updated successfully' : 'New time slot created',
@@ -688,23 +705,10 @@ export function SessionPlanning() {
                                         selectedGigId={selectedGigId || ''}
                                     />
 
-                                    {selectedGigId && (
-                                        <div className="mt-8">
-                                            <AvailableSlotsGrid
-                                                gigId={selectedGigId || undefined}
-                                                selectedDate={selectedDate}
-                                                onReservationMade={() => {
-                                                    // Refresh slots after reservation
-                                                    refreshData();
-                                                }}
-                                            />
-                                        </div>
-                                    )}
-
                                     <div className="mt-8">
                                         <TimeSlotGrid
                                             date={selectedDate}
-                                            slots={slots.filter(s => s.repId === selectedRepId)}
+                                            slots={slots.filter(s => s.repId === selectedRepId || (selectedGigId && s.gigId === selectedGigId))}
                                             gigs={gigs}
                                             selectedGigId={selectedGigId || ''}
                                             onGigFilterChange={(id) => setSelectedGigId(id || null)}
