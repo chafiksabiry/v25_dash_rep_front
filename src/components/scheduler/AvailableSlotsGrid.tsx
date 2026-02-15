@@ -114,30 +114,6 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
         }
     };
 
-    const handleCancel = async (reservation: Reservation) => {
-        if (!reservation._id) return;
-        try {
-            await slotApi.cancelReservation(reservation._id);
-            setMessage({ text: 'Reservation cancelled', type: 'success' });
-            await loadSlots();
-            await loadReservations();
-            if (onReservationMade) {
-                setTimeout(() => {
-                    try {
-                        onReservationMade();
-                    } catch (err) {
-                        console.error('Error in onReservationMade callback:', err);
-                    }
-                    setMessage(null);
-                }, 2000);
-            }
-        } catch (error: any) {
-            console.error('Error cancelling reservation:', error);
-            const errorMsg = error.response?.data?.message || error.message || 'Failed to cancel reservation';
-            setMessage({ text: errorMsg, type: 'error' });
-        }
-    };
-
     if (!gigId || gigId === '' || !selectedDate) {
         return (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center text-gray-500 text-sm">
@@ -247,12 +223,9 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {isReserved ? (
-                                                    <button
-                                                        onClick={() => reservation && handleCancel(reservation)}
-                                                        className="px-4 py-2 text-xs font-semibold text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
-                                                    >
-                                                        Cancel
-                                                    </button>
+                                                    <span className="px-4 py-2 text-xs font-semibold text-blue-600 bg-blue-50 rounded-xl">
+                                                        Reserved
+                                                    </span>
                                                 ) : isAvailable && !isPastDate ? (
                                                     <button
                                                         onClick={() => handleReserve(slot)}

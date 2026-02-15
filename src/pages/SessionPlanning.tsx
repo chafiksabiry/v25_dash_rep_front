@@ -688,6 +688,19 @@ export function SessionPlanning() {
                                         selectedGigId={selectedGigId || ''}
                                     />
 
+                                    {selectedGigId && (
+                                        <div className="mt-8">
+                                            <AvailableSlotsGrid
+                                                gigId={selectedGigId || undefined}
+                                                selectedDate={selectedDate}
+                                                onReservationMade={() => {
+                                                    // Refresh slots after reservation
+                                                    refreshData();
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+
                                     <div className="mt-8">
                                         <TimeSlotGrid
                                             date={selectedDate}
@@ -702,7 +715,7 @@ export function SessionPlanning() {
                                             draftSlots={draftSlots}
                                             draftSlotNotes={draftSlotNotes}
                                             onDraftNotesChange={(time, val) => setDraftSlotNotes(prev => ({ ...prev, [`${format(selectedDate, 'yyyy-MM-dd')}:${time}`]: val }))}
-                                            allowAddSlots={!isPastDate}
+                                            allowAddSlots={false}
                                         />
                                     </div>
                                 </div>
@@ -948,16 +961,6 @@ export function SessionPlanning() {
 
 
 
-                            {selectedGigId && (
-                                <AvailableSlotsGrid
-                                    gigId={selectedGigId || undefined}
-                                    selectedDate={selectedDate}
-                                    onReservationMade={() => {
-                                        // Refresh slots after reservation
-                                        refreshData();
-                                    }}
-                                />
-                            )}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-8">
