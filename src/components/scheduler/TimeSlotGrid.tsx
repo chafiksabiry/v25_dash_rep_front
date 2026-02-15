@@ -37,7 +37,6 @@ export function TimeSlotGrid({
     const timeSlots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
     const daySlots = slots.filter((slot) => slot.date === format(date, 'yyyy-MM-dd'));
     const [showCancelled, setShowCancelled] = useState<boolean>(false);
-    const [showAllHours, setShowAllHours] = useState<boolean>(false);
     const [draftNotes, setDraftNotes] = useState<Record<string, string>>({});
     const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
     const [localDraftSlotNotes, setLocalDraftSlotNotes] = useState<Record<string, string>>({});
@@ -113,24 +112,12 @@ export function TimeSlotGrid({
                             Show cancelled
                         </label>
                     </div>
-                    <div className="flex items-center space-x-3 bg-gray-50/50 px-3 py-1.5 rounded-lg border border-gray-100">
-                        <input
-                            type="checkbox"
-                            id="showAllHours"
-                            checked={showAllHours}
-                            onChange={(e) => setShowAllHours(e.target.checked)}
-                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-all cursor-pointer"
-                        />
-                        <label htmlFor="showAllHours" className="text-xs font-bold text-gray-500 cursor-pointer">
-                            Show all hours
-                        </label>
-                    </div>
                 </div>
             </div>
 
             <div className="divide-y divide-gray-50">
                 {timeSlots
-                    .filter(time => showAllHours || isHourAvailable(time) || displaySlots.some(s => s.startTime === time))
+                    .filter(time => displaySlots.some(s => s.startTime === time) || isPreviewed(time))
                     .map((time) => {
                         const slot = displaySlots.find((s) => s.startTime === time);
                         const available = isHourAvailable(time);
@@ -329,22 +316,22 @@ export function TimeSlotGrid({
                                     ) : (
                                         <div className="flex items-center justify-between">
                                             <button
-                                                    onClick={(e) => {
-                                                        if (!available && !showAllHours) return;
-                                                        e.stopPropagation();
-                                                        onTimeSelect?.(time);
-                                                    }}
-                                                    className={`flex items-center transition-all ${available || showAllHours
-                                                        ? 'text-blue-600 hover:text-blue-800'
-                                                        : 'text-gray-200 cursor-not-allowed hidden'
-                                                        }`}
-                                                    disabled={!available && !showAllHours}
-                                                >
-                                                    <span className="text-sm font-black flex items-center">
-                                                        <span className="text-lg mr-2">+</span>
-                                                        Add slot
-                                                    </span>
-                                                </button>
+                                                onClick={(e) => {
+                                                    if (!available) return;
+                                                    e.stopPropagation();
+                                                    onTimeSelect?.(time);
+                                                }}
+                                                className={`flex items-center transition-all ${available
+                                                    ? 'text-blue-600 hover:text-blue-800'
+                                                    : 'text-gray-200 cursor-not-allowed hidden'
+                                                    }`}
+                                                disabled={!available}
+                                            >
+                                                <span className="text-sm font-black flex items-center">
+                                                    <span className="text-lg mr-2">+</span>
+                                                    Add slot
+                                                </span>
+                                            </button>
                                         </div>
                                     )}
                                 </div>

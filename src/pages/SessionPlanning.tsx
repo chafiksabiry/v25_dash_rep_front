@@ -36,13 +36,28 @@ const stringToColor = (str: string) => {
 };
 
 // Map Slot from backend to frontend TimeSlot type
-const mapBackendSlotToSlot = (slot: any): TimeSlot => {
+const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
     const agentData = slot.agentId && typeof slot.agentId === 'object' ? slot.agentId : null;
     const gigData = slot.gigId && typeof slot.gigId === 'object' ? slot.gigId : null;
 
     const id = (slot._id as any)?.$oid || slot._id?.toString() || crypto.randomUUID();
-    const repId = (agentData as any)?._id || (agentData as any)?.$oid || slot.agentId?.toString() || slot.repId?.toString() || '';
+    let repId = (agentData as any)?._id || (agentData as any)?.$oid || slot.agentId?.toString() || slot.repId?.toString() || '';
     const gigId = (gigData as any)?._id || (gigData as any)?.$oid || slot.gigId?.toString() || '';
+
+    // If it's a Slot with reservations array, check if current agent is in it
+    let status = slot.status;
+    let isReservation = !!slot.isMember; // From backend getReservations mapping
+
+    if (slot.reservations && Array.isArray(slot.reservations) && currentAgentId) {
+        const myRes = slot.reservations.find((r: any) =>
+            (r.agentId?._id || r.agentId)?.toString() === currentAgentId
+        );
+        if (myRes) {
+            status = 'reserved';
+            isReservation = true;
+            repId = currentAgentId;
+        }
+    }
 
     // Ensure date is present (fallback to extracting from startTime if it's an ISO string)
     let date = slot.date;
@@ -57,14 +72,15 @@ const mapBackendSlotToSlot = (slot: any): TimeSlot => {
         date: date || '',
         gigId,
         repId,
-        status: slot.status,
+        status: status as 'available' | 'reserved' | 'cancelled',
         duration: slot.duration || 1,
         notes: slot.notes,
         attended: slot.attended,
         attendanceNotes: slot.attendanceNotes,
         agent: agentData, // Store populated agent data
-        gig: gigData // Store populated gig data
-    };
+        gig: gigData, // Store populated gig data
+        isMember: slot.isMember || isReservation // Compat for flag
+    } as any;
 };
 
 // Map ExternalGig to scheduler Gig type
@@ -212,16 +228,14 @@ export function SessionPlanning() {
                 // Fetch from all sources for REPs
                 const [timeSlots, availableSlots, reservations] = await Promise.all([
                     schedulerApi.getTimeSlots(selectedRepId),
-                    selectedGigId ? slotApi.getSlots(selectedGigId) : Promise.resolve([]),
+                    selectedGigId ? slotApi.getSlots(selectedGigId) : slotApi.getSlots(),
                     selectedGigId ? slotApi.getReservations(selectedRepId, selectedGigId) : slotApi.getReservations(selectedRepId)
                 ]);
 
-                const mappedTimeSlots = Array.isArray(timeSlots) ? timeSlots.map(mapBackendSlotToSlot) : [];
-                const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map(mapBackendSlotToSlot) : [];
+                const mappedTimeSlots = Array.isArray(timeSlots) ? timeSlots.map(s => mapBackendSlotToSlot(s, selectedRepId)) : [];
+                const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map(s => mapBackendSlotToSlot(s, selectedRepId)) : [];
                 const mappedReservations = Array.isArray(reservations) ? reservations.map((r: any) => ({
-                    ...mapBackendSlotToSlot(r),
-                    id: (r._id as any)?.$oid || r._id?.toString() || r.id, // Ensure we use the reservation ID for cancellation
-                    status: 'reserved' as const,
+                    ...mapBackendSlotToSlot(r, selectedRepId),
                     isReservation: true // Flag to distinguish for cancellation
                 })) : [];
 
@@ -263,8 +277,8 @@ export function SessionPlanning() {
                     slotApi.getSlots(selectedGigId)
                 ]);
 
-                const mappedTimeSlots = Array.isArray(timeSlots) ? timeSlots.map(mapBackendSlotToSlot) : [];
-                const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map(mapBackendSlotToSlot) : [];
+                const mappedTimeSlots = Array.isArray(timeSlots) ? timeSlots.map((s: any) => mapBackendSlotToSlot(s, selectedRepId)) : [];
+                const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map((s: any) => mapBackendSlotToSlot(s, selectedRepId)) : [];
 
                 // Merge and deduplicate
                 const allSlots = [...mappedTimeSlots];
@@ -476,7 +490,7 @@ export function SessionPlanning() {
         try {
             await schedulerApi.upsertTimeSlot(slotWithRep);
             const updatedSlots = await schedulerApi.getTimeSlots(selectedRepId);
-            const mappedSlots = Array.isArray(updatedSlots) ? updatedSlots.map(mapBackendSlotToSlot) : [];
+            const mappedSlots = Array.isArray(updatedSlots) ? updatedSlots.map((s: any) => mapBackendSlotToSlot(s, selectedRepId)) : [];
             setSlots(mappedSlots);
 
             setNotification({
