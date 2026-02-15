@@ -75,8 +75,8 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
         repId,
         status: status as 'available' | 'reserved' | 'cancelled',
         duration: slot.duration || 1,
-        notes: repNotes || slot.notes, // Default to repNotes if set, else compat
-        companyNotes: slot.notes,
+        notes: repNotes, // ONLY the rep's personal reservation notes
+        companyNotes: slot.notes, // The general slot notes from company
         attended: slot.attended,
         attendanceNotes: slot.attendanceNotes,
         agent: agentData, // Store populated agent data

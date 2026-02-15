@@ -239,7 +239,7 @@ export function TimeSlotGrid({
                                                             onChange={(e) =>
                                                                 setDraftNotes((prev) => ({ ...prev, [slot.id]: e.target.value }))
                                                             }
-                                                            placeholder="Add your note here..."
+                                                            placeholder="I want to work on this slot"
                                                             className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-blue-200 focus:border-blue-300 flex-1 min-w-[140px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                             disabled={slot.status === 'cancelled'}
                                                         />
