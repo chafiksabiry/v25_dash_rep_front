@@ -181,9 +181,11 @@ export function TimeSlotGrid({
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
+                                                            const isReserving = slot.status !== 'reserved';
                                                             onSlotUpdate({
                                                                 ...slot,
-                                                                status: slot.status === 'reserved' ? 'available' : 'reserved'
+                                                                status: isReserving ? 'reserved' : 'available',
+                                                                notes: isReserving ? (draftNotes[slot.id] ?? slot.notes ?? '') : slot.notes
                                                             });
                                                         }}
                                                         disabled={slot.status === 'cancelled' || (slot.status === 'available' && (slot as any).reservedCount >= (slot as any).capacity)}

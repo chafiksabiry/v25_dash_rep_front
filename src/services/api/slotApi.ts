@@ -76,6 +76,21 @@ export const slotApi = {
     },
 
     /**
+     * Update reservation notes
+     */
+    updateReservationNotes: async (reservationId: string, notes: string): Promise<{ message: string; reservation: Reservation }> => {
+        try {
+            const response = await axios.patch(`${MATCHING_API_URL}/slots/reservations/${reservationId}`, {
+                notes
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error updating reservation notes:', error);
+            throw error;
+        }
+    },
+
+    /**
      * Get reservations for a rep
      */
     getReservations: async (repId?: string, gigId?: string): Promise<Reservation[]> => {

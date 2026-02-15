@@ -43,10 +43,10 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
     let repId = (agentData as any)?._id || (agentData as any)?.$oid || slot.agentId?.toString() || slot.repId?.toString() || '';
     const gigId = (gigData as any)?._id || (gigData as any)?.$oid || slot.gigId?.toString() || '';
 
-    // If it's a Slot with reservations array, check if current agent is in it
     let status = slot.status;
     let isReservation = !!slot.isMember; // From backend getReservations mapping
     let repNotes = '';
+    let reservationId = '';
 
     if (slot.reservations && Array.isArray(slot.reservations) && currentAgentId) {
         const myRes = slot.reservations.find((r: any) =>
@@ -57,6 +57,7 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
             isReservation = true;
             repId = currentAgentId;
             repNotes = myRes.notes || '';
+            reservationId = (myRes._id as any)?.$oid || myRes._id?.toString() || '';
         }
     }
 
@@ -83,7 +84,8 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
         gig: gigData, // Store populated gig data
         isMember: slot.isMember || isReservation, // Compat for flag
         capacity: slot.capacity ?? 1,
-        reservedCount: slot.reservedCount ?? 0
+        reservedCount: slot.reservedCount ?? 0,
+        reservationId
     } as any;
 };
 
@@ -499,9 +501,18 @@ export function SessionPlanning() {
                 return;
             }
 
+            // NEW LOGIC: If it's a backend Slot and we are trying to update notes on an existing reservation
+            if (existing && (existing as any).capacity !== undefined && updates.notes !== undefined && (existing as any).reservationId) {
+                await slotApi.updateReservationNotes((existing as any).reservationId, updates.notes);
+                await refreshData();
+                setNotification({ message: 'Reservation notes updated', type: 'success' });
+                return;
+            }
+
             // NEW LOGIC: If it's a backend Slot and we are trying to set it back to available (cancel)
             if (existing && (existing as any).capacity !== undefined && updates.status === 'available') {
-                await slotApi.cancelReservation(existing.id);
+                const resId = (existing as any).reservationId || existing.id; // Fallback to id if reservationId not found (maybe manual mapping)
+                await slotApi.cancelReservation(resId);
                 await refreshData();
                 setNotification({ message: 'Reservation cancelled', type: 'success' });
                 return;
