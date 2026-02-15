@@ -13,6 +13,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import { getAgentId } from '../utils/authUtils';
 import { schedulerApi } from '../services/api/scheduler';
+import { slotApi } from '../services/api/slotApi';
 
 // Define ExternalGig type locally for API response mapping
 interface ExternalGig {
@@ -43,11 +44,17 @@ const mapBackendSlotToSlot = (slot: any): TimeSlot => {
     const repId = (agentData as any)?._id || (agentData as any)?.$oid || slot.agentId?.toString() || slot.repId?.toString() || '';
     const gigId = (gigData as any)?._id || (gigData as any)?.$oid || slot.gigId?.toString() || '';
 
+    // Ensure date is present (fallback to extracting from startTime if it's an ISO string)
+    let date = slot.date;
+    if (!date && slot.startTime && slot.startTime.includes('T')) {
+        date = slot.startTime.split('T')[0];
+    }
+
     return {
         id,
         startTime: slot.startTime,
         endTime: slot.endTime,
-        date: slot.date,
+        date: date || '',
         gigId,
         repId,
         status: slot.status,
@@ -271,15 +278,29 @@ export function SessionPlanning() {
         const fetchSlots = async () => {
             if (!selectedRepId || userRole !== 'rep') return;
             try {
-                const fetchedSlots = await schedulerApi.getTimeSlots(selectedRepId);
-                let mappedSlots = Array.isArray(fetchedSlots) ? fetchedSlots.map(mapBackendSlotToSlot) : [];
+                // Fetch from both sources
+                const [timeSlots, availableSlots] = await Promise.all([
+                    schedulerApi.getTimeSlots(selectedRepId),
+                    selectedGigId ? slotApi.getSlots(selectedGigId) : Promise.resolve([])
+                ]);
+
+                const mappedTimeSlots = Array.isArray(timeSlots) ? timeSlots.map(mapBackendSlotToSlot) : [];
+                const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map(mapBackendSlotToSlot) : [];
+
+                // Merge and deduplicate
+                let allSlots = [...mappedTimeSlots];
+                mappedAvailableSlots.forEach(slot => {
+                    if (!allSlots.find(s => s.id === slot.id)) {
+                        allSlots.push(slot);
+                    }
+                });
 
                 // Filter by gig if a gig is selected
                 if (selectedGigId) {
-                    mappedSlots = mappedSlots.filter(slot => slot.gigId === selectedGigId);
+                    allSlots = allSlots.filter(slot => slot.gigId === selectedGigId);
                 }
 
-                setSlots(mappedSlots);
+                setSlots(allSlots);
             } catch (error) {
                 console.error('Error fetching slots:', error);
             }
@@ -307,9 +328,24 @@ export function SessionPlanning() {
                 }));
                 setReps(mappedReps);
 
-                // 2. Fetch all slots for this gig (Global View)
-                const globalSlots = await schedulerApi.getTimeSlots(undefined, selectedGigId);
-                setSlots(globalSlots);
+                // 2. Fetch all slots for this gig from both APIs
+                const [timeSlots, availableSlots] = await Promise.all([
+                    schedulerApi.getTimeSlots(undefined, selectedGigId),
+                    slotApi.getSlots(selectedGigId)
+                ]);
+
+                const mappedTimeSlots = Array.isArray(timeSlots) ? timeSlots.map(mapBackendSlotToSlot) : [];
+                const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map(mapBackendSlotToSlot) : [];
+
+                // Merge and deduplicate
+                const allSlots = [...mappedTimeSlots];
+                mappedAvailableSlots.forEach(slot => {
+                    if (!allSlots.find(s => s.id === slot.id)) {
+                        allSlots.push(slot);
+                    }
+                });
+
+                setSlots(allSlots);
             } catch (error) {
                 console.error('Error fetching global gig data:', error);
             } finally {
