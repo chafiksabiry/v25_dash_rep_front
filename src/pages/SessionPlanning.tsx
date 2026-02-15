@@ -201,6 +201,87 @@ export function SessionPlanning() {
     const [quickEnd, setQuickEnd] = useState<string>('');
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
     const [loadingReps, setLoadingReps] = useState<boolean>(false);
+    const [showAttendancePanel] = useState<boolean>(false);
+    const [showAIPanel] = useState<boolean>(true);
+
+    const refreshData = async () => {
+        if (!selectedRepId) return;
+
+        try {
+            if (userRole === 'rep') {
+                // Fetch from all sources for REPs
+                const [timeSlots, availableSlots, reservations] = await Promise.all([
+                    schedulerApi.getTimeSlots(selectedRepId),
+                    selectedGigId ? slotApi.getSlots(selectedGigId) : Promise.resolve([]),
+                    selectedGigId ? slotApi.getReservations(selectedRepId, selectedGigId) : slotApi.getReservations(selectedRepId)
+                ]);
+
+                const mappedTimeSlots = Array.isArray(timeSlots) ? timeSlots.map(mapBackendSlotToSlot) : [];
+                const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map(mapBackendSlotToSlot) : [];
+                const mappedReservations = Array.isArray(reservations) ? reservations.map((r: any) => ({
+                    ...mapBackendSlotToSlot(r),
+                    id: (r._id as any)?.$oid || r._id?.toString() || r.id, // Ensure we use the reservation ID for cancellation
+                    status: 'reserved' as const,
+                    isReservation: true // Flag to distinguish for cancellation
+                })) : [];
+
+                // Merge and deduplicate
+                let allSlots = [...mappedTimeSlots, ...mappedReservations];
+                mappedAvailableSlots.forEach(slot => {
+                    if (!allSlots.find(s => s.id === slot.id)) {
+                        allSlots.push(slot);
+                    }
+                });
+
+                // Filter by gig if a gig is selected
+                if (selectedGigId) {
+                    allSlots = allSlots.filter(slot => slot.gigId === selectedGigId);
+                }
+
+                setSlots(allSlots);
+            } else {
+                // Fetch Global Gig Data (for Company/Admin view)
+                if (!selectedGigId) return;
+
+                setLoadingReps(true);
+                // 1. Fetch all agents enrolled in this gig
+                const gigAgents = await schedulerApi.getGigAgents(selectedGigId, 'enrolled');
+                const mappedReps = gigAgents.map(ga => ({
+                    id: ga.agentId._id,
+                    name: ga.agentId.personalInfo?.firstName + ' ' + ga.agentId.personalInfo?.lastName,
+                    email: ga.agentId.personalInfo?.email || '',
+                    avatar: ga.agentId.personalInfo?.avatar,
+                    specialties: ga.agentId.professionalSummary?.industries || [],
+                    performanceScore: 85,
+                    attendanceScore: 90
+                }));
+                setReps(mappedReps);
+
+                // 2. Fetch all slots for this gig from both APIs
+                const [timeSlots, availableSlots] = await Promise.all([
+                    schedulerApi.getTimeSlots(undefined, selectedGigId),
+                    slotApi.getSlots(selectedGigId)
+                ]);
+
+                const mappedTimeSlots = Array.isArray(timeSlots) ? timeSlots.map(mapBackendSlotToSlot) : [];
+                const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map(mapBackendSlotToSlot) : [];
+
+                // Merge and deduplicate
+                const allSlots = [...mappedTimeSlots];
+                mappedAvailableSlots.forEach(slot => {
+                    if (!allSlots.find(s => s.id === slot.id)) {
+                        allSlots.push(slot);
+                    }
+                });
+
+                setSlots(allSlots);
+                setLoadingReps(false);
+            }
+        } catch (error) {
+            console.error('Error refreshing data:', error);
+            setLoadingReps(false);
+        }
+    };
 
     useEffect(() => {
         const fetchGigs = async () => {
@@ -273,88 +354,13 @@ export function SessionPlanning() {
         }
     }, [selectedRepId, userRole]);
 
-    // Fetch specific REP's slots (for REP view)
+    // Unified Slot Refresh Trigger
     useEffect(() => {
-        const fetchSlots = async () => {
-            if (!selectedRepId || userRole !== 'rep') return;
-            try {
-                // Fetch from both sources
-                const [timeSlots, availableSlots] = await Promise.all([
-                    schedulerApi.getTimeSlots(selectedRepId),
-                    selectedGigId ? slotApi.getSlots(selectedGigId) : Promise.resolve([])
-                ]);
+        refreshData();
+    }, [selectedRepId, userRole, selectedGigId, selectedDate]);
 
-                const mappedTimeSlots = Array.isArray(timeSlots) ? timeSlots.map(mapBackendSlotToSlot) : [];
-                const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map(mapBackendSlotToSlot) : [];
 
-                // Merge and deduplicate
-                let allSlots = [...mappedTimeSlots];
-                mappedAvailableSlots.forEach(slot => {
-                    if (!allSlots.find(s => s.id === slot.id)) {
-                        allSlots.push(slot);
-                    }
-                });
 
-                // Filter by gig if a gig is selected
-                if (selectedGigId) {
-                    allSlots = allSlots.filter(slot => slot.gigId === selectedGigId);
-                }
-
-                setSlots(allSlots);
-            } catch (error) {
-                console.error('Error fetching slots:', error);
-            }
-        };
-        fetchSlots();
-    }, [selectedRepId, userRole, selectedGigId]);
-
-    // Fetch Global Gig Data (for Company/Admin view)
-    useEffect(() => {
-        const fetchGlobalGigData = async () => {
-            if (!selectedGigId || userRole === 'rep') return;
-
-            try {
-                setLoadingReps(true);
-                // 1. Fetch all agents enrolled in this gig
-                const gigAgents = await schedulerApi.getGigAgents(selectedGigId, 'enrolled');
-                const mappedReps = gigAgents.map(ga => ({
-                    id: ga.agentId._id,
-                    name: ga.agentId.personalInfo?.firstName + ' ' + ga.agentId.personalInfo?.lastName,
-                    email: ga.agentId.personalInfo?.email || '',
-                    avatar: ga.agentId.personalInfo?.avatar,
-                    specialties: ga.agentId.professionalSummary?.industries || [],
-                    performanceScore: 85, // Placeholder
-                    attendanceScore: 90 // Placeholder
-                }));
-                setReps(mappedReps);
-
-                // 2. Fetch all slots for this gig from both APIs
-                const [timeSlots, availableSlots] = await Promise.all([
-                    schedulerApi.getTimeSlots(undefined, selectedGigId),
-                    slotApi.getSlots(selectedGigId)
-                ]);
-
-                const mappedTimeSlots = Array.isArray(timeSlots) ? timeSlots.map(mapBackendSlotToSlot) : [];
-                const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map(mapBackendSlotToSlot) : [];
-
-                // Merge and deduplicate
-                const allSlots = [...mappedTimeSlots];
-                mappedAvailableSlots.forEach(slot => {
-                    if (!allSlots.find(s => s.id === slot.id)) {
-                        allSlots.push(slot);
-                    }
-                });
-
-                setSlots(allSlots);
-            } catch (error) {
-                console.error('Error fetching global gig data:', error);
-            } finally {
-                setLoadingReps(false);
-            }
-        };
-
-        fetchGlobalGigData();
-    }, [selectedGigId, userRole, selectedDate]);
 
 
 
@@ -493,10 +499,17 @@ export function SessionPlanning() {
 
     const handleSlotCancel = async (slotId: string) => {
         try {
-            await schedulerApi.cancelTimeSlot(slotId);
-            const updatedSlots = await schedulerApi.getTimeSlots(selectedRepId);
-            const mappedSlots = Array.isArray(updatedSlots) ? updatedSlots.map(mapBackendSlotToSlot) : [];
-            setSlots(mappedSlots);
+            const slot = slots.find(s => s.id === slotId);
+
+            if (slot && (slot as any).isReservation) {
+                // If it's a slotApi reservation
+                await slotApi.cancelReservation(slotId);
+            } else {
+                // If it's a schedulerApi time slot
+                await schedulerApi.cancelTimeSlot(slotId);
+            }
+
+            await refreshData();
 
             setNotification({
                 message: 'Time slot cancelled',
@@ -529,9 +542,7 @@ export function SessionPlanning() {
                 })
             ));
 
-            const updatedSlots = await schedulerApi.getTimeSlots(selectedRepId);
-            const mappedSlots = Array.isArray(updatedSlots) ? updatedSlots.map(mapBackendSlotToSlot) : [];
-            setSlots(mappedSlots);
+            await refreshData();
 
             setNotification({
                 message: `${draftSlots.length} time block(s) reserved successfully`,
@@ -665,8 +676,26 @@ export function SessionPlanning() {
                                         selectedDate={selectedDate}
                                         onDateSelect={setSelectedDate}
                                         slots={slots.filter((slot: TimeSlot) => slot.repId === selectedRepId)}
-                                        selectedGigId={selectedGigId}
+                                        selectedGigId={selectedGigId || ''}
                                     />
+
+                                    <div className="mt-8">
+                                        <TimeSlotGrid
+                                            date={selectedDate}
+                                            slots={slots.filter(s => s.repId === selectedRepId)}
+                                            gigs={gigs}
+                                            selectedGigId={selectedGigId || ''}
+                                            onGigFilterChange={(id) => setSelectedGigId(id || null)}
+                                            onSlotUpdate={handleSlotUpdate}
+                                            onSlotCancel={handleSlotCancel}
+                                            onSlotSelect={handleSlotSelect}
+                                            onTimeSelect={handleTimeSelect}
+                                            draftSlots={draftSlots}
+                                            draftSlotNotes={draftSlotNotes}
+                                            onDraftNotesChange={(time, val) => setDraftSlotNotes(prev => ({ ...prev, [`${format(selectedDate, 'yyyy-MM-dd')}:${time}`]: val }))}
+                                            allowAddSlots={!isPastDate}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
@@ -863,9 +892,17 @@ export function SessionPlanning() {
                                                                                 <p className="text-[9px] font-black text-green-600 uppercase tracking-widest px-1">Reserved</p>
                                                                                 <div className="grid grid-cols-1 gap-1">
                                                                                     {reservedForDay.map(s => (
-                                                                                        <div key={s.id} className="flex items-center justify-between bg-green-50/80 border border-green-100 rounded-md py-1 px-2 text-[10px] text-green-700 font-bold">
+                                                                                        <div key={s.id} className="flex items-center justify-between bg-green-50/80 border border-green-100 rounded-md py-1 px-2 text-[10px] text-green-700 font-bold group">
                                                                                             <span>{s.startTime} - {s.endTime}</span>
-                                                                                            <span className="text-[8px] text-green-500 uppercase">Saved</span>
+                                                                                            <div className="flex items-center gap-1">
+                                                                                                <span className="text-[8px] text-green-500 uppercase group-hover:hidden">Reserved</span>
+                                                                                                <button
+                                                                                                    onClick={() => handleSlotCancel(s.id)}
+                                                                                                    className="hidden group-hover:flex items-center text-[8px] text-red-500 uppercase hover:text-red-700 font-black"
+                                                                                                >
+                                                                                                    Cancel
+                                                                                                </button>
+                                                                                            </div>
                                                                                         </div>
                                                                                     ))}
                                                                                 </div>
@@ -898,17 +935,7 @@ export function SessionPlanning() {
                                     selectedDate={selectedDate}
                                     onReservationMade={() => {
                                         // Refresh slots after reservation
-                                        if (!selectedRepId) return;
-                                        const fetchSlots = async () => {
-                                            try {
-                                                const fetchedSlots = await schedulerApi.getTimeSlots(selectedRepId);
-                                                const mappedSlots = Array.isArray(fetchedSlots) ? fetchedSlots.map(mapBackendSlotToSlot) : [];
-                                                setSlots(mappedSlots);
-                                            } catch (error) {
-                                                console.error('Error refreshing slots:', error);
-                                            }
-                                        };
-                                        fetchSlots();
+                                        refreshData();
                                     }}
                                 />
                             )}
