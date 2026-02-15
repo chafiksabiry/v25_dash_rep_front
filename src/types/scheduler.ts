@@ -20,6 +20,7 @@ export interface Gig {
     name: string;
     description: string;
     company: string;
+    companyId?: string; // Added for filtering
     color: string; // for visual identification
     skills: string[]; // Skills required for this gig
     priority: 'low' | 'medium' | 'high';
