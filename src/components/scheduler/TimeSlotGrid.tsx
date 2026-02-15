@@ -188,7 +188,7 @@ export function TimeSlotGrid({
                                                                 notes: isReserving ? (draftNotes[slot.id] ?? slot.notes ?? '') : slot.notes
                                                             });
                                                         }}
-                                                        disabled={slot.status === 'cancelled' || (slot.status === 'available' && (slot as any).reservedCount >= (slot as any).capacity)}
+                                                        disabled={slot.status === 'cancelled' || (slot.status === 'available' && slot.reservedCount !== undefined && slot.capacity !== undefined && slot.reservedCount >= slot.capacity)}
                                                         className={`px-4 py-2 text-xs font-black rounded-xl flex items-center border shadow-sm transition-all ${slot.status === 'reserved'
                                                             ? 'bg-blue-100/50 text-blue-600 border-blue-200 hover:bg-blue-100'
                                                             : slot.status === 'available'
@@ -204,9 +204,9 @@ export function TimeSlotGrid({
                                                         ) : slot.status === 'available' ? (
                                                             <>
                                                                 <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                                                                {(slot as any).capacity > 1 ? (
+                                                                {slot.capacity && slot.capacity > 1 ? (
                                                                     <span>
-                                                                        Reserve ({(slot as any).capacity - (slot as any).reservedCount} left)
+                                                                        Reserve ({slot.capacity - (slot.reservedCount || 0)} left)
                                                                     </span>
                                                                 ) : (
                                                                     "Reserve"

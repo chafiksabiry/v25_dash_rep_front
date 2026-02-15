@@ -69,7 +69,7 @@ export function HorizontalCalendar({ selectedDate, onDateSelect, slots, selected
                         (!selectedGigId || s.gigId === selectedGigId)
                     );
                     const reservedSlots = daySlots.filter(s => s.status === 'reserved').length;
-                    const availableSlots = daySlots.filter(s => s.status === 'available').length;
+                    const availableSlots = daySlots.reduce((acc, s) => acc + (s.status === 'available' ? (s.capacity || 1) - (s.reservedCount || 0) : 0), 0);
 
                     return (
                         <button

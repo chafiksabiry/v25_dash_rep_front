@@ -49,9 +49,13 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
     let repNotes = '';
     let reservationId = '';
 
-    if (slot.reservations && Array.isArray(slot.reservations) && currentAgentId) {
-        const myRes = slot.reservations.find((r: any) =>
-            (r.agentId?._id || r.agentId)?.toString() === currentAgentId
+    const reservations = slot.reservations || [];
+    const reservedCount = slot.reservedCount || reservations.length || 0;
+    const capacity = slot.capacity || 1;
+
+    if (reservations.length > 0 && currentAgentId) {
+        const myRes = reservations.find((r: any) =>
+            (r.agentId?._id || r.agentId?.$oid || r.agentId)?.toString() === currentAgentId
         );
         if (myRes) {
             status = 'reserved';
@@ -75,19 +79,20 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
         date: date || '',
         gigId,
         repId,
-        status: status as 'available' | 'reserved' | 'cancelled',
+        status: status as any,
         duration: slot.duration || 1,
         notes: repNotes, // ONLY the rep's personal reservation notes
         companyNotes: slot.notes, // The general slot notes from company
+        capacity,
+        reservedCount,
+        reservations,
         attended: slot.attended,
         attendanceNotes: slot.attendanceNotes,
         agent: agentData, // Store populated agent data
         gig: gigData, // Store populated gig data
         isMember: slot.isMember || isReservation, // Compat for flag
-        capacity: slot.capacity ?? 1,
-        reservedCount: slot.reservedCount ?? 0,
         reservationId
-    } as any;
+    };
 };
 
 // Map ExternalGig to scheduler Gig type
