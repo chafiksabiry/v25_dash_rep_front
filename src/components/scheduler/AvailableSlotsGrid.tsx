@@ -25,33 +25,42 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
     }, [gigId, selectedDate]);
 
     const loadSlots = async () => {
-        if (!gigId) return;
+        if (!gigId || !selectedDate) return;
         try {
             setLoading(true);
             const dateStr = format(selectedDate, 'yyyy-MM-dd');
             const fetchedSlots = await slotApi.getSlots(gigId, dateStr);
-            setSlots(fetchedSlots);
-        } catch (error) {
+            setSlots(Array.isArray(fetchedSlots) ? fetchedSlots : []);
+        } catch (error: any) {
             console.error('Error loading slots:', error);
-            setMessage({ text: 'Failed to load available slots', type: 'error' });
+            setMessage({ 
+                text: error.response?.data?.message || 'Failed to load available slots', 
+                type: 'error' 
+            });
         } finally {
             setLoading(false);
         }
     };
 
     const loadReservations = async () => {
-        if (!repId) return;
+        if (!repId || !gigId) return;
         try {
             const fetchedReservations = await slotApi.getReservations(repId, gigId);
-            setReservations(fetchedReservations);
-        } catch (error) {
+            setReservations(Array.isArray(fetchedReservations) ? fetchedReservations : []);
+        } catch (error: any) {
             console.error('Error loading reservations:', error);
+            // Don't show error for reservations, just log it
         }
     };
 
     const handleReserve = async (slot: Slot) => {
         if (!repId) {
             setMessage({ text: 'Please log in to reserve slots', type: 'error' });
+            return;
+        }
+
+        if (!slot._id) {
+            setMessage({ text: 'Invalid slot', type: 'error' });
             return;
         }
 
@@ -62,22 +71,27 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
             return;
         }
 
-        setReservingSlotId(slot._id || '');
+        setReservingSlotId(slot._id);
         setMessage(null);
 
         try {
-            await slotApi.reserveSlot(slot._id!, repId);
+            await slotApi.reserveSlot(slot._id, repId);
             setMessage({ text: 'Slot reserved successfully!', type: 'success' });
             await loadSlots();
             await loadReservations();
             if (onReservationMade) {
                 setTimeout(() => {
-                    onReservationMade();
+                    try {
+                        onReservationMade();
+                    } catch (err) {
+                        console.error('Error in onReservationMade callback:', err);
+                    }
                     setMessage(null);
                 }, 2000);
             }
         } catch (error: any) {
-            const errorMsg = error.response?.data?.message || 'Failed to reserve slot';
+            console.error('Error reserving slot:', error);
+            const errorMsg = error.response?.data?.message || error.message || 'Failed to reserve slot';
             setMessage({ text: errorMsg, type: 'error' });
         } finally {
             setReservingSlotId(null);
@@ -93,26 +107,32 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
             await loadReservations();
             if (onReservationMade) {
                 setTimeout(() => {
-                    onReservationMade();
+                    try {
+                        onReservationMade();
+                    } catch (err) {
+                        console.error('Error in onReservationMade callback:', err);
+                    }
                     setMessage(null);
                 }, 2000);
             }
         } catch (error: any) {
-            setMessage({ text: 'Failed to cancel reservation', type: 'error' });
+            console.error('Error cancelling reservation:', error);
+            const errorMsg = error.response?.data?.message || error.message || 'Failed to cancel reservation';
+            setMessage({ text: errorMsg, type: 'error' });
         }
     };
 
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    const daySlots = slots.filter(s => s.date === dateStr);
-    const isPastDate = dateStr < format(new Date(), 'yyyy-MM-dd');
-
-    if (!gigId) {
+    if (!gigId || !selectedDate) {
         return (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center text-gray-500">
                 Select a gig to see available slots
             </div>
         );
     }
+
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const daySlots = slots.filter(s => s.date === dateStr);
+    const isPastDate = dateStr < format(new Date(), 'yyyy-MM-dd');
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
