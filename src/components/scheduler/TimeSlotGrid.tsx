@@ -75,45 +75,6 @@ export function TimeSlotGrid({
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-50 flex items-center justify-between flex-wrap gap-4 bg-white">
-                <div className="flex items-center text-gray-700">
-                    <Clock className="w-5 h-5 mr-3 opacity-60" />
-                    <h2 className="text-lg font-bold">
-                        Time Slots for {format(date, 'MMMM d, yyyy')}
-                    </h2>
-                </div>
-                <div className="flex items-center space-x-6">
-                    <div className="relative group">
-                        <select
-                            value={selectedGigId || ''}
-                            onChange={(e) => onGigFilterChange(e.target.value)}
-                            className="bg-transparent border-none text-sm font-bold text-gray-700 focus:ring-0 appearance-none pr-8 cursor-pointer"
-                        >
-                            <option value="">Select a Gig</option>
-                            {gigs.map((gig) => (
-                                <option key={gig.id} value={gig.id}>
-                                    {gig.name}
-                                </option>
-                            ))}
-                        </select>
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-gray-600 transition-colors">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-3 bg-gray-50/50 px-3 py-1.5 rounded-lg border border-gray-100">
-                        <input
-                            type="checkbox"
-                            id="showCancelled"
-                            checked={showCancelled}
-                            onChange={(e) => setShowCancelled(e.target.checked)}
-                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-all cursor-pointer"
-                        />
-                        <label htmlFor="showCancelled" className="text-xs font-bold text-gray-500 cursor-pointer">
-                            Show cancelled
-                        </label>
-                    </div>
-                </div>
-            </div>
 
             <div className="divide-y divide-gray-50">
                 {timeSlots
