@@ -805,22 +805,6 @@ export function SessionPlanning() {
                                                 gigId={selectedGigId}
                                                 onReservationMade={refreshData}
                                             />
-
-                                            <TimeSlotGrid
-                                                date={selectedDate}
-                                                slots={slots.filter(s => s.repId === selectedRepId && (selectedGigId && s.gigId === selectedGigId))}
-                                                gigs={gigs}
-                                                selectedGigId={selectedGigId || ''}
-                                                onGigFilterChange={(id) => setSelectedGigId(id || null)}
-                                                onSlotUpdate={handleSlotUpdate}
-                                                onSlotCancel={handleSlotCancel}
-                                                onSlotSelect={handleSlotSelect}
-                                                onTimeSelect={handleTimeSelect}
-                                                draftSlots={draftSlots}
-                                                draftSlotNotes={draftSlotNotes}
-                                                onDraftNotesChange={(time, val) => setDraftSlotNotes(prev => ({ ...prev, [`${format(selectedDate, 'yyyy-MM-dd')}:${time}`]: val }))}
-                                                allowAddSlots={false}
-                                            />
                                         </div>
                                     ) : (
                                         <div className="bg-white p-12 rounded-2xl border-2 border-dashed border-gray-200 text-center flex flex-col items-center justify-center space-y-4">
