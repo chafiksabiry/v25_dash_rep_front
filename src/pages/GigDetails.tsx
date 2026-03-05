@@ -2042,69 +2042,10 @@ export function GigDetails() {
           </div>
         )}
 
-        {/* Leads Section - Full Width - Only for enrolled agents who completed training */}
+        {/* Leads Section - Full Width - Only for enrolled agents */}
         {isAgentEnrolled() && (
           <div className="mt-8">
-            {checkingTraining || trainingCompleted === null ? (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <span className="ml-3 text-gray-600">Checking training completion...</span>
-                </div>
-              </div>
-            ) : hasTraining && trainingStarted === false ? (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="text-center py-8">
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-                    <p className="text-orange-800 font-medium mb-2 text-lg">📚 Training Required!</p>
-                    <p className="text-orange-700 text-sm mb-4">
-                      This gig requires training. You must start the training before accessing leads.
-                    </p>
-                    <p className="text-orange-600 text-xs mb-4">
-                      Please start the required training to unlock access to leads.
-                    </p>
-                    <button
-                      onClick={() => {
-                        // Scroll to trainings section
-                        const trainingsSection = document.getElementById('available-trainings-section');
-                        if (trainingsSection) {
-                          trainingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
-                      }}
-                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-                    >
-                      Go to Training
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : trainingCompleted === false ? (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="text-center py-8">
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                    <p className="text-yellow-800 font-medium mb-2 text-lg">⚠️ Training Not Completed</p>
-                    <p className="text-yellow-700 text-sm mb-4">
-                      You must complete all training modules, quizzes, and final exam before accessing leads.
-                    </p>
-                    <p className="text-yellow-600 text-xs mb-4">
-                      Please complete all required trainings and assessments to unlock access to leads.
-                    </p>
-                    <button
-                      onClick={() => {
-                        // Scroll to trainings section
-                        const trainingsSection = document.getElementById('available-trainings-section');
-                        if (trainingsSection) {
-                          trainingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
-                      }}
-                      className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-                    >
-                      Go to Training
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : trainingCompleted === true ? (
+            {true ? (
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold text-gray-900">Available Leads</h2>
