@@ -27,7 +27,6 @@ export function TimeSlotGrid({
     onSlotCancel,
     onSlotSelect,
     selectedGigId,
-    onGigFilterChange,
     draftSlots = [],
     onTimeSelect,
     draftSlotNotes,
@@ -36,7 +35,7 @@ export function TimeSlotGrid({
 }: TimeSlotGridProps) {
     const timeSlots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
     const daySlots = slots.filter((slot) => slot.date === format(date, 'yyyy-MM-dd'));
-    const [showCancelled, setShowCancelled] = useState<boolean>(false);
+    const [showCancelled] = useState<boolean>(false);
     const [draftNotes, setDraftNotes] = useState<Record<string, string>>({});
     const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
     const [localDraftSlotNotes, setLocalDraftSlotNotes] = useState<Record<string, string>>({});
