@@ -15,6 +15,7 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
     const [reservations, setReservations] = useState<Reservation[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [reservingSlotId, setReservingSlotId] = useState<string | null>(null);
+    const [cancellingReservationId, setCancellingReservationId] = useState<string | null>(null);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
     const [resNotes, setResNotes] = useState<Record<string, string>>({});
 
@@ -111,6 +112,29 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
             setMessage({ text: errorMsg, type: 'error' });
         } finally {
             setReservingSlotId(null);
+        }
+    };
+
+    const handleCancel = async (reservation: Reservation) => {
+        if (!reservation._id) return;
+        setCancellingReservationId(reservation._id);
+        setMessage(null);
+        try {
+            await slotApi.cancelReservation(reservation._id);
+            setMessage({ text: 'Reservation cancelled successfully.', type: 'success' });
+            await loadSlots();
+            await loadReservations();
+            if (onReservationMade) {
+                setTimeout(() => {
+                    try { onReservationMade(); } catch (err) { console.error(err); }
+                    setMessage(null);
+                }, 2000);
+            }
+        } catch (error: any) {
+            console.error('Error cancelling reservation:', error);
+            setMessage({ text: error.response?.data?.message || error.message || 'Failed to cancel reservation', type: 'error' });
+        } finally {
+            setCancellingReservationId(null);
         }
     };
 
@@ -223,9 +247,18 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {isReserved ? (
-                                                    <span className="px-4 py-2 text-xs font-semibold text-blue-600 bg-blue-50 rounded-xl">
-                                                        Reserved
-                                                    </span>
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleCancel(reservation!)}
+                                                            disabled={cancellingReservationId === reservation?._id}
+                                                            className="px-4 py-2 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                        >
+                                                            {cancellingReservationId === reservation?._id ? 'Cancelling...' : 'Cancel'}
+                                                        </button>
+                                                        <span className="px-4 py-2 text-xs font-semibold text-blue-600 bg-blue-50 rounded-xl">
+                                                            Reserved
+                                                        </span>
+                                                    </>
                                                 ) : isAvailable && !isPastDate ? (
                                                     <button
                                                         onClick={() => handleReserve(slot)}
