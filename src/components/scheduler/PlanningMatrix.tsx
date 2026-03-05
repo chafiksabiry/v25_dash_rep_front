@@ -82,16 +82,27 @@ export function PlanningMatrix({ selectedDate, gigId, slots, onRefresh, gigs }: 
                     const timeStr = `${hour.toString().padStart(2, '0')}:00`;
                     const endTimeStr = `${(hour + 1).toString().padStart(2, '0')}:00`;
 
-                    // Check if this cell was even available to toggle
                     const companySlot = slots.find(s => s.date === dateStr && s.startTime === timeStr && s.gigId === gigId);
-                    const isTogglable = companySlot && (companySlot.status === 'available' || (companySlot.status === 'reserved' && companySlot.repId === agentId));
+                    const wasReservedByMe = companySlot && companySlot.status === 'reserved' && companySlot.repId === agentId;
 
-                    if (isTogglable) {
+                    if (isReserved) {
+                        // Always send reserved slots
                         slotsToUpdate.push({
                             date: dateStr,
                             startTime: timeStr,
                             endTime: endTimeStr,
-                            status: isReserved ? 'reserved' : 'available',
+                            status: 'reserved',
+                            repId: agentId,
+                            gigId: gigId,
+                            duration: 1
+                        });
+                    } else if (wasReservedByMe) {
+                        // If it was mine but I unchecked it, set to available
+                        slotsToUpdate.push({
+                            date: dateStr,
+                            startTime: timeStr,
+                            endTime: endTimeStr,
+                            status: 'available',
                             repId: agentId,
                             gigId: gigId,
                             duration: 1
@@ -179,25 +190,24 @@ export function PlanningMatrix({ selectedDate, gigId, slots, onRefresh, gigs }: 
                                     const dateStr = format(date, 'yyyy-MM-dd');
                                     const isReserved = localMatrix[dateStr]?.[hour] || false;
 
-                                    // Check if slot is even available from company
+                                    // Check if slot is officially available from company
                                     const timeStr = `${hour.toString().padStart(2, '0')}:00`;
                                     const companySlot = slots.find(s => s.date === dateStr && s.startTime === timeStr && s.gigId === gigId);
-                                    const isAvailable = companySlot && (companySlot.status === 'available' || (companySlot.status === 'reserved' && companySlot.repId === agentId));
+                                    const isCompanyAvailable = companySlot && companySlot.status === 'available';
 
                                     return (
                                         <td key={dateStr} className="p-2 border-b border-gray-50 text-center">
                                             <button
-                                                onClick={() => isAvailable && handleToggleCell(dateStr, hour)}
-                                                disabled={!isAvailable}
+                                                onClick={() => handleToggleCell(dateStr, hour)}
                                                 className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border-2 
                                                     ${isReserved
                                                         ? 'bg-blue-600 border-blue-600 text-white shadow-md'
-                                                        : isAvailable
+                                                        : isCompanyAvailable
                                                             ? 'bg-emerald-50 border-emerald-200 text-emerald-600 hover:border-emerald-400'
-                                                            : 'bg-gray-50 border-transparent text-gray-200 cursor-not-allowed'
+                                                            : 'bg-gray-50 border-gray-100 text-gray-300 hover:border-blue-200'
                                                     }`}
                                             >
-                                                {isReserved ? <Check className="w-6 h-6" /> : isAvailable ? <Plus className="w-5 h-5 opacity-40" /> : null}
+                                                {isReserved ? <Check className="w-6 h-6" /> : isCompanyAvailable ? <Plus className="w-5 h-5 opacity-40" /> : <div className="w-1 h-1 bg-gray-200 rounded-full group-hover:bg-blue-300"></div>}
                                             </button>
                                         </td>
                                     );

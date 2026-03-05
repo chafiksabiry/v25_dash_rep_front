@@ -241,7 +241,7 @@ export function SessionPlanning() {
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
     const [showAttendancePanel] = useState<boolean>(false);
     const [showAIPanel] = useState<boolean>(true);
-    const [viewMode, setViewMode] = useState<'daily' | 'weekly'>('daily');
+    const [viewMode, setViewMode] = useState<'daily' | 'weekly'>('weekly');
 
     const refreshData = async () => {
         if (!selectedRepId) return;
@@ -787,288 +787,302 @@ export function SessionPlanning() {
                         </div>
                     ) : userRole === 'rep' ? (
                         <div className="space-y-6">
-                            {viewMode === 'weekly' && selectedGigId ? (
-                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <PlanningMatrix
-                                        selectedDate={selectedDate}
-                                        gigId={selectedGigId}
-                                        slots={slots}
-                                        onRefresh={refreshData}
-                                        gigs={gigs}
-                                    />
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                                    <div className="lg:col-span-2">
-                                        <HorizontalCalendar
-                                            selectedDate={selectedDate}
-                                            onDateSelect={setSelectedDate}
-                                            slots={slots.filter((slot: TimeSlot) => slot.repId === selectedRepId)}
-                                            selectedGigId={selectedGigId || ''}
-                                        />
-
-                                        <div className="mt-8">
-                                            <TimeSlotGrid
-                                                date={selectedDate}
-                                                slots={slots.filter(s => s.repId === selectedRepId || (selectedGigId && s.gigId === selectedGigId))}
-                                                gigs={gigs}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                                <div className="lg:col-span-2">
+                                    {viewMode === 'weekly' ? (
+                                        selectedGigId ? (
+                                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                                <PlanningMatrix
+                                                    selectedDate={selectedDate}
+                                                    gigId={selectedGigId}
+                                                    slots={slots}
+                                                    onRefresh={refreshData}
+                                                    gigs={gigs}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="bg-white p-12 rounded-2xl border-2 border-dashed border-gray-200 text-center flex flex-col items-center justify-center space-y-4">
+                                                <div className="p-4 bg-blue-50 rounded-full">
+                                                    <Briefcase className="w-12 h-12 text-blue-500" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-gray-900">Select a Project</h3>
+                                                    <p className="text-gray-500 mt-2">Please select a project in the sidebar to start planning your week.</p>
+                                                </div>
+                                            </div>
+                                        )
+                                    ) : (
+                                        <>
+                                            <HorizontalCalendar
+                                                selectedDate={selectedDate}
+                                                onDateSelect={setSelectedDate}
+                                                slots={slots.filter((slot: TimeSlot) => slot.repId === selectedRepId)}
                                                 selectedGigId={selectedGigId || ''}
-                                                onGigFilterChange={(id) => setSelectedGigId(id || null)}
-                                                onSlotUpdate={handleSlotUpdate}
-                                                onSlotCancel={handleSlotCancel}
-                                                onSlotSelect={handleSlotSelect}
-                                                onTimeSelect={handleTimeSelect}
-                                                draftSlots={draftSlots}
-                                                draftSlotNotes={draftSlotNotes}
-                                                onDraftNotesChange={(time, val) => setDraftSlotNotes(prev => ({ ...prev, [`${format(selectedDate, 'yyyy-MM-dd')}:${time}`]: val }))}
-                                                allowAddSlots={false}
                                             />
+
+                                            <div className="mt-8">
+                                                <TimeSlotGrid
+                                                    date={selectedDate}
+                                                    slots={slots.filter(s => s.repId === selectedRepId || (selectedGigId && s.gigId === selectedGigId))}
+                                                    gigs={gigs}
+                                                    selectedGigId={selectedGigId || ''}
+                                                    onGigFilterChange={(id) => setSelectedGigId(id || null)}
+                                                    onSlotUpdate={handleSlotUpdate}
+                                                    onSlotCancel={handleSlotCancel}
+                                                    onSlotSelect={handleSlotSelect}
+                                                    onTimeSelect={handleTimeSelect}
+                                                    draftSlots={draftSlots}
+                                                    draftSlotNotes={draftSlotNotes}
+                                                    onDraftNotesChange={(time, val) => setDraftSlotNotes(prev => ({ ...prev, [`${format(selectedDate, 'yyyy-MM-dd')}:${time}`]: val }))}
+                                                    allowAddSlots={false}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+                                    {/* Rest of the sidebar content */}
+                                    <div>
+                                        <h3 className="text-base font-semibold text-gray-900 mb-4">Weekly Overview</h3>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-gray-500">Available Slots</span>
+                                                <span className="text-gray-900 font-black">
+                                                    {slots.filter((s: TimeSlot) =>
+                                                        s.repId === selectedRepId &&
+                                                        s.status === 'available' &&
+                                                        (!selectedGigId || s.gigId === selectedGigId)
+                                                    ).length}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-gray-500">Reserved Slots</span>
+                                                <span className="text-gray-900 font-black">
+                                                    {slots.filter((s: TimeSlot) =>
+                                                        s.repId === selectedRepId &&
+                                                        s.status === 'reserved' &&
+                                                        (!selectedGigId || s.gigId === selectedGigId)
+                                                    ).length}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
-                                        {/* Rest of the sidebar content */}
-                                        <div>
-                                            <h3 className="text-base font-semibold text-gray-900 mb-4">Weekly Overview</h3>
-                                            <div className="space-y-4">
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <span className="text-gray-500">Available Slots</span>
-                                                    <span className="text-gray-900 font-black">
-                                                        {slots.filter((s: TimeSlot) =>
-                                                            s.repId === selectedRepId &&
-                                                            s.status === 'available' &&
-                                                            (!selectedGigId || s.gigId === selectedGigId)
-                                                        ).length}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <span className="text-gray-500">Reserved Slots</span>
-                                                    <span className="text-gray-900 font-black">
-                                                        {slots.filter((s: TimeSlot) =>
-                                                            s.repId === selectedRepId &&
-                                                            s.status === 'reserved' &&
-                                                            (!selectedGigId || s.gigId === selectedGigId)
-                                                        ).length}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div className="pt-5 border-t border-gray-100">
+                                        <h3 className="text-base font-semibold text-gray-900 mb-4">Project Hours</h3>
+                                        <div className="space-y-4">
+                                            {gigs.filter(g => !selectedGigId || g.id === selectedGigId).slice(0, 3).map((gig: Gig) => {
+                                                const gigHours = slots
+                                                    .filter((s: TimeSlot) => s.repId === selectedRepId && s.gigId === gig.id && s.status === 'reserved')
+                                                    .reduce((sum: number, s: TimeSlot) => sum + (s.duration || 1), 0);
 
-                                        <div className="pt-5 border-t border-gray-100">
-                                            <h3 className="text-base font-semibold text-gray-900 mb-4">Project Hours</h3>
-                                            <div className="space-y-4">
-                                                {gigs.filter(g => !selectedGigId || g.id === selectedGigId).slice(0, 3).map((gig: Gig) => {
-                                                    const gigHours = slots
-                                                        .filter((s: TimeSlot) => s.repId === selectedRepId && s.gigId === gig.id && s.status === 'reserved')
-                                                        .reduce((sum: number, s: TimeSlot) => sum + (s.duration || 1), 0);
+                                                if (gigHours === 0 && selectedGigId) return null;
 
-                                                    if (gigHours === 0 && selectedGigId) return null;
-
-                                                    return (
-                                                        <div key={gig.id} className="flex justify-between items-center text-sm">
-                                                            <div className="flex items-center">
-                                                                <div className="w-2.5 h-2.5 rounded-full mr-3" style={{ backgroundColor: stringToColor(gig.name) }}></div>
-                                                                <span className="text-gray-500 font-medium truncate max-w-[140px]">{gig.name}</span>
-                                                            </div>
-                                                            <span className="text-gray-900 font-black">{gigHours}h</span>
+                                                return (
+                                                    <div key={gig.id} className="flex justify-between items-center text-sm">
+                                                        <div className="flex items-center">
+                                                            <div className="w-2.5 h-2.5 rounded-full mr-3" style={{ backgroundColor: stringToColor(gig.name) }}></div>
+                                                            <span className="text-gray-500 font-medium truncate max-w-[140px]">{gig.name}</span>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-5 border-t border-gray-100">
-                                            <h3 className="text-base font-semibold text-gray-900 mb-4">Quick Reserve</h3>
-                                            <div className="space-y-4">
-                                                {isPastDate ? (
-                                                    <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm text-amber-800">
-                                                        You can only reserve slots for today or future dates. This day is in the past; existing reserved slots are still shown below.
+                                                        <span className="text-gray-900 font-black">{gigHours}h</span>
                                                     </div>
-                                                ) : (
-                                                    <>
-                                                        <div>
-                                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Project</p>
-                                                            <select
-                                                                className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
-                                                                value={selectedGigId || ''}
-                                                                onChange={(e) => setSelectedGigId(e.target.value === '' ? null : e.target.value)}
-                                                            >
-                                                                <option value="">Select a Project</option>
-                                                                {gigs.map((gig: Gig) => (
-                                                                    <option key={gig.id} value={gig.id}>{gig.name}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                        {(() => {
-                                                            if (!selectedGigId) return (
-                                                                <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 italic text-[10px] text-blue-600 font-bold">
-                                                                    Please select a gig to see available times.
-                                                                </div>
-                                                            );
-                                                            const selectedGig = gigs.find(g => g.id === selectedGigId);
-                                                            const dayName = format(selectedDate, 'EEEE');
-                                                            const daySchedule = selectedGig?.availability?.schedule?.find(
-                                                                s => s.day.toLowerCase() === dayName.toLowerCase()
-                                                            );
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
 
-                                                            if (!daySchedule) return (
-                                                                <div className="p-4 bg-orange-50 rounded-xl border border-orange-100 italic text-[10px] text-orange-600 font-bold">
-                                                                    No availability found for this day.
-                                                                </div>
-                                                            );
+                                    <div className="pt-5 border-t border-gray-100">
+                                        <h3 className="text-base font-semibold text-gray-900 mb-4">Quick Reserve</h3>
+                                        <div className="space-y-4">
+                                            {isPastDate ? (
+                                                <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm text-amber-800">
+                                                    You can only reserve slots for today or future dates. This day is in the past; existing reserved slots are still shown below.
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Project</p>
+                                                        <select
+                                                            className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
+                                                            value={selectedGigId || ''}
+                                                            onChange={(e) => setSelectedGigId(e.target.value === '' ? null : e.target.value)}
+                                                        >
+                                                            <option value="">Select a Project</option>
+                                                            {gigs.map((gig: Gig) => (
+                                                                <option key={gig.id} value={gig.id}>{gig.name}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    {(() => {
+                                                        if (!selectedGigId) return (
+                                                            <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 italic text-[10px] text-blue-600 font-bold">
+                                                                Please select a gig to see available times.
+                                                            </div>
+                                                        );
+                                                        const selectedGig = gigs.find(g => g.id === selectedGigId);
+                                                        const dayName = format(selectedDate, 'EEEE');
+                                                        const daySchedule = selectedGig?.availability?.schedule?.find(
+                                                            s => s.day.toLowerCase() === dayName.toLowerCase()
+                                                        );
 
-                                                            const dateStr = format(selectedDate, 'yyyy-MM-dd');
-                                                            const takenHours = new Set<number>();
-                                                            [...slots.filter(s => s.repId === selectedRepId && s.date === dateStr && s.status === 'reserved'), ...draftSlots.filter(s => s.date === dateStr)].forEach(slot => {
-                                                                const startH = parseInt(slot.startTime?.split(':')[0] ?? '0');
-                                                                const endH = parseInt(slot.endTime?.split(':')[0] ?? '0');
-                                                                for (let h = startH; h < endH; h++) takenHours.add(h);
-                                                            });
+                                                        if (!daySchedule) return (
+                                                            <div className="p-4 bg-orange-50 rounded-xl border border-orange-100 italic text-[10px] text-orange-600 font-bold">
+                                                                No availability found for this day.
+                                                            </div>
+                                                        );
 
-                                                            const startH = parseInt(daySchedule.hours.start.split(':')[0]);
-                                                            const endH = parseInt(daySchedule.hours.end.split(':')[0]);
-                                                            const availableStartOptions = Array.from({ length: endH - startH + 1 }, (_, i) => {
-                                                                const h = startH + i;
-                                                                return `${h.toString().padStart(2, '0')}:00`;
-                                                            }).filter(hStr => !takenHours.has(parseInt(hStr.split(':')[0])));
+                                                        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+                                                        const takenHours = new Set<number>();
+                                                        [...slots.filter(s => s.repId === selectedRepId && s.date === dateStr && s.status === 'reserved'), ...draftSlots.filter(s => s.date === dateStr)].forEach(slot => {
+                                                            const startH = parseInt(slot.startTime?.split(':')[0] ?? '0');
+                                                            const endH = parseInt(slot.endTime?.split(':')[0] ?? '0');
+                                                            for (let h = startH; h < endH; h++) takenHours.add(h);
+                                                        });
 
-                                                            return (
-                                                                <div className="space-y-4">
-                                                                    <div className="grid grid-cols-2 gap-4">
-                                                                        <div>
-                                                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Start Time</p>
-                                                                            <select
-                                                                                className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
-                                                                                value={quickStart}
-                                                                                onChange={(e) => {
-                                                                                    const time = e.target.value;
-                                                                                    setQuickStart(time);
-                                                                                    if (time && quickEnd) updateDraftRange(time, quickEnd);
-                                                                                }}
-                                                                            >
-                                                                                <option value="">Start</option>
-                                                                                {availableStartOptions.map(h => (
-                                                                                    <option key={h} value={h}>{h}</option>
-                                                                                ))}
-                                                                            </select>
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">End Time</p>
-                                                                            <select
-                                                                                className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
-                                                                                value={quickEnd}
-                                                                                onChange={(e) => {
-                                                                                    const time = e.target.value;
-                                                                                    setQuickEnd(time);
-                                                                                    if (quickStart && time) updateDraftRange(quickStart, time);
-                                                                                }}
-                                                                            >
-                                                                                <option value="">End</option>
-                                                                                {Array.from({ length: endH - startH + 1 }, (_, i) => {
-                                                                                    const h = startH + i;
-                                                                                    const hStr = `${h.toString().padStart(2, '0')}:00`;
-                                                                                    const selectedStartH = quickStart ? parseInt(quickStart.split(':')[0]) : -1;
-                                                                                    const isBeforeOrSameStart = selectedStartH !== -1 && h <= selectedStartH;
-                                                                                    const rangeOverlapsTaken = selectedStartH !== -1 && Array.from({ length: h - selectedStartH }, (_, i) => selectedStartH + i).some(t => takenHours.has(t));
-                                                                                    const disabled = isBeforeOrSameStart || rangeOverlapsTaken;
-                                                                                    return (
-                                                                                        <option
-                                                                                            key={hStr}
-                                                                                            value={hStr}
-                                                                                            disabled={disabled}
-                                                                                            className={disabled ? 'text-gray-300' : ''}
-                                                                                        >
-                                                                                            {hStr}
-                                                                                        </option>
-                                                                                    );
-                                                                                })}
-                                                                            </select>
-                                                                        </div>
-                                                                    </div>
+                                                        const startH = parseInt(daySchedule.hours.start.split(':')[0]);
+                                                        const endH = parseInt(daySchedule.hours.end.split(':')[0]);
+                                                        const availableStartOptions = Array.from({ length: endH - startH + 1 }, (_, i) => {
+                                                            const h = startH + i;
+                                                            return `${h.toString().padStart(2, '0')}:00`;
+                                                        }).filter(hStr => !takenHours.has(parseInt(hStr.split(':')[0])));
 
+                                                        return (
+                                                            <div className="space-y-4">
+                                                                <div className="grid grid-cols-2 gap-4">
                                                                     <div>
-                                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Reservation Notes</p>
-                                                                        <textarea
-                                                                            className="w-full bg-gray-50 border-none rounded-xl text-sm font-medium text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100 min-h-[80px] resize-none"
-                                                                            placeholder="Add a note to your reservation (optional)..."
-                                                                            value={globalNotes}
-                                                                            onChange={(e) => setGlobalNotes(e.target.value)}
-                                                                        />
+                                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Start Time</p>
+                                                                        <select
+                                                                            className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
+                                                                            value={quickStart}
+                                                                            onChange={(e) => {
+                                                                                const time = e.target.value;
+                                                                                setQuickStart(time);
+                                                                                if (time && quickEnd) updateDraftRange(time, quickEnd);
+                                                                            }}
+                                                                        >
+                                                                            <option value="">Start</option>
+                                                                            {availableStartOptions.map(h => (
+                                                                                <option key={h} value={h}>{h}</option>
+                                                                            ))}
+                                                                        </select>
                                                                     </div>
+                                                                    <div>
+                                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">End Time</p>
+                                                                        <select
+                                                                            className="w-full bg-gray-50 border-none rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100"
+                                                                            value={quickEnd}
+                                                                            onChange={(e) => {
+                                                                                const time = e.target.value;
+                                                                                setQuickEnd(time);
+                                                                                if (quickStart && time) updateDraftRange(quickStart, time);
+                                                                            }}
+                                                                        >
+                                                                            <option value="">End</option>
+                                                                            {Array.from({ length: endH - startH + 1 }, (_, i) => {
+                                                                                const h = startH + i;
+                                                                                const hStr = `${h.toString().padStart(2, '0')}:00`;
+                                                                                const selectedStartH = quickStart ? parseInt(quickStart.split(':')[0]) : -1;
+                                                                                const isBeforeOrSameStart = selectedStartH !== -1 && h <= selectedStartH;
+                                                                                const rangeOverlapsTaken = selectedStartH !== -1 && Array.from({ length: h - selectedStartH }, (_, i) => selectedStartH + i).some(t => takenHours.has(t));
+                                                                                const disabled = isBeforeOrSameStart || rangeOverlapsTaken;
+                                                                                return (
+                                                                                    <option
+                                                                                        key={hStr}
+                                                                                        value={hStr}
+                                                                                        disabled={disabled}
+                                                                                        className={disabled ? 'text-gray-300' : ''}
+                                                                                    >
+                                                                                        {hStr}
+                                                                                    </option>
+                                                                                );
+                                                                            })}
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
 
-                                                                    {/* Slots below Start Time / End Time: Pending Draft + Already Reserved */}
-                                                                    <div className="space-y-3 py-2 border-t border-gray-100">
-                                                                        {draftSlots.length > 0 && (
+                                                                <div>
+                                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Reservation Notes</p>
+                                                                    <textarea
+                                                                        className="w-full bg-gray-50 border-none rounded-xl text-sm font-medium text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100 min-h-[80px] resize-none"
+                                                                        placeholder="Add a note to your reservation (optional)..."
+                                                                        value={globalNotes}
+                                                                        onChange={(e) => setGlobalNotes(e.target.value)}
+                                                                    />
+                                                                </div>
+
+                                                                {/* Slots below Start Time / End Time: Pending Draft + Already Reserved */}
+                                                                <div className="space-y-3 py-2 border-t border-gray-100">
+                                                                    {draftSlots.length > 0 && (
+                                                                        <div className="space-y-2">
+                                                                            <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest px-1">Pending Draft</p>
+                                                                            <div className="grid grid-cols-1 gap-1">
+                                                                                {draftSlots
+                                                                                    .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
+                                                                                    .map(s => (
+                                                                                        <div key={`draft-${s.date}:${s.startTime}`} className="flex items-center justify-between bg-white border border-blue-100 rounded-md py-1 px-2 text-[10px] text-blue-500 font-bold transition-all hover:border-red-200 group">
+                                                                                            <span>{s.startTime} - {s.endTime}</span>
+                                                                                            <button
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    setDraftSlots(prev => prev.filter(ds => ds.startTime !== s.startTime));
+                                                                                                }}
+                                                                                                className="text-blue-300 group-hover:text-red-500 transition-colors"
+                                                                                            >
+                                                                                                <X className="w-2.5 h-2.5" />
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                    {(() => {
+                                                                        const reservedForDay = slots
+                                                                            .filter(s => s.repId === selectedRepId && s.date === format(selectedDate, 'yyyy-MM-dd') && s.status === 'reserved' && (!selectedGigId || s.gigId === selectedGigId))
+                                                                            .sort((a, b) => a.startTime.localeCompare(b.startTime));
+                                                                        if (reservedForDay.length === 0) return null;
+                                                                        return (
                                                                             <div className="space-y-2">
-                                                                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest px-1">Pending Draft</p>
+                                                                                <p className="text-[9px] font-black text-green-600 uppercase tracking-widest px-1">Reserved</p>
                                                                                 <div className="grid grid-cols-1 gap-1">
-                                                                                    {draftSlots
-                                                                                        .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
-                                                                                        .map(s => (
-                                                                                            <div key={`draft-${s.date}:${s.startTime}`} className="flex items-center justify-between bg-white border border-blue-100 rounded-md py-1 px-2 text-[10px] text-blue-500 font-bold transition-all hover:border-red-200 group">
-                                                                                                <span>{s.startTime} - {s.endTime}</span>
+                                                                                    {reservedForDay.map(s => (
+                                                                                        <div key={s.id} className="flex items-center justify-between bg-green-50/80 border border-green-100 rounded-md py-1 px-2 text-[10px] text-green-700 font-bold group">
+                                                                                            <span>{s.startTime} - {s.endTime}</span>
+                                                                                            <div className="flex items-center gap-1">
+                                                                                                <span className="text-[8px] text-green-500 uppercase group-hover:hidden">Reserved</span>
                                                                                                 <button
-                                                                                                    onClick={(e) => {
-                                                                                                        e.stopPropagation();
-                                                                                                        setDraftSlots(prev => prev.filter(ds => ds.startTime !== s.startTime));
-                                                                                                    }}
-                                                                                                    className="text-blue-300 group-hover:text-red-500 transition-colors"
+                                                                                                    onClick={() => handleSlotCancel(s.id)}
+                                                                                                    className="hidden group-hover:flex items-center text-[8px] text-red-500 uppercase hover:text-red-700 font-black"
                                                                                                 >
-                                                                                                    <X className="w-2.5 h-2.5" />
+                                                                                                    Cancel
                                                                                                 </button>
                                                                                             </div>
-                                                                                        ))}
+                                                                                        </div>
+                                                                                    ))}
                                                                                 </div>
                                                                             </div>
-                                                                        )}
-                                                                        {(() => {
-                                                                            const reservedForDay = slots
-                                                                                .filter(s => s.repId === selectedRepId && s.date === format(selectedDate, 'yyyy-MM-dd') && s.status === 'reserved' && (!selectedGigId || s.gigId === selectedGigId))
-                                                                                .sort((a, b) => a.startTime.localeCompare(b.startTime));
-                                                                            if (reservedForDay.length === 0) return null;
-                                                                            return (
-                                                                                <div className="space-y-2">
-                                                                                    <p className="text-[9px] font-black text-green-600 uppercase tracking-widest px-1">Reserved</p>
-                                                                                    <div className="grid grid-cols-1 gap-1">
-                                                                                        {reservedForDay.map(s => (
-                                                                                            <div key={s.id} className="flex items-center justify-between bg-green-50/80 border border-green-100 rounded-md py-1 px-2 text-[10px] text-green-700 font-bold group">
-                                                                                                <span>{s.startTime} - {s.endTime}</span>
-                                                                                                <div className="flex items-center gap-1">
-                                                                                                    <span className="text-[8px] text-green-500 uppercase group-hover:hidden">Reserved</span>
-                                                                                                    <button
-                                                                                                        onClick={() => handleSlotCancel(s.id)}
-                                                                                                        className="hidden group-hover:flex items-center text-[8px] text-red-500 uppercase hover:text-red-700 font-black"
-                                                                                                    >
-                                                                                                        Cancel
-                                                                                                    </button>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        ))}
-                                                                                    </div>
-                                                                                </div>
-                                                                            );
-                                                                        })()}
-                                                                    </div>
+                                                                        );
+                                                                    })()}
                                                                 </div>
-                                                            );
-                                                        })()}
-                                                        <button
-                                                            onClick={handleQuickReserve}
-                                                            className="w-full py-3.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                                            disabled={!selectedGigId || draftSlots.length === 0}
-                                                        >
-                                                            Reserve Time Block
-                                                        </button>
-                                                    </>
-                                                )}
-                                            </div>
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                    <button
+                                                        onClick={handleQuickReserve}
+                                                        className="w-full py-3.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        disabled={!selectedGigId || draftSlots.length === 0}
+                                                    >
+                                                        Reserve Time Block
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
 
 
-                            )}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-8">
