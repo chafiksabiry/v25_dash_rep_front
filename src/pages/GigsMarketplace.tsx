@@ -1287,8 +1287,8 @@ export function GigsMarketplace() {
         <button
           onClick={() => setActiveTab('available')}
           className={`px-4 py-2 font-medium ${activeTab === 'available'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
+            ? 'text-blue-600 border-b-2 border-blue-600'
+            : 'text-gray-500 hover:text-gray-700'
             }`}
         >
           Available Gigs
@@ -1296,8 +1296,8 @@ export function GigsMarketplace() {
         <button
           onClick={() => setActiveTab('enrolled')}
           className={`px-4 py-2 font-medium ${activeTab === 'enrolled'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
+            ? 'text-blue-600 border-b-2 border-blue-600'
+            : 'text-gray-500 hover:text-gray-700'
             }`}
         >
           Enrolled Gigs
@@ -1305,8 +1305,8 @@ export function GigsMarketplace() {
         <button
           onClick={() => setActiveTab('favorite')}
           className={`px-4 py-2 font-medium ${activeTab === 'favorite'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
+            ? 'text-blue-600 border-b-2 border-blue-600'
+            : 'text-gray-500 hover:text-gray-700'
             }`}
         >
           Favorite Gigs
@@ -1314,8 +1314,8 @@ export function GigsMarketplace() {
         <button
           onClick={() => setActiveTab('invited')}
           className={`px-4 py-2 font-medium ${activeTab === 'invited'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
+            ? 'text-blue-600 border-b-2 border-blue-600'
+            : 'text-gray-500 hover:text-gray-700'
             }`}
         >
           Invited Gigs
@@ -1325,8 +1325,8 @@ export function GigsMarketplace() {
       {/* Message de notification pour les applications */}
       {applicationMessage && (
         <div className={`mb-4 p-4 rounded-lg ${applicationMessage.type === 'success'
-            ? 'bg-green-50 text-green-800 border border-green-200'
-            : 'bg-red-50 text-red-800 border border-red-200'
+          ? 'bg-green-50 text-green-800 border border-green-200'
+          : 'bg-red-50 text-red-800 border border-red-200'
           }`}>
           <p className="text-sm font-medium">
             {applicationMessage.type === 'success' ? '✅ ' : '❌ '}
@@ -1357,16 +1357,16 @@ export function GigsMarketplace() {
                         }}
                         disabled={applyingGigId === gig._id}
                         className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${applyingGigId === gig._id
-                            ? 'bg-purple-200 text-purple-400 cursor-not-allowed'
-                            : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-md cursor-pointer'
+                          ? 'bg-purple-200 text-purple-400 cursor-not-allowed'
+                          : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-md cursor-pointer'
                           }`}
                       >
                         {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
                       </button>
                     ) : (
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
-                          gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
-                            'bg-yellow-100 text-yellow-700'
+                        gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
+                          'bg-yellow-100 text-yellow-700'
                         }`}>
                         {gigStatus === 'enrolled' ? '✓ Enrolled' :
                           gigStatus === 'invited' ? '✉ Invited' :
@@ -1381,15 +1381,15 @@ export function GigsMarketplace() {
                           : addToFavorites(gig._id);
                       }}
                       className={`p-1 rounded-full transition-colors ${favoriteGigs.includes(gig._id)
-                          ? 'hover:bg-red-50'
-                          : 'hover:bg-gray-100'
+                        ? 'hover:bg-red-50'
+                        : 'hover:bg-gray-100'
                         }`}
                       title={favoriteGigs.includes(gig._id) ? "Remove from favorites" : "Add to favorites"}
                     >
                       <Heart
                         className={`w-5 h-5 ${favoriteGigs.includes(gig._id)
-                            ? 'text-red-500 fill-current'
-                            : 'text-gray-400'
+                          ? 'text-red-500 fill-current'
+                          : 'text-gray-400'
                           }`}
                       />
                     </button>
@@ -1534,16 +1534,16 @@ export function GigsMarketplace() {
                               }}
                               disabled={applyingGigId === gig._id}
                               className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${applyingGigId === gig._id
-                                  ? 'bg-purple-200 text-purple-400 cursor-not-allowed'
-                                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-md cursor-pointer'
+                                ? 'bg-purple-200 text-purple-400 cursor-not-allowed'
+                                : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-md cursor-pointer'
                                 }`}
                             >
                               {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
                             </button>
                           ) : (
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${gigStatus === 'enrolled' ? 'bg-green-100 text-green-700' :
-                                gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
-                                  'bg-yellow-100 text-yellow-700'
+                              gigStatus === 'invited' ? 'bg-blue-100 text-blue-700' :
+                                'bg-yellow-100 text-yellow-700'
                               }`}>
                               {gigStatus === 'enrolled' ? '✓ Enrolled' :
                                 gigStatus === 'invited' ? '✉ Invited' :
@@ -1683,15 +1683,15 @@ export function GigsMarketplace() {
                               : addToFavorites(enrollment.gig._id);
                           }}
                           className={`p-1 rounded-full transition-colors ${favoriteGigs.includes(enrollment.gig._id)
-                              ? 'hover:bg-red-50'
-                              : 'hover:bg-gray-100'
+                            ? 'hover:bg-red-50'
+                            : 'hover:bg-gray-100'
                             }`}
                           title={favoriteGigs.includes(enrollment.gig._id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart
                             className={`w-5 h-5 ${favoriteGigs.includes(enrollment.gig._id)
-                                ? 'text-red-500 fill-current'
-                                : 'text-gray-400'
+                              ? 'text-red-500 fill-current'
+                              : 'text-gray-400'
                               }`}
                           />
                         </button>
@@ -1851,15 +1851,15 @@ export function GigsMarketplace() {
                               : addToFavorites(enrolledGig.gig._id);
                           }}
                           className={`p-1 rounded-full transition-colors ${favoriteGigs.includes(enrolledGig.gig._id)
-                              ? 'hover:bg-red-50'
-                              : 'hover:bg-gray-100'
+                            ? 'hover:bg-red-50'
+                            : 'hover:bg-gray-100'
                             }`}
                           title={favoriteGigs.includes(enrolledGig.gig._id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart
                             className={`w-5 h-5 ${favoriteGigs.includes(enrolledGig.gig._id)
-                                ? 'text-red-500 fill-current'
-                                : 'text-gray-400'
+                              ? 'text-red-500 fill-current'
+                              : 'text-gray-400'
                               }`}
                           />
                         </button>
@@ -1951,6 +1951,37 @@ export function GigsMarketplace() {
                         </div>
                       )}
 
+                      {/* Leads */}
+                      {('leads' in enrolledGig.gig && enrolledGig.gig.leads?.types && enrolledGig.gig.leads.types.length > 0) && (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">🎯 Leads:</p>
+                          <div className="flex flex-col gap-2">
+                            {enrolledGig.gig.leads.types.map((lead, idx) => {
+                              const colorMap: Record<string, string> = {
+                                hot: 'bg-red-100 text-red-700 border-red-200',
+                                warm: 'bg-orange-100 text-orange-700 border-orange-200',
+                                cold: 'bg-blue-100 text-blue-700 border-blue-200',
+                              };
+                              const emojiMap: Record<string, string> = {
+                                hot: '🔥',
+                                warm: '☀️',
+                                cold: '❄️',
+                              };
+                              const color = colorMap[lead.type] || 'bg-gray-100 text-gray-700 border-gray-200';
+                              const emoji = emojiMap[lead.type] || '🎯';
+                              return (
+                                <div key={idx} className={`flex items-start gap-2 px-3 py-2 rounded-lg border ${color}`}>
+                                  <span className="text-sm font-semibold capitalize shrink-0">{emoji} {lead.type}</span>
+                                  <span className="text-xs font-bold shrink-0">{lead.percentage}%</span>
+                                  {lead.description && (
+                                    <span className="text-xs opacity-80 line-clamp-1">{lead.description}</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
 
                     </div>
 
@@ -1994,8 +2025,8 @@ export function GigsMarketplace() {
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
             className={`px-4 py-2 rounded-lg ${currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
           >
             Previous
@@ -2006,8 +2037,8 @@ export function GigsMarketplace() {
                 key={page}
                 onClick={() => setCurrentPage(page)}
                 className={`px-4 py-2 rounded-lg ${currentPage === page
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
               >
                 {page}
@@ -2018,8 +2049,8 @@ export function GigsMarketplace() {
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
             className={`px-4 py-2 rounded-lg ${currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
           >
             Next
