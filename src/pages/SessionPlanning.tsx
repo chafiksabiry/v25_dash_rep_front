@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
 import { HorizontalCalendar } from '../components/scheduler/HorizontalCalendar';
 import { TimeSlotGrid } from '../components/scheduler/TimeSlotGrid';
 import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company } from '../types/scheduler';
@@ -14,6 +14,7 @@ import { getAgentId } from '../utils/authUtils';
 import { schedulerApi } from '../services/api/scheduler';
 import { slotApi } from '../services/api/slotApi';
 import { AvailableSlotsGrid } from '../components/scheduler/AvailableSlotsGrid';
+import { div } from '@tensorflow/tfjs';
 
 // Define ExternalGig type locally for API response mapping
 interface ExternalGig {
@@ -1013,17 +1014,26 @@ export function SessionPlanning() {
                                                             )}
                                                         </div>
                                                         <div>
-                                                            <h4 className="font-black text-gray-900">{company.name}</h4>
-                                                            <p className="text-xs text-gray-500 font-bold">{uniqueReps} REPs Active</p>
+                                                            <div>
+                                                                <h4 className="font-black text-gray-900">{company.name}</h4>
+                                                                <p className="text-xs text-gray-500 font-bold">{uniqueReps} REPs Active</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-xl font-black text-indigo-600">{totalHours}h</p>
+                                                            <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-lg mt-1 inline-block">Priority {company.priority}</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                            </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
-                )}
-                        </main>
-        </div>
+                        </div>
+                    )}
+                </main>
+            </div>
         </div>
     );
 }
