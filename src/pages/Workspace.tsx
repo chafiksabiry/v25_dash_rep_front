@@ -607,8 +607,8 @@ export function Workspace() {
   };
 
   const handleCallClick = (lead: Lead) => {
-    setSelectedLead(lead);
-    setShowCallInterface(true);
+    // Redirect to copilot with the leadId
+    window.location.href = `/copilot?leadId=${lead.id}`;
   };
 
   return (
