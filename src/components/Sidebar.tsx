@@ -61,7 +61,7 @@ export function Sidebar({ phases }: SidebarProps) {
       icon: Monitor,
       label: 'Workspace',
       path: '/workspace',
-      isAccessible: () => isPhaseCompleted(5)
+      isAccessible: () => isPhaseCompleted(4)
     },
     {
       icon: Calendar,

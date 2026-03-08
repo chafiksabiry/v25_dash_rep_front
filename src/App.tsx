@@ -220,7 +220,7 @@ function AppContent() {
                   </PhaseProtectedRoute>
                 } />
                 <Route path="/workspace" element={
-                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                  <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
                     <Workspace />
                   </PhaseProtectedRoute>
                 } />
