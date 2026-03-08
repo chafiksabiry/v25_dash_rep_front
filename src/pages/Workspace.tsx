@@ -54,7 +54,7 @@ interface APIResponse {
 export function Workspace() {
   const location = useLocation();
   const gigId = location.state?.gigId;
-  const [activeTab, setActiveTab] = useState(gigId ? 'voice' : 'queue');
+  const [activeTab, setActiveTab] = useState('voice');
   const [message, setMessage] = useState('');
   const [selectedInteraction, setSelectedInteraction] = useState<Interaction | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
@@ -321,7 +321,7 @@ export function Workspace() {
           <div className="h-[600px] bg-white rounded-lg p-6 flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <div className="flex flex-col">
-                <h2 className="text-xl font-semibold text-gray-900">Voice Calls</h2>
+                <h2 className="text-xl font-semibold text-gray-900">Leads</h2>
                 {enrolledGigs.length > 0 && (
                   <div className="mt-2">
                     <select

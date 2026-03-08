@@ -400,7 +400,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
   };
 
   // Function to take a contact center skill assessment
-  const takeContactCenterSkillAssessment = (skillName: string) => {
+  const takeContactCenterSkillAssessment = (skillName: string, categoryName?: string) => {
     const formattedSkill = formatSkillForUrl(skillName);
 
     // Check if we're in standalone mode
@@ -410,7 +410,11 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       ? import.meta.env.VITE_ASSESSMENT_APP_STANDALONE
       : import.meta.env.VITE_ASSESSMENT_APP;
 
-    const assessmentUrl = `${assessmentAppUrl}/contact-center/${formattedSkill}`;
+    let assessmentUrl = `${assessmentAppUrl}/contact-center/${formattedSkill}`;
+    if (categoryName) {
+      assessmentUrl += `?cat=${encodeURIComponent(categoryName)}`;
+    }
+
     console.log("assessmentUrl contact center", assessmentUrl);
     window.location.href = assessmentUrl;
   };
@@ -1115,11 +1119,21 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
             </div>
           )}
           <div className="space-y-8">
-            {CONTACT_CENTER_SKILLS.map((category) => (
+            {[
+              ...CONTACT_CENTER_SKILLS,
+              {
+                name: "Activities",
+                skills: (profile.professionalSummary?.activities || []).map((a: any) => typeof a === 'string' ? a : a.name)
+              },
+              {
+                name: "Industries",
+                skills: (profile.professionalSummary?.industries || []).map((i: any) => typeof i === 'string' ? i : i.name)
+              }
+            ].filter(category => category.skills.length > 0).map((category) => (
               <div key={category.name} className="mb-8">
                 <h3 className="text-xl font-medium text-gray-800 mb-4 pb-2 border-b">{category.name}</h3>
                 <div className="space-y-4">
-                  {category.skills.map((skillName) => {
+                  {category.skills.map((skillName: string) => {
                     const skillData = findSkillData(skillName);
 
                     return (
@@ -1178,7 +1192,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
                           )}
 
                           <button
-                            onClick={() => takeContactCenterSkillAssessment(skillName)}
+                            onClick={() => takeContactCenterSkillAssessment(skillName, category.name)}
                             className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
                           >
                             {skillData?.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
