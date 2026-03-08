@@ -36,6 +36,11 @@ interface Lead {
   };
 }
 
+interface EnrolledGig {
+  _id: string;
+  title: string;
+}
+
 interface APIResponse {
   success: boolean;
   count: number;
@@ -57,26 +62,69 @@ export function Workspace() {
   const [isLoadingLeads, setIsLoadingLeads] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
+  const [selectedGigId, setSelectedGigId] = useState<string>(gigId || '');
   const aiService = new AIService();
   const [showCallInterface, setShowCallInterface] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
+    fetchEnrolledGigs();
+  }, []);
+
+  useEffect(() => {
     if (activeTab === 'voice') {
       fetchLeads(currentPage);
     }
-  }, [activeTab, gigId, currentPage]);
+  }, [activeTab, selectedGigId, currentPage]);
+
+  const fetchEnrolledGigs = async () => {
+    const agentId = localStorage.getItem('agentId');
+    const token = localStorage.getItem('token');
+    if (!agentId || !token) return;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${agentId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const profileData = await response.json();
+        if (profileData.gigs && Array.isArray(profileData.gigs)) {
+          // Filter enrolled gigs and fetch their details or use what's available
+          // For now, let's assume we might need to fetch titles if not in profile
+          // But usually, profile might have some gig info or we can fetch from Gigs API
+          const enrolled = profileData.gigs
+            .filter((g: any) => g.status === 'enrolled')
+            .map((g: any) => ({
+              _id: g.gigId?.$oid || g.gigId,
+              title: g.gigTitle || `Gig ${g.gigId?.$oid || g.gigId}`
+            }));
+
+          setEnrolledGigs(enrolled);
+
+          // If no gigId from location, pick the first enrolled one
+          if (!selectedGigId && enrolled.length > 0) {
+            setSelectedGigId(enrolled[0]._id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching enrolled gigs:', error);
+    }
+  };
 
   const fetchLeads = async (page: number = 1) => {
-    console.log("🔍 Workspace: fetching leads", { gigId, page });
+    const activeGigId = selectedGigId || gigId;
+    console.log("🔍 Workspace: fetching leads", { activeGigId, page });
     const baseUrl = (import.meta.env.VITE_DASHBOARD_COMPANY_API_URL || 'https://v25dashboardbackend-production.up.railway.app/api').replace(/\/$/, '');
     const userId = localStorage.getItem('agentId') || '682b590b4d60b1ff380973c2';
     const limit = 50;
+
     let url = `${baseUrl}/leads/user/${userId}?page=${page}&limit=${limit}`;
 
-    if (gigId) {
-      url = `${baseUrl}/leads/gig/${gigId}?page=${page}&limit=${limit}`;
+    if (activeGigId) {
+      url = `${baseUrl}/leads/gig/${activeGigId}?page=${page}&limit=${limit}`;
     }
 
     try {
@@ -269,7 +317,26 @@ export function Workspace() {
         return (
           <div className="h-[600px] bg-white rounded-lg p-6 flex flex-col">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Voice Calls {gigId && <span className="text-sm font-normal text-blue-600 ml-2">(Gig specific leads)</span>}</h2>
+              <div className="flex flex-col">
+                <h2 className="text-xl font-semibold text-gray-900">Voice Calls</h2>
+                {enrolledGigs.length > 0 && (
+                  <div className="mt-2">
+                    <select
+                      value={selectedGigId}
+                      onChange={(e) => {
+                        setSelectedGigId(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="text-sm border border-gray-300 rounded-lg px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">All My Leads</option>
+                      {enrolledGigs.map(g => (
+                        <option key={g._id} value={g._id}>{g.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
               <div className="flex items-center space-x-2">
                 <button className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">
                   <Mic className="w-5 h-5" />
