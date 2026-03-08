@@ -45,7 +45,7 @@ interface APIResponse {
 export function Workspace() {
   const location = useLocation();
   const gigId = location.state?.gigId;
-  const [activeTab, setActiveTab] = useState('queue');
+  const [activeTab, setActiveTab] = useState(gigId ? 'voice' : 'queue');
   const [message, setMessage] = useState('');
   const [selectedInteraction, setSelectedInteraction] = useState<Interaction | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
@@ -55,7 +55,7 @@ export function Workspace() {
   const aiService = new AIService();
   const [showCallInterface, setShowCallInterface] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (activeTab === 'voice') {
@@ -69,8 +69,8 @@ export function Workspace() {
       setIsLoadingLeads(true);
 
       const baseUrl = import.meta.env.VITE_DASHBOARD_COMPANY_API_URL || 'https://harxv25dashboardfrontend.netlify.app/api';
-      // Fallback ID if currentUser is not available
-      const userId = currentUser?.id || '682b590b4d60b1ff380973c2';
+      // Fallback ID if user is not available
+      const userId = user?.agentId || '682b590b4d60b1ff380973c2';
       let url = `${baseUrl}/leads/user/${userId}`;
 
       if (gigId) {
@@ -80,7 +80,19 @@ export function Workspace() {
         console.log(`👤 No Gig ID, fetching default user leads from: ${url}`);
       }
 
-      const response = await fetch(url);
+      const token = localStorage.getItem('token');
+      const agentId = localStorage.getItem('agentId');
+      const headers: Record<string, string> = {
+        'Accept': 'application/json'
+      };
+
+      if (token) headers.Authorization = `Bearer ${token}`;
+      if (agentId) {
+        headers['x-user-id'] = agentId;
+        headers['x-agent-id'] = agentId;
+      }
+
+      const response = await fetch(url, { headers });
       const responseData: APIResponse = await response.json();
       console.log("✅ Leads data received:", responseData);
 
@@ -511,7 +523,7 @@ export function Workspace() {
           <div className="bg-white p-6 rounded-lg shadow-lg w-96 pointer-events-auto">
             <CallInterface
               phoneNumber={selectedLead.Telephony}
-              agentId={currentUser?.id || ''}
+              agentId={user?.agentId || ''}
               onEnd={handleCallEnd}
               provider="twilio"
               callId={selectedLead.id}
