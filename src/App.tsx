@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { Dashboard } from './pages/Dashboard';
@@ -60,6 +60,7 @@ interface UserProfile {
 }
 
 function AppContent() {
+  const { isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
@@ -155,6 +156,13 @@ function AppContent() {
       window.removeEventListener('popstate', handleRouteChange);
     };
   }, []);
+
+  useEffect(() => {
+    // Si l'utilisateur est sur la page d'auth mais est déjà connecté, rediriger vers le dashboard
+    if (isAuthenticated && window.location.pathname === '/auth') {
+      window.location.replace('/repdashboard/profile');
+    }
+  }, [isAuthenticated]);
 
   if (loading) {
     console.log('⏳ App is in loading state, showing loading screen');

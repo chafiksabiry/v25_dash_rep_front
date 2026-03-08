@@ -53,21 +53,21 @@ interface IpHistoryResponse {
  */
 export const getProfileData = async () => {
   console.log('🔍 Attempting to get profile data...');
-  
+
   // Try to get from localStorage first
   const storedProfile = localStorage.getItem('profileData');
   const storedTimestamp = localStorage.getItem('profileDataTimestamp');
-  
+
   if (!storedProfile) {
     console.log('📭 No profile data found in localStorage');
     console.log('🌐 Fetching fresh data from API...');
     return await fetchProfileFromAPI();
   }
-  
+
   // Check if data exists and is fresh
-  const dataIsFresh = storedTimestamp && 
-                     (Date.now() - parseInt(storedTimestamp)) < CACHE_DURATION;
-  
+  const dataIsFresh = storedTimestamp &&
+    (Date.now() - parseInt(storedTimestamp)) < CACHE_DURATION;
+
   if (dataIsFresh) {
     console.log('✅ Using cached profile data from localStorage');
     console.log(`⏱️ Cache age: ${Math.round((Date.now() - parseInt(storedTimestamp)) / 1000 / 60)} minutes`);
@@ -93,11 +93,11 @@ export const getProfileData = async () => {
  */
 export const fetchProfileFromAPI = async () => {
   console.log('🌐 fetchProfileFromAPI: Starting API fetch process');
-  
+
   // Get run mode from environment variable
   const runMode = import.meta.env.VITE_RUN_MODE || 'in-app';
   let userId;
-  
+
   // Determine userId based on run mode
   if (runMode === 'standalone') {
     console.log("🔑 Running in standalone mode");
@@ -107,64 +107,63 @@ export const fetchProfileFromAPI = async () => {
   } else {
     console.log("🔑 Running in in-app mode");
     // Use userId from cookies in in-app mode
-    userId = Cookies.get('userId');
-    console.log("🔑 userId cookie:", userId);
-    console.log("🔑 Verified saved user ID from cookie:", userId);
+    userId = Cookies.get('userId') || sessionStorage.getItem('userId');
+    console.log("🔑 userId found (Cookie or Session):", userId);
   }
-  
+
   if (!userId) {
     console.error('❌ No userId found based on run mode:', runMode);
     throw new Error('User ID not found');
   }
-  
+
   console.log(`👤 Using userId: ${userId}`);
-  
+
   try {
     console.log('🌐 Attempting to fetch profile by user ID...');
     const response = await profileApi.getById(userId);
     console.log('✅ Successfully fetched profile by user ID');
     console.log('🔍 Response structure:', response.data);
-    
+
     // Handle different response structures
     const profileData = response.data.data || response.data;
     console.log('📋 Extracted profile data:', profileData);
-    
+
     if (!profileData) {
       throw new Error('No profile data found in response');
     }
-    
+
     console.log('💾 Storing profile data in localStorage');
     if (profileData._id) {
       localStorage.setItem('agentId', profileData._id);
       console.log(`📋 Stored agentId: ${profileData._id}`);
     }
-    
+
     // Store the entire profile data in localStorage
     localStorage.setItem('profileData', JSON.stringify(profileData));
     localStorage.setItem('profileDataTimestamp', Date.now().toString());
     console.log('✅ Profile data cached successfully');
-    
+
     return profileData;
   } catch (idError) {
     console.error('❌ Error fetching by ID:', idError);
     console.log('🌐 Falling back to default profile endpoint...');
-    
+
     try {
       const response = await profileApi.get();
       console.log('✅ Successfully fetched profile from default endpoint');
       const profileData = response.data;
-      
+
       console.log('💾 Storing profile data in localStorage');
       if (profileData._id) {
         localStorage.setItem('agentId', profileData._id);
         console.log(`📋 Stored agentId: ${profileData._id}`);
       }
-      
+
       // Store the entire profile data in localStorage
       localStorage.setItem('profileData', JSON.stringify(profileData));
       localStorage.setItem('profileDataTimestamp', Date.now().toString());
       console.log('✅ Profile data cached successfully');
-      
+
       return profileData;
     } catch (fallbackError) {
       console.error('❌ Error fetching from fallback endpoint:', fallbackError);
@@ -178,18 +177,18 @@ export const fetchProfileFromAPI = async () => {
  */
 export const updateProfileData = async (profileId: string, data: any) => {
   console.log('🔄 Updating profile data...', { profileId, dataKeys: Object.keys(data) });
-  
+
   try {
     // Update in API
     console.log('🌐 Sending update to API...');
     const response = await profileApi.update(profileId, data);
     console.log('✅ API update successful');
-    
+
     // Get fresh data from API to ensure consistency
     console.log('🔄 Refreshing cached data with latest from API...');
     await fetchProfileFromAPI();
     console.log('✅ Cache refresh complete');
-    
+
     return response.data;
   } catch (error) {
     console.error('❌ Error updating profile data:', error);
@@ -202,29 +201,29 @@ export const updateProfileData = async (profileId: string, data: any) => {
  */
 export const isProfileDataValid = () => {
   console.log('🔍 Checking if cached profile data is valid...');
-  
+
   const storedProfile = localStorage.getItem('profileData');
   const storedTimestamp = localStorage.getItem('profileDataTimestamp');
-  
+
   if (!storedProfile) {
     console.log('📭 No profile data found in localStorage');
     return false;
   }
-  
+
   if (!storedTimestamp) {
     console.log('⏱️ No timestamp found for cached data');
     return false;
   }
-  
+
   try {
     // Check if data is valid JSON
     JSON.parse(storedProfile);
     console.log('✅ Cached data is valid JSON');
-    
+
     // Check if data is fresh
     const cacheAge = Date.now() - parseInt(storedTimestamp);
     const dataIsFresh = cacheAge < CACHE_DURATION;
-    
+
     if (dataIsFresh) {
       console.log(`✅ Cache is fresh (${Math.round(cacheAge / 1000 / 60)} minutes old)`);
       return true;
@@ -256,10 +255,10 @@ export const updateBasicInfo = async (id: string, basicInfo: any) => {
   try {
     console.log('🔄 Updating basic info...', { id, dataKeys: Object.keys(basicInfo) });
     const { data } = await profileApi.updateBasicInfo(id, basicInfo);
-    
+
     // Refresh cached data
     await fetchProfileFromAPI();
-    
+
     return data;
   } catch (error: any) {
     console.error('❌ Error updating basic info:', error);
@@ -274,10 +273,10 @@ export const updateExperience = async (id: string, experience: any) => {
   try {
     console.log('🔄 Updating experience...', { id });
     const { data } = await profileApi.updateExperience(id, experience);
-    
+
     // Refresh cached data
     await fetchProfileFromAPI();
-    
+
     return data;
   } catch (error: any) {
     console.error('❌ Error updating experience:', error);
@@ -292,10 +291,10 @@ export const updateSkills = async (id: string, skills: any) => {
   try {
     console.log('🔄 Updating skills...', { id, skillTypes: Object.keys(skills) });
     const { data } = await profileApi.updateSkills(id, skills);
-    
+
     // Refresh cached data
     await fetchProfileFromAPI();
-    
+
     return data;
   } catch (error: any) {
     console.error('❌ Error updating skills:', error);
@@ -308,7 +307,7 @@ export const updateSkills = async (id: string, skills: any) => {
  */
 export const getProfilePlan = async (profileId: string): Promise<PlanResponse> => {
   console.log('🔍 Fetching profile subscription plan...', { profileId });
-  
+
   try {
     const response = await profileApi.getPlan(profileId);
     console.log('✅ Successfully fetched plan data:', response.data);
@@ -317,7 +316,7 @@ export const getProfilePlan = async (profileId: string): Promise<PlanResponse> =
     console.error('❌ Error fetching plan data:', error);
     throw error;
   }
-}; 
+};
 
 // Function to fetch user's IP history
 export const fetchUserIpHistory = async (userId: string): Promise<IpHistoryResponse> => {
@@ -364,7 +363,7 @@ export const getFirstLoginCountryCode = (ipHistory: IpHistoryEntry[]): string | 
 export const getUserId = (): string => {
   const runMode = import.meta.env.VITE_RUN_MODE || 'in-app';
   let userId: string;
-  
+
   // Determine userId based on run mode
   if (runMode === 'standalone') {
     console.log("🔑 Running in standalone mode");
@@ -374,16 +373,15 @@ export const getUserId = (): string => {
   } else {
     console.log("🔑 Running in in-app mode");
     // Use userId from cookies in in-app mode
-    userId = Cookies.get('userId') || '';
-    console.log("🔑 userId cookie:", userId);
-    console.log("🔑 Verified saved user ID from cookie:", userId);
+    userId = Cookies.get('userId') || sessionStorage.getItem('userId') || '';
+    console.log("🔑 userId found (Cookie or Session):", userId);
   }
-  
+
   if (!userId) {
     console.error('❌ No userId found based on run mode:', runMode);
     throw new Error('User ID not found');
   }
-  
+
   console.log(`👤 Using userId: ${userId}`);
   return userId;
 };
@@ -401,16 +399,16 @@ export const checkCountryMismatch = async (
   try {
     // Get userId automatically
     const userId = getUserId();
-    
+
     const ipHistoryResponse = await fetchUserIpHistory(userId);
-    
+
     if (!ipHistoryResponse.success) {
       console.error('Failed to fetch IP history:', ipHistoryResponse.message);
       return null;
     }
 
     const firstLoginCountryCode = getFirstLoginCountryCode(ipHistoryResponse.data);
-    
+
     if (!firstLoginCountryCode) {
       console.log('No login history found');
       return null;
@@ -418,12 +416,12 @@ export const checkCountryMismatch = async (
 
     // Check if there's a mismatch
     const hasMismatch = firstLoginCountryCode !== selectedCountryCode;
-    
+
     if (hasMismatch) {
       // Find country names for display
       const firstLoginCountryData = countries.find(c => c.countryCode === firstLoginCountryCode);
       const selectedCountryData = countries.find(c => c.countryCode === selectedCountryCode);
-      
+
       return {
         hasMismatch: true,
         firstLoginCountry: firstLoginCountryData?.countryName || firstLoginCountryCode,

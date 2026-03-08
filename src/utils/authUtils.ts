@@ -15,23 +15,14 @@ export const getAgentId = (): string | null => {
     return agentIdFromCookie.trim();
   }
 
-  // 2. Si pas trouvé dans les cookies, essayer localStorage
-  try {
-    const profileDataString = localStorage.getItem('profileData');
-    if (profileDataString) {
-      const profileData = JSON.parse(profileDataString);
-      const agentIdFromProfile = profileData._id;
-      
-      if (agentIdFromProfile) {
-        console.log('AgentId trouvé dans profileData:', agentIdFromProfile);
-        return agentIdFromProfile;
-      }
-    }
-  } catch (error) {
-    console.error('Erreur lors de la lecture de profileData depuis localStorage:', error);
+  // 3. Si toujours pas trouvé, essayer sessionStorage
+  const agentIdFromSession = sessionStorage.getItem('agentId') || sessionStorage.getItem('userId');
+  if (agentIdFromSession) {
+    console.log('AgentId trouvé dans sessionStorage:', agentIdFromSession);
+    return agentIdFromSession.trim();
   }
 
-  console.warn('AgentId non trouvé dans les cookies ni dans localStorage');
+  console.warn('AgentId non trouvé dans les cookies, localStorage ou sessionStorage');
   return null;
 };
 
@@ -40,9 +31,9 @@ export const getAgentId = (): string | null => {
  * @returns {string | null} Le token ou null si non trouvé
  */
 export const getAuthToken = (): string | null => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   if (!token) {
-    console.warn('Token d\'authentification non trouvé dans localStorage');
+    console.warn('Token d\'authentification non trouvé dans localStorage ou sessionStorage');
   }
   return token;
 };

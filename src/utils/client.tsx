@@ -58,10 +58,9 @@ const addAuthInterceptor = (axiosInstance: any) => {
         console.log("🔑 Using static token from env:", token);
       } else {
         console.log("🔑 Running in in-app mode");
-        // Use userId from cookies in in-app mode
-        token = localStorage.getItem('token');
-        console.log("🔑 token from localStorage:", token);
-        console.log("🔑 Verified saved token from localStorage:", token);
+        // Use token from localStorage or sessionStorage
+        token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        console.log("🔑 token found (Local or Session):", token);
       }
       console.log("🔑 Token from client.js addAuthInterceptor:", token);
       if (token) {
@@ -92,14 +91,14 @@ const addAuthInterceptor = (axiosInstance: any) => {
         message: error.response?.data?.message || error.message,
         data: error.response?.data
       });
-      
+
       if (error.response?.status === 401) {
         console.warn("🔐 Unauthorized - token may be expired or invalid");
         // Optionally clear token and redirect to login
         // localStorage.removeItem('token');
         // window.location.href = '/login';
       }
-      
+
       return Promise.reject(error);
     }
   );
