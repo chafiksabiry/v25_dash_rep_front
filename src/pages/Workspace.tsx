@@ -96,10 +96,12 @@ export function Workspace() {
           // But usually, profile might have some gig info or we can fetch from Gigs API
           const enrolled = profileData.gigs
             .filter((g: any) => g.status === 'enrolled')
-            .map((g: any) => ({
-              _id: g.gigId?.$oid || g.gigId,
-              title: g.gigTitle || `Gig ${g.gigId?.$oid || g.gigId}`
-            }));
+            .map((g: any) => {
+              const gigInfo = g.gigId;
+              const id = typeof gigInfo === 'object' ? (gigInfo._id || gigInfo.$oid) : gigInfo;
+              const title = typeof gigInfo === 'object' && gigInfo.title ? gigInfo.title : (g.gigTitle || `Gig ${id}`);
+              return { _id: id, title };
+            });
 
           setEnrolledGigs(enrolled);
 
