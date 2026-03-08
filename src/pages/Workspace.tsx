@@ -65,34 +65,22 @@ export function Workspace() {
 
   const fetchLeads = async () => {
     console.log("🔍 Workspace: fetching leads", { gigId });
+    const baseUrl = (import.meta.env.VITE_DASHBOARD_COMPANY_API_URL || 'https://v25dashboardbackend-production.up.railway.app/api').replace(/\/$/, '');
+    const userId = localStorage.getItem('agentId') || '682b590b4d60b1ff380973c2';
+    let url = `${baseUrl}/leads/user/${userId}`;
+
+    if (gigId) {
+      url = `${baseUrl}/leads/gig/${gigId}`;
+    }
+
     try {
       setIsLoadingLeads(true);
+      console.log(`📡 Attempting fetch to: ${url}`);
 
-      const baseUrl = import.meta.env.VITE_DASHBOARD_COMPANY_API_URL || 'https://harxv25dashboardfrontend.netlify.app/api';
-      // Fallback ID if user is not available
-      const userId = user?.agentId || '682b590b4d60b1ff380973c2';
-      let url = `${baseUrl}/leads/user/${userId}`;
+      // Simplified fetch without complex headers to test CORS
+      const response = await fetch(url);
+      console.log("📡 Fetch response status:", response.status, response.statusText);
 
-      if (gigId) {
-        url = `${baseUrl}/leads/gig/${gigId}`;
-        console.log(`🎯 Gig ID detected, fetching leads from: ${url}`);
-      } else {
-        console.log(`👤 No Gig ID, fetching default user leads from: ${url}`);
-      }
-
-      const token = localStorage.getItem('token');
-      const agentId = localStorage.getItem('agentId');
-      const headers: Record<string, string> = {
-        'Accept': 'application/json'
-      };
-
-      if (token) headers.Authorization = `Bearer ${token}`;
-      if (agentId) {
-        headers['x-user-id'] = agentId;
-        headers['x-agent-id'] = agentId;
-      }
-
-      const response = await fetch(url, { headers });
       const responseData: APIResponse = await response.json();
       console.log("✅ Leads data received:", responseData);
 
@@ -101,8 +89,13 @@ export function Workspace() {
       } else {
         setLeads([]);
       }
-    } catch (error) {
-      console.error('❌ Error fetching leads:', error);
+    } catch (error: any) {
+      console.error('❌ Error fetching leads (detailed):', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        url
+      });
       setLeads([]);
     } finally {
       setIsLoadingLeads(false);
