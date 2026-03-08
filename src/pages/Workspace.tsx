@@ -23,6 +23,7 @@ interface Interaction {
 }
 
 interface Lead {
+  _id?: string;
   id: string;
   Deal_Name: string;
   Telephony: string;
@@ -369,7 +370,7 @@ export function Workspace() {
                     <div className="space-y-3">
                       {leads.map((lead) => (
                         <div
-                          key={`${lead.id}-${lead.Email_1}-${lead.Created_Time}`}
+                          key={`${lead._id || lead.id}-${lead.Email_1}-${lead.Created_Time}`}
                           className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
                         >
                           <div className="flex justify-between items-center">
@@ -607,8 +608,9 @@ export function Workspace() {
   };
 
   const handleCallClick = (lead: Lead) => {
-    // Redirect to copilot with the leadId
-    window.location.href = `/copilot?leadId=${lead.id}`;
+    // Redirect to copilot with the leadId (prefer _id if available)
+    const leadId = lead._id || lead.id;
+    window.location.href = `/copilot?leadId=${leadId}`;
   };
 
   return (
