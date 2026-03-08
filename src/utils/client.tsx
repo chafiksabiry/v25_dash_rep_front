@@ -69,6 +69,17 @@ const addAuthInterceptor = (axiosInstance: any) => {
       } else {
         console.warn("⚠️ No token found - request will be made without authentication");
       }
+
+      // Add identification headers if agentId exists
+      const agentId = localStorage.getItem('agentId') || sessionStorage.getItem('agentId') ||
+        (runMode === 'standalone' ? import.meta.env.VITE_STANDALONE_USER_ID : null);
+
+      if (agentId) {
+        config.headers['x-user-id'] = agentId;
+        config.headers['x-agent-id'] = agentId;
+        console.log("🆔 Identification headers set:", agentId);
+      }
+
       console.log("🌐 Making request to:", config.baseURL + config.url);
       return config;
     },
