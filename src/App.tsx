@@ -215,15 +215,13 @@ function AppContent() {
                 </PhaseProtectedRoute>
               } />
               <Route path="/community" element={<Community />} />
-              <Route path="/leads" element={
+              <Route path="/import-leads" element={
                 <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                   <ImportLeads />
                 </PhaseProtectedRoute>
               } />
               <Route path="/session-planning" element={
-                <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <SessionPlanning />
-                </PhaseProtectedRoute>
+                <SessionPlanning />
               } />
               <Route path="/call-report" element={
                 <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
