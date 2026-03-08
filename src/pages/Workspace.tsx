@@ -39,6 +39,9 @@ interface Lead {
 interface APIResponse {
   success: boolean;
   count: number;
+  total: number;
+  totalPages: number;
+  currentPage: number;
   data: Lead[];
 }
 
@@ -52,6 +55,8 @@ export function Workspace() {
   const [sentiment, setSentiment] = useState<'positive' | 'neutral' | 'negative'>('neutral');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoadingLeads, setIsLoadingLeads] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const aiService = new AIService();
   const [showCallInterface, setShowCallInterface] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -59,18 +64,19 @@ export function Workspace() {
 
   useEffect(() => {
     if (activeTab === 'voice') {
-      fetchLeads();
+      fetchLeads(currentPage);
     }
-  }, [activeTab, gigId]);
+  }, [activeTab, gigId, currentPage]);
 
-  const fetchLeads = async () => {
-    console.log("🔍 Workspace: fetching leads", { gigId });
+  const fetchLeads = async (page: number = 1) => {
+    console.log("🔍 Workspace: fetching leads", { gigId, page });
     const baseUrl = (import.meta.env.VITE_DASHBOARD_COMPANY_API_URL || 'https://v25dashboardbackend-production.up.railway.app/api').replace(/\/$/, '');
     const userId = localStorage.getItem('agentId') || '682b590b4d60b1ff380973c2';
-    let url = `${baseUrl}/leads/user/${userId}`;
+    const limit = 50;
+    let url = `${baseUrl}/leads/user/${userId}?page=${page}&limit=${limit}`;
 
     if (gigId) {
-      url = `${baseUrl}/leads/gig/${gigId}`;
+      url = `${baseUrl}/leads/gig/${gigId}?page=${page}&limit=${limit}`;
     }
 
     try {
@@ -86,6 +92,9 @@ export function Workspace() {
 
       if (responseData.success && Array.isArray(responseData.data)) {
         setLeads(responseData.data);
+        if (responseData.totalPages) {
+          setTotalPages(responseData.totalPages);
+        }
       } else {
         setLeads([]);
       }
@@ -287,37 +296,62 @@ export function Workspace() {
                     <p className="text-gray-500">No leads found {gigId ? "for this gig" : "for your account"}.</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {leads.map((lead) => (
-                      <div
-                        key={`${lead.id}-${lead.Email_1}-${lead.Created_Time}`}
-                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h4 className="font-medium text-gray-900">{lead.Deal_Name}</h4>
-                            <p className="text-sm text-gray-600">{lead.Telephony || 'No phone'}</p>
-                            <p className="text-sm text-gray-500">{lead.Email_1 || 'No email'}</p>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${lead.Stage === 'Respecte le planning' ? 'bg-green-100 text-green-700' :
-                              lead.Stage === 'En retard' ? 'bg-red-100 text-red-700' :
-                                'bg-gray-100 text-gray-700'
-                              }`}>
-                              {lead.Stage}
-                            </span>
-                            <button
-                              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
-                              onClick={() => handleCallClick(lead)}
-                            >
-                              <Phone className="w-4 h-4" />
-                              <span>Call</span>
-                            </button>
+                  <>
+                    <div className="space-y-3">
+                      {leads.map((lead) => (
+                        <div
+                          key={`${lead.id}-${lead.Email_1}-${lead.Created_Time}`}
+                          className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <h4 className="font-medium text-gray-900">{lead.Deal_Name}</h4>
+                              <p className="text-sm text-gray-600">{lead.Telephony || (lead as any).Phone || 'No phone'}</p>
+                              <p className="text-sm text-gray-500">{lead.Email_1 || 'No email'}</p>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              {lead.Stage && lead.Stage !== 'New' && (
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${lead.Stage === 'Respecte le planning' ? 'bg-green-100 text-green-700' :
+                                  lead.Stage === 'En retard' ? 'bg-red-100 text-red-700' :
+                                    'bg-gray-100 text-gray-700'
+                                  }`}>
+                                  {lead.Stage}
+                                </span>
+                              )}
+                              <button
+                                className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+                                onClick={() => handleCallClick(lead)}
+                              >
+                                <Phone className="w-4 h-4" />
+                                <span>Call</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                    {totalPages > 1 && (
+                      <div className="mt-6 flex justify-center items-center space-x-4">
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          disabled={currentPage === 1}
+                          className={`px-4 py-2 rounded-lg border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                        >
+                          Previous
+                        </button>
+                        <span className="text-sm text-gray-600">
+                          Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          disabled={currentPage === totalPages}
+                          className={`px-4 py-2 rounded-lg border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                        >
+                          Next
+                        </button>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -537,6 +571,8 @@ export function Workspace() {
         </div>
       </div>
 
+      {/* Tool selector hidden as requested */}
+      {/* 
       <div className="grid grid-cols-5 gap-4 mb-6">
         {workspaceTools.map((tool) => (
           <button
@@ -552,6 +588,7 @@ export function Workspace() {
           </button>
         ))}
       </div>
+      */}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">{renderWorkspace()}</div>
