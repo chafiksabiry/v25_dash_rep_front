@@ -44,8 +44,7 @@ export const getAuthToken = (): string | null => {
  */
 export const isAuthenticated = (): boolean => {
   const agentId = getAgentId();
-  const token = getAuthToken();
-  return !!(agentId && token);
+  return !!agentId;
 };
 
 /**

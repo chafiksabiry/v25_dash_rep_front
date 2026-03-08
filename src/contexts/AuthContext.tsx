@@ -24,7 +24,7 @@ export const useAuth = (): AuthContextType => {
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
 
   // Fonction utilitaire pour construire l'URL de l'app principale
   const getMainAppUrl = () => {
@@ -35,32 +35,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const checkAuthStatus = useCallback(() => {
     const agentId = getAgentId();
     const token = getAuthToken();
-    
+
     // Ne pas logger à chaque fois pour éviter le spam de console
-    const isAuth = !!(agentId && token);
-    
+    const isAuth = !!agentId;
+
     // Seulement mettre à jour si l'état a changé
     if (isAuthenticated !== isAuth) {
       console.log('Auth status changed:', { agentId: !!agentId, token: !!token });
       setIsAuthenticated(isAuth);
-      
+
       if (isAuth) {
         setUser({ agentId, token });
       } else {
         setUser(null);
       }
     }
-    
+
     return isAuth;
   }, [isAuthenticated]);
 
   // Fonction de logout sécurisée
   const logout = () => {
     console.log('Performing secure logout...');
-    
+
     // 1. Nettoyer le localStorage
     localStorage.clear();
-    
+
     // 2. Nettoyer tous les cookies
     const cookies = Cookies.get();
     Object.keys(cookies).forEach(cookieName => {
@@ -68,17 +68,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Essayer aussi de supprimer avec différents domaines si nécessaire
       Cookies.remove(cookieName, { path: '/', domain: window.location.hostname });
     });
-    
+
     // 3. Nettoyer l'état local
     setIsAuthenticated(false);
     setUser(null);
-    
+
     // 4. Construire l'URL complète pour rediriger vers l'app principale
     const mainAppUrl = getMainAppUrl();
-    
+
     // 5. Nettoyer l'historique du navigateur pour empêcher le retour
-    window.history.replaceState(null, null, mainAppUrl);
-    
+    window.history.replaceState({}, '', mainAppUrl);
+
     // 6. Rediriger vers l'application principale (pas la sous-app)
     window.location.replace(mainAppUrl);
   };
@@ -86,38 +86,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Vérification initiale au chargement
   useEffect(() => {
     setIsLoading(true);
-    
+
     const agentId = getAgentId();
     const token = getAuthToken();
-    
+
     console.log('Initial auth check:', { agentId: !!agentId, token: !!token });
-    
-    const isAuth = !!(agentId && token);
+
+    const isAuth = !!agentId;
     setIsAuthenticated(isAuth);
-    
+
     if (isAuth) {
       setUser({ agentId, token });
     } else {
       setUser(null);
     }
-    
+
     setIsLoading(false);
   }, []);
 
   // Écouter les changements dans localStorage/cookies depuis d'autres onglets
   useEffect(() => {
-    const handleStorageChange = (e) => {
+    const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'token' && !e.newValue && isAuthenticated) {
         // Token supprimé dans un autre onglet - logout direct
         console.log('Token removed in another tab, logging out...');
         setIsAuthenticated(false);
         setUser(null);
-        window.location.replace(getMainAppUrl());
+        // Ne plus rediriger de force vers le shell
+        // window.location.replace(getMainAppUrl());
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -129,7 +130,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.warn('repApiClient interceptors not available');
       return;
     }
-    
+
     const interceptorId = repApiClient.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -143,7 +144,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           });
           setIsAuthenticated(false);
           setUser(null);
-          window.location.replace(getMainAppUrl());
+          // Ne plus rediriger de force vers le shell
+          // window.location.replace(getMainAppUrl());
         }
         return Promise.reject(error);
       }

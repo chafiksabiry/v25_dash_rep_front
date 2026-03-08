@@ -16,7 +16,7 @@ const LoadingScreen = () => (
 const ProtectedRoute = ({ children, fallback }: { children: React.ReactNode; fallback?: string }) => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
-  
+
   // Construire l'URL complète pour l'app principale
   const getMainAppUrl = () => {
     if (fallback) return fallback;
@@ -30,7 +30,7 @@ const ProtectedRoute = ({ children, fallback }: { children: React.ReactNode; fal
       const isStandalone = import.meta.env.VITE_RUN_MODE === 'standalone';
       const basename = isStandalone ? '' : '/repdashboard';
       const fullPath = basename + location.pathname + location.search;
-      
+
       // Remplacer l'entrée actuelle de l'historique pour empêcher le retour
       window.history.replaceState(
         { protected: true, timestamp: Date.now() },
@@ -48,20 +48,20 @@ const ProtectedRoute = ({ children, fallback }: { children: React.ReactNode; fal
       // Si l'utilisateur essaie de revenir en arrière depuis une page protégée
       if (event.state?.protected) {
         console.log('Tentative de navigation arrière détectée sur page protégée');
-        
+
         // Si l'utilisateur n'est plus authentifié (état déjà géré par AuthContext)
         if (!isAuthenticated) {
           window.location.replace(getMainAppUrl());
           return;
         }
-        
+
         // Si l'utilisateur est toujours authentifié, permettre la navigation
         console.log('Navigation autorisée pour utilisateur authentifié');
       }
     };
 
     window.addEventListener('popstate', handlePopState);
-    
+
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
@@ -99,16 +99,17 @@ const ProtectedRoute = ({ children, fallback }: { children: React.ReactNode; fal
     return <LoadingScreen />;
   }
 
-  // Si non authentifié, rediriger immédiatement vers l'app d'authentification
+  // Si non authentifié, rediriger vers la page d'accueil ou afficher un message
   if (!isAuthenticated) {
     const redirectUrl = getMainAppUrl();
-    console.log('Utilisateur non authentifié, redirection automatique vers:', redirectUrl);
-    
-    // Redirection immédiate vers l'app principale
-    window.location.replace(redirectUrl);
-    
-    // Retourner un écran de chargement pendant la redirection
-    return <LoadingScreen />;
+    console.log('Utilisateur non authentifié (redirection shell désactivée):', redirectUrl);
+
+    // Au lieu de rediriger de force vers le shell, on peut soit ne rien rendre,
+    // soit rediriger vers une route locale de login si elle existe.
+    // Pour l'instant, on suit la logique "Company" qui est moins agressive.
+    // window.location.replace(redirectUrl);
+
+    return <div className="p-8 text-center">Veuillez vous connecter.</div>;
   }
 
   // Si authentifié, afficher le contenu protégé
