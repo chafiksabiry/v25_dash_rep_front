@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  MapPin, Mail, Phone, Target, Clock, Briefcase,
-  Calendar, Edit, CreditCard, X, RefreshCw, CheckCircle, User, Building2, Layers,
-  AlertCircle, Zap, Award, Globe, ChevronRight
+  MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase,
+  Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
+  Edit, CreditCard, X, RefreshCw, CheckCircle
 } from 'lucide-react';
 import { getProfilePlan, checkCountryMismatch, updateProfileData } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
@@ -496,20 +496,15 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-2">
-        <div className="relative">
-          <h1 className="text-4xl font-black text-slate-800 tracking-tight uppercase leading-none">Profile Information</h1>
-          <div className="absolute -bottom-2 left-0 w-12 h-1 bg-harx-pink rounded-full"></div>
-        </div>
-        
-        <div className="flex flex-wrap gap-4 w-full md:w-auto">
+    <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
+      <div className="md:col-span-12 flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold text-gray-900">Profile Information</h1>
+        <div className="flex gap-3">
           {profile.status !== 'completed' && (
             <button
               onClick={handlePublish}
               disabled={isPublishing}
-              className="flex-1 md:flex-none px-6 py-3 rounded-xl bg-green-500 text-white hover:bg-green-600 flex items-center justify-center gap-2 text-sm font-black uppercase tracking-widest transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 disabled:translate-y-0 active:scale-95"
+              className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 flex items-center gap-2 text-sm font-medium transition-colors shadow-md hover:shadow-lg disabled:opacity-50"
             >
               {isPublishing ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -521,7 +516,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
           )}
           <button
             onClick={onEditClick}
-            className="flex-1 md:flex-none px-6 py-3 rounded-xl bg-harx-pink text-white hover:bg-harx-pink-dark flex items-center justify-center gap-2 text-sm font-black uppercase tracking-widest transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 active:scale-95"
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors"
           >
             <Edit className="w-4 h-4" />
             Edit Profile
@@ -529,16 +524,15 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-
       {/* Left Column */}
       <div className="md:col-span-4 space-y-6">
-        {/* Profile Header (Avatar Section) */}
-        <div className="harx-card p-8 bg-white text-center overflow-hidden relative group">
-          <div className="relative mb-8">
-            <div className="w-40 h-40 rounded-full mx-auto p-1 bg-gradient-to-tr from-harx-pink to-slate-200 shadow-2xl relative z-10 overflow-hidden">
-              <div 
-                className="w-full h-full rounded-full bg-slate-50 overflow-hidden flex items-center justify-center cursor-pointer group/photo"
+        {/* Profile Header */}
+        <div className="bg-white rounded-lg p-6">
+          <div className="text-center">
+            <div className="mb-6">
+              <div
+                className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group cursor-pointer"
+                title="Click to view photo"
                 onClick={() => profile.personalInfo?.photo?.url && setShowImageModal(true)}
               >
                 {profile.personalInfo?.photo?.url ? (
@@ -546,62 +540,38 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
                     <img
                       src={profile.personalInfo.photo.url}
                       alt={profile.personalInfo?.name || 'Profile'}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover/photo:scale-110"
+                      className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity">
-                      <span className="text-white text-xs font-black uppercase tracking-widest">Enlarge</span>
+                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="text-white text-sm">Click to view</div>
                     </div>
                   </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl font-black text-slate-300">
+                  <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white">
                     {profile.personalInfo?.name?.charAt(0) || '?'}
                   </div>
                 )}
               </div>
             </div>
-            {/* Decorative element */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-harx-pink/5 rounded-full blur-3xl -z-0"></div>
-          </div>
-
-          <h1 className="text-3xl font-black text-slate-800 mb-1 tracking-tight">{profile.personalInfo?.name}</h1>
-          <p className="text-sm font-black text-harx-pink uppercase tracking-[0.2em] mb-6">{profile.professionalSummary?.currentRole || 'Representative'}</p>
-          
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100/50">
-              <MapPin className="w-4 h-4 text-harx-pink" />
-              <span className="text-sm font-bold text-slate-600">{countryData?.countryName || 'Country not specified'}</span>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">{profile.personalInfo?.name}</h1>
+            <p className="text-lg text-gray-600 mb-4">{profile.professionalSummary?.currentRole || 'Representative'}</p>
+            <div className="flex items-center justify-center gap-2 text-gray-600 mb-4">
+              <MapPin className="w-4 h-4" />
+              <span>{countryData?.countryName || 'Country not specified'}</span>
             </div>
 
-            <div className="flex items-center justify-center gap-4 pt-2 border-t border-slate-50">
-              {profile.personalInfo?.email && (
-                <a href={`mailto:${profile.personalInfo.email}`} className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 text-slate-400 hover:text-harx-pink transition-all hover:shadow-md hover:-translate-y-1">
-                  <Mail className="w-5 h-5" />
-                </a>
-              )}
-              {profile.personalInfo?.phone && (
-                <a href={`tel:${profile.personalInfo.phone}`} className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 text-slate-400 hover:text-harx-pink transition-all hover:shadow-md hover:-translate-y-1">
-                  <Phone className="w-5 h-5" />
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Location Warnings & Status Icons */}
-        {(countryMismatch?.hasMismatch || (checkingCountryMismatch && showLoadingSpinner)) && (
-          <div className="space-y-3">
+            {/* Country mismatch warning */}
             {countryMismatch?.hasMismatch && (
-              <div className="p-4 bg-orange-50 border border-orange-100 rounded-2xl animate-in slide-in-from-top-2 duration-500">
-                <div className="flex gap-3">
-                  <div className="mt-0.5">
+              <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-black text-orange-800 uppercase tracking-widest mb-1">Security Alert</p>
-                    <p className="text-xs font-bold text-orange-700 leading-relaxed">
-                      Profile country (<strong>{countryMismatch.selectedCountry}</strong>) differs from initial login (<strong>{countryMismatch.firstLoginCountry}</strong>).
+                  <div className="ml-3">
+                    <p className="text-sm text-orange-800">
+                      <strong>Location Notice:</strong> Your profile shows <strong>{countryMismatch.selectedCountry}</strong>, but your first login was from <strong>{countryMismatch.firstLoginCountry}</strong>. Please verify your location settings.
                     </p>
                   </div>
                 </div>
@@ -609,82 +579,90 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
             )}
 
             {checkingCountryMismatch && showLoadingSpinner && (
-              <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-3">
-                <RefreshCw className="w-4 h-4 text-harx-pink animate-spin" />
-                <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Validating Location...</p>
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-blue-800">Validating profile information...</p>
+                  </div>
+                </div>
               </div>
             )}
+            <div className="flex items-center justify-center gap-4 text-gray-600">
+              {profile.personalInfo?.email && (
+                <a href={`mailto:${profile.personalInfo.email}`} className="hover:text-blue-600">
+                  <Mail className="w-5 h-5" />
+                </a>
+              )}
+              {profile.personalInfo?.phone && (
+                <a href={`tel:${profile.personalInfo.phone}`} className="hover:text-blue-600">
+                  <Phone className="w-5 h-5" />
+                </a>
+              )}
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Subscription Plan Card */}
-        <div className="harx-card p-8 bg-white">
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50">
-            <div className="p-2 bg-slate-50 rounded-lg">
-              <CreditCard className="w-5 h-5 text-harx-pink" />
-            </div>
-            <h2 className="text-lg font-black text-slate-800 uppercase tracking-widest">Membership</h2>
+        <div className="bg-white rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <CreditCard className="w-6 h-6 text-blue-600" />
+            <h2 className="text-lg font-semibold">Subscription Plan</h2>
           </div>
-          
           {planError ? (
-            <div className="p-4 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100">{planError}</div>
+            <div className="text-red-600 text-sm mb-2">{planError}</div>
           ) : planData && Object.keys(planData.plan).length > 0 ? (
-            <div className="space-y-4">
-              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100/50 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-harx-pink/5 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700"></div>
-                
-                <div className="flex items-center justify-between mb-4 relative z-10">
-                  <h3 className="text-2xl font-black text-slate-800 tracking-tight leading-none">
+            <div className="space-y-3">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xl font-bold text-blue-800">
                     {planData.plan.name}
                   </h3>
-                  <span className="px-3 py-1 bg-harx-pink text-white rounded-full text-[10px] font-black uppercase tracking-widest">
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
                     Active
                   </span>
                 </div>
-                
-                <div className="flex items-baseline gap-1 mb-6 relative z-10">
-                  <span className="text-4xl font-black text-slate-800">${planData.plan.price}</span>
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">/month</span>
+                <div className="text-2xl font-bold text-blue-600 mb-3">
+                  ${planData.plan.price}
+                  <span className="text-sm text-blue-400 font-normal">/month</span>
                 </div>
-                
-                <div className="space-y-2 border-t border-slate-200/50 pt-4 relative z-10">
-                  <div className="flex justify-between items-center text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <span>Account Type</span>
-                    <span className="text-slate-800">{planData.plan.targetUserType}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <span>Joined</span>
-                    <span className="text-slate-800">{planData.plan.createdAt ? new Date(planData.plan.createdAt).toLocaleDateString() : 'N/A'}</span>
-                  </div>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p className="flex items-center gap-2">
+                    Type: {planData.plan.targetUserType}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    Start Date: {planData.plan.createdAt ? new Date(planData.plan.createdAt).toLocaleDateString() : 'N/A'}
+                  </p>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="text-center py-10 px-6 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                <CreditCard className="w-8 h-8 text-slate-200" />
+            <div className="text-center py-6 px-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="mb-3">
+                <svg className="w-12 h-12 text-blue-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-2">Plan Not Configured</h3>
-              <p className="text-xs font-bold text-slate-400 leading-relaxed mb-6">
-                Complete your payment setup to unlock premium features.
+              <h3 className="text-lg font-medium text-blue-800 mb-2">Subscription Plan Not Selected</h3>
+              <p className="text-sm text-blue-600">
+                You haven't selected a subscription plan yet. Choose a plan to unlock all features.
               </p>
-              <button className="w-full py-3 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-600 uppercase tracking-widest hover:bg-slate-50 transition-all">
-                Select a Plan
-              </button>
             </div>
           )}
         </div>
 
         {/* Onboarding Status */}
-        <div className="harx-card p-8 bg-white">
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-            <div className="p-2 bg-slate-50 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-harx-pink" />
-            </div>
-            <h2 className="text-lg font-black text-slate-800 uppercase tracking-widest">Onboarding</h2>
+        <div className="bg-white rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-6 h-6 text-blue-600" />
+            <h2 className="text-lg font-semibold">Onboarding Progress</h2>
           </div>
-          
-          <div className="space-y-6">
+          <div className="space-y-4">
             {[1, 2, 3, 4].map((phaseNum) => {
               const phaseKey = `phase${phaseNum}`;
               const status = profile.onboardingProgress?.phases?.[phaseKey]?.status || 'pending';
@@ -692,37 +670,37 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
               const isCurrent = status === 'in_progress';
 
               return (
-                <div key={phaseNum} className="flex items-center gap-4 group">
+                <div key={phaseNum} className="flex items-center gap-3">
                   <div className={`
-                    w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black transition-all duration-300 shadow-sm
-                    ${isCompleted ? 'bg-green-500 text-white shadow-green-100' :
-                      isCurrent ? 'bg-harx-pink text-white shadow-pink-100 scale-110' :
-                        'bg-slate-50 text-slate-400 group-hover:bg-slate-100'}
+                    w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                    ${isCompleted ? 'bg-green-100 text-green-800' :
+                      isCurrent ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-400' :
+                        'bg-gray-100 text-gray-400'}
                   `}>
-                    {isCompleted ? <CheckCircle className="w-5 h-5" /> : phaseNum}
+                    {phaseNum}
                   </div>
                   <div className="flex-1">
-                    <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">
+                    <div className="text-sm font-medium text-gray-900">
                       Phase {phaseNum}
                     </div>
-                    <div className="text-sm font-bold text-slate-700">
-                      {status === 'completed' ? 'Fully Certified' :
-                        status === 'in_progress' ? 'Active Certification' :
-                          status === 'blocked' ? 'Pending Review' :
-                            'Not Initiated'}
+                    <div className="text-xs text-gray-500">
+                      {status === 'completed' ? 'Completed' :
+                        status === 'in_progress' ? 'In Progress' :
+                          status === 'blocked' ? 'Blocked' :
+                            'Not Started'}
                     </div>
                   </div>
                   <div className={`
-                    px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border
-                    ${status === 'completed' ? 'bg-green-50 text-green-600 border-green-100' :
-                      status === 'in_progress' ? 'bg-harx-pink/10 text-harx-pink border-harx-pink/20' :
-                        status === 'blocked' ? 'bg-red-50 text-red-600 border-red-100' :
-                          'bg-slate-50 text-slate-400 border-slate-100'}
+                    px-2 py-1 rounded text-xs font-medium
+                    ${status === 'completed' ? 'bg-green-100 text-green-800' :
+                      status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                        status === 'blocked' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-500'}
                   `}>
-                    {status === 'completed' ? 'Done' :
+                    {status === 'completed' ? '✓ Done' :
                       status === 'in_progress' ? 'Active' :
-                        status === 'blocked' ? 'Wait' :
-                          'Idle'}
+                        status === 'blocked' ? 'Blocked' :
+                          'Pending'}
                   </div>
                 </div>
               );
@@ -730,169 +708,173 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
 
             <button
               onClick={() => window.location.href = '/reporchestrator'}
-              className="w-full mt-4 py-4 bg-slate-800 text-white rounded-2xl hover:bg-slate-900 transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl hover:-translate-y-1 group active:scale-95"
+              className="w-full mt-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
             >
-              <span className="text-xs font-black uppercase tracking-[0.2em]">Launch Training Space</span>
-              <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              <span>Continue Onboarding</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         </div>
 
-        {/* Overall Score Card */}
-        <div className="harx-card p-8 bg-white relative overflow-hidden">
-          {/* Decorative Background */}
-          <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-harx-pink/5 rounded-full blur-3xl"></div>
-          
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50 relative z-10">
-            <div className="p-2 bg-slate-50 rounded-lg">
-              <Target className="w-5 h-5 text-harx-pink" />
-            </div>
-            <h2 className="text-lg font-black text-slate-800 uppercase tracking-widest">Performance</h2>
+        {/* Overall Score Card - Using REPS score if available */}
+        <div className="bg-white rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Target className="w-6 h-6 text-blue-600" />
+            <h2 className="text-lg font-semibold">Overall Score</h2>
           </div>
-
-          <div className="flex flex-col items-center mb-10 relative z-10">
-            <div className="relative">
-              <svg className="w-32 h-32 transform -rotate-90">
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="58"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  fill="transparent"
-                  className="text-slate-100"
-                />
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="58"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  fill="transparent"
-                  strokeDasharray={364.4}
-                  strokeDashoffset={364.4 - (364.4 * (typeof overallScore === 'number' ? overallScore : 0)) / 100}
-                  className="text-harx-pink transition-all duration-1000 ease-out"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-black text-slate-800 tracking-tighter leading-none">{overallScore}</span>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Global</span>
-              </div>
+          <div className="text-center mb-4">
+            <div className="text-4xl font-bold text-blue-600">
+              {overallScore}
             </div>
+            <div className="text-sm text-gray-500">out of 100</div>
           </div>
-
-          <div className="space-y-4 relative z-10">
-            {[
-              { label: 'Professionalism', key: 'professionalism', color: 'bg-blue-500' },
-              { label: 'Effectiveness', key: 'effectiveness', color: 'bg-green-500' },
-              { label: 'Customer Focus', key: 'customerFocus', color: 'bg-purple-500' }
-            ].map((metric) => {
-              const value = profile.skills?.contactCenter?.[0]?.assessmentResults?.keyMetrics?.[metric.key] || 0;
-              return (
-                <div key={metric.key} className="space-y-1.5">
-                  <div className="flex justify-between items-center px-1">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{metric.label}</span>
-                    <span className="text-[10px] font-black text-slate-800">{value}%</span>
-                  </div>
-                  <div className="h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100/50">
-                    <div 
-                      className={`h-full ${metric.color} rounded-full transition-all duration-1000 ease-out`}
-                      style={{ width: `${value}%` }}
-                    ></div>
+          <div className="space-y-3">
+            {profile.skills?.contactCenter?.[0]?.assessmentResults?.keyMetrics && (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Professionalism</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-600 rounded-full"
+                        style={{ width: `${profile.skills.contactCenter[0].assessmentResults.keyMetrics.professionalism || 0}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">
+                      {profile.skills.contactCenter[0].assessmentResults.keyMetrics.professionalism || 0}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Effectiveness</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-600 rounded-full"
+                        style={{ width: `${profile.skills.contactCenter[0].assessmentResults.keyMetrics.effectiveness || 0}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">
+                      {profile.skills.contactCenter[0].assessmentResults.keyMetrics.effectiveness || 0}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Customer Focus</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-600 rounded-full"
+                        style={{ width: `${profile.skills.contactCenter[0].assessmentResults.keyMetrics.customerFocus || 0}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">
+                      {profile.skills.contactCenter[0].assessmentResults.keyMetrics.customerFocus || 0}
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+            {!profile.skills?.contactCenter?.[0]?.assessmentResults?.keyMetrics && (
+              <div className="text-center py-2 text-gray-500">
+                No assessment metrics available
+              </div>
+            )}
           </div>
-          
-          <div className="mt-8 pt-4 border-t border-slate-50 text-right">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              Last Analysis: <span className="text-slate-600">{lastUpdated}</span>
-            </p>
+          <div className="text-xs text-gray-500 text-right mt-2">
+            Last updated: {lastUpdated}
           </div>
         </div>
 
         {/* Availability Section */}
-        <div className="harx-card p-8 bg-white">
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-            <div className="p-2 bg-slate-50 rounded-lg">
-              <Clock className="w-5 h-5 text-harx-pink" />
+        <div className="bg-white rounded-lg p-6">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-6 h-6 text-blue-600" />
+              <h2 className="text-lg font-semibold">Working Hours & Availability</h2>
             </div>
-            <h2 className="text-lg font-black text-slate-800 uppercase tracking-widest">Availability</h2>
-          </div>
-          
-          {(timezoneData || profile.availability?.timeZone) && (
-            <div className="mb-8">
-              <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3">Time Zone</h3>
-              <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100/50">
-                <Globe className="w-4 h-4 text-harx-pink" />
-                <span className="text-sm font-bold text-slate-700">
-                  {timezoneData
-                    ? repWizardApi.formatTimezone(timezoneData)
-                    : typeof profile.availability.timeZone === 'string'
-                      ? profile.availability.timeZone
-                      : typeof profile.availability.timeZone === 'object' && profile.availability.timeZone
-                        ? `${profile.availability.timeZone.countryName} - ${profile.availability.timeZone.zoneName} (GMT${profile.availability.timeZone.gmtOffset >= 0 ? '+' : ''}${Math.floor(profile.availability.timeZone.gmtOffset)})`
-                        : 'Not specified'
-                  }
-                </span>
-              </div>
+            {(timezoneData || profile.availability?.timeZone) && (
+              <div className="mb-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Time Zone</h3>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Clock className="w-4 h-4" />
+                  <span>
+                    {timezoneData
+                      ? repWizardApi.formatTimezone(timezoneData)
+                      : typeof profile.availability.timeZone === 'string'
+                        ? profile.availability.timeZone
+                        : typeof profile.availability.timeZone === 'object' && profile.availability.timeZone
+                          ? `${profile.availability.timeZone.countryName} - ${profile.availability.timeZone.zoneName} (GMT${profile.availability.timeZone.gmtOffset >= 0 ? '+' : ''}${profile.availability.timeZone.gmtOffset})`
+                          : 'Not specified'
+                    }
+                  </span>
+                </div>
 
-              {/* Timezone mismatch warning */}
-              {(() => {
-                const mismatchInfo = getTimezoneMismatchInfo();
-                if (mismatchInfo) {
-                  return (
-                    <div className="mt-4 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
-                      <div className="mt-0.5">
-                        <svg className="h-4 w-4 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
+                {/* Timezone mismatch warning */}
+                {(() => {
+                  const mismatchInfo = getTimezoneMismatchInfo();
+                  if (mismatchInfo) {
+                    return (
+                      <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm text-amber-800">
+                              Your timezone is set to <strong>{mismatchInfo.timezoneCountry}</strong>, but your country is <strong>{mismatchInfo.selectedCountry}</strong>. This is fine if you work across time zones.
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-[10px] font-bold text-amber-800 leading-relaxed">
-                        TimeZone belongs to <strong>{mismatchInfo.timezoneCountry}</strong>, but your country is <strong>{mismatchInfo.selectedCountry}</strong>.
-                      </p>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            {/* Schedule Display */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Working Schedule</h4>
+              <div className="space-y-2">
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+                  const daySchedule = profile.availability?.schedule?.find((s: ScheduleDay) => s.day === day);
+                  return (
+                    <div
+                      key={day}
+                      className={`flex items-center justify-between p-3 rounded ${daySchedule ? 'bg-blue-50 text-blue-900' : 'bg-gray-50 text-gray-500'
+                        }`}
+                    >
+                      <span className="font-medium">{day}</span>
+                      {daySchedule ? (
+                        <span className="text-blue-700">
+                          {daySchedule.hours.start} - {daySchedule.hours.end}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 italic">Not available</span>
+                      )}
                     </div>
                   );
-                }
-                return null;
-              })()}
-            </div>
-          )}
-
-          <div className="space-y-6">
-            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Operations Schedule</h4>
-            <div className="grid grid-cols-1 gap-2">
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
-                const daySchedule = profile.availability?.schedule?.find((s: ScheduleDay) => s.day === day);
-                return (
-                  <div
-                    key={day}
-                    className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all ${daySchedule ? 'bg-slate-50 border border-slate-100/50' : 'opacity-40'
-                      }`}
-                  >
-                    <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">{day.substring(0, 3)}</span>
-                    {daySchedule ? (
-                      <span className="text-[11px] font-black text-harx-pink tracking-wider">
-                        {daySchedule.hours.start} — {daySchedule.hours.end}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-bold text-slate-300 uppercase italic">Offline</span>
-                    )}
-                  </div>
-                );
-              })}
+                })}
+              </div>
             </div>
 
             {/* Flexibility Options */}
             {profile.availability?.flexibility && profile.availability.flexibility.length > 0 && (
-              <div className="pt-4 mt-6 border-t border-slate-50">
-                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Flexibility</h4>
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Schedule Flexibility</h4>
                 <div className="flex flex-wrap gap-2">
                   {profile.availability.flexibility.map((option: string, index: number) => (
                     <span
                       key={index}
-                      className="px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-green-100"
+                      className="px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-sm font-medium"
                     >
                       {option}
                     </span>
@@ -907,34 +889,38 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       {/* Right Column */}
       <div className="md:col-span-8 space-y-6">
         {/* About Section */}
-        <div className="harx-card p-8 bg-white">
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-            <div className="p-2 bg-slate-50 rounded-lg">
-              <User className="w-5 h-5 text-harx-pink" />
-            </div>
-            <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest">About</h2>
-          </div>
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">About</h2>
 
           {/* Profile Description */}
-          <div className="mb-10">
+          <div className="mb-6">
             {profile.professionalSummary?.profileDescription ? (
-              <p className="text-slate-600 font-bold leading-relaxed whitespace-pre-wrap">{profile.professionalSummary.profileDescription}</p>
+              <p className="text-gray-700 whitespace-pre-wrap">{profile.professionalSummary.profileDescription}</p>
             ) : (
-              <p className="text-slate-400 font-bold italic">No profile description available</p>
+              <p className="text-gray-500 italic">No profile description available</p>
             )}
           </div>
 
           {/* Introduction Video Section */}
-          <div className="pt-8 border-t border-slate-50">
-            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Introduction Video</h3>
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Introduction Video</h3>
 
             {profile.personalInfo?.presentationVideo && profile.personalInfo.presentationVideo.url ? (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Video Player - Responsive with proper aspect ratio */}
-                <div className="w-full relative group overflow-hidden rounded-3xl border border-slate-100 shadow-xl">
+                <div className="w-full">
                   <video
                     controls
-                    className="w-full aspect-video bg-slate-900 object-cover"
+                    className="w-full aspect-video bg-black rounded-lg object-cover"
+                    onLoadedMetadata={(e) => {
+                      console.log("🎥 EXISTING Video Properties:", {
+                        duration: e.currentTarget.duration,
+                        videoWidth: e.currentTarget.videoWidth,
+                        videoHeight: e.currentTarget.videoHeight,
+                        seekable: e.currentTarget.seekable.length > 0,
+                        src: e.currentTarget.currentSrc
+                      });
+                    }}
                   >
                     <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
                     <source src={profile.personalInfo.presentationVideo.url} type="video/webm" />
@@ -943,289 +929,275 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
                 </div>
 
                 {/* Video Information */}
-                <div className="flex flex-wrap gap-4">
-                  {profile.personalInfo.presentationVideo.duration && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100/50">
-                      <Clock className="w-3.5 h-3.5 text-harx-pink" />
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                        Duration: {Math.floor(profile.personalInfo.presentationVideo.duration)}s
-                      </span>
-                    </div>
-                  )}
-                  {profile.personalInfo.presentationVideo.recordedAt && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100/50">
-                      <Calendar className="w-3.5 h-3.5 text-harx-pink" />
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                        Recorded: {new Date(profile.personalInfo.presentationVideo.recordedAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="text-sm text-gray-600 space-y-2">
+                    {profile.personalInfo.presentationVideo.duration && (
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span>Duration: {Math.floor(profile.personalInfo.presentationVideo.duration)}s</span>
+                      </div>
+                    )}
+                    {profile.personalInfo.presentationVideo.recordedAt && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          Recorded: {new Date(profile.personalInfo.presentationVideo.recordedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
-                <div className="mt-0.5">
-                  <svg className="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-xs font-black text-amber-800 uppercase tracking-widest mb-1">Upload Required</p>
-                  <p className="text-[11px] font-bold text-amber-700 leading-relaxed">
-                    Presentation video is missing. A video introduction is required to verify your profile.
-                  </p>
-                </div>
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Presentation video is required. Please record a video introduction to complete your profile.
               </div>
             )}
           </div>
         </div>
 
-        {/* Professional Summary Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Years of Experience Card */}
-          <div className="harx-card p-8 bg-white flex flex-col justify-between">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-slate-50 rounded-lg">
-                <Briefcase className="w-5 h-5 text-harx-pink" />
-              </div>
-              <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">Experience Range</h2>
-            </div>
-            
-            <div className="flex items-baseline gap-2">
-              <span className="text-5xl font-black text-slate-800 tracking-tighter">
-                {profile.professionalSummary?.yearsOfExperience || '0'}
-              </span>
-              <span className="text-sm font-black text-harx-pink uppercase tracking-widest">Years Total</span>
-            </div>
-          </div>
-
-          {/* Notable Companies Card */}
-          <div className="harx-card p-8 bg-white">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-slate-50 rounded-lg">
-                <Building2 className="w-5 h-5 text-harx-pink" />
-              </div>
-              <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">Notable Brands</h2>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              {profile.professionalSummary?.notableCompanies?.length > 0 ? (
-                profile.professionalSummary.notableCompanies.map((company: string, idx: number) => (
-                  <span key={idx} className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                    {company}
-                  </span>
-                ))
+        {/* Years of Experience Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Years of Experience</h2>
+          <div className="flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-gray-500" />
+            <span className="text-lg text-gray-800">
+              {profile.professionalSummary?.yearsOfExperience ? (
+                `${profile.professionalSummary.yearsOfExperience} years`
               ) : (
-                <p className="text-[11px] font-bold text-slate-400 italic">No notable brands listed</p>
+                <span className="text-gray-500 italic">Not specified</span>
               )}
-            </div>
+            </span>
           </div>
         </div>
 
-        {/* Sectors & Domains Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Industries Card */}
-          <div className="harx-card p-8 bg-white">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50">
-              <div className="p-2 bg-slate-50 rounded-lg">
-                <Layers className="w-5 h-5 text-harx-pink" />
-              </div>
-              <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Industries</h2>
+        {/* Industries Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Industries</h2>
+          {(!profile.professionalSummary?.industries || profile.professionalSummary.industries.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Industries are required. Please add the industries you work in.
             </div>
-            
-            <div className="flex flex-wrap gap-2">
-              {profile.professionalSummary?.industries?.length > 0 ? (
-                profile.professionalSummary.industries.map((industry: any, idx: number) => (
-                  <span key={idx} className="px-3 py-1.5 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm">
-                    {typeof industry === 'string' ? industry : industry.name || industry._id}
-                  </span>
-                ))
-              ) : (
-                <p className="text-[11px] font-bold text-slate-400 italic">No industries specified</p>
-              )}
+          )}
+          {profile.professionalSummary?.industries?.length > 0 ? (
+            <div className="flex flex-wrap gap-3">
+              {profile.professionalSummary.industries.map((industry: any, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm">
+                  {typeof industry === 'string' ? industry : industry.name || industry._id}
+                </span>
+              ))}
             </div>
-            
-            {(!profile.professionalSummary?.industries || profile.professionalSummary.industries.length === 0) && (
-              <div className="mt-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
-                <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5" />
-                <p className="text-[10px] font-bold text-amber-800 uppercase tracking-widest leading-relaxed">Required Field</p>
-              </div>
-            )}
-          </div>
-
-          {/* Activities Card */}
-          <div className="harx-card p-8 bg-white">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50">
-              <div className="p-2 bg-slate-50 rounded-lg">
-                <Zap className="w-5 h-5 text-harx-pink" />
-              </div>
-              <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Activities</h2>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              {profile.professionalSummary?.activities?.length > 0 ? (
-                profile.professionalSummary.activities.map((activity: any, idx: number) => (
-                  <span key={idx} className="px-3 py-1.5 bg-harx-pink text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:shadow-pink-100 transition-all">
-                    {typeof activity === 'string' ? activity : activity.name || activity._id}
-                  </span>
-                ))
-              ) : (
-                <p className="text-[11px] font-bold text-slate-400 italic">No activities specified</p>
-              )}
-            </div>
-
-            {(!profile.professionalSummary?.activities || profile.professionalSummary.activities.length === 0) && (
-              <div className="mt-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
-                <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5" />
-                <p className="text-[10px] font-bold text-amber-800 uppercase tracking-widest leading-relaxed">Required Field</p>
-              </div>
-            )}
-          </div>
-        </div>
-             {/* Skills & Expertise Section */}
-        <div className="harx-card p-8 bg-white">
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-            <div className="p-2 bg-slate-50 rounded-lg">
-              <Zap className="w-5 h-5 text-harx-pink" />
-            </div>
-            <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest">Expertise</h2>
-          </div>
-
-          <div className="space-y-10">
-            {/* Technical Skills */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Technical Stack</h3>
-                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{formatSkillsForDisplay(profile.skills?.technical).length} Skills</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {formatSkillsForDisplay(profile.skills?.technical).length > 0 ? (
-                  formatSkillsForDisplay(profile.skills?.technical).map((skill: any, idx: number) => (
-                    <span key={idx} className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black text-slate-700 uppercase tracking-widest hover:border-harx-pink/30 hover:bg-white transition-all">
-                      {skill.name}
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-[11px] font-bold text-slate-400 italic">No technical skills listed</p>
-                )}
-              </div>
-            </div>
-
-            {/* Professional Skills */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Professional Competencies</h3>
-                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{formatSkillsForDisplay(profile.skills?.professional).length} Skills</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {formatSkillsForDisplay(profile.skills?.professional).length > 0 ? (
-                  formatSkillsForDisplay(profile.skills?.professional).map((skill: any, idx: number) => (
-                    <span key={idx} className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black text-slate-700 uppercase tracking-widest hover:border-harx-pink/30 hover:bg-white transition-all">
-                      {skill.name}
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-[11px] font-bold text-slate-400 italic">No professional skills listed</p>
-                )}
-              </div>
-            </div>
-
-            {/* Soft Skills */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Communication & Soft Skills</h3>
-                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{formatSkillsForDisplay(profile.skills?.soft).length} Skills</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {formatSkillsForDisplay(profile.skills?.soft).length > 0 ? (
-                  formatSkillsForDisplay(profile.skills?.soft).map((skill: any, idx: number) => (
-                    <span key={idx} className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black text-slate-700 uppercase tracking-widest hover:border-harx-pink/30 hover:bg-white transition-all">
-                      {skill.name}
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-[11px] font-bold text-slate-400 italic">No soft skills listed</p>
-                )}
-              </div>
-            </div>
-          </div>
+          ) : (
+            <p className="text-gray-500 italic">No industries listed</p>
+          )}
         </div>
 
-        {/* Contact Center Certifications */}
-        <div className="harx-card p-8 bg-white">
-          <div className="flex items-center gap-3 mb-10 pb-4 border-b border-slate-50">
-            <div className="p-2 bg-slate-50 rounded-lg">
-              <Award className="w-5 h-5 text-harx-pink" />
+        {/* Activities Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Activities</h2>
+          {(!profile.professionalSummary?.activities || profile.professionalSummary.activities.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Activities are required. Please add the activities you can perform.
             </div>
-            <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest">Certifications</h2>
-          </div>
+          )}
+          {profile.professionalSummary?.activities && profile.professionalSummary.activities.length > 0 ? (
+            <div className="flex flex-wrap gap-3">
+              {profile.professionalSummary.activities.map((activity: any, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-green-100 text-green-800 rounded-lg text-sm">
+                  {typeof activity === 'string' ? activity : activity.name || activity._id}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No activities listed</p>
+          )}
+        </div>
 
+        {/* Notable Companies Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Notable Companies</h2>
+          {profile.professionalSummary?.notableCompanies?.length > 0 ? (
+            <div className="flex flex-wrap gap-3">
+              {profile.professionalSummary.notableCompanies.map((company: string, idx: number) => (
+                <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-lg text-sm">
+                  {company}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No notable companies listed</p>
+          )}
+        </div>
+
+        {/* Technical Skills Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Technical Skills</h2>
+          {(!profile.skills?.technical || profile.skills.technical.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Technical skills are required. Please add your technical expertise.
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {formatSkillsForDisplay(profile.skills?.technical).map((skill: any, idx: number) => (
+              <div key={idx} className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                <span className="font-medium">{skill.name}</span>
+              </div>
+            ))}
+          </div>
+          {formatSkillsForDisplay(profile.skills?.technical).length === 0 && (
+            <p className="text-gray-500 italic">No technical skills listed</p>
+          )}
+        </div>
+
+        {/* Professional Skills Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Professional Skills</h2>
+          {(!profile.skills?.professional || profile.skills.professional.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Professional skills are required. Please add your professional expertise.
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {formatSkillsForDisplay(profile.skills?.professional).map((skill: any, idx: number) => (
+              <div key={idx} className="px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                <span className="font-medium">{skill.name}</span>
+              </div>
+            ))}
+          </div>
+          {formatSkillsForDisplay(profile.skills?.professional).length === 0 && (
+            <p className="text-gray-500 italic">No professional skills listed</p>
+          )}
+        </div>
+
+        {/* Soft Skills Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Soft Skills</h2>
+          {(!profile.skills?.soft || profile.skills.soft.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Soft skills are required. Please add your interpersonal skills.
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {formatSkillsForDisplay(profile.skills?.soft).map((skill: any, idx: number) => (
+              <div key={idx} className="px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
+                <span className="font-medium">{skill.name}</span>
+              </div>
+            ))}
+          </div>
+          {formatSkillsForDisplay(profile.skills?.soft).length === 0 && (
+            <p className="text-gray-500 italic">No soft skills listed</p>
+          )}
+        </div>
+
+        {/* Contact Center Skills Section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-6">Contact Center Skills</h2>
+          {(!profile.skills?.contactCenter || !profile.skills.contactCenter.some((skill: ContactCenterSkill) => skill.assessmentResults)) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              You should be assessed in at least one contact center skill.
+            </div>
+          )}
           <div className="space-y-8">
             {[
               ...CONTACT_CENTER_SKILLS,
               {
-                name: "Operational Sectors",
+                name: "Activities",
                 skills: (profile.professionalSummary?.activities || []).map((a: any) => typeof a === 'string' ? a : a.name)
+              },
+              {
+                name: "Industries",
+                skills: (profile.professionalSummary?.industries || []).map((i: any) => typeof i === 'string' ? i : i.name)
               }
             ].filter(category => category.skills.length > 0).map((category) => (
-              <div key={category.name} className="group/cat">
-                <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
-                  {category.name}
-                  <div className="h-px flex-1 bg-slate-50"></div>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div key={category.name} className="mb-8">
+                <h3 className="text-xl font-medium text-gray-800 mb-4 pb-2 border-b">{category.name}</h3>
+                <div className="space-y-4">
                   {category.skills.map((skillName: string) => {
                     const skillData = findSkillData(skillName);
-                    const hasAssessment = !!skillData?.assessmentResults;
 
                     return (
-                      <div key={skillName} className={`
-                        p-5 rounded-2xl transition-all duration-300 border
-                        ${hasAssessment ? 'bg-slate-50 border-slate-100 hover:bg-white hover:shadow-xl hover:-translate-y-1' : 'bg-white border-slate-50 opacity-60'}
-                      `}>
-                        <div className="flex justify-between items-start mb-4">
-                          <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">{skillName}</h4>
-                          {hasAssessment && (
-                            <div className="px-2 py-1 bg-green-500 text-white rounded-lg text-[8px] font-black uppercase tracking-widest">
-                              Verified
+                      <div key={skillName} className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="font-medium text-gray-800">{skillName}</h4>
+                          {skillData ? (
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                {skillData.proficiency}
+                              </span>
+                              {skillData.assessmentResults?.score !== undefined && (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+                                  Score: {skillData.assessmentResults.score}/100
+                                </span>
+                              )}
                             </div>
+                          ) : (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs italic">
+                              Not assessed yet
+                            </span>
                           )}
                         </div>
 
-                        {hasAssessment ? (
-                          <div className="space-y-4">
-                            <div className="flex justify-between items-end">
-                              <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Score</p>
-                                <p className="text-xl font-black text-slate-800 leading-none">{skillData.assessmentResults.score}%</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Level</p>
-                                <p className="text-[10px] font-black text-harx-pink uppercase tracking-widest">{skillData.proficiency}</p>
-                              </div>
+                        <div className="flex justify-between items-center">
+                          {skillData?.assessmentResults ? (
+                            <div className="mt-3">
+                              {/* Display key metrics if available */}
+                              {skillData.assessmentResults.keyMetrics && (
+                                <div className="grid grid-cols-3 gap-2">
+                                  {skillData.assessmentResults.keyMetrics.professionalism !== undefined && (
+                                    <div className="bg-blue-50 p-2 rounded text-center">
+                                      <div className="text-xs text-gray-600 mb-1">Professionalism</div>
+                                      <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.professionalism}/100</div>
+                                    </div>
+                                  )}
+                                  {skillData.assessmentResults.keyMetrics.effectiveness !== undefined && (
+                                    <div className="bg-green-50 p-2 rounded text-center">
+                                      <div className="text-xs text-gray-600 mb-1">Effectiveness</div>
+                                      <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.effectiveness}/100</div>
+                                    </div>
+                                  )}
+                                  {skillData.assessmentResults.keyMetrics.customerFocus !== undefined && (
+                                    <div className="bg-purple-50 p-2 rounded text-center">
+                                      <div className="text-xs text-gray-600 mb-1">Customer Focus</div>
+                                      <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.customerFocus}/100</div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                              <div className="h-full bg-harx-pink rounded-full" style={{ width: `${skillData.assessmentResults.score}%` }}></div>
+                          ) : (
+                            <div className="mt-2 text-sm text-gray-500 italic">
+                              Complete an assessment to see your KPI metrics
                             </div>
-                          </div>
-                        ) : (
+                          )}
+
                           <button
                             onClick={() => takeContactCenterSkillAssessment(skillName, category.name)}
-                            className="w-full py-3 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100 hover:bg-harx-pink hover:text-white hover:border-harx-pink transition-all"
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
                           >
-                            Take Assessment
+                            {skillData?.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
                           </button>
-                        )}
-                        
-                        {hasAssessment && (
-                          <button
-                            onClick={() => takeContactCenterSkillAssessment(skillName, category.name)}
-                            className="w-full mt-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-harx-pink transition-all flex items-center justify-center gap-2 group/btn"
-                          >
-                            <RefreshCw className="w-3 h-3 group-hover/btn:animate-spin" />
-                            Retake Analysis
-                          </button>
-                        )}
+                        </div>
                       </div>
                     );
                   })}
@@ -1235,198 +1207,226 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
           </div>
         </div>
 
-        {/* Languages Section */}
-        <div className="harx-card p-8 bg-white">
-          <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-50">
-            <div className="p-2 bg-slate-50 rounded-lg">
-              <Globe className="w-5 h-5 text-harx-pink" />
+        {/* Languages Section - Moved from left column */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-6">Languages</h2>
+          {(!profile.personalInfo?.languages || profile.personalInfo.languages.length === 0) ? (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              You should specify at least one language.
             </div>
-            <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest">Languages</h2>
-          </div>
-
-          <div className="space-y-6">
-            {(!profile.personalInfo?.languages || profile.personalInfo.languages.length === 0) ? (
-              <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
-                <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5" />
-                <p className="text-[10px] font-bold text-amber-800 uppercase tracking-widest">At least one language is required</p>
-              </div>
-            ) : (
-              profile.personalInfo.languages.map((lang: any, index: number) => {
+          ) : !profile.personalInfo.languages.some((lang: Language) => lang.assessmentResults) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              You should be assessed in at least one language.
+            </div>
+          )}
+          {profile.personalInfo?.languages?.length > 0 ? (
+            <div className="space-y-4">
+              {profile.personalInfo.languages.map((lang: any, index: number) => {
                 const stars = getProficiencyStars(lang.proficiency);
+
+                // Get language name and code based on whether it's populated or not
                 const languageName = typeof lang.language === 'object' && lang.language
                   ? lang.language.name
-                  : (typeof lang.language === 'string' ? lang.language : 'Unknown Language');
-                const languageCode = typeof lang.language === 'object' && lang.language ? lang.language.code : '';
+                  : (typeof lang.language === 'string' ? 'Unknown Language' : 'Unknown Language');
+
+                const languageCode = typeof lang.language === 'object' && lang.language
+                  ? lang.language.code
+                  : (typeof lang.language === 'string' ? '' : '');
 
                 return (
-                  <div key={index} className="p-6 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-xl transition-all group">
-                    <div className="flex justify-between items-center mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-slate-400 border border-slate-100 uppercase">
-                          {languageCode || '??'}
-                        </div>
-                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest leading-none">
-                          {languageName}
-                        </h3>
-                      </div>
-                      <div className="flex gap-1">
+                  <div key={index} className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-medium text-gray-800">
+                        {languageName}
+                        {languageCode && <span className="text-gray-500 ml-1">({languageCode})</span>}
+                      </h3>
+                      <div className="flex items-center">
                         {[...Array(6)].map((_, i) => (
-                          <div
+                          <Star
                             key={i}
-                            className={`w-1.5 h-1.5 rounded-full ${i < stars ? 'bg-harx-pink' : 'bg-slate-200'}`}
+                            className={`w-4 h-4 ${i < stars
+                              ? 'text-yellow-400 fill-current'
+                              : 'text-gray-300'
+                              }`}
                           />
                         ))}
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                      <div className="p-3 bg-white rounded-xl border border-slate-100">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Fluency</p>
-                        <p className="text-xs font-black text-slate-800 uppercase tracking-widest">{lang.proficiency}</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-slate-100">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
-                        <p className={`text-[9px] font-black uppercase tracking-widest ${lang.assessmentResults ? 'text-green-500' : 'text-slate-300'}`}>
-                          {lang.assessmentResults ? 'Verified' : 'Pending'}
-                        </p>
-                      </div>
+                    <div className="mb-4 flex justify-between items-center">
+                      <span className="text-sm font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                        {lang.proficiency}
+                      </span>
+                      <button
+                        onClick={() => takeLanguageAssessment(languageName, languageCode)}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+                      >
+                        {lang.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
+                      </button>
                     </div>
 
-                    <button
-                      onClick={() => takeLanguageAssessment(languageName, languageCode)}
-                      className="w-full py-3 bg-white border border-slate-100 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:bg-harx-pink group-hover:text-white group-hover:border-harx-pink transition-all"
-                    >
-                      {lang.assessmentResults ? 'Retake Analysis' : 'Verify Proficiency'}
-                    </button>
+                    {/* Always show assessment criteria */}
+                    <div className="grid grid-cols-3 gap-4 mt-4">
+                      {!lang.assessmentResults ? (
+                        <div className="col-span-3 text-center">
+                          <p className="text-sm text-gray-500 italic">Not assessed yet</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div>
+                            <span className="text-sm text-gray-600">Fluency</span>
+                            <p className="font-medium text-gray-800">{lang.assessmentResults.fluency?.score || 0}/100</p>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">Proficiency</span>
+                            <p className="font-medium text-gray-800">{lang.assessmentResults.proficiency?.score || 0}/100</p>
+                          </div>
+                          <div>
+                            <span className="text-sm text-gray-600">Completeness</span>
+                            <p className="font-medium text-gray-800">{lang.assessmentResults.completeness?.score || 0}/100</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No languages listed</p>
+          )}
         </div>
 
-        {/* Experience Section */}
-        <div className="harx-card p-8 bg-white">
-          <div className="flex items-center gap-3 mb-10 pb-4 border-b border-slate-50">
-            <div className="p-2 bg-slate-50 rounded-lg">
-              <Briefcase className="w-5 h-5 text-harx-pink" />
+        {/* Experience Section - Always show this section */}
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-6">Experience</h2>
+          {(!profile.experience || profile.experience.length === 0) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Please add your work experience.
             </div>
-            <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest">Work History</h2>
-          </div>
-
-          <div className="space-y-12">
-            {profile.experience?.length > 0 ? (
-              profile.experience.map((exp: any, index: number) => {
-                const formatDate = (dateString: string) => {
+          )}
+          {profile.experience?.length > 0 ? (
+            <div className="space-y-6">
+              {profile.experience.map((exp: any, index: number) => {
+                // Format dates for display
+                const formatDateToDD_MM_YYYY = (dateString: string) => {
                   if (!dateString) return '';
+                  // Check if it's already formatted with slashes or dashes
+                  if (dateString.includes('/') || dateString.includes('-')) {
+                    // Try to standardize the format
+                    try {
+                      const date = new Date(dateString);
+                      return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
+                    } catch (e) {
+                      return dateString; // Return as is if parsing fails
+                    }
+                  }
+
+                  // Parse ISO date
                   try {
                     const date = new Date(dateString);
-                    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+                    return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
                   } catch (e) {
-                    return dateString.toUpperCase();
+                    return dateString;
                   }
                 };
 
-                const start = formatDate(exp.startDate);
-                const end = exp.endDate === 'present' || !exp.endDate ? 'PRESENT' : formatDate(exp.endDate);
+                const startDate = formatDateToDD_MM_YYYY(exp.startDate);
+                // Handle endDate specifically - could be 'present' or a Date
+                let endDate = exp.endDate === 'present' ? 'Present' :
+                  exp.endDate ? formatDateToDD_MM_YYYY(exp.endDate) : 'Present';
 
                 return (
-                  <div key={index} className="relative pl-8 before:content-[''] before:absolute before:left-0 before:top-2 before:bottom-0 before:w-px before:bg-slate-100 group">
-                    <div className="absolute left-[-4px] top-2 w-2 h-2 rounded-full bg-slate-200 border-2 border-white transition-all group-hover:bg-harx-pink group-hover:scale-125"></div>
-                    
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
+                  <div key={index} className="border-l-2 border-blue-500 pl-4">
+                    <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-1">{exp.title || exp.role || 'Professional'}</h3>
-                        <p className="text-[11px] font-black text-harx-pink uppercase tracking-widest">{exp.company || 'Unknown Enterprise'}</p>
+                        <h3 className="font-medium text-gray-800">{exp.title || exp.role || 'Position'}</h3>
+                        <p className="text-gray-600">{exp.company || 'Company'}</p>
                       </div>
-                      <div className="px-3 py-1 bg-slate-50 rounded-full border border-slate-100">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{start} — {end}</p>
-                      </div>
+                      <span className="text-sm text-gray-500">
+                        {startDate} - {endDate}
+                      </span>
                     </div>
-
                     {exp.description && (
-                      <p className="text-[11px] font-bold text-slate-500 leading-relaxed mb-6">{exp.description}</p>
+                      <p className="text-gray-700 mt-2">{exp.description}</p>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {exp.responsibilities?.length > 0 && (
-                        <div>
-                          <h4 className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">Core Responsibilities</h4>
-                          <ul className="space-y-3">
-                            {exp.responsibilities.map((r: string, idx: number) => (
-                              <li key={idx} className="flex gap-3 text-[10px] font-bold text-slate-600">
-                                <div className="mt-1.5 w-1 h-1 rounded-full bg-slate-200 shrink-0"></div>
-                                {r}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      {exp.achievements?.length > 0 && (
-                        <div>
-                          <h4 className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">Key Achievements</h4>
-                          <ul className="space-y-3">
-                            {exp.achievements.map((a: string, idx: number) => (
-                              <li key={idx} className="flex gap-3 text-[10px] font-black text-harx-pink bg-pink-50/30 p-2 rounded-lg border border-pink-100/20">
-                                <Target className="w-3 h-3 shrink-0 mt-0.5" />
-                                {a}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
+                    {/* Responsibilities section */}
+                    {exp.responsibilities?.length > 0 && (
+                      <div className="mt-3">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Responsibilities:</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {exp.responsibilities.map((responsibility: string, idx: number) => (
+                            <li key={idx} className="text-sm text-gray-600">{responsibility}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Achievements section */}
+                    {exp.achievements?.length > 0 && (
+                      <div className="mt-3">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Key Achievements:</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {exp.achievements.map((achievement: string, idx: number) => (
+                            <li key={idx} className="text-sm text-gray-600">{achievement}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 );
-              })
-            ) : (
-              <p className="text-[11px] font-bold text-slate-400 italic">No work history documented</p>
-            )}
-          </div>
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No experience listed</p>
+          )}
         </div>
       </div>
-    </div>
 
-    {/* Updated Image Modal */}
-    {showImageModal && profile?.personalInfo?.photo?.url && (
-      <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-[100] p-4"
-        onClick={() => setShowImageModal(false)}
-      >
+      {/* Updated Image Modal */}
+      {showImageModal && profile.personalInfo?.photo?.url && (
         <div
-          className="relative w-[30%] min-w-[300px] bg-white rounded-[40px] overflow-hidden flex flex-col shadow-2xl border border-white/20 animate-in fade-in zoom-in duration-300"
-          onClick={e => e.stopPropagation()}
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowImageModal(false)}
         >
-          {/* Modal Header */}
-          <div className="px-8 py-6 border-b border-slate-50 flex justify-between items-center">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Profile Identity</h3>
+          <div
+            className="relative w-[30%] min-w-[300px] bg-white rounded-lg overflow-hidden flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900">My Profile Image</h3>
+            </div>
+
+            {/* Close button */}
             <button
-              className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+              className="absolute top-4 right-4 p-2 bg-white rounded-full text-gray-600 hover:text-gray-900 shadow-lg z-10"
               onClick={() => setShowImageModal(false)}
             >
-              <X className="w-4 h-4 text-slate-400" />
+              <X className="w-6 h-6" />
             </button>
-          </div>
 
-          {/* Main image */}
-          <div className="p-8">
-            <div className="relative group rounded-[32px] overflow-hidden shadow-xl border border-slate-100">
+            {/* Main image */}
+            <div className="p-4">
               <img
                 src={profile.personalInfo.photo.url}
                 alt={profile.personalInfo?.name || 'Profile'}
-                className="w-full h-auto object-contain"
-                style={{ maxHeight: '60vh' }}
+                className="w-full h-auto object-contain rounded-lg"
+                style={{ maxHeight: '70vh' }}
               />
             </div>
           </div>
-
-          <div className="px-8 py-6 bg-slate-50 border-t border-slate-100/50">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Verified Representative Profile</p>
-          </div>
         </div>
-      </div>
-    )}
-  </div>
-);
-};
+      )}
+    </div>
+  );
+}; 

@@ -93,37 +93,24 @@ export function TopBar() {
   const initials = getInitials(userName);
 
   return (
-    <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-end px-8 sticky top-0 z-10">
-      <div className="flex items-center space-x-6">
-        <div className="relative group cursor-pointer">
-          <div className="p-2 text-slate-400 hover:text-harx-pink transition-colors">
-            <Bell className="w-6 h-6" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-harx-pink rounded-full border-2 border-white"></span>
-          </div>
-        </div>
-        
-        <div className="h-8 w-[1px] bg-gray-100"></div>
-
-        <div className="flex items-center space-x-4 group cursor-pointer">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-bold text-slate-800 group-hover:text-harx-pink transition-colors">{userName}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{userRole}</p>
-          </div>
-          
+    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-6">
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           {profileData?.personalInfo?.photo?.url ? (
-            <div className="relative">
-              <img
-                src={profileData.personalInfo.photo.url}
-                alt={userName}
-                className="w-10 h-10 rounded-full object-cover ring-2 ring-transparent group-hover:ring-harx-pink/20 transition-all"
-              />
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-            </div>
+            <img
+              src={profileData.personalInfo.photo.url}
+              alt={userName}
+              className="w-8 h-8 rounded-full object-cover"
+            />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-harx-pink/10 flex items-center justify-center text-harx-pink font-bold border border-harx-pink/20 group-hover:bg-harx-pink group-hover:text-white transition-all">
+            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
               {initials}
             </div>
           )}
+          <div>
+            <p className="text-sm font-medium text-gray-700">{userName}</p>
+            <p className="text-xs text-gray-500">{userRole}</p>
+          </div>
         </div>
       </div>
     </header>
