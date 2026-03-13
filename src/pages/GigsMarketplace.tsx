@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, User, Globe, Calendar, Repeat, Star, Heart } from 'lucide-react';
+import { User, Users, Globe, Calendar, Heart } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchPendingRequests as fetchPendingRequestsUtil, fetchEnrolledGigsFromProfile } from '../utils/gigStatusUtils';
 
