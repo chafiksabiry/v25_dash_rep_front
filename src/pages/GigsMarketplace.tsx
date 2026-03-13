@@ -1357,8 +1357,10 @@ export function GigsMarketplace() {
                         ? `${gig.commission.commission_per_call} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'} / call`
                         : `${gig.commission.baseAmount || 0} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'}/yr base`}
                     </span>
-                    {(gig.commission.bonus || gig.commission.bonusAmount) && (
-                      <span className="ml-1 text-xs text-green-600">+ bonus</span>
+                    {(gig.commission.bonus && gig.commission.bonus != 0 || gig.commission.bonusAmount && gig.commission.bonusAmount != "0") && (
+                      <span className="ml-1 text-xs text-green-600">
+                        + {gig.commission.bonusAmount || gig.commission.bonus} bonus
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
@@ -1529,8 +1531,10 @@ export function GigsMarketplace() {
                             ? `${gig.commission.commission_per_call} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'} / call`
                             : `${gig.commission.baseAmount || 0} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'}/yr base`}
                         </span>
-                        {(gig.commission.bonus || gig.commission.bonusAmount) && (
-                          <span className="ml-1 text-xs text-green-600">+ bonus</span>
+                        {(gig.commission.bonus && gig.commission.bonus != 0 || gig.commission.bonusAmount && gig.commission.bonusAmount != "0") && (
+                          <span className="ml-1 text-xs text-green-600">
+                            + {gig.commission.bonusAmount || gig.commission.bonus} bonus
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
@@ -1669,8 +1673,10 @@ export function GigsMarketplace() {
                               ? `${enrollment.gig.commission.baseAmount} ${typeof enrollment.gig.commission.currency === 'object' ? enrollment.gig.commission.currency?.symbol || enrollment.gig.commission.currency?.code || 'EUR' : enrollment.gig.commission.currency || 'EUR'}/yr base`
                               : 'N/A / call'}
                         </span>
-                        {('commission' in enrollment.gig && (enrollment.gig.commission?.bonus || enrollment.gig.commission?.bonusAmount)) && (
-                          <span className="ml-1 text-xs text-green-600">+ bonus</span>
+                        {('commission' in enrollment.gig && (enrollment.gig.commission?.bonus && enrollment.gig.commission.bonus != 0 || enrollment.gig.commission?.bonusAmount && enrollment.gig.commission.bonusAmount != "0")) && (
+                          <span className="ml-1 text-xs text-green-600">
+                            + {enrollment.gig.commission.bonusAmount || enrollment.gig.commission.bonus} bonus
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
@@ -1843,8 +1849,10 @@ export function GigsMarketplace() {
                               ? `${enrolledGig.gig.commission.baseAmount} ${typeof enrolledGig.gig.commission.currency === 'object' ? enrolledGig.gig.commission.currency?.symbol || enrolledGig.gig.commission.currency?.code || 'EUR' : enrolledGig.gig.commission.currency || 'EUR'}/yr base` 
                               : 'N/A / call'}
                         </span>
-                        {('commission' in enrolledGig.gig && (enrolledGig.gig.commission?.bonus || enrolledGig.gig.commission?.bonusAmount)) && (
-                          <span className="ml-1 text-xs text-green-600">+ bonus</span>
+                        {('commission' in enrolledGig.gig && (enrolledGig.gig.commission?.bonus && enrolledGig.gig.commission.bonus != 0 || enrolledGig.gig.commission?.bonusAmount && enrolledGig.gig.commission.bonusAmount != "0")) && (
+                          <span className="ml-1 text-xs text-green-600">
+                            + {enrolledGig.gig.commission.bonusAmount || enrolledGig.gig.commission.bonus} bonus
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
