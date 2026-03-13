@@ -1606,8 +1606,8 @@ export function GigDetails() {
 
             {/* Leads Information - Only for enrolled agents */}
             {isAgentEnrolled() && gig.leads?.types?.length > 0 && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Lead Types</h2>
+              <div className="harx-card p-8 bg-white">
+                <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest mb-6 border-b border-slate-50 pb-4">Lead Types</h2>
                 <div className="space-y-3">
                   {gig.leads.types.map((leadType, index) => (
                     <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
@@ -1843,7 +1843,7 @@ export function GigDetails() {
                   </div>
                   <p className="text-xs text-blue-600 mt-1">
                     GMT{gig.availability.time_zone.gmtOffset
-                      ? (gig.availability.time_zone.gmtOffset >= 0 ? '+' : '') + (gig.availability.time_zone.gmtOffset / 3600)
+                      ? (gig.availability.time_zone.gmtOffset >= 0 ? '+' : '') + Math.floor(gig.availability.time_zone.gmtOffset / 3600)
                       : gig.availability.time_zone.offset}
                   </p>
                 </div>
@@ -2069,9 +2069,9 @@ export function GigDetails() {
                   </div>
                   <div className="flex items-center gap-4">
                     {engagementScore !== null && (
-                      <div className="flex items-center gap-2 px-4 py-2 bg-harx-pink/5 rounded-xl border border-harx-pink/10">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
                         <span className="text-xs font-black text-slate-400 uppercase tracking-tighter">Engagement Score</span>
-                        <span className="text-sm font-black text-harx-pink">{engagementScore}%</span>
+                        <span className="text-sm font-black text-slate-800">{engagementScore}%</span>
                       </div>
                     )}
                     {totalLeads > 0 && (
@@ -2244,10 +2244,10 @@ export function GigDetails() {
                     )}
                   </>
                 )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
 }
