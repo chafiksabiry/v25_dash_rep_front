@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, DollarSign, Users, User, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight, Repeat, Star, FileText, Heart } from 'lucide-react';
+import { DollarSign, User, Globe, Calendar, Repeat, Star, Heart } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchPendingRequests as fetchPendingRequestsUtil, fetchEnrolledGigsFromProfile } from '../utils/gigStatusUtils';
 
@@ -1351,7 +1351,6 @@ export function GigsMarketplace() {
 
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center text-sm text-gray-500">
-                    <DollarSign className="w-4 h-4 mr-2" />
                     <span>
                       {gig.commission.commission_per_call !== undefined
                         ? `${gig.commission.commission_per_call} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'} / call`
@@ -1525,7 +1524,6 @@ export function GigsMarketplace() {
 
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
-                        <DollarSign className="w-4 h-4 mr-2" />
                         <span>
                           {gig.commission.commission_per_call !== undefined
                             ? `${gig.commission.commission_per_call} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'} / call`
@@ -1665,7 +1663,6 @@ export function GigsMarketplace() {
 
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
-                        <DollarSign className="w-4 h-4 mr-2" />
                         <span>
                           {('commission' in enrollment.gig && enrollment.gig.commission?.commission_per_call !== undefined)
                             ? `${enrollment.gig.commission.commission_per_call} ${typeof enrollment.gig.commission.currency === 'object' ? enrollment.gig.commission.currency?.symbol || '€' : enrollment.gig.commission.currency || '€'} / call`
@@ -1841,12 +1838,11 @@ export function GigsMarketplace() {
 
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
-                        <DollarSign className="w-4 h-4 mr-2" />
                         <span>
                           {('commission' in enrolledGig.gig && enrolledGig.gig.commission?.commission_per_call !== undefined)
                             ? `${enrolledGig.gig.commission.commission_per_call} ${typeof enrolledGig.gig.commission.currency === 'object' ? enrolledGig.gig.commission.currency?.symbol || '€' : enrolledGig.gig.commission.currency || '€'} / call`
-                            : ('commission' in enrolledGig.gig && enrolledGig.gig.commission?.baseAmount) 
-                              ? `${enrolledGig.gig.commission.baseAmount} ${typeof enrolledGig.gig.commission.currency === 'object' ? enrolledGig.gig.commission.currency?.symbol || enrolledGig.gig.commission.currency?.code || 'EUR' : enrolledGig.gig.commission.currency || 'EUR'}/yr base` 
+                            : ('commission' in enrolledGig.gig && enrolledGig.gig.commission?.baseAmount)
+                              ? `${enrolledGig.gig.commission.baseAmount} ${typeof enrolledGig.gig.commission.currency === 'object' ? enrolledGig.gig.commission.currency?.symbol || enrolledGig.gig.commission.currency?.code || 'EUR' : enrolledGig.gig.commission.currency || 'EUR'}/yr base`
                               : 'N/A / call'}
                         </span>
                         {('commission' in enrolledGig.gig && (enrolledGig.gig.commission?.bonus && enrolledGig.gig.commission.bonus != 0 || enrolledGig.gig.commission?.bonusAmount && enrolledGig.gig.commission.bonusAmount != "0")) && (
