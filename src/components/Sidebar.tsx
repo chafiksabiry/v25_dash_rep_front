@@ -96,36 +96,44 @@ export function Sidebar({ phases }: SidebarProps) {
   }, [phases]);
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200">
-      <div className="h-16 flex items-center justify-center border-b border-gray-200">
+    <div className="w-64 bg-white border-r border-gray-100 flex flex-col">
+      <div className="h-20 flex items-center justify-center border-b border-gray-50">
         <img
           src={`${import.meta.env.VITE_FRONT_URL}logo_harx.jpg`}
           alt="HARX.AI Logo"
-          className="h-8 w-auto object-contain"
+          className="h-10 w-auto object-contain"
+          onError={(e) => {
+            // Fallback to a text logo if image fails
+            (e.target as any).src = 'https://harx25pageslinks.netlify.app/logo_harx.jpg';
+          }}
         />
       </div>
-      <nav className="mt-6">
+      <nav className="flex-1 mt-6 px-3">
         {filteredNavItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${isActive ? 'bg-blue-50 text-blue-600' : ''
+              `flex items-center px-4 py-3 mb-1 rounded-xl font-medium transition-all group ${isActive
+                ? 'bg-harx-pink/10 text-harx-pink shadow-sm'
+                : 'text-slate-500 hover:bg-gray-50 hover:text-slate-900'
               }`
             }
           >
-            <item.icon className="w-5 h-5 mr-3" />
+            <item.icon className={`w-5 h-5 mr-3 transition-colors ${(({ isActive }: any) => isActive ? 'text-harx-pink' : 'text-slate-400 group-hover:text-slate-600') as any}`} />
             <span>{item.label}</span>
           </NavLink>
         ))}
+      </nav>
+      <div className="p-4 border-t border-gray-100">
         <button
           onClick={logout}
-          className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors mt-auto"
+          className="w-full flex items-center px-4 py-3 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors"
         >
           <LogOut className="w-5 h-5 mr-3" />
-          <span>Logout</span>
+          <span className="font-medium">Logout</span>
         </button>
-      </nav>
+      </div>
     </div>
   );
 }

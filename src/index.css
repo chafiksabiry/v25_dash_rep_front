@@ -1,3 +1,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --harx-pink: #FF4B69;
+  --harx-orange: #FF7E5F;
+}
+
+body {
+  @apply font-sans antialiased bg-gray-50 text-slate-900;
+}
+
+.harx-gradient {
+  background: linear-gradient(135deg, var(--harx-pink) 0%, var(--harx-orange) 100%);
+}
+
+.harx-text-gradient {
+  @apply bg-clip-text text-transparent;
+  background: linear-gradient(135deg, var(--harx-pink) 0%, var(--harx-orange) 100%);
+}
+
+/* Professional card style */
+.harx-card {
+  @apply bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300;
+}
