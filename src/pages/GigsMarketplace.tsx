@@ -1,375 +1,320 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, Users, Globe, Calendar, Heart, User, Mail, Clock } from 'lucide-react';
+import { ArrowLeft, DollarSign, Users, User, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight, Repeat, Star, FileText, Heart } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchPendingRequests as fetchPendingRequestsUtil, fetchEnrolledGigsFromProfile } from '../utils/gigStatusUtils';
 
-export function GigsMarketplace() {
-  const navigate = useNavigate();
 
-  // Interface pour les gigs populés
-  interface PopulatedGig {
+// Interface pour les gigs populés
+interface PopulatedGig {
+  _id: string;
+  title: string;
+  description: string;
+  category: string;
+
+  // 👤 User populé
+  userId: {
     _id: string;
-    title: string;
-    description: string;
-    category: string;
+    email: string;
+    fullName: string;
+    phone?: string;
+    linkedInId?: string;
+    isVerified: boolean;
+    verificationCode?: {
+      code?: string;
+      expiresAt?: Date;
+      otp?: number;
+      otpExpiresAt?: Date;
+    };
+    ipHistory: Array<{
+      ip: string;
+      timestamp: Date;
+      action: 'register' | 'login';
+      locationInfo: {
+        location?: string;
+        region?: string;
+        city?: string;
+        isp?: string;
+        postal?: string;
+        coordinates?: string;
+      };
+    }>;
+    createdAt: Date;
+    typeUser?: string;
+    firstTime: boolean;
+  };
 
-    // 👤 User populé
-    userId: {
-      _id: string;
-      email: string;
-      fullName: string;
+  // 🏢 Company populé
+  companyId: {
+    _id: string;
+    userId?: string;
+    name: string;
+    logo?: string;
+    industry?: string;
+    founded?: string;
+    headquarters?: string;
+    overview: string;
+    companyIntro?: string;
+    mission?: string;
+    subscription: 'free' | 'standard' | 'premium';
+    culture: {
+      values: string[];
+      benefits: string[];
+      workEnvironment?: string;
+    };
+    opportunities: {
+      roles: string[];
+      growthPotential?: string;
+      training?: string;
+    };
+    technology: {
+      stack: string[];
+      innovation?: string;
+    };
+    contact: {
+      email?: string;
       phone?: string;
-      linkedInId?: string;
-      isVerified: boolean;
-      verificationCode?: {
-        code?: string;
-        expiresAt?: Date;
-        otp?: number;
-        otpExpiresAt?: Date;
+      address?: string;
+      website?: string;
+      coordinates?: {
+        lat: number;
+        lng: number;
       };
-      ipHistory: Array<{
-        ip: string;
-        timestamp: Date;
-        action: 'register' | 'login';
-        locationInfo: {
-          location?: string;
-          region?: string;
-          city?: string;
-          isp?: string;
-          postal?: string;
-          coordinates?: string;
-        };
-      }>;
-      createdAt: Date;
-      typeUser?: string;
-      firstTime: boolean;
     };
-
-    // 🏢 Company populé
-    companyId: {
-      _id: string;
-      userId?: string;
-      name: string;
-      logo?: string;
-      industry?: string;
-      founded?: string;
-      headquarters?: string;
-      overview: string;
-      companyIntro?: string;
-      mission?: string;
-      subscription: 'free' | 'standard' | 'premium';
-      culture: {
-        values: string[];
-        benefits: string[];
-        workEnvironment?: string;
-      };
-      opportunities: {
-        roles: string[];
-        growthPotential?: string;
-        training?: string;
-      };
-      technology: {
-        stack: string[];
-        innovation?: string;
-      };
-      contact: {
-        email?: string;
-        phone?: string;
-        address?: string;
-        website?: string;
-        coordinates?: {
-          lat: number;
-          lng: number;
-        };
-      };
-      socialMedia: {
-        linkedin?: string;
-        twitter?: string;
-        facebook?: string;
-        instagram?: string;
-      };
-      createdAt: Date;
-      updatedAt: Date;
+    socialMedia: {
+      linkedin?: string;
+      twitter?: string;
+      facebook?: string;
+      instagram?: string;
     };
+    createdAt: Date;
+    updatedAt: Date;
+  };
 
-    destination_zone: {
-      name: {
-        common: string;
-        official: string;
-        nativeName?: {
-          [key: string]: {
-            official: string;
-            common: string;
-            _id: string;
-          };
-        };
-      };
-      flags: {
-        png: string;
-        svg: string;
-        alt: string;
-      };
-      _id: string;
-      cca2: string;
-      __v: number;
-      createdAt: string;
-      updatedAt: string;
-    };
-
-    // 🎯 Activities populées
-    activities: Array<{
-      _id: string;
-      name: string;
-      description?: string;
-      createdAt: Date;
-      updatedAt: Date;
-    }>;
-
-    // 🏭 Industries populées
-    industries: Array<{
-      _id: string;
-      name: string;
-      description?: string;
-      createdAt: Date;
-      updatedAt: Date;
-    }>;
-
-    seniority: {
-      level: string;
-      yearsExperience: string;
-    };
-
-    // 🎓 Skills populées
-    skills: {
-      professional: Array<{
-        skill: {
+  destination_zone: {
+    name: {
+      common: string;
+      official: string;
+      nativeName?: {
+        [key: string]: {
+          official: string;
+          common: string;
           _id: string;
-          name: string;
-          category?: string;
-          description?: string;
-          createdAt: Date;
-          updatedAt: Date;
         };
-        level: number;
-        details: string;
-      }>;
-      technical: Array<{
-        skill: {
-          _id: string;
-          name: string;
-          category?: string;
-          description?: string;
-          createdAt: Date;
-          updatedAt: Date;
-        };
-        level: number;
-        details: string;
-      }>;
-      soft: Array<{
-        skill: {
-          _id: string;
-          name: string;
-          category?: string;
-          description?: string;
-          createdAt: Date;
-          updatedAt: Date;
-        };
-        level: number;
-        details: string;
-      }>;
-      languages: Array<{
-        language: {
-          _id: string;
-          name: string;
-          iso639_1: string;
-          description?: string;
-          createdAt: Date;
-          updatedAt: Date;
-        };
-        proficiency: string;
-        iso639_1: string;
-      }>;
+      };
     };
+    flags: {
+      png: string;
+      svg: string;
+      alt: string;
+    };
+    _id: string;
+    cca2: string;
+    __v: number;
+    createdAt: string;
+    updatedAt: string;
+  };
 
-    // ⏰ Availability avec timezone populé
-    availability: {
-      schedule: Array<{
-        day: string;
-        hours: {
-          start: string;
-          end: string;
-        };
-      }>;
-      time_zone: {
+  // 🎯 Activities populées
+  activities: Array<{
+    _id: string;
+    name: string;
+    description?: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
+
+  // 🏭 Industries populées
+  industries: Array<{
+    _id: string;
+    name: string;
+    description?: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
+
+  seniority: {
+    level: string;
+    yearsExperience: string;
+  };
+
+  // 🎓 Skills populées
+  skills: {
+    professional: Array<{
+      skill: {
         _id: string;
         name: string;
-        offset: string;
-        abbreviation: string;
+        category?: string;
         description?: string;
         createdAt: Date;
         updatedAt: Date;
       };
-      flexibility: string[];
-      minimumHours: {
-        daily?: number;
-        weekly?: number;
-        monthly?: number;
-      };
-    };
-
-    // 💰 Commission
-    commission: {
-      base: string;
-      baseAmount: string;
-      bonus?: string;
-      bonusAmount?: string;
-      structure?: string;
-      currency: string;
-      minimumVolume: {
-        amount: string;
-        period: string;
-        unit: string;
-      };
-      transactionCommission?: {
-        type: string;
-        amount: string;
-      };
-      additionalDetails?: string;
-    };
-
-    // 🎯 Leads
-    leads: {
-      types: Array<{
-        type: 'hot' | 'warm' | 'cold';
-        percentage: number;
-        description: string;
-        conversionRate?: number;
-      }>;
-      sources: string[];
-    };
-
-    // 👥 Team
-    team: {
-      size: string;
-      structure: Array<{
-        roleId: string;
-        count: number;
-        seniority: {
-          level: string;
-          yearsExperience: string;
-        };
-      }>;
-      territories: string[];
-    };
-
-    // 📖 Documentation
-    documentation: {
-      product?: Array<{ name: string; url: string }>;
-      process?: Array<{ name: string; url: string }>;
-      training?: Array<{ name: string; url: string }>;
-    };
-
-    // 👥 Agents enrolled/invited/requested
-    agents?: Array<{
-      agentId: string;
-      status: 'enrolled' | 'invited' | 'requested' | 'pending';
-      enrollmentDate?: Date | string;
-      invitationDate?: Date | string;
-      updatedAt?: Date | string;
-      _id?: string;
+      level: number;
+      details: string;
     }>;
-
-    status: 'to_activate' | 'active' | 'inactive' | 'archived';
-    createdAt: Date;
-    updatedAt: Date;
-  }
-
-  // Interface pour les enrollments invités
-  interface InvitedEnrollment {
-    id: string;
-    gig: PopulatedGig | {
-      _id: string;
-      title: string;
-      description: string;
-      category: string;
-      destination_zone: {
-        name: {
-          common: string;
-          official: string;
-          nativeName?: {
-            [key: string]: {
-              official: string;
-              common: string;
-              _id: string;
-            };
-          };
-        };
-        flags: {
-          png: string;
-          svg: string;
-          alt: string;
-        };
+    technical: Array<{
+      skill: {
         _id: string;
-        cca2: string;
-        __v: number;
-        createdAt: string;
-        updatedAt: string;
+        name: string;
+        category?: string;
+        description?: string;
+        createdAt: Date;
+        updatedAt: Date;
       };
-    };
-    enrollmentStatus: string;
-    invitationSentAt: string;
-    invitationExpiresAt: string;
-    isExpired: boolean;
-    canEnroll: boolean;
-    notes?: string;
-    matchScore?: number | null;
-    matchStatus?: string | null;
-  }
-
-  // Interface pour les gigs inscrits
-  interface EnrolledGig {
-    id: string;
-    gig: {
-      _id: string;
-      title: string;
-      description: string;
-      category: string;
-      destination_zone: {
-        name: {
-          common: string;
-          official: string;
-          nativeName?: {
-            [key: string]: {
-              official: string;
-              common: string;
-              _id: string;
-            };
-          };
-        };
-        flags: {
-          png: string;
-          svg: string;
-          alt: string;
-        };
+      level: number;
+      details: string;
+    }>;
+    soft: Array<{
+      skill: {
         _id: string;
-        cca2: string;
-        __v: number;
-        createdAt: string;
-        updatedAt: string;
+        name: string;
+        category?: string;
+        description?: string;
+        createdAt: Date;
+        updatedAt: Date;
       };
-      company: string;
-      compensation: string;
-      experience: string;
-      workHours: string;
+      level: number;
+      details: string;
+    }>;
+    languages: Array<{
+      language: {
+        _id: string;
+        name: string;
+        iso639_1: string;
+        description?: string;
+        createdAt: Date;
+        updatedAt: Date;
+      };
+      proficiency: string;
+      iso639_1: string;
+    }>;
+  };
+
+  // ⏰ Availability avec timezone populé
+  availability: {
+    schedule: Array<{
+      day: string;
+      hours: {
+        start: string;
+        end: string;
+      };
+    }>;
+    time_zone: {
+      _id: string;
+      name: string;
+      offset: string;
+      abbreviation: string;
+      zoneName?: string;
+      countryName?: string;
+      description?: string;
+      createdAt: Date;
+      updatedAt: Date;
     };
-    enrollmentStatus: string;
-    enrollmentDate: string;
-    enrollmentNotes?: string;
-    status: string;
-    matchScore: number;
-    matchStatus: string;
-  }
+    flexibility: string[];
+    minimumHours: {
+      daily?: number;
+      weekly?: number;
+      monthly?: number;
+    };
+  };
+
+  // 💰 Commission
+  commission: {
+    commission_per_call: number;
+    bonusAmount?: string | number;
+    currency: {
+      _id: string;
+      code?: string;
+      symbol?: string;
+      name?: string;
+    } | string;
+    minimumVolume: {
+      amount: string | number;
+      period: string;
+      unit: string;
+    };
+    transactionCommission?: number | {
+      type: string;
+      amount: string | number;
+    };
+    additionalDetails?: string;
+    // Legacy fields for backward compatibility
+    baseAmount?: string | number;
+    bonus?: string | number;
+  };
+
+  // 🎯 Leads
+  leads: {
+    types: Array<{
+      type: 'hot' | 'warm' | 'cold';
+      percentage: number;
+      description: string;
+      conversionRate?: number;
+    }>;
+    sources: string[];
+  };
+
+  // 👥 Team
+  team: {
+    size: string;
+    structure: Array<{
+      roleId: string;
+      count: number;
+      seniority: {
+        level: string;
+        yearsExperience: string;
+      };
+    }>;
+    territories: string[];
+  };
+
+  // 📖 Documentation
+  documentation: {
+    product?: Array<{ name: string; url: string }>;
+    process?: Array<{ name: string; url: string }>;
+    training?: Array<{ name: string; url: string }>;
+  };
+
+  // 👥 Agents enrolled/invited/requested
+  agents?: Array<{
+    agentId: string;
+    status: 'enrolled' | 'invited' | 'requested' | 'pending';
+    enrollmentDate?: Date | string;
+    invitationDate?: Date | string;
+    updatedAt?: Date | string;
+    _id?: string;
+  }>;
+
+  status: 'to_activate' | 'active' | 'inactive' | 'archived';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Interface pour les enrollments invités
+interface InvitedEnrollment {
+  id: string;
+  gig: PopulatedGig;
+  enrollmentStatus: string;
+  invitationSentAt: string;
+  invitationExpiresAt: string;
+  isExpired: boolean;
+  canEnroll: boolean;
+  notes?: string;
+  matchScore?: number | null;
+  matchStatus?: string | null;
+}
+
+// Interface pour les gigs inscrits
+interface EnrolledGig {
+  id: string;
+  gig: PopulatedGig;
+  matchScore?: number;
+  enrollmentDate: string;
+  status: string;
+}
+
+export function GigsMarketplace() {
+  const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<'available' | 'enrolled' | 'favorite' | 'invited'>('available');
   const [gigs, setGigs] = useState<PopulatedGig[]>([]);
@@ -1182,8 +1127,11 @@ export function GigsMarketplace() {
         return gigs
           .sort((a, b) => {
             switch (sortBy) {
-              case 'salary':
-                return parseInt(b.commission.baseAmount) - parseInt(a.commission.baseAmount);
+              case 'salary': {
+                const aVal = a.commission?.commission_per_call !== undefined ? a.commission.commission_per_call * 1000 : parseInt((a.commission?.baseAmount as any) || '0');
+                const bVal = b.commission?.commission_per_call !== undefined ? b.commission.commission_per_call * 1000 : parseInt((b.commission?.baseAmount as any) || '0');
+                return bVal - aVal;
+              }
               case 'experience':
                 return parseInt(b.seniority.yearsExperience) - parseInt(a.seniority.yearsExperience);
               case 'latest':
@@ -1212,8 +1160,11 @@ export function GigsMarketplace() {
           .filter(gig => favoriteGigs.includes(gig._id))
           .sort((a, b) => {
             switch (sortBy) {
-              case 'salary':
-                return parseInt(b.commission.baseAmount) - parseInt(a.commission.baseAmount);
+              case 'salary': {
+                const aVal = a.commission?.commission_per_call !== undefined ? a.commission.commission_per_call * 1000 : parseInt((a.commission?.baseAmount as any) || '0');
+                const bVal = b.commission?.commission_per_call !== undefined ? b.commission.commission_per_call * 1000 : parseInt((b.commission?.baseAmount as any) || '0');
+                return bVal - aVal;
+              }
               case 'experience':
                 return parseInt(b.seniority.yearsExperience) - parseInt(a.seniority.yearsExperience);
               case 'latest':
@@ -1337,7 +1288,7 @@ export function GigsMarketplace() {
 
       {activeTab === 'available' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {currentGigs.map((gig) => {
+          {(currentGigs as PopulatedGig[]).map((gig) => {
             const gigStatus = getGigStatus(gig._id);
             return (
               <div key={gig._id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
@@ -1401,8 +1352,12 @@ export function GigsMarketplace() {
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center text-sm text-gray-500">
                     <DollarSign className="w-4 h-4 mr-2" />
-                    <span>{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr base</span>
-                    {gig.commission.bonus && (
+                    <span>
+                      {gig.commission.commission_per_call !== undefined
+                        ? `${gig.commission.commission_per_call} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'} / call`
+                        : `${gig.commission.baseAmount || 0} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'}/yr base`}
+                    </span>
+                    {(gig.commission.bonus || gig.commission.bonusAmount) && (
                       <span className="ml-1 text-xs text-green-600">+ bonus</span>
                     )}
                   </div>
@@ -1514,7 +1469,7 @@ export function GigsMarketplace() {
           ) : (
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {currentGigs.map((gig) => (
+                {(currentGigs as PopulatedGig[]).map((gig) => (
                   <div key={gig._id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -1569,8 +1524,12 @@ export function GigsMarketplace() {
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{gig.commission.baseAmount} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}/yr base</span>
-                        {gig.commission.bonus && (
+                        <span>
+                          {gig.commission.commission_per_call !== undefined
+                            ? `${gig.commission.commission_per_call} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'} / call`
+                            : `${gig.commission.baseAmount || 0} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'}/yr base`}
+                        </span>
+                        {(gig.commission.bonus || gig.commission.bonusAmount) && (
                           <span className="ml-1 text-xs text-green-600">+ bonus</span>
                         )}
                       </div>
@@ -1664,7 +1623,7 @@ export function GigsMarketplace() {
           ) : (
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {invitedEnrollments.map((enrollment) => (
+                {(currentGigs as InvitedEnrollment[]).map((enrollment) => (
                   <div key={enrollment.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -1703,8 +1662,14 @@ export function GigsMarketplace() {
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{('commission' in enrollment.gig && enrollment.gig.commission?.baseAmount) ? `${enrollment.gig.commission.baseAmount} ${typeof enrollment.gig.commission.currency === 'object' ? enrollment.gig.commission.currency?.symbol || enrollment.gig.commission.currency?.code || 'EUR' : enrollment.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
-                        {('commission' in enrollment.gig && enrollment.gig.commission?.bonus) && (
+                        <span>
+                          {('commission' in enrollment.gig && enrollment.gig.commission?.commission_per_call !== undefined)
+                            ? `${enrollment.gig.commission.commission_per_call} ${typeof enrollment.gig.commission.currency === 'object' ? enrollment.gig.commission.currency?.symbol || '€' : enrollment.gig.commission.currency || '€'} / call`
+                            : ('commission' in enrollment.gig && enrollment.gig.commission?.baseAmount)
+                              ? `${enrollment.gig.commission.baseAmount} ${typeof enrollment.gig.commission.currency === 'object' ? enrollment.gig.commission.currency?.symbol || enrollment.gig.commission.currency?.code || 'EUR' : enrollment.gig.commission.currency || 'EUR'}/yr base`
+                              : 'N/A / call'}
+                        </span>
+                        {('commission' in enrollment.gig && (enrollment.gig.commission?.bonus || enrollment.gig.commission?.bonusAmount)) && (
                           <span className="ml-1 text-xs text-green-600">+ bonus</span>
                         )}
                       </div>
@@ -1832,7 +1797,7 @@ export function GigsMarketplace() {
           ) : (
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {enrolledGigs.map((enrolledGig) => (
+                {(currentGigs as EnrolledGig[]).map((enrolledGig) => (
                   <div key={enrolledGig.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -1871,8 +1836,14 @@ export function GigsMarketplace() {
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>{('commission' in enrolledGig.gig && enrolledGig.gig.commission?.baseAmount) ? `${enrolledGig.gig.commission.baseAmount} ${typeof enrolledGig.gig.commission.currency === 'object' ? enrolledGig.gig.commission.currency?.symbol || enrolledGig.gig.commission.currency?.code || 'EUR' : enrolledGig.gig.commission.currency || 'EUR'}/yr base` : 'N/A EUR/yr base'}</span>
-                        {('commission' in enrolledGig.gig && enrolledGig.gig.commission?.bonus) && (
+                        <span>
+                          {('commission' in enrolledGig.gig && enrolledGig.gig.commission?.commission_per_call !== undefined)
+                            ? `${enrolledGig.gig.commission.commission_per_call} ${typeof enrolledGig.gig.commission.currency === 'object' ? enrolledGig.gig.commission.currency?.symbol || '€' : enrolledGig.gig.commission.currency || '€'} / call`
+                            : ('commission' in enrolledGig.gig && enrolledGig.gig.commission?.baseAmount) 
+                              ? `${enrolledGig.gig.commission.baseAmount} ${typeof enrolledGig.gig.commission.currency === 'object' ? enrolledGig.gig.commission.currency?.symbol || enrolledGig.gig.commission.currency?.code || 'EUR' : enrolledGig.gig.commission.currency || 'EUR'}/yr base` 
+                              : 'N/A / call'}
+                        </span>
+                        {('commission' in enrolledGig.gig && (enrolledGig.gig.commission?.bonus || enrolledGig.gig.commission?.bonusAmount)) && (
                           <span className="ml-1 text-xs text-green-600">+ bonus</span>
                         )}
                       </div>

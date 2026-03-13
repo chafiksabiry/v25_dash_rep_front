@@ -71,7 +71,7 @@ export function ImportLeads() {
       // Rediriger vers l'endpoint d'authentification Zoho
       const userId = getAgentId();
       const redirectUrl = `${import.meta.env.VITE_DASH_COMPANY_BACKEND}/zoho/auth?userId=${userId}&redirectUrl=${window.location.origin}/company/leads`;
-      
+
       console.log('🔗 Redirecting to Zoho auth:', redirectUrl);
       window.location.href = redirectUrl;
     } catch (error) {
@@ -149,11 +149,10 @@ export function ImportLeads() {
 
         {/* Message de notification */}
         {message && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-            message.type === 'success' 
-              ? 'bg-green-50 text-green-800 border border-green-200' 
+          <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${message.type === 'success'
+              ? 'bg-green-50 text-green-800 border border-green-200'
               : 'bg-red-50 text-red-800 border border-red-200'
-          }`}>
+            }`}>
             {message.type === 'success' ? (
               <CheckCircle className="w-5 h-5" />
             ) : (
@@ -169,8 +168,8 @@ export function ImportLeads() {
             <div className="flex items-center gap-4 mb-6">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <svg className="w-8 h-8" viewBox="0 0 48 48" fill="none">
-                  <rect width="48" height="48" rx="8" fill="#E34133"/>
-                  <path d="M24 12L12 36H36L24 12Z" fill="white"/>
+                  <rect width="48" height="48" rx="8" fill="#E34133" />
+                  <path d="M24 12L12 36H36L24 12Z" fill="white" />
                 </svg>
               </div>
               <div>
@@ -203,11 +202,10 @@ export function ImportLeads() {
               <button
                 onClick={handleDisconnect}
                 disabled={actionLoading}
-                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                  actionLoading
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${actionLoading
                     ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
                     : 'bg-red-600 text-white hover:bg-red-700'
-                }`}
+                  }`}
               >
                 {actionLoading ? 'Disconnecting...' : 'Disconnect'}
               </button>
@@ -215,11 +213,10 @@ export function ImportLeads() {
               <button
                 onClick={handleConnect}
                 disabled={actionLoading}
-                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                  actionLoading
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${actionLoading
                     ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
                     : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
+                  }`}
               >
                 {actionLoading ? 'Connecting...' : 'Connect'}
               </button>
@@ -250,7 +247,7 @@ export function ImportLeads() {
             </div>
 
             <p className="text-gray-600 mb-6">
-              📄 Supported: CSV, Excel, JSON, TXT
+              📄 Supported: CSV, Excel
             </p>
 
             <button
