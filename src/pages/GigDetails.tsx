@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Skeleton } from '../components/ui/Skeleton';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight, Repeat, Star, FileText } from 'lucide-react';
 import Cookies from 'js-cookie';
@@ -1233,10 +1234,42 @@ export function GigDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-harx-500"></div>
-          <p className="mt-4 text-gray-500 font-medium">Loading gig details...</p>
+      <div className="min-h-screen py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <Skeleton className="h-6 w-32" variant="rounded" />
+          
+          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 border border-gray-100 space-y-6">
+            <div className="flex justify-between items-start">
+              <div className="space-y-4 flex-1">
+                <Skeleton className="h-12 w-3/4" variant="rounded" />
+                <Skeleton className="h-6 w-1/4" variant="rounded" />
+              </div>
+              <Skeleton className="h-10 w-32" variant="rounded" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 border border-gray-100 space-y-4">
+                <Skeleton className="h-8 w-48" variant="rounded" />
+                <Skeleton className="h-24 w-full" variant="rounded" />
+              </div>
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 border border-gray-100 space-y-6">
+                <Skeleton className="h-8 w-48" variant="rounded" />
+                <div className="flex flex-wrap gap-2">
+                  {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-8 w-24" variant="rounded" />)}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-8">
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 border border-gray-100 space-y-6">
+                <Skeleton className="h-8 w-full" variant="rounded" />
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-6 w-full" variant="rounded" />)}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

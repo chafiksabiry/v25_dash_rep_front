@@ -11,6 +11,7 @@ import { AIService } from '../services/ai';
 import { CallInterface } from '../components/CallInterface';
 import { useAuth } from '../contexts/AuthContext';
 import { GlobalAIAssistant } from '../components/GlobalAIAssistant';
+import { Skeleton } from '../components/ui/Skeleton';
 
 interface Interaction {
   id: number;
@@ -359,8 +360,22 @@ export function Workspace() {
                   </span>
                 </div>
                 {isLoadingLeads ? (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-harx-500"></div>
+                  <div className="space-y-4">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="border border-gray-100 rounded-2xl p-5 flex justify-between items-center bg-white/50 animate-pulse">
+                        <div className="space-y-3 flex-1">
+                          <Skeleton className="h-5 w-1/3" variant="rounded" />
+                          <div className="flex gap-4">
+                            <Skeleton className="h-3 w-24" variant="rounded" />
+                            <Skeleton className="h-3 w-32" variant="rounded" />
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <Skeleton className="h-6 w-16" variant="rounded" />
+                          <Skeleton className="h-10 w-24" variant="rounded" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : leads.length === 0 ? (
                   <div className="text-center py-12 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Skeleton } from '../components/ui/Skeleton';
 
 import { useNavigate } from 'react-router-dom';
 import { User, Users, Globe, Calendar, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -1220,9 +1221,35 @@ export function GigsMarketplace() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-harx-500"></div>
-        <span className="ml-3 text-gray-500 font-medium">Loading marketplace...</span>
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-48" variant="rounded" />
+          <Skeleton className="h-20 w-full" variant="rounded" />
+        </div>
+        
+        <div className="flex space-x-8 border-b border-gray-100 pb-4">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-6 w-24" variant="rounded" />)}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 space-y-4">
+              <div className="flex justify-between">
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-6 w-3/4" variant="rounded" />
+                  <Skeleton className="h-3 w-1/4" variant="rounded" />
+                </div>
+                <Skeleton className="h-8 w-20" variant="rounded" />
+              </div>
+              <Skeleton className="h-12 w-full" variant="rounded" />
+              <div className="space-y-2 pt-2">
+                <Skeleton className="h-4 w-1/2" variant="text" />
+                <Skeleton className="h-4 w-2/3" variant="text" />
+                <Skeleton className="h-4 w-1/3" variant="text" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

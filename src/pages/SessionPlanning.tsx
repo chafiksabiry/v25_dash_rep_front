@@ -13,6 +13,7 @@ import { getAgentId } from '../utils/authUtils';
 import { schedulerApi } from '../services/api/scheduler';
 import { slotApi } from '../services/api/slotApi';
 import { AvailableSlotsGrid } from '../components/scheduler/AvailableSlotsGrid';
+import { Skeleton } from '../components/ui/Skeleton';
 
 // Define ExternalGig type locally for API response mapping
 interface ExternalGig {
@@ -609,9 +610,8 @@ export function SessionPlanning() {
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Strategic Time Management & Reservation</p>
                             </div>
                             {loadingGigs && (
-                                <div className="ml-4 px-3 py-1 bg-harx-50 rounded-lg flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-harx-500 rounded-full animate-pulse"></div>
-                                    <span className="text-[10px] text-harx-600 font-black uppercase tracking-widest">Syncing Projects...</span>
+                                <div className="ml-4 flex items-center gap-2">
+                                    <Skeleton className="h-6 w-32" variant="rounded" />
                                 </div>
                             )}
                         </div>
@@ -642,7 +642,9 @@ export function SessionPlanning() {
                     {userRole === 'company' ? (
                         <div className="space-y-8">
                             <div className="flex space-x-3 overflow-x-auto pb-6 no-scrollbar">
-                                {gigs.length === 0 ? (
+                                {loadingGigs ? (
+                                    [1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-40 shrink-0" variant="rounded" />)
+                                ) : gigs.length === 0 ? (
                                     <div className="text-gray-400 italic px-8 py-5 bg-white/50 backdrop-blur-sm rounded-3xl border border-dashed border-gray-200 w-full text-center text-[10px] font-black uppercase tracking-widest">No active projects found.</div>
                                 ) : (
                                     gigs.map(gig => (
