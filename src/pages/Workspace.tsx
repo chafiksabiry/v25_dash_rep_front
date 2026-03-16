@@ -6,8 +6,6 @@ import {
   PhoneIncoming, AlertCircle, CheckCircle, XCircle,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { AIAssistant } from '../components/AIAssistant';
-import { AIService } from '../services/ai';
 import { CallInterface } from '../components/CallInterface';
 import { useAuth } from '../contexts/AuthContext';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -58,15 +56,12 @@ export function Workspace() {
   const [activeTab, setActiveTab] = useState('voice');
   const [message, setMessage] = useState('');
   const [selectedInteraction, setSelectedInteraction] = useState<Interaction | null>(null);
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [sentiment, setSentiment] = useState<'positive' | 'neutral' | 'negative'>('neutral');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoadingLeads, setIsLoadingLeads] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
   const [selectedGigId, setSelectedGigId] = useState<string>(gigId || '');
-  const aiService = new AIService();
   const [showCallInterface, setShowCallInterface] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const { user } = useAuth();
@@ -163,19 +158,7 @@ export function Workspace() {
     }
   };
 
-  const handleAISuggestion = (suggestion: string) => {
-    setMessage(suggestion);
-  };
 
-  useEffect(() => {
-    if (selectedInteraction?.issue) {
-      aiService.suggestQuickResponses(selectedInteraction.issue)
-        .then(suggestions => setAiSuggestions(suggestions));
-
-      aiService.analyzeSentiment(selectedInteraction.issue)
-        .then(result => setSentiment(result));
-    }
-  }, [selectedInteraction]);
 
   const workspaceTools = [
     { id: 'queue', label: 'Queue', icon: List },
@@ -649,35 +632,8 @@ export function Workspace() {
       </div>
       */}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3">{renderWorkspace()}</div>
-
-        <div className="space-y-6">
-
-          <AIAssistant
-            suggestions={aiSuggestions}
-            onSuggestionClick={handleAISuggestion}
-            sentiment={sentiment}
-          />
-
-          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Quick Actions</h2>
-            <div className="space-y-3">
-              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
-                Transfer to Specialist
-              </button>
-              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
-                View Customer History
-              </button>
-              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
-                Access Knowledge Base
-              </button>
-              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
-                Create Support Ticket
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="w-full">
+        {renderWorkspace()}
       </div>
     </div>
   );
