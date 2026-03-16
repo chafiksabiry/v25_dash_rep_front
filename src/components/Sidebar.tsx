@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Users, Calendar } from 'lucide-react';
+import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Users, Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 // Declare qiankun global variables
@@ -28,9 +28,13 @@ interface Phases {
 
 interface SidebarProps {
   phases: Phases | undefined;
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (isOpen: boolean) => void;
+  isCollapsed: boolean;
+  setIsCollapsed: (isCollapsed: boolean) => void;
 }
 
-export function Sidebar({ phases }: SidebarProps) {
+export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, setIsCollapsed }: SidebarProps) {
   const { logout } = useAuth();
 
   const isPhaseCompleted = (phaseNumber: number): boolean => {
@@ -96,37 +100,65 @@ export function Sidebar({ phases }: SidebarProps) {
   }, [phases]);
 
   return (
-    <div className="w-72 fixed inset-y-0 left-0 z-30 bg-[#0a0b14] text-white transition-all duration-300 md:relative shadow-2xl border-r border-white/5 flex flex-col overflow-y-auto">
-      <div className="h-[90px] px-6 flex items-center border-b border-white/5 bg-[#0a0b14]/50 backdrop-blur-sm">
-        <div className="relative shrink-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-harx-500/40 to-harx-600/40 blur-md rounded-lg scale-90"></div>
-          <img
-            src={`${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo_harx.png`}
-            alt="HARX Logo"
-            className="h-11 w-11 object-contain relative z-10 rounded-lg shadow-xl border border-white/10"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = `${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo_harx.jpg`;
-            }}
-          />
+    <div 
+      className={`fixed inset-y-0 left-0 z-30 bg-[#0a0b14] text-white transition-all duration-300 ease-in-out md:relative shadow-2xl border-r border-white/5 flex flex-col overflow-visible ${
+        !isSidebarOpen
+          ? '-translate-x-full md:translate-x-0'
+          : 'translate-x-0'
+      } ${isCollapsed ? 'w-20' : 'w-72'}`}
+    >
+      {/* Toggle Button - Modern Floating Style */}
+      <button 
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="absolute -right-3 top-12 bg-harx-500 text-white rounded-full p-1.5 shadow-lg shadow-harx-500/30 hover:scale-110 active:scale-95 transition-all z-[60] hidden md:flex"
+      >
+        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      </button>
+
+      <div className={`h-[90px] flex items-center justify-between border-b border-white/5 bg-[#0a0b14]/50 backdrop-blur-sm transition-all duration-300 ${isCollapsed ? 'px-4 justify-center' : 'px-6'}`}>
+        <div className="flex items-center space-x-3.5">
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-harx-500/40 to-harx-600/40 blur-md rounded-lg scale-90"></div>
+            <img
+              src={`${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo_harx.png`}
+              alt="HARX Logo"
+              className="h-11 w-11 object-contain relative z-10 rounded-lg shadow-xl border border-white/10"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = `${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo_harx.jpg`;
+              }}
+            />
+          </div>
+          {!isCollapsed && (
+            <div className="flex flex-col justify-center overflow-hidden">
+              <span className="text-[11px] font-black text-transparent bg-clip-text bg-gradient-to-r from-harx-400 to-harx-600 tracking-[0.25em] uppercase leading-none mb-1">
+                HARX
+              </span>
+              <span className="text-xl font-black text-white tracking-tight uppercase leading-none whitespace-nowrap">
+                Dashboard
+              </span>
+            </div>
+          )}
         </div>
-        <div className="ml-3.5 flex flex-col justify-center">
-          <span className="text-[11px] font-black text-transparent bg-clip-text bg-gradient-to-r from-harx-400 to-harx-600 tracking-[0.25em] uppercase leading-none mb-1">
-            HARX
-          </span>
-          <span className="text-xl font-black text-white tracking-tight uppercase leading-none">
-            Dashboard
-          </span>
-        </div>
+        {!isCollapsed && (
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="md:hidden p-2 hover:bg-white/10 rounded-xl transition-colors shrink-0"
+          >
+            <X className="h-5 w-5 text-gray-400" />
+          </button>
+        )}
       </div>
 
-      <nav className="flex-1 px-4 flex flex-col min-h-0 space-y-1">
+      <nav className="flex-1 px-4 py-4 flex flex-col min-h-0 space-y-2">
         {filteredNavItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex w-full items-center space-x-3 rounded-2xl py-3 px-5 transition-all duration-300 group ${
+              `flex w-full items-center rounded-2xl transition-all duration-300 group relative ${
+                isCollapsed ? 'justify-center p-3' : 'space-x-3 py-3 px-5'
+              } ${
                 isActive
                   ? 'bg-gradient-harx text-white shadow-xl shadow-harx-500/25 ring-1 ring-white/10'
                   : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
@@ -138,22 +170,31 @@ export function Sidebar({ phases }: SidebarProps) {
                 <div className={`p-2 rounded-xl transition-all shrink-0 ${isActive ? 'bg-white/20' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
                   <item.icon className="h-5 w-5" />
                 </div>
-                <span className="font-black text-sm tracking-tight">{item.label}</span>
+                {!isCollapsed && (
+                  <span className="font-black text-sm tracking-tight whitespace-nowrap overflow-hidden">{item.label}</span>
+                )}
+                {isCollapsed && (
+                  <div className="absolute left-16 bg-slate-900 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl border border-white/10">
+                    {item.label}
+                  </div>
+                )}
               </>
             )}
           </NavLink>
         ))}
       </nav>
 
-      <div className="p-4 bg-black/40 border-t border-white/5 mt-auto">
+      <div className={`bg-black/40 border-t border-white/5 transition-all duration-300 ${isCollapsed ? 'p-3 flex justify-center' : 'p-4'}`}>
         <button
           onClick={logout}
-          className="flex w-full items-center space-x-3 rounded-xl py-2 px-4 text-gray-400 hover:bg-harx-600/20 hover:text-harx-400 transition-all duration-300 group font-bold text-sm"
+          className={`flex items-center rounded-xl transition-all duration-300 group font-bold text-sm text-gray-400 hover:bg-harx-600/20 hover:text-harx-400 ${
+            isCollapsed ? 'justify-center p-3' : 'w-full space-x-3 py-2 px-4'
+          }`}
         >
-          <div className="p-2 rounded-lg bg-gray-800/50 group-hover:bg-harx-500/20 transition-colors">
+          <div className="p-2 rounded-lg bg-gray-800/50 group-hover:bg-harx-500/20 transition-colors shrink-0">
             <LogOut className="h-4 w-4" />
           </div>
-          <span>Logout</span>
+          {!isCollapsed && <span>Logout</span>}
         </button>
       </div>
     </div>

@@ -63,6 +63,8 @@ function AppContent() {
   const { isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     console.log('🚀 App component mounted - initializing application');
@@ -179,10 +181,19 @@ function AppContent() {
 
   return (
     <Router basename={basename}>
-      <div className="flex h-screen bg-gray-50">
-        <Sidebar phases={userProfile?.onboardingProgress?.phases} />
+      <div className="flex h-screen bg-gray-50 overflow-hidden">
+        <Sidebar 
+          phases={userProfile?.onboardingProgress?.phases} 
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+        />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <TopBar />
+          <TopBar 
+            isSidebarOpen={isSidebarOpen}
+            setIsSidebarOpen={setIsSidebarOpen}
+          />
           <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
             <Routes>
               <Route path="/" element={

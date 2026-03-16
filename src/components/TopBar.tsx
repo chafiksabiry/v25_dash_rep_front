@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, Search, User } from 'lucide-react';
+import { Bell, Search, User, Menu } from 'lucide-react';
 import { getUserInfo } from '../utils/authUtils';
+
+interface TopBarProps {
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (isOpen: boolean) => void;
+}
 
 interface ProfileData {
   personalInfo?: {
@@ -23,7 +28,7 @@ interface ProfileData {
 // Add event listener for profile updates
 const PROFILE_UPDATE_EVENT = 'PROFILE_UPDATED';
 
-export function TopBar() {
+export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   
   const loadProfileData = () => {
@@ -93,9 +98,16 @@ export function TopBar() {
   const initials = getInitials(userName);
 
   return (
-    <header className="h-20 bg-white shadow-sm border-b border-gray-100 flex items-center justify-end px-8 shrink-0 z-20">
-      <div className="flex items-center space-x-6">
-        <div className="flex items-center space-x-3 p-2 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
+    <header className="h-20 bg-white shadow-sm border-b border-gray-100 flex items-center justify-between px-8 shrink-0 z-20">
+      <div className="flex w-full items-center justify-between">
+        <button
+          className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-gray-500 hover:bg-gray-100 hover:text-harx-500 transition-all duration-300 shadow-sm md:hidden"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <div className="flex items-center space-x-6 ml-auto">
+          <div className="flex items-center space-x-3 p-2 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
           {profileData?.personalInfo?.photo?.url ? (
             <img
               src={profileData.personalInfo.photo.url}
