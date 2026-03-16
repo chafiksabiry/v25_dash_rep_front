@@ -707,68 +707,10 @@ export function Workspace() {
           </button>
         ))}
       </div>
-      */}
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3">{renderWorkspace()}</div>
-
-        <div className="space-y-6">
-          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Customer Info</h2>
-            <div className="space-y-6">
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">Name</label>
-                <p className="font-black text-gray-900 text-lg leading-tight">{selectedInteraction?.customer || 'No customer selected'}</p>
-              </div>
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">Issue</label>
-                <p className="font-medium text-gray-700 leading-relaxed italic">{selectedInteraction?.issue || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">Wait Time</label>
-                <div className="flex items-center gap-2">
-                   <Clock className="w-3.5 h-3.5 text-harx-400" />
-                   <p className="font-black text-gray-900">{selectedInteraction?.waitTime || 'N/A'}</p>
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Priority</label>
-                <span className={`inline-block px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest ${selectedInteraction?.priority === 'High' ? 'bg-harx-50 text-harx-600 border border-harx-100' :
-                  selectedInteraction?.priority === 'Medium' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
-                    selectedInteraction?.priority === 'Low' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
-                      'bg-gray-50 text-gray-400'
-                  }`}>
-                  {selectedInteraction?.priority || 'N/A'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <AIAssistant
-            suggestions={aiSuggestions}
-            onSuggestionClick={handleAISuggestion}
-            sentiment={sentiment}
-          />
-
-          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Quick Actions</h2>
-            <div className="space-y-3">
-              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
-                Transfer to Specialist
-              </button>
-              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
-                View Customer History
-              </button>
-              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
-                Access Knowledge Base
-              </button>
-              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
-                Create Support Ticket
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 gap-6">
+        <div className="lg:col-span-1">{renderWorkspace()}</div>
       </div>
+     </div>
     </div>
   );
 }
