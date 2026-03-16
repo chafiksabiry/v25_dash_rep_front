@@ -98,14 +98,18 @@ export function Sidebar({ phases }: SidebarProps) {
   return (
     <div className="w-72 fixed inset-y-0 left-0 z-30 bg-[#0a0b14] text-white transition-all duration-300 md:relative shadow-2xl border-r border-white/5 flex flex-col overflow-y-auto">
       <div className="px-6 py-8 flex items-center justify-center">
-        <div className="flex items-center space-x-3">
-          <div className="h-10 w-10 bg-gradient-to-br from-harx-400 to-harx-600 rounded-xl flex items-center justify-center shadow-lg shadow-harx-500/20 shrink-0">
-            <span className="text-white font-black text-xl leading-none">H</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-harx-500 tracking-[0.2em] uppercase italic leading-none mb-1">HARX</span>
-            <span className="text-xl font-black tracking-tighter text-white leading-none whitespace-nowrap">Dashboard</span>
-          </div>
+        <img
+          src={`${import.meta.env.VITE_FRONT_URL}logo_harx-mascotte.png`}
+          alt="HARX.AI Logo"
+          className="h-10 w-auto object-contain animate-float"
+          onError={(e) => {
+             // Fallback to the standard logo if mascot isn't found
+            (e.target as HTMLImageElement).src = `${import.meta.env.VITE_FRONT_URL}logo_harx.jpg`;
+          }}
+        />
+        <div className="ml-3 flex flex-col">
+          <span className="text-[10px] font-black text-harx-500 tracking-[0.2em] uppercase italic leading-none mb-1">HARX</span>
+          <span className="text-xl font-black tracking-tighter text-white leading-none whitespace-nowrap">Dashboard</span>
         </div>
       </div>
 
