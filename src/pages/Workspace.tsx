@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-  Phone, Mail, MessageSquare, Globe, Clock, User, Mic, Video,
-  Send, Paperclip, Image, Smile, MoreHorizontal, List, Filter,
+  Phone, Mail, Globe, Clock, User, Mic, Video,
+  Paperclip, Image, MoreHorizontal, List, Filter,
   PhoneIncoming, AlertCircle, CheckCircle, XCircle,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { AIAssistant } from '../components/AIAssistant';
+import { AIService } from '../services/ai';
 import { CallInterface } from '../components/CallInterface';
 import { useAuth } from '../contexts/AuthContext';
-import { GlobalAIAssistant } from '../components/GlobalAIAssistant';
 import { Skeleton } from '../components/ui/Skeleton';
 
 interface Interaction {
@@ -57,6 +58,7 @@ export function Workspace() {
   const [activeTab, setActiveTab] = useState('voice');
   const [message, setMessage] = useState('');
   const [selectedInteraction, setSelectedInteraction] = useState<Interaction | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [sentiment, setSentiment] = useState<'positive' | 'neutral' | 'negative'>('neutral');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoadingLeads, setIsLoadingLeads] = useState(false);
@@ -64,6 +66,7 @@ export function Workspace() {
   const [totalPages, setTotalPages] = useState(1);
   const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
   const [selectedGigId, setSelectedGigId] = useState<string>(gigId || '');
+  const aiService = new AIService();
   const [showCallInterface, setShowCallInterface] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const { user } = useAuth();
@@ -164,13 +167,21 @@ export function Workspace() {
     setMessage(suggestion);
   };
 
+  useEffect(() => {
+    if (selectedInteraction?.issue) {
+      aiService.suggestQuickResponses(selectedInteraction.issue)
+        .then(suggestions => setAiSuggestions(suggestions));
+
+      aiService.analyzeSentiment(selectedInteraction.issue)
+        .then(result => setSentiment(result));
+    }
+  }, [selectedInteraction]);
 
   const workspaceTools = [
     { id: 'queue', label: 'Queue', icon: List },
     { id: 'voice', label: 'Voice Call', icon: Phone },
     { id: 'video', label: 'Video Call', icon: Video },
     { id: 'email', label: 'Email Support', icon: Mail },
-    { id: 'chat', label: 'Live Chat', icon: MessageSquare },
     { id: 'social', label: 'Social Media', icon: Globe },
   ];
 
@@ -195,16 +206,6 @@ export function Workspace() {
       issue: 'Billing Question',
       channel: 'Email Support',
     },
-    {
-      id: 3,
-      customer: 'Emily Brown',
-      type: 'chat',
-      status: 'waiting',
-      priority: 'Low',
-      waitTime: '5 minutes',
-      issue: 'Account Access',
-      channel: 'Live Chat',
-    },
   ];
 
   const renderQueue = () => (
@@ -224,7 +225,6 @@ export function Workspace() {
             <option>All Types</option>
             <option>Calls</option>
             <option>Emails</option>
-            <option>Chats</option>
           </select>
         </div>
       </div>
@@ -242,13 +242,11 @@ export function Workspace() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-4">
                   <div className={`p-3 rounded-xl transition-colors ${item.type === 'call' ? 'bg-emerald-50 text-emerald-600' :
-                    item.type === 'email' ? 'bg-harx-50 text-harx-600' :
-                      item.type === 'chat' ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600'
+                    item.type === 'email' ? 'bg-harx-50 text-harx-600' : 'bg-amber-50 text-amber-600'
                     }`}>
                     {item.type === 'call' ? <PhoneIncoming className="w-5 h-5" /> :
                       item.type === 'email' ? <Mail className="w-5 h-5" /> :
-                        item.type === 'chat' ? <MessageSquare className="w-5 h-5" /> :
-                          <Globe className="w-5 h-5" />}
+                        <Globe className="w-5 h-5" />}
                   </div>
                   <div>
                     <h3 className="font-black text-gray-900 group-hover:text-harx-600 transition-colors uppercase text-sm tracking-tight">{item.customer}</h3>
@@ -526,47 +524,6 @@ export function Workspace() {
           </div>
         );
 
-      case 'chat':
-        return (
-          <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-3xl border border-gray-100 flex flex-col shadow-sm">
-            <div className="flex-1 p-8 overflow-y-auto space-y-6">
-              <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-2xl rounded-tl-none p-5 max-w-[70%] border border-gray-100 shadow-sm relative">
-                  <p className="text-gray-900 text-sm font-medium leading-relaxed">Hello! How can I help you today?</p>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2 block">10:30 AM</span>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <div className="bg-gradient-harx text-white rounded-2xl rounded-tr-none p-5 max-w-[70%] shadow-lg shadow-harx-500/10 relative">
-                  <p className="text-sm font-medium leading-relaxed">I'm having trouble with my recent order</p>
-                  <div className="flex items-center justify-end gap-1.5 mt-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white/60">10:31 AM</span>
-                    <CheckCircle className="w-3 h-3 text-white/60" />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="p-6 border-t border-gray-100 bg-gray-50/30 rounded-b-3xl">
-              <div className="flex space-x-3 items-end">
-                <div className="flex-1 relative">
-                  <textarea
-                    rows={1}
-                    placeholder="Type your premium message..."
-                    className="w-full px-6 py-4 border border-gray-50 rounded-2xl bg-white focus:outline-none focus:ring-2 focus:ring-harx-500 transition-all text-sm font-medium shadow-sm pr-12 resize-none"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                  />
-                  <button className="absolute right-4 bottom-4 p-1 text-gray-400 hover:text-harx-600 transition-colors">
-                    <Smile className="w-5 h-5" />
-                  </button>
-                </div>
-                <button className="p-4 bg-gradient-harx text-white rounded-2xl hover:shadow-lg hover:shadow-harx-500/20 transition-all hover:-translate-y-0.5 flex-shrink-0 mb-0.5">
-                  <Send className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        );
 
       case 'social':
         return (
@@ -621,9 +578,6 @@ export function Workspace() {
                   <button className="p-3 text-gray-400 hover:text-harx-600 hover:bg-harx-50 rounded-xl transition-all border border-transparent hover:border-harx-100">
                     <Image className="w-5 h-5" />
                   </button>
-                  <button className="p-3 text-gray-400 hover:text-harx-600 hover:bg-harx-50 rounded-xl transition-all border border-transparent hover:border-harx-100">
-                    <Smile className="w-5 h-5" />
-                  </button>
                 </div>
                 <button className="px-8 py-3 bg-gradient-harx text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all hover:-translate-y-0.5">
                   Post Reply
@@ -650,7 +604,6 @@ export function Workspace() {
 
   return (
     <div className="space-y-6">
-      <GlobalAIAssistant />
       {showCallInterface && selectedLead && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 pointer-events-none">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96 pointer-events-auto">
@@ -694,10 +647,38 @@ export function Workspace() {
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-6">
-        <div className="lg:col-span-1">{renderWorkspace()}</div>
+      */}
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-3">{renderWorkspace()}</div>
+
+        <div className="space-y-6">
+
+          <AIAssistant
+            suggestions={aiSuggestions}
+            onSuggestionClick={handleAISuggestion}
+            sentiment={sentiment}
+          />
+
+          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Quick Actions</h2>
+            <div className="space-y-3">
+              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
+                Transfer to Specialist
+              </button>
+              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
+                View Customer History
+              </button>
+              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
+                Access Knowledge Base
+              </button>
+              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
+                Create Support Ticket
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-     */}
     </div>
   );
 }
