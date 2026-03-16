@@ -331,6 +331,8 @@ export function GigsMarketplace() {
   const [favoriteGigs, setFavoriteGigs] = useState<string[]>([]);
   const [applyingGigId, setApplyingGigId] = useState<string | null>(null);
   const [applicationMessage, setApplicationMessage] = useState<{ gigId: string; message: string; type: 'success' | 'error' } | null>(null);
+  const [expandedActivities, setExpandedActivities] = useState<Record<string, boolean>>({});
+  const [expandedIndustries, setExpandedIndustries] = useState<Record<string, boolean>>({});
 
   // Fonction pour obtenir le statut d'un gig pour l'agent connecté
   const getGigStatus = (gigId: string): 'enrolled' | 'invited' | 'pending' | 'none' => {
@@ -1387,15 +1389,22 @@ export function GigsMarketplace() {
                     <div className="mb-4">
                       <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
                       <div className="flex flex-wrap gap-1">
-                        {gig.industries.slice(0, 3).map((industry) => (
+                        {(expandedIndustries[gig._id] ? gig.industries : gig.industries.slice(0, 3)).map((industry) => (
                           <span key={industry._id} className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
                             {industry.name}
                           </span>
                         ))}
                         {gig.industries.length > 3 && (
-                          <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                            +{gig.industries.length - 3} more
-                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setExpandedIndustries(prev => ({...prev, [gig._id]: !prev[gig._id]}));
+                            }}
+                            className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                          >
+                            {expandedIndustries[gig._id] ? 'Show less' : `+${gig.industries.length - 3} more`}
+                          </button>
                         )}
                       </div>
                     </div>
@@ -1406,15 +1415,22 @@ export function GigsMarketplace() {
                     <div>
                       <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
                       <div className="flex flex-wrap gap-1">
-                        {gig.activities.slice(0, 3).map((activity) => (
+                        {(expandedActivities[gig._id] ? gig.activities : gig.activities.slice(0, 3)).map((activity) => (
                           <span key={activity._id} className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
                             {activity.name}
                           </span>
                         ))}
                         {gig.activities.length > 3 && (
-                          <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                            +{gig.activities.length - 3} more
-                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setExpandedActivities(prev => ({...prev, [gig._id]: !prev[gig._id]}));
+                            }}
+                            className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                          >
+                            {expandedActivities[gig._id] ? 'Show less' : `+${gig.activities.length - 3} more`}
+                          </button>
                         )}
                       </div>
                     </div>
@@ -1560,15 +1576,22 @@ export function GigsMarketplace() {
                         <div className="mb-4">
                           <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
                           <div className="flex flex-wrap gap-1">
-                            {gig.industries.slice(0, 3).map((industry) => (
+                            {(expandedIndustries[gig._id] ? gig.industries : gig.industries.slice(0, 3)).map((industry) => (
                               <span key={industry._id} className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
                                 {industry.name}
                               </span>
                             ))}
                             {gig.industries.length > 3 && (
-                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                                +{gig.industries.length - 3} more
-                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setExpandedIndustries(prev => ({...prev, [gig._id]: !prev[gig._id]}));
+                                }}
+                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                              >
+                                {expandedIndustries[gig._id] ? 'Show less' : `+${gig.industries.length - 3} more`}
+                              </button>
                             )}
                           </div>
                         </div>
@@ -1579,15 +1602,22 @@ export function GigsMarketplace() {
                         <div>
                           <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
                           <div className="flex flex-wrap gap-1">
-                            {gig.activities.slice(0, 3).map((activity) => (
+                            {(expandedActivities[gig._id] ? gig.activities : gig.activities.slice(0, 3)).map((activity) => (
                               <span key={activity._id} className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
                                 {activity.name}
                               </span>
                             ))}
                             {gig.activities.length > 3 && (
-                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                                +{gig.activities.length - 3} more
-                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setExpandedActivities(prev => ({...prev, [gig._id]: !prev[gig._id]}));
+                                }}
+                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                              >
+                                {expandedActivities[gig._id] ? 'Show less' : `+${gig.activities.length - 3} more`}
+                              </button>
                             )}
                           </div>
                         </div>
@@ -1701,15 +1731,22 @@ export function GigsMarketplace() {
                         <div className="mb-4">
                           <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
                           <div className="flex flex-wrap gap-1">
-                            {enrollment.gig.industries.slice(0, 3).map((industry) => (
+                            {(expandedIndustries[enrollment.gig._id] ? enrollment.gig.industries : enrollment.gig.industries.slice(0, 3)).map((industry) => (
                               <span key={industry._id} className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
                                 {industry.name}
                               </span>
                             ))}
                             {enrollment.gig.industries.length > 3 && (
-                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                                +{enrollment.gig.industries.length - 3} more
-                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setExpandedIndustries(prev => ({...prev, [enrollment.gig._id]: !prev[enrollment.gig._id]}));
+                                }}
+                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                              >
+                                {expandedIndustries[enrollment.gig._id] ? 'Show less' : `+${enrollment.gig.industries.length - 3} more`}
+                              </button>
                             )}
                           </div>
                         </div>
@@ -1729,15 +1766,22 @@ export function GigsMarketplace() {
                         <div>
                           <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
                           <div className="flex flex-wrap gap-1">
-                            {enrollment.gig.activities.slice(0, 3).map((activity) => (
+                            {(expandedActivities[enrollment.gig._id] ? enrollment.gig.activities : enrollment.gig.activities.slice(0, 3)).map((activity) => (
                               <span key={activity._id} className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
                                 {activity.name}
                               </span>
                             ))}
                             {enrollment.gig.activities.length > 3 && (
-                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                                +{enrollment.gig.activities.length - 3} more
-                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setExpandedActivities(prev => ({...prev, [enrollment.gig._id]: !prev[enrollment.gig._id]}));
+                                }}
+                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                              >
+                                {expandedActivities[enrollment.gig._id] ? 'Show less' : `+${enrollment.gig.activities.length - 3} more`}
+                              </button>
                             )}
                           </div>
                         </div>
@@ -1876,15 +1920,22 @@ export function GigsMarketplace() {
                         <div className="mb-4">
                           <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
                           <div className="flex flex-wrap gap-1">
-                            {enrolledGig.gig.industries.slice(0, 3).map((industry) => (
+                            {(expandedIndustries[enrolledGig.gig._id] ? enrolledGig.gig.industries : enrolledGig.gig.industries.slice(0, 3)).map((industry) => (
                               <span key={industry._id} className="px-2 py-1 bg-purple-100 rounded-full text-xs text-purple-700">
                                 {industry.name}
                               </span>
                             ))}
                             {enrolledGig.gig.industries.length > 3 && (
-                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                                +{enrolledGig.gig.industries.length - 3} more
-                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setExpandedIndustries(prev => ({...prev, [enrolledGig.gig._id]: !prev[enrolledGig.gig._id]}));
+                                }}
+                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                              >
+                                {expandedIndustries[enrolledGig.gig._id] ? 'Show less' : `+${enrolledGig.gig.industries.length - 3} more`}
+                              </button>
                             )}
                           </div>
                         </div>
@@ -1904,15 +1955,22 @@ export function GigsMarketplace() {
                         <div className="mb-4">
                           <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
                           <div className="flex flex-wrap gap-1">
-                            {enrolledGig.gig.activities.slice(0, 3).map((activity) => (
+                            {(expandedActivities[enrolledGig.gig._id] ? enrolledGig.gig.activities : enrolledGig.gig.activities.slice(0, 3)).map((activity) => (
                               <span key={activity._id} className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
                                 {activity.name}
                               </span>
                             ))}
                             {enrolledGig.gig.activities.length > 3 && (
-                              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                                +{enrolledGig.gig.activities.length - 3} more
-                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setExpandedActivities(prev => ({...prev, [enrolledGig.gig._id]: !prev[enrolledGig.gig._id]}));
+                                }}
+                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                              >
+                                {expandedActivities[enrolledGig.gig._id] ? 'Show less' : `+${enrolledGig.gig.activities.length - 3} more`}
+                              </button>
                             )}
                           </div>
                         </div>
