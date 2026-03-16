@@ -1,8 +1,7 @@
-﻿import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { HorizontalCalendar } from '../components/scheduler/HorizontalCalendar';
-import { TimeSlotGrid } from '../components/scheduler/TimeSlotGrid';
 import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company } from '../types/scheduler';
-import { Building, Clock, Briefcase, AlertCircle, Users, Brain, X } from 'lucide-react';
+import { Building, Clock, Briefcase, AlertCircle, Users, Brain } from 'lucide-react';
 import { CompanyView } from '../components/scheduler/CompanyView';
 import { WorkloadPredictionComponent as WorkloadPrediction } from '../components/scheduler/WorkloadPrediction';
 import { AttendanceReport } from '../components/scheduler/AttendanceReport';
@@ -14,7 +13,6 @@ import { getAgentId } from '../utils/authUtils';
 import { schedulerApi } from '../services/api/scheduler';
 import { slotApi } from '../services/api/slotApi';
 import { AvailableSlotsGrid } from '../components/scheduler/AvailableSlotsGrid';
-import { div } from '@tensorflow/tfjs';
 
 // Define ExternalGig type locally for API response mapping
 interface ExternalGig {
@@ -41,13 +39,12 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
     const agentData = slot.agentId && typeof slot.agentId === 'object' ? slot.agentId : null;
     const gigData = slot.gigId && typeof slot.gigId === 'object' ? slot.gigId : null;
 
-    // Use slot.slotId if available (for reservations), otherwise use _id
     const id = slot.slotId || (slot._id as any)?.$oid || slot._id?.toString() || crypto.randomUUID();
     let repId = (agentData as any)?._id || (agentData as any)?.$oid || slot.agentId?.toString() || slot.repId?.toString() || '';
     const gigId = (gigData as any)?._id || (gigData as any)?.$oid || slot.gigId?.toString() || '';
 
     let status = slot.status;
-    let isReservation = !!slot.isMember; // From backend getReservations mapping
+    let isReservation = !!slot.isMember;
     let repNotes = '';
     let reservationId = '';
 
@@ -55,7 +52,6 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
     const reservedCount = slot.reservedCount !== undefined ? slot.reservedCount : reservations.length;
     const capacity = slot.capacity || 1;
 
-    // Handle new reservationSlot structure
     if (slot.reservationId) {
         status = 'reserved';
         isReservation = true;
@@ -63,7 +59,6 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
         repNotes = slot.notes || '';
         repId = currentAgentId || repId;
     } else if (reservations.length > 0 && currentAgentId) {
-        // Fallback for old embedded structure during transition or hybrid views
         const myRes = reservations.find((r: any) =>
             (r.agentId?._id || r.agentId?.$oid || r.agentId)?.toString() === currentAgentId
         );
@@ -76,7 +71,6 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
         }
     }
 
-    // Ensure date is present (fallback to extracting from startTime if it's an ISO string)
     let date = slot.date;
     if (!date && slot.startTime && slot.startTime.includes('T')) {
         date = slot.startTime.split('T')[0];
@@ -91,21 +85,20 @@ const mapBackendSlotToSlot = (slot: any, currentAgentId?: string): TimeSlot => {
         repId,
         status: status as any,
         duration: slot.duration || 1,
-        notes: repNotes, // ONLY the rep's personal reservation notes
-        companyNotes: slot.notes, // The general slot notes from company
+        notes: repNotes,
+        companyNotes: slot.notes,
         capacity,
         reservedCount,
         reservations,
         attended: slot.attended,
         attendanceNotes: slot.attendanceNotes,
-        agent: agentData, // Store populated agent data
-        gig: gigData, // Store populated gig data
-        isMember: slot.isMember || isReservation, // Compat for flag
+        agent: agentData,
+        gig: gigData,
+        isMember: slot.isMember || isReservation,
         reservationId
     };
 };
 
-// Map ExternalGig to scheduler Gig type
 const mapExternalGigToSchedulerGig = (gig: ExternalGig): Gig => {
     const id = (gig._id as any)?.$oid || gig._id?.toString() || crypto.randomUUID();
     return {
@@ -115,7 +108,7 @@ const mapExternalGigToSchedulerGig = (gig: ExternalGig): Gig => {
         company: gig.companyName || 'Unknown Company',
         color: stringToColor(id),
         skills: gig.requiredSkills?.map((s: any) => typeof s === 'string' ? s : s.name) || [],
-        priority: 'medium', // Default priority, could be derived
+        priority: 'medium',
         availability: gig.availability
     };
 };
@@ -223,7 +216,7 @@ export function SessionPlanning() {
     const [slots, setSlots] = useState<TimeSlot[]>([]);
     const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
-    const [userRole] = useState<UserRole>('rep');
+    const [userRole, setUserRole] = useState<UserRole>('rep');
 
     const [selectedRepId] = useState<string>(() => {
         const agendId = getAgentId();
@@ -247,7 +240,6 @@ export function SessionPlanning() {
 
         try {
             if (userRole === 'rep') {
-                // Fetch from all sources for REPs
                 const [timeSlots, availableSlots, reservations] = await Promise.all([
                     schedulerApi.getTimeSlots(selectedRepId),
                     selectedGigId ? slotApi.getSlots(selectedGigId) : slotApi.getSlots(),
@@ -258,14 +250,12 @@ export function SessionPlanning() {
                 const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map(s => mapBackendSlotToSlot(s, selectedRepId)) : [];
                 const mappedReservations = Array.isArray(reservations) ? reservations.map((r: any) => ({
                     ...mapBackendSlotToSlot(r, selectedRepId),
-                    isReservation: true // Flag to distinguish for cancellation
+                    isReservation: true
                 })) : [];
 
-                // Merge and deduplicate: Prioritize Reservations > Time Slots > Available Slots
                 const finalSlots: TimeSlot[] = [];
                 const seenIds = new Set<string>();
 
-                // 1. Add Reservations first
                 mappedReservations.forEach(slot => {
                     if (!seenIds.has(slot.id)) {
                         finalSlots.push(slot);
@@ -273,7 +263,6 @@ export function SessionPlanning() {
                     }
                 });
 
-                // 2. Add Time Slots (original time blocks)
                 mappedTimeSlots.forEach(slot => {
                     if (!seenIds.has(slot.id)) {
                         finalSlots.push(slot);
@@ -281,7 +270,6 @@ export function SessionPlanning() {
                     }
                 });
 
-                // 3. Add Available Slots
                 mappedAvailableSlots.forEach(slot => {
                     if (!seenIds.has(slot.id)) {
                         finalSlots.push(slot);
@@ -290,18 +278,13 @@ export function SessionPlanning() {
                 });
 
                 let allSlots = finalSlots;
-
-                // Filter by gig if a gig is selected
                 if (selectedGigId) {
                     allSlots = allSlots.filter(slot => slot.gigId === selectedGigId);
                 }
-
                 setSlots(allSlots);
             } else {
-                // Fetch Global Gig Data (for Company/Admin view)
                 if (!selectedGigId) return;
 
-                // 1. Fetch all agents enrolled in this gig
                 const gigAgents = await schedulerApi.getGigAgents(selectedGigId, 'enrolled');
                 const mappedReps = gigAgents.map(ga => ({
                     id: ga.agentId._id,
@@ -310,11 +293,11 @@ export function SessionPlanning() {
                     avatar: ga.agentId.personalInfo?.avatar,
                     specialties: ga.agentId.professionalSummary?.industries || [],
                     performanceScore: 85,
-                    attendanceScore: 90
+                    attendanceScore: 90,
+                    attendanceHistory: []
                 }));
                 setReps(mappedReps);
 
-                // 2. Fetch all slots for this gig from both APIs
                 const [timeSlots, availableSlots] = await Promise.all([
                     schedulerApi.getTimeSlots(undefined, selectedGigId),
                     slotApi.getSlots(selectedGigId)
@@ -323,7 +306,6 @@ export function SessionPlanning() {
                 const mappedTimeSlots = Array.isArray(timeSlots) ? timeSlots.map((s: any) => mapBackendSlotToSlot(s, selectedRepId)) : [];
                 const mappedAvailableSlots = Array.isArray(availableSlots) ? availableSlots.map((s: any) => mapBackendSlotToSlot(s, selectedRepId)) : [];
 
-                // Merge and deduplicate
                 const finalSlots: TimeSlot[] = [];
                 const seenIds = new Set<string>();
 
@@ -349,9 +331,12 @@ export function SessionPlanning() {
     };
 
     useEffect(() => {
+        const role = Cookies.get('user_role') as UserRole;
+        if (role) setUserRole(role);
+        
         const fetchGigs = async () => {
             const companyId = Cookies.get('companyId');
-            if (!companyId) {
+            if (role !== 'company' || !companyId) {
                 setLoadingGigs(false);
                 return;
             }
@@ -364,7 +349,6 @@ export function SessionPlanning() {
                 if (response.data && response.data.data) {
                     const mappedGigs = response.data.data.map(mapExternalGigToSchedulerGig);
                     setGigs(mappedGigs);
-                    // Removed auto-selection of first gig
                 }
             } catch (error) {
                 console.error('Error fetching gigs:', error);
@@ -380,9 +364,6 @@ export function SessionPlanning() {
         initAI();
         fetchGigs();
     }, [userRole]);
-
-
-
 
     useEffect(() => {
         const fetchEnrolledGigs = async () => {
@@ -400,7 +381,7 @@ export function SessionPlanning() {
                         name: gigAgent.gigId.title,
                         description: gigAgent.gigId.description || '',
                         company: gigAgent.gigId.companyId?.name || 'Unknown Company',
-                        companyId: gigAgent.gigId.companyId?._id || '', // Map company ID
+                        companyId: gigAgent.gigId.companyId?._id || '',
                         color: stringToColor(gigAgent.gigId._id || gigAgent.gigId.title),
                         skills: [],
                         priority: 'medium',
@@ -419,16 +400,9 @@ export function SessionPlanning() {
         }
     }, [selectedRepId, userRole]);
 
-    // Unified Slot Refresh Trigger
     useEffect(() => {
         refreshData();
     }, [selectedRepId, userRole, selectedGigId, selectedDate]);
-
-
-
-
-
-
 
     const weeklyStats = useMemo<WeeklyStats>(() => {
         const stats: WeeklyStats = {
@@ -446,22 +420,18 @@ export function SessionPlanning() {
         filteredSlots.forEach((slot) => {
             if (slot.status !== 'cancelled') {
                 stats.totalHours += slot.duration || 1;
-
                 if (slot.status === 'available') {
                     stats.availableSlots++;
                 } else if (slot.status === 'reserved') {
                     stats.reservedSlots++;
                 }
-
                 if (slot.gigId) {
                     stats.gigBreakdown[slot.gigId] = (stats.gigBreakdown[slot.gigId] || 0) + (slot.duration || 1);
                 }
             }
         });
 
-        // Add pending hours from all draft slots
         stats.pendingHours = draftSlots.reduce((sum, s) => sum + (s.duration || 1), 0);
-
         return stats;
     }, [slots, userRole, selectedRepId, draftSlots]);
 
@@ -473,7 +443,6 @@ export function SessionPlanning() {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
         const isAlreadyDrafted = draftSlots.some(s => s.date === dateStr && s.startTime === time);
 
-        // Reset quick dropdowns when selecting manually
         setQuickStart('');
         setQuickEnd('');
 
@@ -516,7 +485,6 @@ export function SessionPlanning() {
                 });
             }
             setDraftSlots(newRange);
-            // Reset dropdowns to placeholders as requested
             setQuickStart('');
             setQuickEnd('');
         }
@@ -524,7 +492,6 @@ export function SessionPlanning() {
 
     const handleSlotUpdate = async (updates: Partial<TimeSlot>) => {
         let slotWithRep: TimeSlot;
-
         if (updates.id) {
             const existing = slots.find(s => s.id === updates.id);
             if (existing) {
@@ -540,89 +507,55 @@ export function SessionPlanning() {
 
         try {
             const existing = updates.id ? slots.find(s => s.id === updates.id) : null;
-
-            // NEW LOGIC: If it's a backend Slot (has capacity info) and we are reserving it
             if (existing && (existing as any).capacity !== undefined && updates.status === 'reserved') {
                 await slotApi.reserveSlot(existing.id, selectedRepId, updates.notes || '');
                 await refreshData();
-                setNotification({ message: 'Slot reserved successfully', type: 'success' });
+                showNotification('success', 'Slot reserved successfully');
                 return;
             }
-
-            // NEW LOGIC: If it's a backend Slot and we are trying to update notes on an existing reservation
             if (existing && (existing as any).capacity !== undefined && updates.notes !== undefined && (existing as any).reservationId) {
                 await slotApi.updateReservationNotes((existing as any).reservationId, updates.notes);
                 await refreshData();
-                setNotification({ message: 'Reservation notes updated', type: 'success' });
+                showNotification('success', 'Reservation notes updated');
                 return;
             }
-
-            // NEW LOGIC: If it's a backend Slot and we are trying to set it back to available (cancel)
             if (existing && (existing as any).capacity !== undefined && updates.status === 'available') {
-                const resId = (existing as any).reservationId || existing.id; // Fallback to id if reservationId not found (maybe manual mapping)
+                const resId = (existing as any).reservationId || existing.id;
                 await slotApi.cancelReservation(resId);
                 await refreshData();
-                setNotification({ message: 'Reservation cancelled', type: 'success' });
+                showNotification('success', 'Reservation cancelled');
                 return;
             }
-
             await schedulerApi.upsertTimeSlot(slotWithRep);
             await refreshData();
-
-            setNotification({
-                message: updates.id ? 'Time slot updated successfully' : 'New time slot created',
-                type: 'success'
-            });
+            showNotification('success', updates.id ? 'Time slot updated successfully' : 'New time slot created');
         } catch (error) {
             console.error('Error saving slot:', error);
-            setNotification({
-                message: 'Failed to save time slot',
-                type: 'error'
-            });
+            showNotification('error', 'Failed to save time slot');
         }
-
-        setTimeout(() => setNotification(null), 3000);
     };
 
     const handleSlotCancel = async (slotId: string) => {
         try {
             const slot = slots.find(s => s.id === slotId);
-
             if (slot && (slot as any).reservationId) {
-                // If it's a slotApi reservation
                 await slotApi.cancelReservation((slot as any).reservationId);
             } else if (slot && (slot as any).isReservation) {
-                // Fallback for old mapping
                 await slotApi.cancelReservation(slotId);
             } else {
-                // If it's a schedulerApi time slot
                 await schedulerApi.cancelTimeSlot(slotId);
             }
-
             await refreshData();
-
-            setNotification({
-                message: 'Time slot cancelled',
-                type: 'success'
-            });
+            showNotification('success', 'Time slot cancelled');
         } catch (error) {
             console.error('Error cancelling slot:', error);
-            setNotification({
-                message: 'Failed to cancel time slot',
-                type: 'error'
-            });
+            showNotification('error', 'Failed to cancel time slot');
         }
-
-        setTimeout(() => setNotification(null), 3000);
-
-        if (selectedSlot?.id === slotId) {
-            setSelectedSlot(null);
-        }
+        if (selectedSlot?.id === slotId) setSelectedSlot(null);
     };
 
     const handleQuickReserve = async () => {
         if (!selectedGigId || draftSlots.length === 0) return;
-
         try {
             await Promise.all(draftSlots.map(slot =>
                 schedulerApi.upsertTimeSlot({
@@ -631,74 +564,74 @@ export function SessionPlanning() {
                     notes: draftSlotNotes[`${slot.date}:${slot.startTime}`] ?? globalNotes ?? slot.notes ?? ''
                 })
             ));
-
             await refreshData();
-
-            setNotification({
-                message: `${draftSlots.length} time block(s) reserved successfully`,
-                type: 'success'
-            });
-
+            showNotification('success', `${draftSlots.length} time block(s) reserved successfully`);
             setDraftSlots([]);
-            setDraftSlotNotes(prev => {
-                const next = { ...prev };
-                draftSlots.forEach(s => { if (s.date && s.startTime) delete next[`${s.date}:${s.startTime}`]; });
-                return next;
-            });
+            setDraftSlotNotes({});
             setGlobalNotes('');
         } catch (error) {
             console.error('Error in multi-reserve:', error);
-            setNotification({
-                message: 'Failed to reserve time blocks',
-                type: 'error'
-            });
+            showNotification('error', 'Failed to reserve time blocks');
         }
-
-        setTimeout(() => setNotification(null), 3000);
     };
 
     const handleSlotSelect = (slot: TimeSlot) => {
         setSelectedSlot(slot);
     };
 
+    const showNotification = (type: 'success' | 'error', message: string) => {
+        setNotification({ type, message });
+        setTimeout(() => setNotification(null), 5000);
+    };
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans">
+        <div className="min-h-screen bg-gray-50/50 font-sans p-8">
             {notification && (
-                <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'
-                    }`}>
-                    <AlertCircle className="w-5 h-5 shrink-0" />
-                    <p className="font-medium">{notification.message}</p>
+                <div className={`fixed top-8 right-8 z-50 px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 ${
+                    notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-100 shadow-emerald-500/5' : 'bg-harx-50 text-harx-800 border border-harx-100 shadow-harx-500/5'
+                }`}>
+                    <AlertCircle className={`w-5 h-5 shrink-0 ${notification.type === 'success' ? 'text-emerald-500' : 'text-harx-500'}`} />
+                    <p className="font-black text-sm uppercase tracking-tight">{notification.message}</p>
                 </div>
             )}
 
-            <div className="space-y-6">
-                {/* Page title + stats (compatible with other dashboard pages) */}
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-blue-50 rounded-xl">
-                                <Building className="w-7 h-7 text-blue-600" />
+            <div className="max-w-[1600px] mx-auto space-y-8">
+                {/* Page title + stats */}
+                <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-10 shadow-sm border border-gray-100 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-harx-500/5 blur-[100px] -mr-32 -mt-32"></div>
+                    <div className="relative z-10 flex flex-wrap items-center justify-between gap-8">
+                        <div className="flex items-center gap-6">
+                            <div className="w-20 h-20 bg-gradient-harx rounded-3xl flex items-center justify-center shadow-lg shadow-harx-500/20">
+                                <Building className="w-10 h-10 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">Session Planning</h1>
-                                <p className="text-sm text-gray-500 mt-0.5">Plan and reserve your time slots</p>
+                                <h1 className="text-5xl font-black text-gray-900 tracking-tighter leading-none mb-2">Session Planning</h1>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Strategic Time Management & Reservation</p>
                             </div>
-                            {loadingGigs && <span className="text-xs text-blue-500 font-medium animate-pulse">Updating Gigs...</span>}
+                            {loadingGigs && (
+                                <div className="ml-4 px-3 py-1 bg-harx-50 rounded-lg flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 bg-harx-500 rounded-full animate-pulse"></div>
+                                    <span className="text-[10px] text-harx-600 font-black uppercase tracking-widest">Syncing Projects...</span>
+                                </div>
+                            )}
                         </div>
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 rounded-xl border border-gray-100">
-                                <Clock className="w-5 h-5 text-blue-600" />
+                        <div className="flex items-center gap-8">
+                            <div className="flex items-center gap-4 px-8 py-5 bg-white rounded-[2rem] border border-gray-100 shadow-sm shadow-gray-200/50">
+                                <div className="w-12 h-12 bg-harx-50 rounded-2xl flex items-center justify-center">
+                                    <Clock className="w-6 h-6 text-harx-600" />
+                                </div>
                                 <div>
-                                    <p className="text-xs text-gray-500 font-medium">Weekly Hours</p>
-                                    <p className="text-lg font-bold text-gray-900">{weeklyStats.totalHours}h</p>
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Weekly Commitment</p>
+                                    <p className="text-3xl font-black text-gray-900 tracking-tight">{weeklyStats.totalHours}<span className="text-lg text-gray-400 ml-1">h</span></p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 rounded-xl border border-gray-100">
-                                <Briefcase className="w-5 h-5 text-indigo-600" />
+                            <div className="flex items-center gap-4 px-8 py-5 bg-white rounded-[2rem] border border-gray-100 shadow-sm shadow-gray-200/50">
+                                <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center">
+                                    <Briefcase className="w-6 h-6 text-indigo-600" />
+                                </div>
                                 <div>
-                                    <p className="text-xs text-gray-500 font-medium">Active Gigs</p>
-                                    <p className="text-lg font-bold text-gray-900">{Object.keys(weeklyStats.gigBreakdown).length}</p>
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Active Projects</p>
+                                    <p className="text-3xl font-black text-gray-900 tracking-tight">{Object.keys(weeklyStats.gigBreakdown).length}</p>
                                 </div>
                             </div>
                         </div>
@@ -708,17 +641,17 @@ export function SessionPlanning() {
                 <main className="w-full">
                     {userRole === 'company' ? (
                         <div className="space-y-8">
-                            <div className="flex space-x-2 overflow-x-auto pb-2 no-scrollbar">
+                            <div className="flex space-x-3 overflow-x-auto pb-6 no-scrollbar">
                                 {gigs.length === 0 ? (
-                                    <div className="text-gray-500 italic px-4 py-3 bg-white rounded-xl border border-dashed border-gray-200 w-full text-center text-sm">No active gigs found.</div>
+                                    <div className="text-gray-400 italic px-8 py-5 bg-white/50 backdrop-blur-sm rounded-3xl border border-dashed border-gray-200 w-full text-center text-[10px] font-black uppercase tracking-widest">No active projects found.</div>
                                 ) : (
                                     gigs.map(gig => (
                                         <button
                                             key={gig.id}
                                             onClick={() => setSelectedGigId(gig.id)}
-                                            className={`px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-200 text-sm font-medium ${selectedGigId === gig.id
-                                                ? 'bg-blue-600 text-white shadow-sm'
-                                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                                            className={`px-8 py-4 rounded-2xl whitespace-nowrap transition-all duration-300 text-[10px] font-black uppercase tracking-widest ${selectedGigId === gig.id
+                                                ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20'
+                                                : 'bg-white text-gray-500 hover:text-harx-600 hover:bg-harx-50 border border-gray-100 shadow-sm'
                                                 }`}
                                         >
                                             {gig.name}
@@ -729,22 +662,24 @@ export function SessionPlanning() {
 
                             {selectedGigId && (
                                 <div className="space-y-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-                                            <p className="text-sm text-gray-500 mb-1 font-medium">REPs Scheduled</p>
-                                            <p className="text-2xl font-bold text-gray-900">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="p-8 bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group hover:border-emerald-100 transition-all">
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[50px] -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-all"></div>
+                                            <p className="text-[10px] text-gray-400 mb-2 font-black uppercase tracking-widest relative z-10">REPs Scheduled</p>
+                                            <p className="text-4xl font-black text-gray-900 tracking-tight relative z-10">
                                                 {new Set(slots
                                                     .filter(slot => slot.gigId === selectedGigId && slot.status === 'reserved')
                                                     .map(slot => slot.repId)
                                                 ).size}
                                             </p>
                                         </div>
-                                        <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-                                            <p className="text-sm text-gray-500 mb-1 font-medium">Total Hours Committed</p>
-                                            <p className="text-2xl font-bold text-gray-900">
+                                        <div className="p-8 bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group hover:border-harx-100 transition-all">
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-harx-500/5 blur-[50px] -mr-16 -mt-16 group-hover:bg-harx-500/10 transition-all"></div>
+                                            <p className="text-[10px] text-gray-400 mb-2 font-black uppercase tracking-widest relative z-10">Total Commitment</p>
+                                            <p className="text-4xl font-black text-gray-900 tracking-tight relative z-10">
                                                 {slots
                                                     .filter(slot => slot.gigId === selectedGigId && slot.status === 'reserved')
-                                                    .reduce((sum, slot) => sum + slot.duration, 0)}h
+                                                    .reduce((sum, slot) => sum + slot.duration, 0)}<span className="text-xl text-gray-400 ml-1">h</span>
                                             </p>
                                         </div>
                                     </div>
@@ -761,24 +696,24 @@ export function SessionPlanning() {
                         </div>
                     ) : userRole === 'rep' ? (
                         <div className="space-y-6">
-                            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-blue-50 rounded-xl">
-                                        <Briefcase className="w-6 h-6 text-blue-600" />
+                            <div className="bg-white/80 backdrop-blur-md rounded-[2rem] shadow-sm border border-gray-100 p-8 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                                <div className="flex items-center gap-6">
+                                    <div className="w-14 h-14 bg-harx-50 rounded-2xl flex items-center justify-center">
+                                        <Briefcase className="w-7 h-7 text-harx-600" />
                                     </div>
                                     <div>
-                                        <h2 className="text-lg font-bold text-gray-900">Select Project</h2>
-                                        <p className="text-sm text-gray-500">Choose a project to see available slots</p>
+                                        <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Strategic Project Selector</h2>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mt-0.5">Choose your primary focus area</p>
                                     </div>
                                 </div>
                                 <select
-                                    className="min-w-[300px] bg-gray-50 border-gray-200 rounded-xl text-sm font-bold text-gray-700 py-3 px-4 focus:ring-2 focus:ring-blue-100 outline-none"
+                                    className="min-w-[320px] bg-gray-50/50 border-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-700 py-4 px-6 focus:ring-4 focus:ring-harx-500/10 focus:border-harx-200 outline-none transition-all shadow-inner"
                                     value={selectedGigId || ''}
                                     onChange={(e) => setSelectedGigId(e.target.value === '' ? null : e.target.value)}
                                 >
-                                    <option value="">Choose a project...</option>
+                                    <option value="">CHOOSE A STRATEGIC PROJECT...</option>
                                     {gigs.map((gig: Gig) => (
-                                        <option key={gig.id} value={gig.id}>{gig.name}</option>
+                                        <option key={gig.id} value={gig.id}>{gig.name.toUpperCase()}</option>
                                     ))}
                                 </select>
                             </div>
@@ -795,8 +730,8 @@ export function SessionPlanning() {
                                     {selectedGigId ? (
                                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                             <div className="flex items-center justify-between">
-                                                <h3 className="text-xl font-black text-gray-900 flex items-center gap-3">
-                                                    <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
+                                                <h3 className="text-2xl font-black text-gray-900 flex items-center gap-4 tracking-tight uppercase">
+                                                    <div className="w-2 h-8 bg-gradient-harx rounded-full"></div>
                                                     Available Slots
                                                 </h3>
                                             </div>
@@ -819,14 +754,13 @@ export function SessionPlanning() {
                                     )}
                                 </div>
 
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
-                                    {/* Rest of the sidebar content */}
+                                <div className="bg-white/80 backdrop-blur-md rounded-[2rem] shadow-sm border border-gray-100 p-8 space-y-8">
                                     <div>
-                                        <h3 className="text-base font-semibold text-gray-900 mb-4">Weekly Overview</h3>
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-6 px-1 text-center">Weekly Strategy Overview</h3>
                                         <div className="space-y-4">
-                                            <div className="flex justify-between items-center text-sm">
-                                                <span className="text-gray-500">Available Slots</span>
-                                                <span className="text-gray-900 font-black">
+                                            <div className="flex justify-between items-center p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Available Slots</span>
+                                                <span className="text-xl font-black text-gray-900 tracking-tight">
                                                     {slots.filter((s: TimeSlot) =>
                                                         s.repId === selectedRepId &&
                                                         s.status === 'available' &&
@@ -834,9 +768,9 @@ export function SessionPlanning() {
                                                     ).length}
                                                 </span>
                                             </div>
-                                            <div className="flex justify-between items-center text-sm">
-                                                <span className="text-gray-500">Reserved Slots</span>
-                                                <span className="text-gray-900 font-black">
+                                            <div className="flex justify-between items-center p-4 bg-emerald-50 rounded-2xl border border-emerald-100 shadow-sm shadow-emerald-500/5">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Reserved Slots</span>
+                                                <span className="text-xl font-black text-emerald-700 tracking-tight">
                                                     {slots.filter((s: TimeSlot) =>
                                                         s.repId === selectedRepId &&
                                                         s.status === 'reserved' &&
@@ -847,85 +781,87 @@ export function SessionPlanning() {
                                         </div>
                                     </div>
 
-                                    <div className="pt-5 border-t border-gray-100">
-                                        <h3 className="text-base font-semibold text-gray-900 mb-4">Project Hours</h3>
-                                        <div className="space-y-4">
+                                    <div className="pt-8 border-t border-gray-100">
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-6 px-1 text-center">Project Allocation</h3>
+                                        <div className="space-y-3">
                                             {gigs.filter(g => !selectedGigId || g.id === selectedGigId).slice(0, 3).map((gig: Gig) => {
+                                                const gigColor = stringToColor(gig.name);
                                                 const gigHours = slots
                                                     .filter((s: TimeSlot) => s.repId === selectedRepId && s.gigId === gig.id && s.status === 'reserved')
                                                     .reduce((sum: number, s: TimeSlot) => sum + (s.duration || 1), 0);
-
                                                 if (gigHours === 0 && selectedGigId) return null;
-
                                                 return (
-                                                    <div key={gig.id} className="flex justify-between items-center text-sm">
+                                                    <div key={gig.id} className="flex justify-between items-center p-4 bg-white rounded-2xl border border-gray-50 hover:border-harx-100 transition-all group">
                                                         <div className="flex items-center">
-                                                            <div className="w-2.5 h-2.5 rounded-full mr-3" style={{ backgroundColor: stringToColor(gig.name) }}></div>
-                                                            <span className="text-gray-500 font-medium truncate max-w-[140px]">{gig.name}</span>
+                                                            <div className="w-1.5 h-6 rounded-full mr-4 transition-all group-hover:scale-y-125" style={{ backgroundColor: gigColor }}></div>
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 truncate max-w-[120px]">{gig.name}</span>
                                                         </div>
-                                                        <span className="text-gray-900 font-black">{gigHours}h</span>
+                                                        <span className="text-lg font-black text-gray-900 tracking-tight">{gigHours}h</span>
                                                     </div>
                                                 );
                                             })}
                                         </div>
                                     </div>
-
                                 </div>
                             </div>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-8">
-                            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                                <h2 className="text-xl font-black text-gray-900 mb-8 flex items-center">
-                                    <div className="w-2 h-7 bg-blue-600 rounded-full mr-4"></div>
-                                    Admin Command Center
+                            <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] shadow-sm border border-gray-100 p-10 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[100px] -mr-32 -mt-32"></div>
+                                <h2 className="text-3xl font-black text-gray-900 mb-10 flex items-center tracking-tighter uppercase relative z-10">
+                                    <div className="w-2.5 h-10 bg-gradient-to-b from-indigo-500 to-indigo-700 rounded-full mr-6 shadow-lg shadow-indigo-500/20"></div>
+                                    Admin Intelligence Hub
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className="bg-blue-600 p-6 rounded-3xl text-white shadow-xl shadow-blue-100">
-                                        <h3 className="text-sm font-bold opacity-80 uppercase mb-2">Total REPs</h3>
-                                        <p className="text-4xl font-black">{reps.length}</p>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                                    <div className="bg-indigo-600 rounded-[2rem] p-8 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-[40px] -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700"></div>
+                                        <h3 className="text-[10px] font-black opacity-60 uppercase mb-3 tracking-[0.2em]">Scale: Total REPs</h3>
+                                        <p className="text-6xl font-black tracking-tighter">{reps.length}</p>
                                     </div>
-                                    <div className="bg-emerald-500 p-6 rounded-3xl text-white shadow-xl shadow-emerald-100">
-                                        <h3 className="text-sm font-bold opacity-80 uppercase mb-2">Total Partners</h3>
-                                        <p className="text-4xl font-black">{sampleCompanies.length}</p>
+                                    <div className="bg-emerald-500 rounded-[2rem] p-8 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-[40px] -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700"></div>
+                                        <h3 className="text-[10px] font-black opacity-60 uppercase mb-3 tracking-[0.2em]">Network: Partners</h3>
+                                        <p className="text-6xl font-black tracking-tighter">{sampleCompanies.length}</p>
                                     </div>
-                                    <div className="bg-indigo-600 p-6 rounded-3xl text-white shadow-xl shadow-indigo-100">
-                                        <h3 className="text-sm font-bold opacity-80 uppercase mb-2">Total Active Gigs</h3>
-                                        <p className="text-4xl font-black">{gigs.length}</p>
+                                    <div className="bg-harx-600 rounded-[2rem] p-8 text-white shadow-xl shadow-harx-500/20 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-[40px] -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700"></div>
+                                        <h3 className="text-[10px] font-black opacity-60 uppercase mb-3 tracking-[0.2em]">Impact: Active projects</h3>
+                                        <p className="text-6xl font-black tracking-tighter">{gigs.length}</p>
                                     </div>
                                 </div>
                             </div>
 
                             {showAttendancePanel && (
-                                <AttendanceReport
-                                    reps={reps}
-                                    slots={slots}
-                                />
+                                <AttendanceReport reps={reps} slots={slots} />
                             )}
 
                             {showAIPanel && (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     <WorkloadPrediction slots={slots} />
-                                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                                        <div className="flex items-center mb-8">
-                                            <div className="p-3 bg-purple-100 rounded-2xl mr-4">
-                                                <Brain className="w-6 h-6 text-purple-600" />
+                                    <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] shadow-sm border border-gray-100 p-10 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-64 h-64 bg-harx-500/5 blur-[100px] -mr-32 -mt-32"></div>
+                                        <div className="flex items-center mb-10 relative z-10">
+                                            <div className="w-14 h-14 bg-gradient-harx rounded-2xl flex items-center justify-center shadow-lg shadow-harx-500/20 mr-6">
+                                                <Brain className="w-7 h-7 text-white" />
                                             </div>
-                                            <h2 className="text-xl font-extrabold text-gray-900">AI Global Insights</h2>
+                                            <h2 className="text-3xl font-black text-gray-900 tracking-tighter uppercase leading-none">AI Strategic Insights</h2>
                                         </div>
-                                        <div className="space-y-6">
-                                            <div className="p-5 bg-purple-50 rounded-2xl border border-purple-100">
-                                                <h3 className="font-black text-purple-900 mb-2 uppercase text-xs">Scheduling Efficiency</h3>
-                                                <p className="text-sm text-purple-800 leading-relaxed font-medium">
-                                                    Global operation efficiency is at <span className="text-xl font-black">78%</span>.
-                                                    Predicted optimization could increase output by 14% next week.
+                                        <div className="space-y-6 relative z-10">
+                                            <div className="p-8 bg-harx-50 rounded-[2rem] border border-harx-100 shadow-sm shadow-harx-500/5 relative overflow-hidden group">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-harx-500/5 blur-[40px] -mr-16 -mt-16 group-hover:bg-harx-500/10 transition-all"></div>
+                                                <h3 className="font-black text-harx-900 mb-3 uppercase text-[10px] tracking-widest relative z-10">Scheduling Optimization</h3>
+                                                <p className="text-sm text-harx-800 leading-relaxed font-black relative z-10">
+                                                    Global operation efficiency is at <span className="text-3xl tracking-tighter text-harx-900 mx-1">78%</span>.
+                                                    Predicted optimization could increase output by <span className="text-emerald-500 font-black">14%</span> next week.
                                                 </p>
                                             </div>
-                                            <div className="p-5 bg-blue-50 rounded-2xl border border-blue-100">
-                                                <h3 className="font-black text-blue-900 mb-2 uppercase text-xs">Resource Allocation</h3>
-                                                <p className="text-sm text-blue-800 leading-relaxed font-medium">
-                                                    Resource utilization is peak during 10:00 - 15:00 UTC.
-                                                    Recommended shift re-distribution for evening gigs.
+                                            <div className="p-8 bg-indigo-50 rounded-[2rem] border border-indigo-100 shadow-sm shadow-indigo-500/5 relative overflow-hidden group">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[40px] -mr-16 -mt-16 group-hover:bg-indigo-500/10 transition-all"></div>
+                                                <h3 className="font-black text-indigo-900 mb-3 uppercase text-[10px] tracking-widest relative z-10">Intelligence Report</h3>
+                                                <p className="text-sm text-indigo-800 leading-relaxed font-black relative z-10">
+                                                    Peak resource utilization identified: <span className="px-2 py-0.5 bg-indigo-100 rounded-lg mx-1">10:00 - 15:00 UTC</span>.
+                                                    Recommended shift re-distribution for evening operations.
                                                 </p>
                                             </div>
                                         </div>
@@ -933,34 +869,37 @@ export function SessionPlanning() {
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                                    <h2 className="text-lg font-black text-gray-900 mb-6 uppercase tracking-wider">REP Performance List</h2>
-                                    <div className="space-y-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
+                                <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] shadow-sm border border-gray-100 p-10 relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] -mr-32 -mt-32 group-hover:bg-emerald-500/10 transition-all"></div>
+                                    <h2 className="text-[10px] font-black text-emerald-600 mb-8 uppercase tracking-[0.2em] relative z-10 flex items-center">
+                                        <div className="w-1.5 h-4 bg-emerald-500 rounded-full mr-3 animate-pulse"></div>
+                                        Active Force: REP Performance
+                                    </h2>
+                                    <div className="space-y-4 relative z-10">
                                         {reps.map(rep => {
                                             const repSlots = slots.filter(slot => slot.repId === rep.id && slot.status === 'reserved');
                                             const totalHours = repSlots.reduce((sum, slot) => sum + slot.duration, 0);
-
                                             return (
-                                                <div key={rep.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl group hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100">
-                                                    <div className="flex items-center">
-                                                        <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mr-4 overflow-hidden border border-gray-100">
+                                                <div key={rep.id} className="flex items-center justify-between p-6 bg-white rounded-3xl group/item hover:bg-emerald-50 hover:shadow-lg hover:shadow-emerald-500/5 transition-all border border-gray-50 hover:border-emerald-100">
+                                                    <div className="flex items-center gap-6">
+                                                        <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center overflow-hidden border border-gray-100 group-hover/item:border-emerald-200 transition-all">
                                                             {rep.avatar ? (
                                                                 <img src={rep.avatar} alt={rep.name} className="w-full h-full object-cover" />
                                                             ) : (
-                                                                <Users className="w-6 h-6 text-gray-400" />
+                                                                <Users className="w-7 h-7 text-gray-400 group-hover/item:text-emerald-500" />
                                                             )}
                                                         </div>
                                                         <div>
-                                                            <h4 className="font-black text-gray-900">{rep.name}</h4>
-                                                            <p className="text-xs text-gray-500 font-bold">{rep.email}</p>
+                                                            <h4 className="font-black text-gray-900 tracking-tight group-hover/item:text-emerald-900">{rep.name}</h4>
+                                                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{rep.email}</p>
                                                         </div>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="text-xl font-black text-blue-600">{totalHours}h</p>
-                                                        <div className="flex space-x-2 mt-1">
-                                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-black rounded-lg">P: {rep.performanceScore}</span>
-                                                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-black rounded-lg">A: {rep.attendanceScore}%</span>
+                                                        <p className="text-2xl font-black text-emerald-600 tracking-tighter group-hover/item:scale-110 transition-transform">{totalHours}<span className="text-xs ml-0.5 opacity-60">h</span></p>
+                                                        <div className="flex space-x-2 mt-2">
+                                                            <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-lg uppercase tracking-widest">P: {rep.performanceScore}</span>
+                                                            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-black rounded-lg uppercase tracking-widest">A: {rep.attendanceScore}%</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -969,38 +908,38 @@ export function SessionPlanning() {
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                                    <h2 className="text-lg font-black text-gray-900 mb-6 uppercase tracking-wider">Partner Presence</h2>
-                                    <div className="space-y-4">
+                                <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] shadow-sm border border-gray-100 p-10 relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-harx-500/5 blur-[100px] -mr-32 -mt-32 group-hover:bg-harx-500/10 transition-all"></div>
+                                    <h2 className="text-[10px] font-black text-harx-600 mb-8 uppercase tracking-[0.2em] relative z-10 flex items-center">
+                                        <div className="w-1.5 h-4 bg-harx-500 rounded-full mr-3 animate-pulse"></div>
+                                        Strategic Network: Partners
+                                    </h2>
+                                    <div className="space-y-4 relative z-10">
                                         {sampleCompanies.map(company => {
                                             const companySlots = slots.filter(slot => {
                                                 const gig = gigs.find(g => g.id === slot.gigId);
                                                 return gig?.company === company.name && slot.status === 'reserved';
                                             });
-
                                             const totalHours = companySlots.reduce((sum, slot) => sum + slot.duration, 0);
                                             const uniqueReps = new Set(companySlots.map(slot => slot.repId)).size;
-
                                             return (
-                                                <div key={company.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl group hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100">
-                                                    <div className="flex items-center">
-                                                        <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mr-4 overflow-hidden border border-gray-100">
+                                                <div key={company.id} className="flex items-center justify-between p-6 bg-white rounded-3xl group/item hover:bg-harx-50 hover:shadow-lg hover:shadow-harx-500/5 transition-all border border-gray-50 hover:border-harx-100">
+                                                    <div className="flex items-center gap-6">
+                                                        <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center overflow-hidden border border-gray-100 group-hover/item:border-harx-200 transition-all">
                                                             {company.logo ? (
-                                                                <img src={company.logo} alt={company.name} className="w-full h-full object-contain p-1" />
+                                                                <img src={company.logo} alt={company.name} className="w-full h-full object-contain p-2" />
                                                             ) : (
-                                                                <Building className="w-6 h-6 text-gray-400" />
+                                                                <Building className="w-7 h-7 text-gray-400 group-hover/item:text-harx-500" />
                                                             )}
                                                         </div>
                                                         <div>
-                                                            <div>
-                                                                <h4 className="font-black text-gray-900">{company.name}</h4>
-                                                                <p className="text-xs text-gray-500 font-bold">{uniqueReps} REPs Active</p>
-                                                            </div>
+                                                            <h4 className="font-black text-gray-900 tracking-tight group-hover/item:text-harx-900">{company.name}</h4>
+                                                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{uniqueReps} REPs Active</p>
                                                         </div>
-                                                        <div className="text-right">
-                                                            <p className="text-xl font-black text-indigo-600">{totalHours}h</p>
-                                                            <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-lg mt-1 inline-block">Priority {company.priority}</span>
-                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-2xl font-black text-harx-600 tracking-tighter group-hover/item:scale-110 transition-transform">{totalHours}<span className="text-xs ml-0.5 opacity-60">h</span></p>
+                                                        <span className="px-2 py-1 bg-harx-100 text-harx-700 text-[10px] font-black rounded-lg mt-2 inline-block uppercase tracking-widest">Priority {company.priority}</span>
                                                     </div>
                                                 </div>
                                             );
@@ -1015,3 +954,5 @@ export function SessionPlanning() {
         </div>
     );
 }
+
+export default SessionPlanning;
