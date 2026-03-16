@@ -317,6 +317,7 @@ interface EnrolledGig {
 
 export function GigsMarketplace() {
   const navigate = useNavigate();
+  const agentId = getAgentId();
 
   const [activeTab, setActiveTab] = useState<'available' | 'enrolled' | 'favorite' | 'invited'>('available');
   const [gigs, setGigs] = useState<PopulatedGig[]>([]);
@@ -1130,7 +1131,7 @@ export function GigsMarketplace() {
     return () => {
       window.removeEventListener('refreshGigStatuses', handleRefreshStatuses);
     };
-  }, [applicationMessage, agentId]);
+  }, [applicationMessage]);
 
   // Filter and sort gigs based on active tab
   const getFilteredAndSortedGigs = () => {
