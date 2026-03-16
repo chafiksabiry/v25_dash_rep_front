@@ -406,7 +406,6 @@ export function GigDetails() {
   const [applying, setApplying] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [applicationMessage, setApplicationMessage] = useState('');
-  const [enrollmentStatus, setEnrollmentStatus] = useState<'none' | 'requested' | 'enrolled' | 'invited'>('none');
 
   // États pour les statuts depuis le profil
   const [pendingGigIds, setPendingGigIds] = useState<string[]>([]);
@@ -503,6 +502,18 @@ export function GigDetails() {
     };
 
     fetchStatusesFromProfile();
+
+    // Écouter les événements de rafraîchissement des statuts
+    const handleRefresh = () => {
+      console.log('🔄 Event received: refreshGigStatuses in GigDetails');
+      fetchStatusesFromProfile();
+    };
+
+    window.addEventListener('refreshGigStatuses', handleRefresh);
+    
+    return () => {
+      window.removeEventListener('refreshGigStatuses', handleRefresh);
+    };
   }, []);
 
   // Vérifier le statut d'enrollment de l'agent
@@ -518,22 +529,8 @@ export function GigDetails() {
       try {
         console.log('🔍 Checking enrollment status for agent:', agentId, 'gig:', gigId);
 
-        // Vérifier d'abord si l'agent est dans la liste des agents inscrits du gig
-        if (gig && gig.enrolledAgents) {
-          const isEnrolled = gig.enrolledAgents.some((agent: any) =>
-            agent.$oid === agentId || agent === agentId
-          );
-
-          if (isEnrolled) {
-            console.log('✅ Agent is enrolled in this gig');
-            setEnrollmentStatus('enrolled');
-            return;
-          }
-        }
-
         // Vérifier si l'agent est invité à ce gig
         try {
-          console.log('🔍 Checking if agent is invited to this gig');
           const invitedResponse = await fetch(
             `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/invited/agent/${agentId}`,
             {
@@ -545,78 +542,25 @@ export function GigDetails() {
 
           if (invitedResponse.ok) {
             const invitedData = await invitedResponse.json();
-            console.log('📧 Invited gigs data:', invitedData);
-
-            // Vérifier si ce gig est dans la liste des gigs invités
             const isInvited = invitedData.some((invitation: any) =>
               invitation.gigId === gigId || invitation.gigId?._id === gigId
             );
 
             if (isInvited) {
               console.log('📨 Agent is invited to this gig');
-              setEnrollmentStatus('invited');
-              return;
+              // On pourrait ajouter un state invitedGigIds si besoin, 
+              // mais pour l'instant on se base sur les props ou getAgentStatus
             }
           }
         } catch (invitedErr) {
           console.log('ℹ️ Could not check invitation status:', invitedErr);
         }
 
-        // Vérifier si l'agent a déjà fait une demande d'enrollment en regardant les gigs enrolled
-        try {
-          console.log('🔍 Checking if agent has pending enrollment request');
-
-          // Utiliser l'endpoint des enrollments de l'agent pour vérifier le statut
-          const enrolledResponse = await fetch(
-            `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/enrolled/agent/${agentId}`,
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (enrolledResponse.ok) {
-            const enrolledData = await enrolledResponse.json();
-            console.log('📝 Enrolled gigs data:', enrolledData);
-
-            // Vérifier si il y a une demande en attente pour ce gig (status pending)
-            const hasPendingRequest = enrolledData.some((enrollment: any) =>
-              (enrollment.gigId === gigId || enrollment.gigId?._id === gigId) &&
-              enrollment.status === 'pending'
-            );
-
-            if (hasPendingRequest) {
-              console.log('⏳ Agent has pending enrollment request for this gig');
-              setEnrollmentStatus('requested');
-              return;
-            }
-
-            // Vérifier aussi si l'agent est déjà accepté/enrolled
-            const hasAcceptedRequest = enrolledData.some((enrollment: any) =>
-              (enrollment.gigId === gigId || enrollment.gigId?._id === gigId) &&
-              (enrollment.status === 'accepted' || enrollment.status === 'enrolled')
-            );
-
-            if (hasAcceptedRequest) {
-              console.log('✅ Agent is enrolled in this gig');
-              setEnrollmentStatus('enrolled');
-              return;
-            }
-          } else {
-            console.log('⚠️ Enrolled gigs check failed:', enrolledResponse.status);
-          }
-        } catch (enrolledErr) {
-          console.log('ℹ️ Could not check enrolled gigs:', enrolledErr);
-        }
-
         // Si aucune des vérifications n'a trouvé de statut, l'agent n'a pas de relation avec ce gig
-        console.log('ℹ️ Agent has no relationship with this gig');
-        setEnrollmentStatus('none');
+        console.log('ℹ️ Agent enrollment status check complete');
 
       } catch (err) {
         console.error('❌ Error checking enrollment status:', err);
-        setEnrollmentStatus('none');
       }
     };
 
@@ -1182,12 +1126,12 @@ export function GigDetails() {
                   if (enrollmentForThisGig) {
                     if (enrollmentForThisGig.status === 'pending') {
                       console.log('⏳ Found pending enrollment, updating status');
-                      setEnrollmentStatus('requested');
+                      setPendingGigIds(prev => [...prev, gigId!]);
                       setApplicationStatus('success');
                       setApplicationMessage('Status updated: This gig is already pending');
                     } else if (enrollmentForThisGig.status === 'accepted' || enrollmentForThisGig.status === 'enrolled') {
                       console.log('✅ Found accepted enrollment, updating status');
-                      setEnrollmentStatus('enrolled');
+                      setEnrolledGigIds(prev => [...prev, gigId!]);
                       setApplicationStatus('success');
                       setApplicationMessage('Status updated: You are now enrolled in this gig');
                     }
@@ -1216,12 +1160,12 @@ export function GigDetails() {
 
       setApplicationStatus('success');
       setApplicationMessage(data.message || 'Application sent successfully!');
-      setEnrollmentStatus('requested');
+      
+      // Mise à jour optimiste pour affichage immédiat
+      setPendingGigIds(prev => [...prev, gigId!]);
 
       // Déclencher le rafraîchissement des statuts dans toutes les pages
       await refreshGigStatuses();
-
-      // Ne pas rediriger, juste mettre à jour le statut local
 
     } catch (err) {
       console.error('❌ Error applying to gig:', err);
