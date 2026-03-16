@@ -3,7 +3,8 @@ import { useLocation } from 'react-router-dom';
 import {
   Phone, Mail, MessageSquare, Globe, Clock, User, Mic, Video,
   Send, Paperclip, Image, Smile, MoreHorizontal, List, Filter,
-  PhoneIncoming, AlertCircle, CheckCircle, XCircle
+  PhoneIncoming, AlertCircle, CheckCircle, XCircle,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { AIAssistant } from '../components/AIAssistant';
 import { AIService } from '../services/ai';
@@ -219,19 +220,19 @@ export function Workspace() {
   ];
 
   const renderQueue = () => (
-    <div className="h-[600px] bg-white rounded-lg border border-gray-200 flex flex-col">
-      <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+    <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-3xl border border-gray-100 flex flex-col shadow-sm">
+      <div className="p-6 border-b border-gray-100 flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <h2 className="font-semibold text-gray-900">Interaction Queue</h2>
-          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-sm">
+          <h2 className="text-xl font-black text-gray-900 tracking-tight">Interaction Queue</h2>
+          <span className="bg-harx-50 text-harx-600 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-harx-100">
             {queueItems.length} Pending
           </span>
         </div>
         <div className="flex space-x-2">
-          <button className="p-2 text-gray-500 hover:text-gray-700">
+          <button className="p-2.5 text-gray-400 hover:text-harx-600 hover:bg-harx-50 rounded-xl transition-all">
             <Filter className="w-5 h-5" />
           </button>
-          <select className="border border-gray-200 rounded-lg px-3 py-1 text-sm">
+          <select className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500 focus:outline-none focus:ring-2 focus:ring-harx-500 transition-all">
             <option>All Types</option>
             <option>Calls</option>
             <option>Emails</option>
@@ -239,50 +240,50 @@ export function Workspace() {
           </select>
         </div>
       </div>
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1 p-6 overflow-y-auto">
         <div className="space-y-4">
           {queueItems.map((item) => (
             <div
               key={item.id}
-              className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+              className="border border-gray-100 rounded-2xl p-5 hover:bg-harx-50/30 hover:border-harx-100 transition-all cursor-pointer group hover:shadow-lg hover:shadow-harx-500/5"
               onClick={() => {
                 setSelectedInteraction(item);
                 setActiveTab(item.type);
               }}
             >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg ${item.type === 'call' ? 'bg-green-50' :
-                    item.type === 'email' ? 'bg-blue-50' :
-                      item.type === 'chat' ? 'bg-purple-50' : 'bg-orange-50'
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-4">
+                  <div className={`p-3 rounded-xl transition-colors ${item.type === 'call' ? 'bg-emerald-50 text-emerald-600' :
+                    item.type === 'email' ? 'bg-harx-50 text-harx-600' :
+                      item.type === 'chat' ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600'
                     }`}>
-                    {item.type === 'call' ? <PhoneIncoming className="w-5 h-5 text-green-600" /> :
-                      item.type === 'email' ? <Mail className="w-5 h-5 text-blue-600" /> :
-                        item.type === 'chat' ? <MessageSquare className="w-5 h-5 text-purple-600" /> :
-                          <Globe className="w-5 h-5 text-orange-600" />}
+                    {item.type === 'call' ? <PhoneIncoming className="w-5 h-5" /> :
+                      item.type === 'email' ? <Mail className="w-5 h-5" /> :
+                        item.type === 'chat' ? <MessageSquare className="w-5 h-5" /> :
+                          <Globe className="w-5 h-5" />}
                   </div>
                   <div>
-                    <h3 className="font-medium text-gray-900">{item.customer}</h3>
-                    <p className="text-sm text-gray-500">{item.channel}</p>
+                    <h3 className="font-black text-gray-900 group-hover:text-harx-600 transition-colors uppercase text-sm tracking-tight">{item.customer}</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{item.channel}</p>
                   </div>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.priority === 'High' ? 'bg-red-100 text-red-700' :
-                  item.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-green-100 text-green-700'
+                <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest ${item.priority === 'High' ? 'bg-harx-50 text-harx-600 border border-harx-100' :
+                  item.priority === 'Medium' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                    'bg-emerald-50 text-emerald-700 border border-emerald-100'
                   }`}>
                   {item.priority}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-2 text-gray-500">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-gray-400">
                   <Clock className="w-4 h-4" />
-                  <span>Wait: {item.waitTime}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Wait: {item.waitTime}</span>
                 </div>
-                <div className="flex space-x-2">
-                  <button className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <div className="flex space-x-3">
+                  <button className="px-5 py-2 bg-gradient-harx text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all hover:-translate-y-0.5">
                     Accept
                   </button>
-                  <button className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                  <button className="px-5 py-2 bg-white text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 border border-gray-100 transition-all">
                     Skip
                   </button>
                 </div>
@@ -291,21 +292,21 @@ export function Workspace() {
           ))}
         </div>
       </div>
-      <div className="p-4 border-t border-gray-200 bg-gray-50">
-        <div className="flex justify-between items-center text-sm text-gray-600">
-          <div className="flex items-center space-x-4">
+      <div className="p-6 border-t border-gray-100 bg-gray-50/30 rounded-b-3xl">
+        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+          <div className="flex items-center space-x-6">
             <div className="flex items-center">
-              <AlertCircle className="w-4 h-4 text-yellow-600 mr-1" />
-              <span>Avg. Wait: 8m</span>
+              <AlertCircle className="w-4 h-4 text-amber-500 mr-2" />
+              <span className="text-gray-500">Avg. Wait: <span className="text-gray-900">8m</span></span>
             </div>
             <div className="flex items-center">
-              <CheckCircle className="w-4 h-4 text-green-600 mr-1" />
-              <span>Completed: 45</span>
+              <CheckCircle className="w-4 h-4 text-emerald-500 mr-2" />
+              <span className="text-gray-500">Completed: <span className="text-gray-900">45</span></span>
             </div>
           </div>
           <div className="flex items-center">
-            <XCircle className="w-4 h-4 text-red-600 mr-1" />
-            <span>Missed: 3</span>
+            <XCircle className="w-4 h-4 text-harx-500 mr-2" />
+            <span className="text-gray-500">Missed: <span className="text-gray-900">3</span></span>
           </div>
         </div>
       </div>
@@ -318,19 +319,19 @@ export function Workspace() {
         return renderQueue();
       case 'voice':
         return (
-          <div className="h-[600px] bg-white rounded-lg p-6 flex flex-col">
-            <div className="flex justify-between items-center mb-6">
+          <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-3xl p-8 flex flex-col shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-8 border-b border-gray-100 pb-6">
               <div className="flex flex-col">
-                <h2 className="text-xl font-semibold text-gray-900">Leads</h2>
+                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Leads</h2>
                 {enrolledGigs.length > 0 && (
-                  <div className="mt-2">
+                  <div className="mt-3">
                     <select
                       value={selectedGigId}
                       onChange={(e) => {
                         setSelectedGigId(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="text-sm border border-gray-300 rounded-lg px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500 focus:outline-none focus:ring-2 focus:ring-harx-500 transition-all shadow-sm"
                     >
                       <option value="">All My Leads</option>
                       {enrolledGigs.map(g => (
@@ -340,59 +341,67 @@ export function Workspace() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center space-x-2">
-                <button className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">
+              <div className="flex items-center space-x-3">
+                <button className="p-3 bg-white text-gray-400 rounded-xl border border-gray-100 hover:text-harx-600 hover:bg-harx-50 transition-all shadow-sm">
                   <Mic className="w-5 h-5" />
                 </button>
-                <button className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">
+                <button className="p-3 bg-white text-gray-400 rounded-xl border border-gray-100 hover:text-harx-500 hover:bg-harx-50 transition-all shadow-sm">
                   <Phone className="w-5 h-5" />
                 </button>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <div className="bg-white rounded-lg">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Recent Leads</h3>
-                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Recent Leads</h3>
+                  <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-100">
                     {leads.length} Leads
                   </span>
                 </div>
                 {isLoadingLeads ? (
-                  <div className="flex justify-center items-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-harx-500"></div>
                   </div>
                 ) : leads.length === 0 ? (
-                  <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <p className="text-gray-500">No leads found {gigId ? "for this gig" : "for your account"}.</p>
+                  <div className="text-center py-12 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
+                    <p className="text-gray-400 font-medium">No leads found {gigId ? "for this gig" : "for your account"}.</p>
                   </div>
                 ) : (
                   <>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {leads.map((lead) => (
                         <div
                           key={`${lead._id || lead.id}-${lead.Email_1}-${lead.Created_Time}`}
-                          className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                          className="border border-gray-100 rounded-2xl p-5 hover:bg-harx-50/30 hover:border-harx-100 transition-all group hover:shadow-lg hover:shadow-harx-500/5"
                         >
                           <div className="flex justify-between items-center">
-                            <div>
-                              <h4 className="font-medium text-gray-900">{lead.Deal_Name}</h4>
-                              <p className="text-sm text-gray-600">{lead.Telephony || (lead as any).Phone || 'No phone'}</p>
-                              <p className="text-sm text-gray-500">{lead.Email_1 || 'No email'}</p>
+                            <div className="space-y-1">
+                              <h4 className="font-black text-gray-900 uppercase text-sm tracking-tight group-hover:text-harx-600 transition-colors">{lead.Deal_Name}</h4>
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1.5 text-gray-400">
+                                  <Phone className="w-3 h-3" />
+                                  <p className="text-[10px] font-black uppercase tracking-widest">{lead.Telephony || (lead as any).Phone || 'No phone'}</p>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-gray-400">
+                                  <Mail className="w-3 h-3" />
+                                  <p className="text-[10px] font-black uppercase tracking-widest leading-none mt-0.5">{lead.Email_1 || 'No email'}</p>
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-3">
+                            <div className="flex items-center space-x-4">
                               {lead.Stage && lead.Stage !== 'New' && (
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${lead.Stage === 'Respecte le planning' ? 'bg-green-100 text-green-700' :
-                                  lead.Stage === 'En retard' ? 'bg-red-100 text-red-700' :
-                                    'bg-gray-100 text-gray-700'
+                                <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest ${lead.Stage === 'Respecte le planning' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                                  lead.Stage === 'En retard' ? 'bg-harx-50 text-harx-600 border border-harx-100' :
+                                    'bg-gray-50 text-gray-400 border border-gray-100'
                                   }`}>
                                   {lead.Stage}
                                 </span>
                               )}
                               <button
-                                className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+                                className="px-6 py-2 bg-gradient-harx text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all hover:-translate-y-0.5 flex items-center gap-2"
                                 onClick={() => handleCallClick(lead)}
                               >
-                                <Phone className="w-4 h-4" />
+                                <Phone className="w-3.5 h-3.5" />
                                 <span>Call</span>
                               </button>
                             </div>
@@ -401,23 +410,31 @@ export function Workspace() {
                       ))}
                     </div>
                     {totalPages > 1 && (
-                      <div className="mt-6 flex justify-center items-center space-x-4">
+                      <div className="mt-8 flex justify-center items-center gap-6">
                         <button
                           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                           disabled={currentPage === 1}
-                          className={`px-4 py-2 rounded-lg border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                          className={`flex items-center px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currentPage === 1
+                            ? 'bg-gray-50 text-gray-300 cursor-not-allowed border border-gray-100'
+                            : 'bg-white text-gray-700 hover:bg-harx-50 hover:text-harx-600 border border-gray-100 shadow-sm'
+                            }`}
                         >
+                          <ChevronLeft className="w-4 h-4 mr-2" />
                           Previous
                         </button>
-                        <span className="text-sm text-gray-600">
-                          Page {currentPage} of {totalPages}
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                          Page <span className="text-gray-900">{currentPage}</span> of <span className="text-gray-900">{totalPages}</span>
                         </span>
                         <button
                           onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                           disabled={currentPage === totalPages}
-                          className={`px-4 py-2 rounded-lg border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                          className={`flex items-center px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currentPage === totalPages
+                            ? 'bg-gray-50 text-gray-300 cursor-not-allowed border border-gray-100'
+                            : 'bg-white text-gray-700 hover:bg-harx-50 hover:text-harx-600 border border-gray-100 shadow-sm'
+                            }`}
                         >
                           Next
+                          <ChevronRight className="w-4 h-4 ml-2" />
                         </button>
                       </div>
                     )}
@@ -430,35 +447,42 @@ export function Workspace() {
 
       case 'video':
         return (
-          <div className="h-[600px] bg-gray-900 rounded-lg p-6 text-white flex flex-col">
-            <div className="flex justify-between items-center mb-8">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                  <User className="w-6 h-6" />
+          <div className="h-[600px] bg-gray-900 rounded-3xl p-8 text-white flex flex-col shadow-2xl relative overflow-hidden">
+            {/* Ambient Background Glow */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-harx-500/10 blur-[100px] -mr-32 -mt-32"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 blur-[100px] -ml-32 -mb-32"></div>
+
+            <div className="relative z-10 flex justify-between items-center mb-12">
+              <div className="flex items-center space-x-5">
+                <div className="w-14 h-14 bg-gradient-harx rounded-2xl flex items-center justify-center shadow-lg shadow-harx-500/20">
+                  <User className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-medium">{selectedInteraction?.customer || 'No Customer Selected'}</h3>
-                  <p className="text-sm text-gray-400">In call: 00:12:34</p>
+                  <h3 className="text-xl font-black tracking-tight">{selectedInteraction?.customer || 'No Customer Selected'}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <p className="text-xs font-black uppercase tracking-widest text-gray-400">In call: <span className="text-emerald-400">00:12:34</span></p>
+                  </div>
                 </div>
               </div>
               <div className="flex space-x-4">
-                <button className="p-3 bg-gray-800 rounded-full hover:bg-gray-700">
+                <button className="p-4 bg-white/10 backdrop-blur-md rounded-2xl hover:bg-white/20 transition-all border border-white/5">
                   <Mic className="w-5 h-5" />
                 </button>
-                <button className="p-3 bg-gray-800 rounded-full hover:bg-gray-700">
+                <button className="p-4 bg-white/10 backdrop-blur-md rounded-2xl hover:bg-white/20 transition-all border border-white/5">
                   <Video className="w-5 h-5" />
                 </button>
-                <button className="p-3 bg-red-600 rounded-full hover:bg-red-700">
+                <button className="p-4 bg-red-500/20 backdrop-blur-md rounded-2xl hover:bg-red-500/40 text-red-500 transition-all border border-red-500/20">
                   <Phone className="w-5 h-5" />
                 </button>
               </div>
             </div>
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-32 h-32 bg-gray-800 rounded-full mx-auto mb-4 flex items-center justify-center">
-                  <User className="w-16 h-16 text-gray-400" />
+            <div className="flex-1 flex items-center justify-center relative z-10">
+              <div className="text-center group">
+                <div className="w-40 h-40 bg-white/5 rounded-full mx-auto mb-6 flex items-center justify-center border border-white/10 shadow-inner group-hover:scale-105 transition-transform duration-500">
+                  <User className="w-20 h-20 text-gray-600" />
                 </div>
-                <p className="text-gray-400">Video disabled</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Video disabled</p>
               </div>
             </div>
           </div>
@@ -466,32 +490,34 @@ export function Workspace() {
 
       case 'email':
         return (
-          <div className="h-[600px] bg-white rounded-lg border border-gray-200 flex flex-col">
-            <div className="p-4 border-b border-gray-200">
+          <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-3xl border border-gray-100 flex flex-col shadow-sm">
+            <div className="p-6 border-b border-gray-100">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2 px-1">Subject</label>
               <input
                 type="text"
-                placeholder="Subject"
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg"
+                placeholder="Enter email subject..."
+                className="w-full px-5 py-3 border border-gray-50 rounded-2xl bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-harx-500 focus:bg-white transition-all text-sm font-medium"
               />
             </div>
-            <div className="flex-1 p-4">
+            <div className="flex-1 p-6">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2 px-1">Message Body</label>
               <textarea
-                className="w-full h-full p-4 border border-gray-200 rounded-lg resize-none"
-                placeholder="Compose your email..."
+                className="w-full h-[calc(100%-28px)] p-6 border border-gray-50 rounded-3xl bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-harx-500 focus:bg-white transition-all text-sm font-medium resize-none leading-relaxed"
+                placeholder="Compose your premium response..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
               />
             </div>
-            <div className="p-4 border-t border-gray-200 flex justify-between items-center">
-              <div className="flex space-x-2">
-                <button className="p-2 text-gray-500 hover:text-gray-700">
+            <div className="p-6 border-t border-gray-100 bg-gray-50/30 flex justify-between items-center rounded-b-3xl">
+              <div className="flex space-x-3">
+                <button className="p-3 text-gray-400 hover:text-harx-600 hover:bg-harx-50 rounded-xl transition-all border border-transparent hover:border-harx-100">
                   <Paperclip className="w-5 h-5" />
                 </button>
-                <button className="p-2 text-gray-500 hover:text-gray-700">
+                <button className="p-3 text-gray-400 hover:text-harx-600 hover:bg-harx-50 rounded-xl transition-all border border-transparent hover:border-harx-100">
                   <Image className="w-5 h-5" />
                 </button>
               </div>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              <button className="px-8 py-3 bg-gradient-harx text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all hover:-translate-y-0.5">
                 Send Email
               </button>
             </div>
@@ -500,34 +526,39 @@ export function Workspace() {
 
       case 'chat':
         return (
-          <div className="h-[600px] bg-white rounded-lg border border-gray-200 flex flex-col">
-            <div className="flex-1 p-4 overflow-y-auto space-y-4">
+          <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-3xl border border-gray-100 flex flex-col shadow-sm">
+            <div className="flex-1 p-8 overflow-y-auto space-y-6">
               <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-lg p-3 max-w-[70%]">
-                  <p className="text-gray-900">Hello! How can I help you today?</p>
-                  <span className="text-xs text-gray-500">10:30 AM</span>
+                <div className="bg-gray-100 rounded-2xl rounded-tl-none p-5 max-w-[70%] border border-gray-100 shadow-sm relative">
+                  <p className="text-gray-900 text-sm font-medium leading-relaxed">Hello! How can I help you today?</p>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2 block">10:30 AM</span>
                 </div>
               </div>
               <div className="flex justify-end">
-                <div className="bg-blue-600 text-white rounded-lg p-3 max-w-[70%]">
-                  <p>I'm having trouble with my recent order</p>
-                  <span className="text-xs text-blue-200">10:31 AM</span>
+                <div className="bg-gradient-harx text-white rounded-2xl rounded-tr-none p-5 max-w-[70%] shadow-lg shadow-harx-500/10 relative">
+                  <p className="text-sm font-medium leading-relaxed">I'm having trouble with my recent order</p>
+                  <div className="flex items-center justify-end gap-1.5 mt-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/60">10:31 AM</span>
+                    <CheckCircle className="w-3 h-3 text-white/60" />
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="p-4 border-t border-gray-200">
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  placeholder="Type your message..."
-                  className="flex-1 px-4 py-2 border border-gray-200 rounded-lg"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                />
-                <button className="p-2 text-gray-500 hover:text-gray-700">
-                  <Smile className="w-5 h-5" />
-                </button>
-                <button className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <div className="p-6 border-t border-gray-100 bg-gray-50/30 rounded-b-3xl">
+              <div className="flex space-x-3 items-end">
+                <div className="flex-1 relative">
+                  <textarea
+                    rows={1}
+                    placeholder="Type your premium message..."
+                    className="w-full px-6 py-4 border border-gray-50 rounded-2xl bg-white focus:outline-none focus:ring-2 focus:ring-harx-500 transition-all text-sm font-medium shadow-sm pr-12 resize-none"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                  />
+                  <button className="absolute right-4 bottom-4 p-1 text-gray-400 hover:text-harx-600 transition-colors">
+                    <Smile className="w-5 h-5" />
+                  </button>
+                </div>
+                <button className="p-4 bg-gradient-harx text-white rounded-2xl hover:shadow-lg hover:shadow-harx-500/20 transition-all hover:-translate-y-0.5 flex-shrink-0 mb-0.5">
                   <Send className="w-5 h-5" />
                 </button>
               </div>
@@ -537,60 +568,62 @@ export function Workspace() {
 
       case 'social':
         return (
-          <div className="h-[600px] bg-white rounded-lg border border-gray-200 flex flex-col">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+          <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-3xl border border-gray-100 flex flex-col shadow-sm">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/10 rounded-t-3xl text-[10px] font-black uppercase tracking-widest">
               <div className="flex space-x-4">
-                <select className="border border-gray-200 rounded-lg px-3 py-1">
+                <select className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-harx-500 transition-all shadow-sm">
                   <option>Twitter</option>
                   <option>Facebook</option>
                   <option>Instagram</option>
                 </select>
-                <select className="border border-gray-200 rounded-lg px-3 py-1">
+                <select className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-harx-500 transition-all shadow-sm">
                   <option>Public Posts</option>
                   <option>Direct Messages</option>
                   <option>Comments</option>
                 </select>
               </div>
-              <button className="p-2 text-gray-500 hover:text-gray-700">
+              <button className="p-3 bg-white text-gray-400 rounded-xl border border-gray-100 hover:text-harx-600 hover:bg-harx-50 transition-all shadow-sm">
                 <MoreHorizontal className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex-1 p-4 overflow-y-auto">
-              <div className="space-y-4">
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+            <div className="flex-1 p-8 overflow-y-auto">
+              <div className="space-y-6">
+                <div className="border border-gray-100 rounded-3xl p-6 bg-white hover:bg-harx-50/20 transition-all group hover:shadow-lg hover:shadow-harx-500/5">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className="w-12 h-12 bg-gradient-harx rounded-2xl flex items-center justify-center shadow-lg shadow-harx-500/10">
+                       <User className="w-6 h-6 text-white" />
+                    </div>
                     <div>
-                      <p className="font-medium">@customer123</p>
-                      <p className="text-sm text-gray-500">2 minutes ago</p>
+                      <p className="font-black text-gray-900 group-hover:text-harx-600 transition-colors uppercase text-sm tracking-tight">@customer123</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">2 minutes ago</p>
                     </div>
                   </div>
-                  <p className="text-gray-900">Having issues with my recent purchase. Can someone help?</p>
-                  <div className="mt-3 flex space-x-4">
-                    <button className="text-sm text-blue-600 hover:text-blue-700">Reply</button>
-                    <button className="text-sm text-gray-500 hover:text-gray-700">DM</button>
+                  <p className="text-gray-700 text-sm leading-relaxed font-medium">Having issues with my recent purchase. Can someone help?</p>
+                  <div className="mt-6 flex space-x-6">
+                    <button className="text-[10px] font-black uppercase tracking-widest text-harx-600 hover:text-harx-700 underline decoration-2 underline-offset-4">Reply</button>
+                    <button className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-600">DM</button>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="p-4 border-t border-gray-200">
+            <div className="p-6 border-t border-gray-100 bg-gray-50/30 rounded-b-3xl">
               <textarea
-                className="w-full p-3 border border-gray-200 rounded-lg resize-none"
-                placeholder="Compose your response..."
+                className="w-full p-5 border border-gray-50 rounded-2xl bg-white focus:outline-none focus:ring-2 focus:ring-harx-500 transition-all text-sm font-medium shadow-sm resize-none leading-relaxed"
+                placeholder="Compose your premium response..."
                 rows={3}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
               />
-              <div className="mt-2 flex justify-between items-center">
-                <div className="flex space-x-2">
-                  <button className="p-2 text-gray-500 hover:text-gray-700">
+              <div className="mt-4 flex justify-between items-center px-1">
+                <div className="flex space-x-3">
+                  <button className="p-3 text-gray-400 hover:text-harx-600 hover:bg-harx-50 rounded-xl transition-all border border-transparent hover:border-harx-100">
                     <Image className="w-5 h-5" />
                   </button>
-                  <button className="p-2 text-gray-500 hover:text-gray-700">
+                  <button className="p-3 text-gray-400 hover:text-harx-600 hover:bg-harx-50 rounded-xl transition-all border border-transparent hover:border-harx-100">
                     <Smile className="w-5 h-5" />
                   </button>
                 </div>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <button className="px-8 py-3 bg-gradient-harx text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all hover:-translate-y-0.5">
                   Post Reply
                 </button>
               </div>
@@ -629,14 +662,14 @@ export function Workspace() {
           </div>
         </div>
       )}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Workspace</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-black text-gray-900 tracking-tight">Workspace</h1>
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 bg-green-50 px-3 py-1 rounded-lg">
-            <Clock className="w-4 h-4 text-green-600" />
-            <span className="text-green-600 text-sm">Active: 45m</span>
+          <div className="flex items-center space-x-2 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 shadow-sm shadow-emerald-500/5">
+            <Clock className="w-4 h-4 text-emerald-600" />
+            <span className="text-emerald-700 text-xs font-black uppercase tracking-widest">Active: 45m</span>
           </div>
-          <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+          <button className="px-6 py-2.5 bg-white text-gray-500 hover:text-red-600 border border-gray-100 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all hover:bg-red-50 hover:border-red-100 shadow-sm">
             End Session
           </button>
         </div>
@@ -665,27 +698,30 @@ export function Workspace() {
         <div className="lg:col-span-3">{renderWorkspace()}</div>
 
         <div className="space-y-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Info</h2>
-            <div className="space-y-4">
+          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Customer Info</h2>
+            <div className="space-y-6">
               <div>
-                <label className="text-sm text-gray-500">Name</label>
-                <p className="font-medium text-gray-900">{selectedInteraction?.customer || 'No customer selected'}</p>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">Name</label>
+                <p className="font-black text-gray-900 text-lg leading-tight">{selectedInteraction?.customer || 'No customer selected'}</p>
               </div>
               <div>
-                <label className="text-sm text-gray-500">Issue</label>
-                <p className="font-medium text-gray-900">{selectedInteraction?.issue || 'N/A'}</p>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">Issue</label>
+                <p className="font-medium text-gray-700 leading-relaxed italic">{selectedInteraction?.issue || 'N/A'}</p>
               </div>
               <div>
-                <label className="text-sm text-gray-500">Wait Time</label>
-                <p className="font-medium text-gray-900">{selectedInteraction?.waitTime || 'N/A'}</p>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">Wait Time</label>
+                <div className="flex items-center gap-2">
+                   <Clock className="w-3.5 h-3.5 text-harx-400" />
+                   <p className="font-black text-gray-900">{selectedInteraction?.waitTime || 'N/A'}</p>
+                </div>
               </div>
               <div>
-                <label className="text-sm text-gray-500">Priority</label>
-                <span className={`inline-block px-2 py-1 rounded-full text-sm ${selectedInteraction?.priority === 'High' ? 'bg-red-100 text-red-700' :
-                  selectedInteraction?.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                    selectedInteraction?.priority === 'Low' ? 'bg-green-100 text-green-700' :
-                      'bg-gray-100 text-gray-700'
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Priority</label>
+                <span className={`inline-block px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest ${selectedInteraction?.priority === 'High' ? 'bg-harx-50 text-harx-600 border border-harx-100' :
+                  selectedInteraction?.priority === 'Medium' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                    selectedInteraction?.priority === 'Low' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                      'bg-gray-50 text-gray-400'
                   }`}>
                   {selectedInteraction?.priority || 'N/A'}
                 </span>
@@ -699,19 +735,19 @@ export function Workspace() {
             sentiment={sentiment}
           />
 
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-            <div className="space-y-2">
-              <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
+          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Quick Actions</h2>
+            <div className="space-y-3">
+              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
                 Transfer to Specialist
               </button>
-              <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
+              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
                 View Customer History
               </button>
-              <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
+              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
                 Access Knowledge Base
               </button>
-              <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
+              <button className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-harx-600 hover:bg-harx-50/50 rounded-xl transition-all border border-transparent hover:border-harx-100">
                 Create Support Ticket
               </button>
             </div>
