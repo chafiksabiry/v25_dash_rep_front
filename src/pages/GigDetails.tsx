@@ -1234,7 +1234,10 @@ export function GigDetails() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-harx-500"></div>
+          <p className="mt-4 text-gray-500 font-medium">Loading gig details...</p>
+        </div>
       </div>
     );
   }
@@ -1242,12 +1245,13 @@ export function GigDetails() {
   if (error || !gig) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Gig Not Found</h2>
-          <p className="text-gray-600 mb-4">{error || 'The requested gig could not be found.'}</p>
+        <div className="bg-white p-12 rounded-3xl shadow-xl border border-gray-100 text-center max-w-md">
+          <div className="text-5xl mb-6">🔍</div>
+          <h2 className="text-2xl font-black text-gray-900 mb-2">Gig Not Found</h2>
+          <p className="text-gray-500 mb-8 font-medium">{error || 'The requested gig could not be found or has been archived.'}</p>
           <button
             onClick={() => navigate('/gigs-marketplace')}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            className="w-full bg-gradient-harx text-white py-3 px-6 rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5"
           >
             Back to Marketplace
           </button>
@@ -1257,38 +1261,38 @@ export function GigDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-transparent py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header avec bouton retour */}
         <div className="mb-6">
           <button
             onClick={() => navigate('/gigs-marketplace')}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+            className="flex items-center text-gray-500 hover:text-harx-600 mb-6 transition-colors font-bold group"
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
+            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
             Back to Marketplace
           </button>
 
-          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
             <div className="flex justify-between items-start mb-6">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-3xl font-bold text-gray-900">{gig.title}</h1>
+                <div className="flex items-center flex-wrap gap-4 mb-3">
+                  <h1 className="text-4xl font-black text-gray-900 tracking-tight">{gig.title}</h1>
                   {/* Badge de statut */}
                   {getAgentStatus() === 'enrolled' && (
-                    <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-700 border border-green-300">
+                    <span className="inline-block px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
                       ✓ Enrolled
                     </span>
                   )}
                   {getAgentStatus() === 'invited' && (
-                    <span className="inline-block px-4 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-700 border border-blue-300">
+                    <span className="inline-block px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-harx-50 text-harx-600 border border-harx-100 shadow-sm">
                       ✉ Invited
                     </span>
                   )}
                 </div>
-                <p className="text-lg text-gray-600 mb-2">{gig.category}</p>
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                <p className="text-lg text-gray-500 font-medium mb-4">{gig.category}</p>
+                <div className="flex items-center gap-4">
+                  <span className="inline-block px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest bg-harx-alt-50 text-harx-alt-700">
                     {gig.seniority.level}
                   </span>
                   <span className="text-sm text-gray-600">
@@ -1311,7 +1315,7 @@ export function GigDetails() {
                   <div className="text-center">
                     <button
                       onClick={() => window.location.href = '/copilot'}
-                      className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors shadow-md"
+                      className="inline-block px-8 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-xl font-black text-sm uppercase tracking-wider hover:shadow-lg hover:shadow-emerald-500/20 transition-all hover:-translate-y-0.5"
                     >
                       🚀 Start
                     </button>
@@ -1332,9 +1336,9 @@ export function GigDetails() {
                   <button
                     onClick={handleApply}
                     disabled={applying}
-                    className={`px-5 py-2 rounded-lg transition-colors font-medium text-sm shadow-md ${applying
-                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                    className={`px-8 py-3 rounded-xl transition-all font-black text-sm uppercase tracking-wider shadow-md hover:-translate-y-0.5 ${applying
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-harx text-white hover:shadow-lg hover:shadow-harx-500/20'
                       }`}
                   >
                     {applying ? (
@@ -1392,26 +1396,26 @@ export function GigDetails() {
           {/* Colonne principale */}
           <div className="xl:col-span-3 space-y-8">
             {/* Description */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Job Description</h2>
-              <p className="text-gray-700 whitespace-pre-wrap">{gig.description}</p>
+            <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+              <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Job Description</h2>
+              <p className="text-gray-600 font-medium leading-relaxed whitespace-pre-wrap">{gig.description}</p>
             </div>
 
             {/* Skills */}
-            {(gig.skills?.technical?.length > 0 || gig.skills?.professional?.length > 0 || gig.skills?.soft?.length > 0) && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Required Skills</h2>
+            {(gig.skills?.technical?.length > 0 || gig.skills?.professional?.length > 0 || gig.skills?.soft?.length > 0 || gig.skills?.languages?.length > 0) && (
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Required Skills</h2>
 
                 {gig.skills.technical?.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-lg font-medium text-gray-800 mb-2">Technical Skills</h3>
+                  <div className="mb-6">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Technical Skills</h3>
                     <div className="flex flex-wrap gap-2">
                       {gig.skills.technical.map((skill, i) => {
                         console.log('Technical skill item:', skill);
                         const skillName = skill.skill?.name || skill.details || 'Skill';
                         const skillLevel = skill.level > 0 ? ` (Level ${skill.level})` : '';
                         return (
-                          <span key={i} className="px-3 py-1 bg-blue-100 rounded-full text-sm text-blue-800">
+                          <span key={i} className="px-3 py-1.5 bg-harx-50 text-harx-600 rounded-xl text-xs font-black uppercase tracking-wider">
                             {skillName}{skillLevel}
                           </span>
                         );
@@ -1421,15 +1425,15 @@ export function GigDetails() {
                 )}
 
                 {gig.skills.professional?.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-lg font-medium text-gray-800 mb-2">Professional Skills</h3>
+                  <div className="mb-6">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Professional Skills</h3>
                     <div className="flex flex-wrap gap-2">
                       {gig.skills.professional.map((skill, i) => {
                         console.log('Professional skill item:', skill);
                         const skillName = skill.skill?.name || skill.details || 'Skill';
                         const skillLevel = skill.level > 0 ? ` (Level ${skill.level})` : '';
                         return (
-                          <span key={i} className="px-3 py-1 bg-green-100 rounded-full text-sm text-green-800">
+                          <span key={i} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-black uppercase tracking-wider">
                             {skillName}{skillLevel}
                           </span>
                         );
@@ -1439,15 +1443,15 @@ export function GigDetails() {
                 )}
 
                 {gig.skills.soft?.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-lg font-medium text-gray-800 mb-2">Soft Skills</h3>
+                  <div className="mb-6">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Soft Skills</h3>
                     <div className="flex flex-wrap gap-2">
                       {gig.skills.soft.map((skill, i) => {
                         console.log('Soft skill item:', skill);
                         const skillName = skill.skill?.name || skill.details || 'Skill';
                         const skillLevel = skill.level > 0 ? ` (Level ${skill.level})` : '';
                         return (
-                          <span key={i} className="px-3 py-1 bg-purple-100 rounded-full text-sm text-purple-800">
+                          <span key={i} className="px-3 py-1.5 bg-harx-alt-100/50 text-harx-alt-700 rounded-xl text-xs font-black uppercase tracking-wider">
                             {skillName}{skillLevel}
                           </span>
                         );
@@ -1457,15 +1461,15 @@ export function GigDetails() {
                 )}
 
                 {gig.skills.languages?.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-800 mb-2">Languages</h3>
+                  <div className="mb-0">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Languages</h3>
                     <div className="flex flex-wrap gap-2">
                       {gig.skills.languages.map((lang, i) => {
                         console.log('Language item:', lang);
                         const langName = lang.language?.name || lang.iso639_1?.toUpperCase() || 'Language';
                         const proficiency = lang.proficiency || 'N/A';
                         return (
-                          <span key={i} className="px-3 py-1 bg-yellow-100 rounded-full text-sm text-yellow-800">
+                          <span key={i} className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-xl text-xs font-black uppercase tracking-wider">
                             {langName} ({proficiency})
                           </span>
                         );
@@ -1478,15 +1482,15 @@ export function GigDetails() {
 
             {/* Industries */}
             {gig.industries?.length > 0 && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Industries</h2>
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Industries</h2>
                 <div className="flex flex-wrap gap-2">
                   {gig.industries.map((industry, index) => {
                     console.log('Industry item:', industry);
                     const industryName = industry.name || 'Industry';
                     const industryId = industry._id || index;
                     return (
-                      <span key={industryId} className="px-3 py-1 bg-purple-100 rounded-full text-sm text-purple-800">
+                      <span key={industryId} className="px-3 py-1.5 bg-harx-alt-100/50 text-harx-alt-700 rounded-xl text-xs font-black uppercase tracking-wider">
                         {industryName}
                       </span>
                     );
@@ -1502,15 +1506,15 @@ export function GigDetails() {
 
             {/* Activities */}
             {gig.activities?.length > 0 && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Key Activities</h2>
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Key Activities</h2>
                 <div className="flex flex-wrap gap-2">
                   {gig.activities.map((activity, index) => {
                     console.log('Activity item:', activity);
                     const activityName = activity.name || 'Activity';
                     const activityId = activity._id || index;
                     return (
-                      <span key={activityId} className="px-3 py-1 bg-green-100 rounded-full text-sm text-green-800">
+                      <span key={activityId} className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-xl text-xs font-black uppercase tracking-wider">
                         {activityName}
                       </span>
                     );
@@ -1534,78 +1538,78 @@ export function GigDetails() {
             )}
 
             {/* Commission section updated to match the UI precisely */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-blue-100/50 rounded-lg">
-                  <DollarSign className="h-6 w-6 text-blue-600" />
+                <div className="p-2 bg-harx-50 rounded-xl">
+                  <DollarSign className="h-6 w-6 text-harx-600" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">Commission Structure</h2>
+                <h2 className="text-xl font-black text-gray-900 tracking-tight">Commission Structure</h2>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Card 1: Per call compensation */}
-                <div className="p-6 rounded-2xl bg-green-50/50 border border-green-100 flex flex-col justify-between h-40 group hover:shadow-md transition-shadow">
+                <div className="p-6 rounded-2xl bg-emerald-50/50 border border-emerald-100/50 flex flex-col justify-between h-40 group hover:shadow-md transition-all">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-green-100/50 rounded-xl">
-                      <Phone className="h-6 w-6 text-green-600" />
+                    <div className="p-3 bg-emerald-100/50 rounded-xl">
+                      <Phone className="h-6 w-6 text-emerald-600" />
                     </div>
-                    <span className="text-lg font-semibold text-gray-700">Per call compensation</span>
+                    <span className="text-lg font-black text-gray-700">Per call compensation</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-gray-900">{gig.commission.commission_per_call ?? 0}</span>
-                    <span className="text-2xl text-gray-400 font-medium">
+                    <span className="text-4xl font-black text-gray-900">{gig.commission.commission_per_call ?? 0}</span>
+                    <span className="text-2xl text-gray-400 font-black">
                       {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'}
                     </span>
                   </div>
                 </div>
 
                 {/* Card 2: Transaction Commission */}
-                <div className="p-6 rounded-2xl bg-purple-50/50 border border-purple-100 flex flex-col justify-between h-40 group hover:shadow-md transition-shadow">
+                <div className="p-6 rounded-2xl bg-harx-50/50 border border-harx-100/50 flex flex-col justify-between h-40 group hover:shadow-md transition-all">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-purple-100/50 rounded-xl">
-                      <Repeat className="h-6 w-6 text-purple-600" />
+                    <div className="p-3 bg-harx-100/50 rounded-xl">
+                      <Repeat className="h-6 w-6 text-harx-600" />
                     </div>
-                    <span className="text-lg font-semibold text-gray-700">Transaction Commission</span>
+                    <span className="text-lg font-black text-gray-700">Transaction Commission</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-gray-900">
+                    <span className="text-4xl font-black text-gray-900">
                       {typeof gig.commission.transactionCommission === 'number' 
                         ? gig.commission.transactionCommission 
                         : (gig.commission.transactionCommission as any)?.amount || 0}
                     </span>
-                    <span className="text-2xl text-gray-400 font-medium">
+                    <span className="text-2xl text-gray-400 font-black">
                       {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'}
                     </span>
                   </div>
                 </div>
 
                 {/* Card 3: Bonus & Incentives */}
-                <div className="p-6 rounded-2xl bg-amber-50/50 border border-amber-100 flex flex-col justify-between h-40 group hover:shadow-md transition-shadow">
+                <div className="p-6 rounded-2xl bg-harx-alt-50/50 border border-harx-alt-100/50 flex flex-col justify-between h-40 group hover:shadow-md transition-all">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-amber-100/50 rounded-xl">
-                      <Star className="h-6 w-6 text-amber-600" />
+                    <div className="p-3 bg-harx-alt-100/50 rounded-xl">
+                      <Star className="h-6 w-6 text-harx-alt-600" />
                     </div>
-                    <span className="text-lg font-semibold text-gray-700">Bonus & Incentives</span>
+                    <span className="text-lg font-black text-gray-700">Bonus & Incentives</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-gray-900">{gig.commission.bonusAmount || 0}</span>
-                    <span className="text-2xl text-gray-400 font-medium">
+                    <span className="text-4xl font-black text-gray-900">{gig.commission.bonusAmount || 0}</span>
+                    <span className="text-2xl text-gray-400 font-black">
                       {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'}
                     </span>
                   </div>
                 </div>
 
                 {/* Card 4: Minimum Volume Requirements */}
-                <div className="p-6 rounded-2xl bg-orange-50/50 border border-orange-100 flex flex-col justify-between h-40 group hover:shadow-md transition-shadow relative">
+                <div className="p-6 rounded-2xl bg-amber-50/50 border border-amber-100/50 flex flex-col justify-between h-40 group hover:shadow-md transition-all relative">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-orange-100/50 rounded-xl">
-                      <Target className="h-6 w-6 text-orange-600" />
+                    <div className="p-3 bg-amber-100/50 rounded-xl">
+                      <Target className="h-6 w-6 text-amber-600" />
                     </div>
-                    <span className="text-lg font-semibold text-gray-700">Minimum Volume Requirements</span>
+                    <span className="text-lg font-black text-gray-700">Minimum Volume Requirements</span>
                   </div>
                   <div className="flex items-baseline justify-between w-full">
-                    <span className="text-4xl font-bold text-gray-900">{gig.commission.minimumVolume?.amount || 0}</span>
-                    <div className="px-3 py-1 bg-white/80 border border-gray-200 rounded-lg text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    <span className="text-4xl font-black text-gray-900">{gig.commission.minimumVolume?.amount || 0}</span>
+                    <div className="px-3 py-1 bg-white/80 border border-gray-200 rounded-lg text-[10px] font-black text-gray-500 uppercase tracking-widest">
                       {gig.commission.minimumVolume?.period || 'MONTHLY'}
                     </div>
                   </div>
@@ -1625,15 +1629,15 @@ export function GigDetails() {
 
             {/* Leads Information - Only for enrolled agents */}
             {isAgentEnrolled() && gig.leads?.types?.length > 0 && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Lead Types</h2>
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Lead Types</h2>
                 <div className="space-y-3">
                   {gig.leads.types.map((leadType, index) => (
                     <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                       <div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${leadType.type === 'hot' ? 'bg-red-100 text-red-700' :
-                          leadType.type === 'warm' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-blue-100 text-blue-700'
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${leadType.type === 'hot' ? 'bg-harx-50 text-harx-600' :
+                          leadType.type === 'warm' ? 'bg-amber-50 text-amber-700' :
+                            'bg-harx-alt-50 text-harx-alt-700'
                           }`}>
                           {leadType.type.charAt(0).toUpperCase() + leadType.type.slice(1)}
                         </span>
@@ -1665,8 +1669,8 @@ export function GigDetails() {
 
             {/* Team Structure */}
             {gig.team && (gig.team.size || gig.team.territories?.length > 0 || gig.team.structure?.length > 0) && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Team Structure</h2>
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Team Structure</h2>
                 <div className="space-y-3">
                   {gig.team.size && (
                     <div className="flex justify-between">
@@ -1679,7 +1683,7 @@ export function GigDetails() {
                       <span className="text-gray-600">Territories:</span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {gig.team.territories.map((territory, index) => (
-                          <span key={index} className="px-2 py-1 bg-blue-100 rounded-full text-xs text-blue-700">
+                          <span key={index} className="px-3 py-1 bg-harx-alt-50 rounded-xl text-[10px] font-black uppercase tracking-wider text-harx-alt-700">
                             {typeof territory === 'object' ? territory?.name?.common || territory?.cca2 || 'Unknown' : territory}
                           </span>
                         ))}
@@ -1706,15 +1710,15 @@ export function GigDetails() {
             {/* Career Growth & Benefits */}
             {((gig.companyId?.opportunities && (gig.companyId.opportunities.roles?.length > 0 || gig.companyId.opportunities.growthPotential || gig.companyId.opportunities.training)) ||
               (gig.companyId?.culture && (gig.companyId.culture.benefits?.length > 0 || gig.companyId.culture.workEnvironment))) && (
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Career Growth & Benefits</h2>
+                <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+                  <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Career Growth & Benefits</h2>
 
                   {gig.companyId?.opportunities?.roles?.length > 0 && (
                     <div className="mb-4">
                       <h3 className="font-medium text-gray-800 mb-2">Career Progression:</h3>
                       <div className="flex flex-wrap gap-2">
                         {gig.companyId.opportunities.roles.map((role, index) => (
-                          <span key={index} className="px-3 py-1 bg-green-100 rounded-full text-sm text-green-800">
+                          <span key={index} className="px-3 py-1.5 bg-emerald-50 rounded-xl text-xs font-black uppercase tracking-wider text-emerald-700">
                             {role}
                           </span>
                         ))}
@@ -1764,11 +1768,11 @@ export function GigDetails() {
           {/* Sidebar */}
           <div className="xl:col-span-2 space-y-8">
             {/* Company Info */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Company</h2>
-              <div className="space-y-3">
+            <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+              <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Company</h2>
+              <div className="space-y-4">
                 <div className="flex items-center">
-                  <Building className="w-5 h-5 mr-2 text-gray-400" />
+                  <Building className="w-5 h-5 mr-3 text-harx-400" />
                   <span className="font-medium">{(() => {
                     console.log('Company data:', gig.companyId);
                     return gig.companyId?.name || (gig as any).company || gig.userId?.fullName || 'Unknown';
@@ -1838,8 +1842,8 @@ export function GigDetails() {
             </div>
 
             {/* Schedule & Availability */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Availability</h2>
+            <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+              <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Availability</h2>
 
               {/* Timezone */}
               {gig.availability?.time_zone && (
@@ -1889,13 +1893,13 @@ export function GigDetails() {
 
               {/* Schedule */}
               {gig.availability?.schedule?.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="font-medium text-gray-800 mb-2">Schedule:</h3>
+                <div className="mb-6">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Schedule:</h3>
                   <div className="space-y-2">
                     {gig.availability.schedule.map((schedule, i) => (
-                      <div key={i} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
-                        <span className="font-medium">{schedule.day}</span>
-                        <span className="text-gray-600">{schedule.hours.start} - {schedule.hours.end}</span>
+                      <div key={i} className="flex justify-between text-sm bg-harx-50/50 p-3 rounded-xl border border-harx-100/50">
+                        <span className="font-black text-gray-700">{schedule.day}</span>
+                        <span className="text-harx-600 font-black">{schedule.hours.start} - {schedule.hours.end}</span>
                       </div>
                     ))}
                   </div>
@@ -1905,10 +1909,10 @@ export function GigDetails() {
               {/* Flexibility */}
               {gig.availability?.flexibility?.length > 0 && (
                 <div>
-                  <h3 className="font-medium text-gray-800 mb-2">Flexibility:</h3>
-                  <div className="flex flex-wrap gap-1">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Flexibility:</h3>
+                  <div className="flex flex-wrap gap-2">
                     {gig.availability.flexibility.map((flex, index) => (
-                      <span key={index} className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                      <span key={index} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-black uppercase tracking-wider">
                         {flex}
                       </span>
                     ))}
@@ -1919,17 +1923,18 @@ export function GigDetails() {
 
             {/* Documentation */}
             {((gig.documentation?.product?.length ?? 0) > 0 || (gig.documentation?.process?.length ?? 0) > 0 || (gig.documentation?.training?.length ?? 0) > 0) && (
-              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Documentation & Resources</h2>
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+                <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Documentation & Resources</h2>
 
                 {(gig.documentation?.product?.length ?? 0) > 0 && (
-                  <div className="mb-4">
-                    <h3 className="font-medium text-gray-800 mb-2">Product Documentation:</h3>
-                    <div className="space-y-1">
+                  <div className="mb-6">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Product Documentation:</h3>
+                    <div className="space-y-2">
                       {gig.documentation?.product?.map((doc, index) => (
                         <a key={index} href={doc.url} target="_blank" rel="noopener noreferrer"
-                          className="block text-sm text-blue-600 hover:underline">
-                          📄 {doc.name}
+                          className="flex items-center p-3 rounded-xl bg-gray-50 hover:bg-harx-50 text-harx-600 transition-colors group">
+                          <span className="text-lg mr-3 group-hover:scale-110 transition-transform">📄</span>
+                          <span className="text-sm font-black uppercase tracking-tight truncate">{doc.name}</span>
                         </a>
                       ))}
                     </div>
@@ -1937,13 +1942,14 @@ export function GigDetails() {
                 )}
 
                 {(gig.documentation?.process?.length ?? 0) > 0 && (
-                  <div className="mb-4">
-                    <h3 className="font-medium text-gray-800 mb-2">Process Documentation:</h3>
-                    <div className="space-y-1">
+                  <div className="mb-6">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Process Documentation:</h3>
+                    <div className="space-y-2">
                       {gig.documentation?.process?.map((doc, index) => (
                         <a key={index} href={doc.url} target="_blank" rel="noopener noreferrer"
-                          className="block text-sm text-blue-600 hover:underline">
-                          📋 {doc.name}
+                          className="flex items-center p-3 rounded-xl bg-gray-50 hover:bg-emerald-50 text-emerald-700 transition-colors group">
+                          <span className="text-lg mr-3 group-hover:scale-110 transition-transform">📋</span>
+                          <span className="text-sm font-black uppercase tracking-tight truncate">{doc.name}</span>
                         </a>
                       ))}
                     </div>
@@ -1952,12 +1958,13 @@ export function GigDetails() {
 
                 {(gig.documentation?.training?.length ?? 0) > 0 && (
                   <div>
-                    <h3 className="font-medium text-gray-800 mb-2">Training Materials:</h3>
-                    <div className="space-y-1">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Training Materials:</h3>
+                    <div className="space-y-2">
                       {gig.documentation?.training?.map((doc, index) => (
                         <a key={index} href={doc.url} target="_blank" rel="noopener noreferrer"
-                          className="block text-sm text-blue-600 hover:underline">
-                          🎓 {doc.name}
+                          className="flex items-center p-3 rounded-xl bg-gray-50 hover:bg-harx-alt-50 text-harx-alt-700 transition-colors group">
+                          <span className="text-lg mr-3 group-hover:scale-110 transition-transform">🎓</span>
+                          <span className="text-sm font-black uppercase tracking-tight truncate">{doc.name}</span>
                         </a>
                       ))}
                     </div>
@@ -1971,13 +1978,13 @@ export function GigDetails() {
 
         {/* Available Trainings Section - Before Leads */}
         {isAgentEnrolled() && (
-          <div className="mt-8">
-            <div id="available-trainings-section" className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Trainings</h2>
+          <div className="mt-12">
+            <div id="available-trainings-section" className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+              <h2 className="text-2xl font-black text-gray-900 mb-8 tracking-tight">Available Trainings</h2>
               {loadingTrainings ? (
-                <div className="flex justify-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  <span className="ml-3 text-gray-600">Loading trainings...</span>
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-harx-500"></div>
+                  <span className="mt-4 text-gray-500 font-medium">Loading trainings...</span>
                 </div>
               ) : availableTrainings.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1992,55 +1999,48 @@ export function GigDetails() {
                     return (
                       <div
                         key={trainingId}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer flex flex-col"
+                        className="bg-white h-full p-6 border border-gray-100 rounded-3xl hover:border-harx-200 hover:shadow-xl hover:shadow-harx-500/5 transition-all cursor-pointer flex flex-col group"
                         onClick={() => handleTrainingClick(trainingId)}
                       >
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                          <h3 className="text-lg font-black text-gray-900 mb-3 line-clamp-2 group-hover:text-harx-600 transition-colors">
                             {training.title || 'Untitled Training'}
                           </h3>
                           {training.description && (
-                            <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+                            <p className="text-sm text-gray-500 mb-6 line-clamp-3 leading-relaxed font-medium">
                               {training.description}
                             </p>
                           )}
 
                           {/* Progress Bar */}
                           {progress && progressStatus !== 'not-started' && (
-                            <div className="mb-3">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs text-gray-600">Progress</span>
-                                <span className="text-xs font-medium text-gray-900">{progressPercent}%</span>
+                            <div className="mb-6">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Progress</span>
+                                <span className="text-xs font-black text-harx-600">{progressPercent}%</span>
                               </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
                                 <div
-                                  className={`h-2 rounded-full transition-all ${progressStatus === 'completed'
-                                    ? 'bg-green-600'
-                                    : 'bg-blue-600'
-                                    }`}
+                                  className="h-full bg-gradient-harx rounded-full transition-all duration-1000"
                                   style={{ width: `${progressPercent}%` }}
                                 ></div>
                               </div>
                             </div>
                           )}
 
-                          <div className="flex items-center gap-2 mb-3">
+                          <div className="flex items-center gap-2 mb-6">
                             {training.status && (
-                              <span className={`inline-block px-2 py-1 text-xs rounded-full ${training.status === 'active' || training.status === 'published'
-                                ? 'bg-green-100 text-green-700'
-                                : training.status === 'draft'
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : 'bg-gray-100 text-gray-700'
+                              <span className={`inline-block px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg ${training.status === 'active' || training.status === 'published'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-amber-50 text-amber-700'
                                 }`}>
                                 {training.status}
                               </span>
                             )}
                             {progressStatus && progressStatus !== 'not-started' && (
-                              <span className={`inline-block px-2 py-1 text-xs rounded-full ${progressStatus === 'completed'
-                                ? 'bg-green-100 text-green-700'
-                                : progressStatus === 'in-progress'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : 'bg-gray-100 text-gray-700'
+                              <span className={`inline-block px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg ${progressStatus === 'completed'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-harx-50 text-harx-600'
                                 }`}>
                                 {progressStatus === 'completed' ? 'Completed' : 'In Progress'}
                               </span>
@@ -2048,9 +2048,9 @@ export function GigDetails() {
                           </div>
                         </div>
                         <button
-                          className={`w-full mt-auto px-4 py-2 rounded-lg transition-colors ${progressStatus === 'completed'
-                            ? 'bg-green-600 text-white hover:bg-green-700'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                          className={`w-full mt-auto px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${progressStatus === 'completed'
+                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-1 relative'
+                            : 'bg-gradient-harx text-white hover:shadow-lg hover:shadow-harx-500/20'
                             }`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -2075,60 +2075,60 @@ export function GigDetails() {
 
         {/* Leads Section - Full Width - Only for enrolled agents */}
         {isAgentEnrolled() && (
-          <div className="mt-8">
+          <div className="mt-12">
             {true ? (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">Available Leads</h2>
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-8">
+                  <h2 className="text-2xl font-black text-gray-900 tracking-tight">Available Leads</h2>
                   <div className="flex items-center gap-4">
                     {engagementScore !== null && (
-                      <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-lg border border-blue-200">
-                        <span className="text-sm font-medium text-gray-700">Score:</span>
-                        <span className="text-sm font-bold text-blue-600">{engagementScore}/100</span>
+                      <div className="flex items-center gap-2 px-4 py-2 bg-harx-50 rounded-xl border border-harx-100 shadow-sm shadow-harx-500/5">
+                        <span className="text-xs font-black uppercase tracking-widest text-gray-400">Score:</span>
+                        <span className="text-sm font-black text-harx-600">{engagementScore}/100</span>
                       </div>
                     )}
-                    {totalLeads > 0 && (
-                      <span className="text-sm text-gray-600">
-                        Total: {totalLeads} leads
+                  {totalLeads > 0 && (
+                      <span className="inline-block px-3 py-1 bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400 rounded-lg">
+                        {totalLeads} leads
                       </span>
                     )}
                   </div>
                 </div>
                 {leadsLoading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-harx-500"></div>
                   </div>
                 ) : leadsError ? (
-                  <div className="text-center py-8">
-                    <p className="text-red-600 mb-2">❌ {leadsError}</p>
+                  <div className="text-center py-12 bg-red-50/30 rounded-3xl border border-dashed border-red-100">
+                    <p className="text-red-600 font-black mb-4">❌ {leadsError}</p>
                     <button
                       onClick={() => fetchLeads(currentPage)}
-                      className="text-blue-600 hover:text-blue-700 text-sm"
+                      className="px-6 py-2 bg-white text-red-600 border border-red-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-colors shadow-sm"
                     >
                       Try again
                     </button>
                   </div>
                 ) : leads.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No leads available for this gig yet.</p>
+                  <div className="text-center py-12 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
+                    <p className="text-gray-400 font-medium">No leads available for this gig yet.</p>
                   </div>
                 ) : (
-                  <>
-                    {/* Leads Table */}
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                      {/* Table Header - Fixed */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full border-collapse">
-                          <thead className="bg-gray-50 sticky top-0 z-10">
-                            <tr className="border-b border-gray-200">
-                              <th className="text-left py-3 px-4 font-medium text-gray-900">Lead Name</th>
-                              <th className="text-left py-3 px-4 font-medium text-gray-900">Email</th>
-                              <th className="text-left py-3 px-4 font-medium text-gray-900">Phone</th>
-                              <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
-                            </tr>
-                          </thead>
-                        </table>
-                      </div>
+                    <>
+                      {/* Leads Table */}
+                      <div className="border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+                        {/* Table Header - Fixed */}
+                        <div className="overflow-x-auto">
+                          <table className="w-full border-collapse">
+                            <thead className="bg-gray-50/50 sticky top-0 z-10 backdrop-blur-sm">
+                              <tr className="border-b border-gray-100">
+                                <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Lead Name</th>
+                                <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Email</th>
+                                <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Phone</th>
+                                <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Actions</th>
+                              </tr>
+                            </thead>
+                          </table>
+                        </div>
 
                       {/* Table Body - Scrollable */}
                       <div className="overflow-y-auto overflow-x-auto max-h-96" style={{ maxHeight: '480px' }}>
@@ -2154,20 +2154,20 @@ export function GigDetails() {
                                 </td>
 
                                 {/* Email */}
-                                <td className="py-3 px-4" style={{ width: '35%' }}>
+                                <td className="py-4 px-6" style={{ width: '35%' }}>
                                   {lead.Email_1 ? (
-                                    <div className="flex items-center">
-                                      <Mail className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                                    <div className="flex items-center group/email">
+                                      <Mail className="w-4 h-4 mr-3 text-harx-400 flex-shrink-0 group-hover/email:text-harx-600 transition-colors" />
                                       <a
                                         href={`mailto:${lead.Email_1}`}
-                                        className="text-blue-600 hover:text-blue-700 hover:underline text-sm truncate"
+                                        className="text-harx-600 hover:text-harx-700 text-sm font-black tracking-tight truncate max-w-xs"
                                         title={lead.Email_1}
                                       >
-                                        {lead.Email_1.length > 25 ? `${lead.Email_1.substring(0, 25)}...` : lead.Email_1}
+                                        {lead.Email_1}
                                       </a>
                                     </div>
                                   ) : (
-                                    <span className="text-gray-400 text-sm">-</span>
+                                    <span className="text-gray-300 text-xs font-black uppercase tracking-widest">N/A</span>
                                   )}
                                 </td>
 
@@ -2186,7 +2186,7 @@ export function GigDetails() {
                                 </td>
 
                                 {/* Actions */}
-                                <td className="py-3 px-4" style={{ width: '15%' }}>
+                                <td className="py-4 px-6 text-right" style={{ width: '15%' }}>
                                   <button
                                     onClick={() => {
                                       console.log('Redirecting to copilot for lead:', lead);
@@ -2207,10 +2207,10 @@ export function GigDetails() {
                                         console.error('VITE_COPILOT_URL not configured');
                                       }
                                     }}
-                                    className="flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
+                                    className="inline-flex items-center px-6 py-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all hover:-translate-y-0.5 whitespace-nowrap"
                                     title="Call this lead"
                                   >
-                                    <Phone className="w-4 h-4 mr-1" />
+                                    <Phone className="w-3 h-3 mr-2" />
                                     Call
                                   </button>
                                 </td>
@@ -2221,40 +2221,40 @@ export function GigDetails() {
                       </div>
                     </div>
 
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                      <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
-                        <div className="text-sm text-gray-600">
-                          Page {currentPage} of {totalPages}
-                        </div>
+                      {/* Pagination */}
+                      {totalPages > 1 && (
+                        <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-100">
+                          <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            Page <span className="text-gray-900">{currentPage}</span> of <span className="text-gray-900">{totalPages}</span>
+                          </div>
 
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className={`flex items-center px-3 py-1 rounded-md text-sm ${currentPage === 1
-                              ? 'text-gray-400 cursor-not-allowed'
-                              : 'text-gray-700 hover:bg-gray-100'
-                              }`}
-                          >
-                            <ChevronLeft className="w-4 h-4 mr-1" />
-                            Previous
-                          </button>
+                          <div className="flex gap-4">
+                            <button
+                              onClick={() => handlePageChange(currentPage - 1)}
+                              disabled={currentPage === 1}
+                              className={`flex items-center px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currentPage === 1
+                                ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                                : 'bg-white text-gray-700 hover:bg-harx-50 hover:text-harx-600 border border-gray-100 shadow-sm'
+                                }`}
+                            >
+                              <ChevronLeft className="w-4 h-4 mr-2" />
+                              Previous
+                            </button>
 
-                          <button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className={`flex items-center px-3 py-1 rounded-md text-sm ${currentPage === totalPages
-                              ? 'text-gray-400 cursor-not-allowed'
-                              : 'text-gray-700 hover:bg-gray-100'
-                              }`}
-                          >
-                            Next
-                            <ChevronRight className="w-4 h-4 ml-1" />
-                          </button>
+                            <button
+                              onClick={() => handlePageChange(currentPage + 1)}
+                              disabled={currentPage === totalPages}
+                              className={`flex items-center px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currentPage === totalPages
+                                ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                                : 'bg-white text-gray-700 hover:bg-harx-50 hover:text-harx-600 border border-gray-100 shadow-sm'
+                                }`}
+                            >
+                              Next
+                              <ChevronRight className="w-4 h-4 ml-2" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </>
                 )}
               </div>
