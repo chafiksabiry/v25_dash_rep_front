@@ -2,24 +2,14 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Phone, Mail, Globe, Clock, User, Video,
-  Paperclip, Image, MoreHorizontal, List, Filter,
-  PhoneIncoming, AlertCircle, CheckCircle, XCircle,
+  Paperclip, Image, MoreHorizontal, PhoneOutgoing, XCircle,
   ChevronLeft, ChevronRight
+  Phone, Mail, Globe, Video, PhoneOutgoing
 } from 'lucide-react';
 import { CallInterface } from '../components/CallInterface';
 import { useAuth } from '../contexts/AuthContext';
 import { Skeleton } from '../components/ui/Skeleton';
-
-interface Interaction {
-  id: number;
-  customer: string;
-  type: string;
-  status: string;
-  priority: string;
-  waitTime: string;
-  issue: string;
-  channel: string;
-}
+import { CallRecords } from '../components/CallRecords';
 
 interface Lead {
   _id?: string;
@@ -55,8 +45,7 @@ export function Workspace() {
   const gigId = location.state?.gigId;
   const [activeTab, setActiveTab] = useState('voice');
   const [message, setMessage] = useState('');
-  const [selectedInteraction, setSelectedInteraction] = useState<Interaction | null>(null);
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isLoadingLeads, setIsLoadingLeads] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -158,134 +147,16 @@ export function Workspace() {
     }
   };
 
-
-
   const workspaceTools = [
-    { id: 'queue', label: 'Queue', icon: List },
     { id: 'voice', label: 'Voice Call', icon: Phone },
+    { id: 'calls', label: 'Call History', icon: PhoneOutgoing },
     { id: 'video', label: 'Video Call', icon: Video },
     { id: 'email', label: 'Email Support', icon: Mail },
     { id: 'social', label: 'Social Media', icon: Globe },
   ];
 
-  const queueItems = [
-    {
-      id: 1,
-      customer: 'Sarah Wilson',
-      type: 'call',
-      status: 'waiting',
-      priority: 'High',
-      waitTime: '2 minutes',
-      issue: 'Product Configuration',
-      channel: 'Phone Support',
-    },
-    {
-      id: 2,
-      customer: 'John Doe',
-      type: 'email',
-      status: 'new',
-      priority: 'Medium',
-      waitTime: '15 minutes',
-      issue: 'Billing Question',
-      channel: 'Email Support',
-    },
-  ];
-
-  const renderQueue = () => (
-    <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-3xl border border-gray-100 flex flex-col shadow-sm">
-      <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight">Interaction Queue</h2>
-          <span className="bg-harx-50 text-harx-600 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-harx-100">
-            {queueItems.length} Pending
-          </span>
-        </div>
-        <div className="flex space-x-2">
-          <button className="p-2.5 text-gray-400 hover:text-harx-600 hover:bg-harx-50 rounded-xl transition-all">
-            <Filter className="w-5 h-5" />
-          </button>
-          <select className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500 focus:outline-none focus:ring-2 focus:ring-harx-500 transition-all">
-            <option>All Types</option>
-            <option>Calls</option>
-            <option>Emails</option>
-          </select>
-        </div>
-      </div>
-      <div className="flex-1 p-6 overflow-y-auto">
-        <div className="space-y-4">
-          {queueItems.map((item) => (
-            <div
-              key={item.id}
-              className="border border-gray-100 rounded-2xl p-5 hover:bg-harx-50/30 hover:border-harx-100 transition-all cursor-pointer group hover:shadow-lg hover:shadow-harx-500/5"
-              onClick={() => {
-                setSelectedInteraction(item);
-                setActiveTab(item.type);
-              }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className={`p-3 rounded-xl transition-colors ${item.type === 'call' ? 'bg-emerald-50 text-emerald-600' :
-                    item.type === 'email' ? 'bg-harx-50 text-harx-600' : 'bg-amber-50 text-amber-600'
-                    }`}>
-                    {item.type === 'call' ? <PhoneIncoming className="w-5 h-5" /> :
-                      item.type === 'email' ? <Mail className="w-5 h-5" /> :
-                        <Globe className="w-5 h-5" />}
-                  </div>
-                  <div>
-                    <h3 className="font-black text-gray-900 group-hover:text-harx-600 transition-colors uppercase text-sm tracking-tight">{item.customer}</h3>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{item.channel}</p>
-                  </div>
-                </div>
-                <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest ${item.priority === 'High' ? 'bg-harx-50 text-harx-600 border border-harx-100' :
-                  item.priority === 'Medium' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
-                    'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                  }`}>
-                  {item.priority}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-gray-400">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Wait: {item.waitTime}</span>
-                </div>
-                <div className="flex space-x-3">
-                  <button className="px-5 py-2 bg-gradient-harx text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all hover:-translate-y-0.5">
-                    Accept
-                  </button>
-                  <button className="px-5 py-2 bg-white text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 border border-gray-100 transition-all">
-                    Skip
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="p-6 border-t border-gray-100 bg-gray-50/30 rounded-b-3xl">
-        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center">
-              <AlertCircle className="w-4 h-4 text-amber-500 mr-2" />
-              <span className="text-gray-500">Avg. Wait: <span className="text-gray-900">8m</span></span>
-            </div>
-            <div className="flex items-center">
-              <CheckCircle className="w-4 h-4 text-emerald-500 mr-2" />
-              <span className="text-gray-500">Completed: <span className="text-gray-900">45</span></span>
-            </div>
-          </div>
-          <div className="flex items-center">
-            <XCircle className="w-4 h-4 text-harx-500 mr-2" />
-            <span className="text-gray-500">Missed: <span className="text-gray-900">3</span></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   const renderWorkspace = () => {
     switch (activeTab) {
-      case 'queue':
-        return renderQueue();
       case 'voice':
         return (
           <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-3xl p-8 flex flex-col shadow-sm border border-gray-100">
@@ -423,7 +294,6 @@ export function Workspace() {
       case 'video':
         return (
           <div className="h-[600px] bg-gray-900 rounded-3xl p-8 text-white flex flex-col shadow-2xl relative overflow-hidden">
-            {/* Ambient Background Glow */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-harx-500/10 blur-[100px] -mr-32 -mt-32"></div>
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 blur-[100px] -ml-32 -mb-32"></div>
 
@@ -433,7 +303,7 @@ export function Workspace() {
                   <User className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black tracking-tight">{selectedInteraction?.customer || 'No Customer Selected'}</h3>
+                  <h3 className="text-xl font-black tracking-tight">{selectedLead?.Deal_Name || 'No Customer Selected'}</h3>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                     <p className="text-xs font-black uppercase tracking-widest text-gray-400">In call: <span className="text-emerald-400">00:12:34</span></p>
@@ -470,7 +340,7 @@ export function Workspace() {
               <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2 px-1">Message Body</label>
               <textarea
                 className="w-full h-[calc(100%-28px)] p-6 border border-gray-50 rounded-3xl bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-harx-500 focus:bg-white transition-all text-sm font-medium resize-none leading-relaxed"
-                placeholder="Compose your premium response..."
+                placeholder="Compose your response..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
               />
@@ -491,6 +361,12 @@ export function Workspace() {
           </div>
         );
 
+      case 'calls':
+        return (
+          <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-3xl p-8 overflow-y-auto shadow-sm border border-gray-100">
+            <CallRecords gigId={selectedGigId} />
+          </div>
+        );
 
       case 'social':
         return (
@@ -535,7 +411,7 @@ export function Workspace() {
             <div className="p-6 border-t border-gray-100 bg-gray-50/30 rounded-b-3xl">
               <textarea
                 className="w-full p-5 border border-gray-50 rounded-2xl bg-white focus:outline-none focus:ring-2 focus:ring-harx-500 transition-all text-sm font-medium shadow-sm resize-none leading-relaxed"
-                placeholder="Compose your premium response..."
+                placeholder="Compose your response..."
                 rows={3}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -564,48 +440,31 @@ export function Workspace() {
   };
 
   const handleCallClick = (lead: Lead) => {
-    // Redirect to copilot with the leadId (prefer _id if available)
     const leadId = lead._id || lead.id;
     window.location.href = `/copilot?leadId=${leadId}`;
   };
 
   return (
     <div className="space-y-6">
-      {showCallInterface && selectedLead && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 pointer-events-none">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96 pointer-events-auto">
-            <CallInterface
-              phoneNumber={selectedLead.Telephony}
-              agentId={user?.agentId || ''}
-              onEnd={handleCallEnd}
-              provider="twilio"
-              callId={selectedLead.id}
-            />
-          </div>
-        </div>
-      )}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-black text-gray-900 tracking-tight">Workspace</h1>
       </div>
 
-      {/* Tool selector hidden as requested */}
-      {/* 
       <div className="grid grid-cols-5 gap-4 mb-6">
         {workspaceTools.map((tool) => (
           <button
             key={tool.id}
             onClick={() => setActiveTab(tool.id)}
-            className={`flex items-center justify-center space-x-2 p-4 rounded-lg transition-colors ${activeTab === tool.id
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-50'
+            className={`flex items-center justify-center space-x-2 p-4 rounded-xl transition-all border ${activeTab === tool.id
+              ? 'bg-gradient-harx text-white border-transparent shadow-lg shadow-harx-500/20 -translate-y-0.5'
+              : 'bg-white text-gray-400 border-gray-100 hover:border-harx-100 hover:text-harx-600'
               }`}
           >
-            <tool.icon className="w-5 h-5" />
-            <span>{tool.label}</span>
+            <tool.icon className={`w-5 h-5 ${activeTab === tool.id ? 'text-white' : 'text-current'}`} />
+            <span className="text-[10px] font-black uppercase tracking-widest">{tool.label}</span>
           </button>
         ))}
       </div>
-      */}
 
       <div className="w-full">
         {renderWorkspace()}
