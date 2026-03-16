@@ -1130,7 +1130,7 @@ export function GigsMarketplace() {
     return () => {
       window.removeEventListener('refreshGigStatuses', handleRefreshStatuses);
     };
-  }, []);
+  }, [applicationMessage, agentId]);
 
   // Filter and sort gigs based on active tab
   const getFilteredAndSortedGigs = () => {

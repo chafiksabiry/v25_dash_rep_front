@@ -524,7 +524,7 @@ export function GigDetails() {
     return () => {
       window.removeEventListener('refreshGigStatuses', handleRefresh);
     };
-  }, []);
+  }, [applicationStatus, gigId]);
 
   // Vérifier le statut d'enrollment de l'agent
   useEffect(() => {
