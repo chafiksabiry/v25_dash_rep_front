@@ -2,15 +2,17 @@
 import axios from 'axios';
 
 // Use Vite environment variables (instead of process.env)
-console.log("API_URL", import.meta.env.VITE_API_URL);
-console.log("REP_API_URL", import.meta.env.VITE_REP_API_URL);
-console.log("CALLS_API_URL", import.meta.env.VITE_CALLS_API_URL);
-console.log("DASHBOARD_COMPANY_API_URL", import.meta.env.VITE_DASHBOARD_COMPANY_API_URL);
-
 const API_URL = import.meta.env.VITE_API_URL;
 const REP_API_URL = import.meta.env.VITE_REP_API_URL;
 const CALLS_API_URL = import.meta.env.VITE_CALLS_API_URL || import.meta.env.VITE_API_URL_CALL;
 const DASHBOARD_COMPANY_API_URL = import.meta.env.VITE_DASHBOARD_COMPANY_API_URL;
+
+console.log("🚀 Final API URLs Configuration:", {
+  API_URL,
+  REP_API_URL,
+  CALLS_API_URL,
+  DASHBOARD_COMPANY_API_URL
+});
 
 // Create axios instances with default config
 const apiClient = axios.create({
