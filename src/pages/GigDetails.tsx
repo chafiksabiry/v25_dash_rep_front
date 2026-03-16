@@ -334,7 +334,8 @@ export function GigDetails() {
   const [totalLeads, setTotalLeads] = useState(0);
   const limit = 50; // Nombre de leads par page (maximum supporté par le backend)
 
-  // États pour la vérification de complétion de la formation
+
+  // Placeholder states for compatibility
   const [trainingCompleted, setTrainingCompleted] = useState<boolean | null>(null);
   const [checkingTraining, setCheckingTraining] = useState(false);
   const [trainingStarted, setTrainingStarted] = useState<boolean | null>(null);
@@ -494,7 +495,16 @@ export function GigDetails() {
         ]);
 
         console.log('📝 Profile statuses fetched:', { pendingIds, enrolledIds });
-        setPendingGigIds(pendingIds);
+        
+        // Fix: Si on vient de postuler avec succès, s'assurer que le gigId reste dans pendingIds
+        // Même si le serveur a un léger délai de mise à jour
+        let finalPendingIds = pendingIds;
+        if (applicationStatus === 'success' && gigId && !pendingIds.includes(gigId)) {
+          console.log('🛡️ Merging optimistic pending gigId into fetched results to prevent flicker');
+          finalPendingIds = [...pendingIds, gigId];
+        }
+
+        setPendingGigIds(finalPendingIds);
         setEnrolledGigIds(enrolledIds);
       } catch (error) {
         console.error('❌ Error fetching statuses from profile:', error);
@@ -581,6 +591,7 @@ export function GigDetails() {
     return String(id);
   };
 
+  // Fonction pour récupérer la progression des trainings pour ce gig
   // Fonction pour récupérer la progression des trainings pour ce gig
   const fetchTrainingsProgress = async () => {
     const agentId = getAgentId();
@@ -791,187 +802,9 @@ export function GigDetails() {
     }
   };
 
-  // Fonction pour vérifier si le gig a des formations et si le rep a commencé
-  const checkTrainingStarted = async (): Promise<{ hasTraining: boolean; started: boolean }> => {
-    const agentId = getAgentId();
-    if (!agentId || !gigId) return { hasTraining: false, started: false };
-
-    try {
-      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://v25platformtrainingbackend-production.up.railway.app';
-
-      // Récupérer les journeys pour ce gig
-      const journeysResponse = await fetch(
-        `${trainingBackendUrl}/training_journeys/gig/${gigId}`
-      );
-
-      if (!journeysResponse.ok) {
-        console.warn('⚠️ Could not fetch training journeys:', journeysResponse.status);
-        return { hasTraining: false, started: false };
-      }
-
-      const journeysData = await journeysResponse.json();
-      const journeys = journeysData.success ? journeysData.data : [];
-
-      if (!journeys || journeys.length === 0) {
-        // Pas de formation pour ce gig
-        return { hasTraining: false, started: false };
-      }
-
-      // Vérifier si le rep a commencé au moins une formation
-      let hasStarted = false;
-      for (const journey of journeys) {
-        const journeyId = journey.id || journey._id;
-        if (!journeyId) continue;
-
-        // Vérifier si le rep est enrollé dans ce journey
-        if (!journey.enrolledRepIds || !journey.enrolledRepIds.includes(agentId)) {
-          continue;
-        }
-
-        // Vérifier si le rep a un progrès pour ce journey
-        const progressResponse = await fetch(
-          `${trainingBackendUrl}/training_journeys/rep-progress?repId=${agentId}&journeyId=${journeyId}`
-        );
-
-        if (progressResponse.ok) {
-          const progressData = await progressResponse.json();
-          const progress = progressData.success
-            ? (Array.isArray(progressData.data) ? progressData.data[0] : progressData.data)
-            : null;
-
-          if (progress && progress.id) {
-            // Le rep a commencé cette formation
-            hasStarted = true;
-            break;
-          }
-        }
-      }
-
-      return { hasTraining: true, started: hasStarted };
-    } catch (err) {
-      console.error('❌ Error checking training started:', err);
-      return { hasTraining: false, started: false };
-    }
-  };
-
-  // Fonction pour vérifier si la formation est complétée
-  const checkTrainingCompletion = async (): Promise<boolean> => {
-    const agentId = getAgentId();
-    if (!agentId || !gigId) return false;
-
-    setCheckingTraining(true);
-    try {
-      // Récupérer les training journeys pour ce gig
-      const trainingBackendUrl = import.meta.env.VITE_TRAINING_BACKEND_URL || 'https://v25platformtrainingbackend-production.up.railway.app';
-
-      // Récupérer les journeys pour ce gig
-      const journeysResponse = await fetch(
-        `${trainingBackendUrl}/training_journeys/gig/${gigId}`
-      );
-
-      if (!journeysResponse.ok) {
-        console.warn('⚠️ Could not fetch training journeys:', journeysResponse.status);
-        // Si on ne peut pas vérifier, considérer comme non complété pour la sécurité
-        return false;
-      }
-
-      const journeysData = await journeysResponse.json();
-      const journeys = journeysData.success ? journeysData.data : [];
-      if (!journeys || journeys.length === 0) {
-        console.log('ℹ️ No training journeys found for this gig');
-        // Si pas de formation, considérer comme complété (pas de formation = pas de prérequis)
-        return true;
-      }
-
-      // Récupérer les journeys du rep pour vérifier le progrès
-      const repJourneysResponse = await fetch(
-        `${trainingBackendUrl}/training_journeys/rep/${agentId}`
-      );
-
-      if (!repJourneysResponse.ok) {
-        console.warn('⚠️ Could not fetch rep journeys:', repJourneysResponse.status);
-        return false;
-      }
-
-      const repJourneys = await repJourneysResponse.json();
-      const repJourneyIds = repJourneys.map((j: any) => j.id || j._id).filter(Boolean);
-
-      // Vérifier la complétion pour chaque journey du gig
-      for (const journey of journeys) {
-        const journeyId = journey.id || journey._id;
-        if (!journeyId) continue;
-
-        // Vérifier si le rep est enrollé dans ce journey
-        if (!journey.enrolledRepIds || !journey.enrolledRepIds.includes(agentId)) {
-          console.log(`ℹ️ Rep not enrolled in journey ${journeyId}`);
-          continue; // Skip si pas enrollé
-        }
-
-        // Vérifier si tous les modules sont complétés
-        if (journey.modules && Array.isArray(journey.modules)) {
-          for (const module of journey.modules) {
-            const moduleId = module.id || module._id;
-            if (!moduleId) continue;
-
-            // Vérifier le progrès via l'API de progrès
-            const progressResponse = await fetch(
-              `${trainingBackendUrl}/rep-progress?repId=${agentId}&journeyId=${journeyId}&moduleId=${moduleId}`
-            );
-
-            if (progressResponse.ok) {
-              const progressData = await progressResponse.json();
-              const progress = Array.isArray(progressData) ? progressData[0] : progressData;
-
-              // Vérifier si le module est complété
-              if (!progress || progress.status !== 'completed' || progress.progress < 100) {
-                console.log(`❌ Module ${moduleId} not completed (status: ${progress?.status}, progress: ${progress?.progress})`);
-                return false;
-              }
-            } else {
-              console.warn(`⚠️ Could not fetch progress for module ${moduleId}`);
-              return false; // Si on ne peut pas vérifier, considérer comme non complété
-            }
-
-            // Vérifier si tous les quizzes sont complétés
-            if (module.quizzes && Array.isArray(module.quizzes) && module.quizzes.length > 0) {
-              for (const quiz of module.quizzes) {
-                const quizId = quiz.id || quiz._id;
-                if (!quizId) continue;
-
-                // Vérifier les tentatives de quiz
-                const quizAttemptsResponse = await fetch(
-                  `${trainingBackendUrl}/module-quizzes/${quizId}/attempts?repId=${agentId}`
-                );
-
-                if (quizAttemptsResponse.ok) {
-                  const quizAttempts = await quizAttemptsResponse.json();
-                  const passedAttempt = Array.isArray(quizAttempts)
-                    ? quizAttempts.find((attempt: any) => attempt.status === 'passed' || attempt.passed === true)
-                    : (quizAttempts.status === 'passed' || quizAttempts.passed === true ? quizAttempts : null);
-
-                  if (!passedAttempt) {
-                    console.log(`❌ Quiz ${quizId} not passed`);
-                    return false;
-                  }
-                } else {
-                  console.warn(`⚠️ Could not fetch quiz attempts for quiz ${quizId}`);
-                  return false; // Si on ne peut pas vérifier, considérer comme non complété
-                }
-              }
-            }
-          }
-        }
-      }
-
-      console.log('✅ All training modules and quizzes completed');
-      return true;
-    } catch (err) {
-      console.error('❌ Error checking training completion:', err);
-      return false; // En cas d'erreur, considérer comme non complété pour la sécurité
-    } finally {
-      setCheckingTraining(false);
-    }
-  };
+  // Placeholders pour compatibilité
+  const checkTrainingStarted = async () => ({ hasTraining: false, started: false });
+  const checkTrainingCompletion = async () => true;
 
   // Fonction pour récupérer les leads
   const fetchLeads = async (page: number = 1) => {
@@ -1019,16 +852,10 @@ export function GigDetails() {
   useEffect(() => {
     const verifyTrainingAndLoadLeads = async () => {
       if (gigId && isAgentEnrolled()) {
-        // Charger les leads directement, sans vérification de training
         const score = await getEngagementScore();
         setEngagementScore(score);
-        setTrainingCompleted(true); // bypass — leads toujours accessibles si enrolled
         console.log(`✅ Agent enrolled, chargement des leads pour gig ${gigId}`);
         fetchLeads(1);
-      } else {
-        setTrainingCompleted(null);
-        setHasTraining(false);
-        setTrainingStarted(null);
       }
     };
 

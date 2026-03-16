@@ -741,7 +741,15 @@ export function GigsMarketplace() {
     try {
       const pendingGigIds = await fetchPendingRequestsUtil();
       console.log('✅ fetchPendingRequests completed, setting pendingRequests:', pendingGigIds);
-      setPendingRequests(pendingGigIds);
+
+      // FIX FLICKERING: Merge optimistic state
+      let finalPendingIds = pendingGigIds;
+      if (applicationMessage?.type === 'success' && applicationMessage?.gigId && !pendingGigIds.includes(applicationMessage.gigId)) {
+        console.log('🛡️ Merging optimistic pending gigId into fetched results to prevent flicker');
+        finalPendingIds = [...pendingGigIds, applicationMessage.gigId];
+      }
+
+      setPendingRequests(finalPendingIds);
     } catch (error) {
       console.error('❌ Error in fetchPendingRequests:', error);
       setPendingRequests([]);
