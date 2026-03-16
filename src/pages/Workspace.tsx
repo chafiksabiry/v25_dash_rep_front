@@ -4,7 +4,6 @@ import {
   Phone, Mail, Globe, Clock, User, Video,
   Paperclip, Image, MoreHorizontal, PhoneOutgoing, XCircle,
   ChevronLeft, ChevronRight
-  Phone, Mail, Globe, Video, PhoneOutgoing
 } from 'lucide-react';
 import { CallInterface } from '../components/CallInterface';
 import { useAuth } from '../contexts/AuthContext';
@@ -46,13 +45,13 @@ export function Workspace() {
   const [activeTab, setActiveTab] = useState('voice');
   const [message, setMessage] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoadingLeads, setIsLoadingLeads] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
   const [selectedGigId, setSelectedGigId] = useState<string>(gigId || '');
   const [showCallInterface, setShowCallInterface] = useState(false);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
