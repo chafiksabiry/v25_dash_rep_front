@@ -6,8 +6,6 @@ import {
   PhoneIncoming, AlertCircle, CheckCircle, XCircle,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { AIAssistant } from '../components/AIAssistant';
-import { AIService } from '../services/ai';
 import { CallInterface } from '../components/CallInterface';
 import { useAuth } from '../contexts/AuthContext';
 import { GlobalAIAssistant } from '../components/GlobalAIAssistant';
@@ -59,7 +57,6 @@ export function Workspace() {
   const [activeTab, setActiveTab] = useState('voice');
   const [message, setMessage] = useState('');
   const [selectedInteraction, setSelectedInteraction] = useState<Interaction | null>(null);
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [sentiment, setSentiment] = useState<'positive' | 'neutral' | 'negative'>('neutral');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoadingLeads, setIsLoadingLeads] = useState(false);
@@ -67,7 +64,6 @@ export function Workspace() {
   const [totalPages, setTotalPages] = useState(1);
   const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
   const [selectedGigId, setSelectedGigId] = useState<string>(gigId || '');
-  const aiService = new AIService();
   const [showCallInterface, setShowCallInterface] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const { user } = useAuth();
@@ -168,15 +164,6 @@ export function Workspace() {
     setMessage(suggestion);
   };
 
-  useEffect(() => {
-    if (selectedInteraction?.issue) {
-      aiService.suggestQuickResponses(selectedInteraction.issue)
-        .then(suggestions => setAiSuggestions(suggestions));
-
-      aiService.analyzeSentiment(selectedInteraction.issue)
-        .then(result => setSentiment(result));
-    }
-  }, [selectedInteraction]);
 
   const workspaceTools = [
     { id: 'queue', label: 'Queue', icon: List },
@@ -710,7 +697,7 @@ export function Workspace() {
       <div className="grid grid-cols-1 gap-6">
         <div className="lg:col-span-1">{renderWorkspace()}</div>
       </div>
-     </div>
+     */}
     </div>
   );
 }
