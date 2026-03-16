@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-  Phone, Mail, Globe, Clock, User, Mic, Video,
+  Phone, Mail, Globe, Clock, User, Video,
   Paperclip, Image, MoreHorizontal, List, Filter,
   PhoneIncoming, AlertCircle, CheckCircle, XCircle,
   ChevronLeft, ChevronRight
@@ -310,14 +310,6 @@ export function Workspace() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center space-x-3">
-                <button className="p-3 bg-white text-gray-400 rounded-xl border border-gray-100 hover:text-harx-600 hover:bg-harx-50 transition-all shadow-sm">
-                  <Mic className="w-5 h-5" />
-                </button>
-                <button className="p-3 bg-white text-gray-400 rounded-xl border border-gray-100 hover:text-harx-500 hover:bg-harx-50 transition-all shadow-sm">
-                  <Phone className="w-5 h-5" />
-                </button>
-              </div>
             </div>
             <div className="flex-1 overflow-y-auto">
               <div>
@@ -448,17 +440,9 @@ export function Workspace() {
                   </div>
                 </div>
               </div>
-              <div className="flex space-x-4">
-                <button className="p-4 bg-white/10 backdrop-blur-md rounded-2xl hover:bg-white/20 transition-all border border-white/5">
-                  <Mic className="w-5 h-5" />
-                </button>
-                <button className="p-4 bg-white/10 backdrop-blur-md rounded-2xl hover:bg-white/20 transition-all border border-white/5">
-                  <Video className="w-5 h-5" />
-                </button>
                 <button className="p-4 bg-red-500/20 backdrop-blur-md rounded-2xl hover:bg-red-500/40 text-red-500 transition-all border border-red-500/20">
-                  <Phone className="w-5 h-5" />
+                  <XCircle className="w-5 h-5" />
                 </button>
-              </div>
             </div>
             <div className="flex-1 flex items-center justify-center relative z-10">
               <div className="text-center group">
@@ -602,15 +586,6 @@ export function Workspace() {
       )}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-black text-gray-900 tracking-tight">Workspace</h1>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 shadow-sm shadow-emerald-500/5">
-            <Clock className="w-4 h-4 text-emerald-600" />
-            <span className="text-emerald-700 text-xs font-black uppercase tracking-widest">Active: 45m</span>
-          </div>
-          <button className="px-6 py-2.5 bg-white text-gray-500 hover:text-red-600 border border-gray-100 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all hover:bg-red-50 hover:border-red-100 shadow-sm">
-            End Session
-          </button>
-        </div>
       </div>
 
       {/* Tool selector hidden as requested */}
