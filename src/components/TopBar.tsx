@@ -98,7 +98,7 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
   const initials = getInitials(userName);
 
   return (
-    <header className="h-20 bg-white shadow-sm border-b border-gray-100 flex items-center justify-between px-8 shrink-0 z-20">
+    <header className="h-20 bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100/50 flex items-center justify-between px-8 shrink-0 z-20">
       <div className="flex w-full items-center justify-between">
         <button
           className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-gray-500 hover:bg-gray-100 hover:text-harx-500 transition-all duration-300 shadow-sm md:hidden"
@@ -125,6 +125,7 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
           </div>
         </div>
       </div>
+    </div>
     </header>
   );
 }

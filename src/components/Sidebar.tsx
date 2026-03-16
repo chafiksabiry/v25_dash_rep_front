@@ -101,7 +101,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
 
   return (
     <div 
-      className={`fixed inset-y-0 left-0 z-30 bg-[#0a0b14] text-white transition-all duration-300 ease-in-out md:relative shadow-2xl border-r border-white/5 flex flex-col overflow-visible ${
+      className={`fixed inset-y-0 left-0 z-30 bg-gradient-to-b from-[#0f111a] to-[#150a11] text-white transition-all duration-300 ease-in-out md:relative shadow-2xl border-r border-white/10 flex flex-col overflow-visible ${
         !isSidebarOpen
           ? '-translate-x-full md:translate-x-0'
           : 'translate-x-0'

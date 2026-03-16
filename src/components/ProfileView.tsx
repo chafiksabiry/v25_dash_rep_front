@@ -528,7 +528,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       <div className="md:col-span-4 space-y-6">
         {/* Profile Header */}
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-harx-100/50 to-harx-50/50 opacity-60"></div>
+          <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-harx-100/40 to-transparent opacity-60"></div>
           <div className="text-center relative z-10">
             <div className="mb-6 mt-4">
               <div

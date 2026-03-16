@@ -169,7 +169,7 @@ function AppContent() {
   if (loading) {
     console.log('⏳ App is in loading state, showing loading screen');
     return (
-      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+      <div className="min-h-screen bg-premium-gradient flex justify-center items-center">
         <div className="text-lg text-gray-600">Loading dashboard...</div>
       </div>
     );
@@ -181,7 +181,7 @@ function AppContent() {
 
   return (
     <Router basename={basename}>
-      <div className="flex h-screen bg-gray-50 overflow-hidden">
+      <div className="flex h-screen bg-premium-gradient overflow-hidden">
         <Sidebar 
           phases={userProfile?.onboardingProgress?.phases} 
           isSidebarOpen={isSidebarOpen}
@@ -194,7 +194,7 @@ function AppContent() {
             isSidebarOpen={isSidebarOpen}
             setIsSidebarOpen={setIsSidebarOpen}
           />
-          <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
+          <main className="flex-1 overflow-y-auto p-4">
             <Routes>
               <Route path="/" element={
                 <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
