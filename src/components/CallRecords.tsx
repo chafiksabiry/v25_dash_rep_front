@@ -92,18 +92,15 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
 
         console.log(`🔍 Fetching call records for agent ID: ${agentId}`);
         const response = await api.calls.getByAgentId(agentId);
-        console.log("📞 Call records response:", response);
+        console.log("📞 Call records response type:", typeof response);
         
-        if (response.success) {
+        if (response && response.success && Array.isArray(response.data)) {
           console.log(`✅ Successfully retrieved ${response.data.length} call records`);
           
           let filteredCalls = response.data;
           
           if (gigId) {
             console.log(`🎯 Filtering by Gig ID: ${gigId}`);
-            // Note: CallRecord interface doesn't explicitly have gigId, 
-            // but we might need to check if it's in metadata or lead
-            // For now, if gigId is provided, we'll try to filter by it if the field exists
             filteredCalls = filteredCalls.filter((call: any) => 
               call.gigId === gigId || call.gig === gigId
             );

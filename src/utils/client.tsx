@@ -9,7 +9,7 @@ console.log("DASHBOARD_COMPANY_API_URL", import.meta.env.VITE_DASHBOARD_COMPANY_
 
 const API_URL = import.meta.env.VITE_API_URL;
 const REP_API_URL = import.meta.env.VITE_REP_API_URL;
-const CALLS_API_URL = import.meta.env.VITE_CALLS_API_URL;
+const CALLS_API_URL = import.meta.env.VITE_CALLS_API_URL || import.meta.env.VITE_API_URL_CALL;
 const DASHBOARD_COMPANY_API_URL = import.meta.env.VITE_DASHBOARD_COMPANY_API_URL;
 
 // Create axios instances with default config
