@@ -99,12 +99,13 @@ export function Sidebar({ phases }: SidebarProps) {
     <div className="w-72 fixed inset-y-0 left-0 z-30 bg-[#0a0b14] text-white transition-all duration-300 md:relative shadow-2xl border-r border-white/5 flex flex-col overflow-y-auto">
       <div className="px-6 py-8 flex items-center justify-center">
         <img
-          src={`${import.meta.env.VITE_FRONT_URL}logo_harx.png`}
+          src={`${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo_harx.png`}
           alt="HARX.AI Logo"
           className="h-10 w-auto object-contain animate-float"
           onError={(e) => {
-             // Fallback to the standard logo if mascot isn't found
-            (e.target as HTMLImageElement).src = `${import.meta.env.VITE_FRONT_URL}logo_harx.jpg`;
+            // Prevent infinite loop if fallback fails
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = `${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo_harx.jpg`;
           }}
         />
         <div className="ml-3 flex flex-col">
