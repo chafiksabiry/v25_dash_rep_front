@@ -96,36 +96,55 @@ export function Sidebar({ phases }: SidebarProps) {
   }, [phases]);
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200">
-      <div className="h-16 flex items-center justify-center border-b border-gray-200">
-        <img
-          src={`${import.meta.env.VITE_FRONT_URL}logo_harx.jpg`}
-          alt="HARX.AI Logo"
-          className="h-8 w-auto object-contain"
-        />
+    <div className="w-72 fixed inset-y-0 left-0 z-30 bg-[#0a0b14] text-white transition-all duration-300 md:relative shadow-2xl border-r border-white/5 flex flex-col overflow-y-auto">
+      <div className="px-6 py-8 flex items-center justify-center">
+        <div className="flex items-center space-x-3">
+          <div className="h-10 w-10 bg-gradient-to-br from-harx-400 to-harx-600 rounded-xl flex items-center justify-center shadow-lg shadow-harx-500/20 shrink-0">
+            <span className="text-white font-black text-xl leading-none">H</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-harx-500 tracking-[0.2em] uppercase italic leading-none mb-1">HARX</span>
+            <span className="text-xl font-black tracking-tighter text-white leading-none whitespace-nowrap">Dashboard</span>
+          </div>
+        </div>
       </div>
-      <nav className="mt-6">
+
+      <nav className="flex-1 px-4 flex flex-col min-h-0 space-y-1">
         {filteredNavItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${isActive ? 'bg-blue-50 text-blue-600' : ''
+              `flex w-full items-center space-x-3 rounded-2xl py-3 px-5 transition-all duration-300 group ${
+                isActive
+                  ? 'bg-gradient-harx text-white shadow-xl shadow-harx-500/25 ring-1 ring-white/10'
+                  : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
               }`
             }
           >
-            <item.icon className="w-5 h-5 mr-3" />
-            <span>{item.label}</span>
+            {({ isActive }) => (
+              <>
+                <div className={`p-2 rounded-xl transition-all shrink-0 ${isActive ? 'bg-white/20' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
+                  <item.icon className="h-5 w-5" />
+                </div>
+                <span className="font-black text-sm tracking-tight">{item.label}</span>
+              </>
+            )}
           </NavLink>
         ))}
+      </nav>
+
+      <div className="p-4 bg-black/40 border-t border-white/5 mt-auto">
         <button
           onClick={logout}
-          className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors mt-auto"
+          className="flex w-full items-center space-x-3 rounded-xl py-2 px-4 text-gray-400 hover:bg-harx-600/20 hover:text-harx-400 transition-all duration-300 group font-bold text-sm"
         >
-          <LogOut className="w-5 h-5 mr-3" />
+          <div className="p-2 rounded-lg bg-gray-800/50 group-hover:bg-harx-500/20 transition-colors">
+            <LogOut className="h-4 w-4" />
+          </div>
           <span>Logout</span>
         </button>
-      </nav>
+      </div>
     </div>
   );
 }

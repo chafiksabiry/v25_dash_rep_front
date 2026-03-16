@@ -93,23 +93,23 @@ export function TopBar() {
   const initials = getInitials(userName);
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-6">
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-3">
+    <header className="h-20 bg-white shadow-sm border-b border-gray-100 flex items-center justify-end px-8 shrink-0 z-20">
+      <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-3 p-2 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
           {profileData?.personalInfo?.photo?.url ? (
             <img
               src={profileData.personalInfo.photo.url}
               alt={userName}
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-10 h-10 rounded-xl object-cover shadow-sm"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-harx-100 to-harx-200 flex items-center justify-center text-harx-600 font-black shadow-sm">
               {initials}
             </div>
           )}
-          <div>
-            <p className="text-sm font-medium text-gray-700">{userName}</p>
-            <p className="text-xs text-gray-500">{userRole}</p>
+          <div className="text-right">
+            <p className="text-sm font-black tracking-tight text-gray-900">{userName}</p>
+            <p className="text-xs font-semibold text-harx-500 uppercase tracking-wider">{userRole}</p>
           </div>
         </div>
       </div>
