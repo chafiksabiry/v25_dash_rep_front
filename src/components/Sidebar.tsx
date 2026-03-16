@@ -97,21 +97,16 @@ export function Sidebar({ phases }: SidebarProps) {
 
   return (
     <div className="w-72 fixed inset-y-0 left-0 z-30 bg-[#0a0b14] text-white transition-all duration-300 md:relative shadow-2xl border-r border-white/5 flex flex-col overflow-y-auto">
-      <div className="px-6 py-8 flex items-center justify-center">
+      <div className="h-24 flex items-center justify-center border-b border-white/5">
         <img
           src={`${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo_harx.png`}
           alt="HARX.AI Logo"
-          className="h-10 w-auto object-contain animate-float"
+          className="h-10 w-auto object-contain"
           onError={(e) => {
-            // Prevent infinite loop if fallback fails
             e.currentTarget.onerror = null;
             e.currentTarget.src = `${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo_harx.jpg`;
           }}
         />
-        <div className="ml-3 flex flex-col">
-          <span className="text-[10px] font-black text-harx-500 tracking-[0.2em] uppercase italic leading-none mb-1">HARX</span>
-          <span className="text-xl font-black tracking-tighter text-white leading-none whitespace-nowrap">Dashboard</span>
-        </div>
       </div>
 
       <nav className="flex-1 px-4 flex flex-col min-h-0 space-y-1">
