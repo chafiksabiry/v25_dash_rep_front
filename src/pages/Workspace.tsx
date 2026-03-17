@@ -148,7 +148,7 @@ export function Workspace() {
   };
 
   const workspaceTools = [
-    { id: 'voice', label: 'Voice Call', icon: Phone },
+    { id: 'voice', label: 'Leads', icon: User },
     { id: 'calls', label: 'Call History', icon: PhoneOutgoing },
   ];
 
