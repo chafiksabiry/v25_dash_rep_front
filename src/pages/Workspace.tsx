@@ -149,9 +149,6 @@ export function Workspace() {
   const workspaceTools = [
     { id: 'voice', label: 'Voice Call', icon: Phone },
     { id: 'calls', label: 'Call History', icon: PhoneOutgoing },
-    { id: 'video', label: 'Video Call', icon: Video },
-    { id: 'email', label: 'Email Support', icon: Mail },
-    { id: 'social', label: 'Social Media', icon: Globe },
   ];
 
   const renderWorkspace = () => {
