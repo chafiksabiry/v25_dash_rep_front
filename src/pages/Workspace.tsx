@@ -9,6 +9,7 @@ import { CallInterface } from '../components/CallInterface';
 import { useAuth } from '../contexts/AuthContext';
 import { Skeleton } from '../components/ui/Skeleton';
 import { CallRecords } from '../components/CallRecords';
+import api from '../utils/client';
 
 interface Lead {
   _id?: string;
@@ -46,6 +47,7 @@ export function Workspace() {
   const [message, setMessage] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [callCounts, setCallCounts] = useState<Record<string, number>>({});
   const [isLoadingLeads, setIsLoadingLeads] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -131,8 +133,41 @@ export function Workspace() {
         if (responseData.totalPages) {
           setTotalPages(responseData.totalPages);
         }
+        
+        // Fetch call counts for these leads
+        try {
+          const agentId = localStorage.getItem('agentId');
+          if (agentId) {
+            const callsResponse = await api.calls.getByAgentId(agentId);
+            if (callsResponse && callsResponse.success && Array.isArray(callsResponse.data)) {
+              const counts: Record<string, number> = {};
+              responseData.data.forEach(lead => {
+                  const leadIdStr = lead._id || lead.id;
+                  if (leadIdStr) counts[leadIdStr] = 0;
+              });
+
+              callsResponse.data.forEach((call: any) => {
+                const callGigId = call.gigId || call.gig || call.lead?.gigId || call.lead?.gig;
+                const callGigIdStr = typeof callGigId === 'object' ? (callGigId._id || callGigId.$oid) : (callGigId || '');
+                
+                // Only count calls associated with the active gig (or all if activeGigId is empty)
+                if (!activeGigId || callGigIdStr === activeGigId) {
+                   const callLeadId = call.lead?._id || call.leadId || call.lead;
+                   const callLeadIdStr = typeof callLeadId === 'object' ? (callLeadId.$oid || callLeadId._id) : callLeadId;
+                   if (callLeadIdStr && counts[callLeadIdStr] !== undefined) {
+                       counts[callLeadIdStr]++;
+                   }
+                }
+              });
+              setCallCounts(counts);
+            }
+          }
+        } catch (e) {
+          console.error("Error fetching call counts for leads:", e);
+        }
       } else {
         setLeads([]);
+        setCallCounts({});
       }
     } catch (error: any) {
       console.error('❌ Error fetching leads (detailed):', {
@@ -202,7 +237,15 @@ export function Workspace() {
                         >
                           <div className="flex justify-between items-center">
                             <div className="space-y-1">
-                              <h4 className="font-black text-gray-900 uppercase text-sm tracking-tight group-hover:text-harx-600 transition-colors">{lead.Deal_Name}</h4>
+                              <h4 className="font-black text-gray-900 uppercase text-sm tracking-tight group-hover:text-harx-600 transition-colors flex items-center">
+                                {lead.Deal_Name}
+                                {callCounts[lead._id || lead.id] !== undefined && (
+                                  <span className="ml-3 inline-flex items-center justify-center px-2 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded-full text-[10px] font-black tracking-widest leading-none">
+                                    <Phone className="w-2 h-2 mr-1" />
+                                    {callCounts[lead._id || lead.id]} CALL{callCounts[lead._id || lead.id] !== 1 ? 'S' : ''}
+                                  </span>
+                                )}
+                              </h4>
                               <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-1.5 text-gray-400">
                                   <Phone className="w-3 h-3" />
