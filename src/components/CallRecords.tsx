@@ -96,6 +96,9 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
         
         if (response && response.success && Array.isArray(response.data)) {
           console.log(`✅ Successfully retrieved ${response.data.length} call records`);
+          if (response.data.length > 0) {
+            console.log("🔍 Sample call record structure:", JSON.stringify(response.data[0], null, 2));
+          }
           
           let filteredCalls = response.data;
           
