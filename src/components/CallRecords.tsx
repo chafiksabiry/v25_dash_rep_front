@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Phone, Clock, Download, PhoneOutgoing, Info, Brain, X, User, ExternalLink, PlayCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
@@ -317,7 +318,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
           )}
         </div>
       {/* Call Detail Modal */}
-      {selectedCall && (
+      {selectedCall && createPortal(
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
           <div 
             className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" 
@@ -336,7 +337,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                   </h3>
                 </div>
               </div>
-              <button onClick={() => setSelectedCall(null)} className="relative z-10 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl text-white">
+              <button onClick={() => setSelectedCall(null)} className="relative z-10 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 text-white transition-all duration-300">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -421,7 +422,8 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
