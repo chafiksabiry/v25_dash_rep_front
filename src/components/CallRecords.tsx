@@ -437,7 +437,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
               )}
 
               {/* Transcription Section */}
-              {selectedCall.ai_call_score && selectedCall.transcript && selectedCall.transcript.length > 0 && (
+              {selectedCall.transcript && selectedCall.transcript.length > 0 && (
                 <div className="space-y-4">
                   <button
                     onClick={() => setShowTranscript(!showTranscript)}
