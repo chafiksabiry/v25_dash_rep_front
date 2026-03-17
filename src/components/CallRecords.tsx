@@ -448,7 +448,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                     className="flex items-center justify-center gap-2 w-full px-6 py-4 rounded-2xl font-bold text-sm transition-all duration-300 bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
                   >
                     <Info className="w-4 h-4" />
-                    {showTranscript ? 'Masquer la transcription' : 'Afficher la transcription'}
+                    {showTranscript ? 'Hide transcription' : 'Show transcription'}
                   </button>
                   
                   {showTranscript && (
