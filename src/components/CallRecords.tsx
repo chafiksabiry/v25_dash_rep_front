@@ -144,7 +144,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
     };
 
     fetchCallRecords();
-  }, []);
+  }, [gigId, leadId]);
 
 
   if (loading) {

@@ -162,23 +162,6 @@ export function Workspace() {
             <div className="flex justify-between items-center mb-8 border-b border-gray-100 pb-6">
               <div className="flex flex-col">
                 <h2 className="text-2xl font-black text-gray-900 tracking-tight">Leads</h2>
-                {enrolledGigs.length > 0 && (
-                  <div className="mt-3">
-                    <select
-                      value={selectedGigId}
-                      onChange={(e) => {
-                        setSelectedGigId(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500 focus:outline-none focus:ring-2 focus:ring-harx-500 transition-all shadow-sm"
-                    >
-                      <option value="">All My Leads</option>
-                      {enrolledGigs.map(g => (
-                        <option key={g._id} value={g._id}>{g.title}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
@@ -445,8 +428,33 @@ export function Workspace() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-end mb-8">
         <h1 className="text-4xl font-black text-gray-900 tracking-tight">Workspace</h1>
+        
+        {enrolledGigs.length > 0 && (
+          <div className="flex flex-col items-end space-y-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mr-1">Active Gig</span>
+            <select
+              value={selectedGigId}
+              onChange={(e) => {
+                setSelectedGigId(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-white border border-gray-200 rounded-xl px-6 py-2.5 text-xs font-black uppercase tracking-widest text-gray-700 focus:outline-none focus:ring-2 focus:ring-harx-500 transition-all shadow-sm hover:border-harx-200 appearance-none cursor-pointer min-w-[200px]"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='Length 19 9l-7 7-7-7' /%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 1rem center',
+                backgroundSize: '1em'
+              }}
+            >
+              <option value="">All My Leads</option>
+              {enrolledGigs.map(g => (
+                <option key={g._id} value={g._id}>{g.title}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-5 gap-4 mb-6">
