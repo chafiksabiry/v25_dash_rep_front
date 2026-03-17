@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Phone, Clock, Download, PhoneOutgoing, Info, Brain, X, User, ExternalLink, PlayCircle } from 'lucide-react';
+import { Phone, Clock, Download, PhoneOutgoing, Info, Brain, X, User, ExternalLink, PlayCircle, Shield, Zap, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
 
@@ -89,62 +89,68 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
   const [selectedCall, setSelectedCall] = useState<CallRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [analyzingCallId, setAnalyzingCallId] = useState<string | null>(null);
+
+  const fetchCallRecords = async () => {
+    try {
+      const agentId = localStorage.getItem('agentId');
+      if (!agentId) {
+        console.error('❌ Agent ID not found in localStorage');
+        throw new Error('Agent ID not found');
+      }
+
+      console.log(`🔍 Fetching call records for agent ID: ${agentId}`);
+      const response = await api.calls.getByAgentId(agentId);
+      
+      if (response && response.success && Array.isArray(response.data)) {
+        let filteredCalls = response.data;
+        
+        if (gigId) {
+          filteredCalls = filteredCalls.filter((call: any) => {
+            if (call.gigId === gigId || call.gig === gigId) return true;
+            const leadGigId = call.lead?.gigId || call.lead?.gig;
+            const leadGigIdStr = typeof leadGigId === 'object' ? (leadGigId._id || leadGigId.$oid) : (leadGigId || '');
+            return leadGigIdStr === gigId;
+          });
+        }
+        
+        if (leadId) {
+          filteredCalls = filteredCalls.filter((call: any) => 
+            call.lead?._id === leadId || call.leadId === leadId || call.lead === leadId
+          );
+        }
+
+        setCallRecords(filteredCalls);
+      } else {
+        throw new Error(response.message || 'Failed to fetch call records');
+      }
+      setLoading(false);
+    } catch (err: any) {
+      console.error('❌ Error fetching call records:', err);
+      setError(err.message || 'Failed to fetch call records');
+      setLoading(false);
+    }
+  };
+
+  const handleAnalyzeCall = async (callId: string) => {
+    try {
+      setAnalyzingCallId(callId);
+      const response = await api.calls.analyze(callId);
+      if (response.success) {
+        // Refresh call list or update selected call
+        if (selectedCall && (selectedCall._id === callId || (selectedCall as any).$oid === callId)) {
+          setSelectedCall({ ...selectedCall, ai_call_score: response.data });
+        }
+        fetchCallRecords();
+      }
+    } catch (error) {
+      console.error('Error analyzing call:', error);
+    } finally {
+      setAnalyzingCallId(null);
+    }
+  };
 
   useEffect(() => {
-    console.log('📞 Call Records component mounted - fetching call records');
-    const fetchCallRecords = async () => {
-      try {
-        const agentId = localStorage.getItem('agentId');
-        if (!agentId) {
-          console.error('❌ Agent ID not found in localStorage');
-          throw new Error('Agent ID not found');
-        }
-
-        console.log(`🔍 Fetching call records for agent ID: ${agentId}`);
-        const response = await api.calls.getByAgentId(agentId);
-        console.log("📞 Call records response type:", typeof response);
-        
-        if (response && response.success && Array.isArray(response.data)) {
-          console.log(`✅ Successfully retrieved ${response.data.length} call records`);
-          
-          let filteredCalls = response.data;
-          
-          if (gigId) {
-            filteredCalls = filteredCalls.filter((call: any) => {
-              // Priority 1: Direct gigId on call
-              if (call.gigId === gigId || call.gig === gigId) return true;
-              
-              // Priority 2: GigId on lead object
-              const leadGigId = call.lead?.gigId || call.lead?.gig;
-              const leadGigIdStr = typeof leadGigId === 'object' ? (leadGigId._id || leadGigId.$oid) : (leadGigId || '');
-              
-              return leadGigIdStr === gigId;
-            });
-          }
-          
-          if (leadId) {
-            console.log(`🎯 Filtering by Lead ID: ${leadId}`);
-            filteredCalls = filteredCalls.filter((call: any) => 
-              call.lead?._id === leadId || call.leadId === leadId || call.lead === leadId
-            );
-          }
-
-          setCallRecords(filteredCalls);
-          if (filteredCalls.length === 0) {
-            console.log('⚠️ No call records found after filtering');
-          }
-        } else {
-          console.error('❌ API returned error:', response.message);
-          throw new Error(response.message || 'Failed to fetch call records');
-        }
-        setLoading(false);
-      } catch (err: any) {
-        console.error('❌ Error fetching call records:', err);
-        setError(err.message || 'Failed to fetch call records');
-        setLoading(false);
-      }
-    };
-
     fetchCallRecords();
   }, [gigId, leadId]);
 
@@ -336,19 +342,44 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
             </div>
             <div className="p-8 space-y-8 overflow-y-auto max-h-[70vh]">
               {selectedCall.ai_call_score && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-emerald-50/50 border border-emerald-100 p-6 rounded-3xl text-center">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-2xl text-center">
                     <Brain className="w-5 h-5 text-emerald-500 mx-auto mb-2" />
                     <div className="text-[10px] font-black text-emerald-600 uppercase mb-1">Sentiment</div>
-                    <div className="text-3xl font-black text-emerald-700">{selectedCall.ai_call_score['Sentiment analysis']?.score || 0}/10</div>
+                    <div className="text-2xl font-black text-emerald-700">{selectedCall.ai_call_score['Sentiment analysis']?.score || 0}%</div>
                   </div>
-                  <div className="bg-indigo-50/50 border border-indigo-100 p-6 rounded-3xl text-center">
-                    <PlayCircle className="w-5 h-5 text-indigo-500 mx-auto mb-2" />
+                  <div className="bg-indigo-50/50 border border-indigo-100 p-4 rounded-2xl text-center">
+                    <Zap className="w-5 h-5 text-indigo-500 mx-auto mb-2" />
                     <div className="text-[10px] font-black text-indigo-600 uppercase mb-1">Fluency</div>
-                    <div className="text-3xl font-black text-indigo-700">{selectedCall.ai_call_score['Agent fluency']?.score || 0}/10</div>
+                    <div className="text-2xl font-black text-indigo-700">{selectedCall.ai_call_score['Agent fluency']?.score || 0}%</div>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-100 p-4 rounded-2xl text-center">
+                    <Shield className="w-5 h-5 text-amber-500 mx-auto mb-2" />
+                    <div className="text-[10px] font-black text-amber-600 uppercase mb-1">Fraud</div>
+                    <div className="text-2xl font-black text-amber-700">{selectedCall.ai_call_score['Fraud detection']?.score || 0}%</div>
+                  </div>
+                  <div className="bg-harx-50/50 border border-harx-100 p-4 rounded-2xl text-center">
+                    <PlayCircle className="w-5 h-5 text-harx-500 mx-auto mb-2" />
+                    <div className="text-[10px] font-black text-harx-600 uppercase mb-1">Overall</div>
+                    <div className="text-2xl font-black text-harx-700">{selectedCall.ai_call_score.overall?.score || 0}%</div>
                   </div>
                 </div>
               )}
+
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => handleAnalyzeCall(selectedCall._id || (selectedCall as any).$oid)}
+                  disabled={analyzingCallId === (selectedCall._id || (selectedCall as any).$oid)}
+                  className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-bold text-sm transition-all duration-300 ${
+                    analyzingCallId === (selectedCall._id || (selectedCall as any).$oid) 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'bg-harx-500 text-white hover:bg-harx-600 shadow-lg shadow-harx-200'
+                  }`}
+                >
+                  <RefreshCw className={`w-4 h-4 ${analyzingCallId === (selectedCall._id || (selectedCall as any).$oid) ? 'animate-spin' : ''}`} />
+                  {analyzingCallId === (selectedCall._id || (selectedCall as any).$oid) ? 'Analyzing...' : 'Re-analyze with AI'}
+                </button>
+              </div>
               {(selectedCall.recording_url || selectedCall.recording_url_cloudinary) && (
                 <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100">
                   <audio controls src={selectedCall.recording_url_cloudinary || selectedCall.recording_url} className="w-full" />

@@ -207,6 +207,10 @@ export const callsApi = {
     const response = await callsApiClient.put(`/api/calls/${id}`, data);
     return response.data;
   },
+  analyze: async (id: string) => {
+    const response = await callsApiClient.post(`/api/calls/${id}/analyze`);
+    return response.data;
+  }
 };
 
 export const vertexApi = {
