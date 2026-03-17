@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Phone, Clock, Download, PhoneOutgoing, Info, Brain } from 'lucide-react';
+import { Phone, Clock, Download, PhoneOutgoing, Info, Brain, X, User, ExternalLink, PlayCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
 
@@ -85,6 +85,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
   const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [callRecords, setCallRecords] = useState<CallRecord[]>([]);
+  const [selectedCall, setSelectedCall] = useState<CallRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -217,7 +218,11 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
           ) : (
             <div className="divide-y divide-gray-200">
               {callRecords.map((record: CallRecord) => (
-                <div key={record._id} className="p-6 hover:bg-gray-50 transition-colors">
+                <div 
+                  key={record._id} 
+                  onClick={() => setSelectedCall(record)}
+                  className="p-6 hover:bg-gray-50 transition-all duration-300 cursor-pointer group"
+                >
                   <div className="flex justify-between">
                     {/* Left side - Call info */}
                     <div className="flex items-start space-x-4">
@@ -311,7 +316,63 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
             </div>
           )}
         </div>
-
+ 
+      {/* Call Detail Modal */}
+      {selectedCall && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-gray-900/60 backdrop-blur-md" 
+            onClick={() => setSelectedCall(null)}
+          ></div>
+          <div className="relative w-full max-w-2xl bg-white/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 fade-in duration-300">
+            <div className="relative h-32 bg-gradient-harx p-8 flex items-end justify-between overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl -mr-32 -mt-32"></div>
+              <div className="relative z-10 flex items-center gap-4 text-white">
+                <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30">
+                  <User className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black tracking-tight">
+                    {selectedCall.lead?.First_Name ? `${selectedCall.lead.First_Name} ${selectedCall.lead.Last_Name || ''}` : selectedCall.lead?.name || 'Customer'}
+                  </h3>
+                </div>
+              </div>
+              <button onClick={() => setSelectedCall(null)} className="relative z-10 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-8 space-y-8 overflow-y-auto max-h-[70vh]">
+              {selectedCall.ai_call_score && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-emerald-50/50 border border-emerald-100 p-6 rounded-3xl text-center">
+                    <Brain className="w-5 h-5 text-emerald-500 mx-auto mb-2" />
+                    <div className="text-[10px] font-black text-emerald-600 uppercase mb-1">Sentiment</div>
+                    <div className="text-3xl font-black text-emerald-700">{selectedCall.ai_call_score['Sentiment analysis']?.score || 0}/10</div>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-100 p-6 rounded-3xl text-center">
+                    <PlayCircle className="w-5 h-5 text-indigo-500 mx-auto mb-2" />
+                    <div className="text-[10px] font-black text-indigo-600 uppercase mb-1">Fluency</div>
+                    <div className="text-3xl font-black text-indigo-700">{selectedCall.ai_call_score['Agent fluency']?.score || 0}/10</div>
+                  </div>
+                </div>
+              )}
+              {(selectedCall.recording_url || selectedCall.recording_url_cloudinary) && (
+                <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100">
+                  <audio controls src={selectedCall.recording_url_cloudinary || selectedCall.recording_url} className="w-full" />
+                </div>
+              )}
+              <div className="flex justify-center pt-4">
+                 <button onClick={() => {
+                   const leadId = selectedCall.lead?._id || selectedCall.lead?.id;
+                   if (leadId) window.location.href = `/copilot?leadId=${leadId}`;
+                 }} className="px-12 py-4 bg-gradient-harx text-white text-xs font-black uppercase rounded-2xl">
+                  Go to CRM Details
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
