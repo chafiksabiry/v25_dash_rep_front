@@ -106,9 +106,14 @@ export const fetchProfileFromAPI = async () => {
     console.log("🔑 Using static userID from env:", userId);
   } else {
     console.log("🔑 Running in in-app mode");
-    // Use userId from cookies in in-app mode
-    userId = Cookies.get('userId') || sessionStorage.getItem('userId');
-    console.log("🔑 userId found (Cookie or Session):", userId);
+    // Use userId or agentId from cookies, session, or local storage
+    userId = Cookies.get('userId') || 
+             Cookies.get('agentId') || 
+             sessionStorage.getItem('userId') || 
+             sessionStorage.getItem('agentId') ||
+             localStorage.getItem('userId') ||
+             localStorage.getItem('agentId');
+    console.log("🔑 userId found (Any source):", userId);
   }
 
   if (!userId) {
@@ -372,9 +377,14 @@ export const getUserId = (): string => {
     console.log("🔑 Using static userID from env:", userId);
   } else {
     console.log("🔑 Running in in-app mode");
-    // Use userId from cookies in in-app mode
-    userId = Cookies.get('userId') || sessionStorage.getItem('userId') || '';
-    console.log("🔑 userId found (Cookie or Session):", userId);
+    // Use userId or agentId from cookies, session, or local storage
+    userId = Cookies.get('userId') || 
+             Cookies.get('agentId') || 
+             sessionStorage.getItem('userId') || 
+             sessionStorage.getItem('agentId') ||
+             localStorage.getItem('userId') ||
+             localStorage.getItem('agentId') || '';
+    console.log("🔑 userId found (Any source):", userId);
   }
 
   if (!userId) {
