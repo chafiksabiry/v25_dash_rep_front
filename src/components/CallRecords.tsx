@@ -95,7 +95,6 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [analyzingCallId, setAnalyzingCallId] = useState<string | null>(null);
-  const [showTranscript, setShowTranscript] = useState(false);
 
   const fetchCallRecords = async () => {
     try {
@@ -235,7 +234,6 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                   key={record._id} 
                   onClick={() => {
                     setSelectedCall(record);
-                    setShowTranscript(false);
                   }}
                   className="p-6 hover:bg-gray-50 transition-all duration-300 cursor-pointer group"
                 >
@@ -332,7 +330,6 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
             className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" 
             onClick={() => {
               setSelectedCall(null);
-              setShowTranscript(false);
             }}
           ></div>
           <div className="relative w-full max-w-xl bg-white rounded-[2rem] shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 fade-in duration-300 flex flex-col">
@@ -350,7 +347,6 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
               </div>
               <button onClick={() => {
                 setSelectedCall(null);
-                setShowTranscript(false);
               }} className="relative z-10 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 text-white transition-all duration-300">
                 <X className="w-5 h-5" />
               </button>
@@ -439,34 +435,28 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
               {/* Transcription Section */}
               {selectedCall.transcript && selectedCall.transcript.length > 0 && (
                 <div className="space-y-4">
-                  <button
-                    onClick={() => setShowTranscript(!showTranscript)}
-                    className="flex items-center justify-center gap-2 w-full px-6 py-4 rounded-2xl font-bold text-sm transition-all duration-300 bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
-                  >
-                    <Info className="w-4 h-4" />
-                    {showTranscript ? 'Masquer la transcription' : 'Afficher la transcription'}
-                  </button>
-                  
-                  {showTranscript && (
-                    <div className="bg-gray-50/50 rounded-3xl border border-gray-100 p-6 max-h-64 overflow-y-auto space-y-4 shadow-inner mt-4">
-                      {selectedCall.transcript.map((turn, index) => (
-                        <div key={index} className={`flex flex-col ${turn.speaker?.toLowerCase().includes('agent') ? 'items-start' : 'items-end'}`}>
-                          <span className={`text-[9px] font-black uppercase tracking-widest mb-1 ${
-                            turn.speaker?.toLowerCase().includes('agent') ? 'text-indigo-600' : 'text-emerald-600'
-                          }`}>
-                            {turn.speaker}
-                          </span>
-                          <div className={`max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed ${
-                            turn.speaker?.toLowerCase().includes('agent') 
-                              ? 'bg-indigo-50 text-indigo-900 rounded-tl-none border border-indigo-100' 
-                              : 'bg-emerald-50 text-emerald-900 rounded-tr-none border border-emerald-100'
-                          }`}>
-                            {turn.text}
-                          </div>
+                  <div className="flex items-center gap-2 px-2">
+                    <Info className="w-4 h-4 text-harx-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Transcription</span>
+                  </div>
+                  <div className="bg-gray-50/50 rounded-3xl border border-gray-100 p-6 max-h-64 overflow-y-auto space-y-4 shadow-inner mt-4">
+                    {selectedCall.transcript.map((turn, index) => (
+                      <div key={index} className={`flex flex-col ${turn.speaker?.toLowerCase().includes('agent') ? 'items-start' : 'items-end'}`}>
+                        <span className={`text-[9px] font-black uppercase tracking-widest mb-1 ${
+                          turn.speaker?.toLowerCase().includes('agent') ? 'text-indigo-600' : 'text-emerald-600'
+                        }`}>
+                          {turn.speaker}
+                        </span>
+                        <div className={`max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed ${
+                          turn.speaker?.toLowerCase().includes('agent') 
+                            ? 'bg-indigo-50 text-indigo-900 rounded-tl-none border border-indigo-100' 
+                            : 'bg-emerald-50 text-emerald-900 rounded-tr-none border border-emerald-100'
+                        }`}>
+                          {turn.text}
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
