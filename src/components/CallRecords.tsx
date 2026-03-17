@@ -255,7 +255,19 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           {(record.lead?.Phone || record.lead?.phone || record.to || record.from) && (
                             <p className="flex items-center">
                               <Phone className="w-4 h-4 mr-1.5" />
-                              {record.lead?.Phone || record.lead?.phone || record.to || record.from}
+                              {(() => {
+                                const phone = record.lead?.Phone || record.lead?.phone || record.to || record.from || '';
+                                if (!phone) return '';
+                                // Clean up the phone number (remove spaces, dashes)
+                                const cleanPhone = phone.replace(/[\s-]/g, '');
+                                if (cleanPhone.length <= 6) return cleanPhone;
+                                
+                                const firstPart = cleanPhone.substring(0, 4);
+                                const lastPart = cleanPhone.substring(cleanPhone.length - 2);
+                                const maskedPart = '*'.repeat(cleanPhone.length - 6);
+                                
+                                return `${firstPart}${maskedPart}${lastPart}`;
+                              })()}
                             </p>
                           )}
                           <p className="flex items-center">
