@@ -144,7 +144,11 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
       if (response.success) {
         // Refresh call list or update selected call
         if (selectedCall && (selectedCall._id === callId || (selectedCall as any).$oid === callId)) {
-          setSelectedCall({ ...selectedCall, ai_call_score: response.data });
+          setSelectedCall({ 
+            ...selectedCall, 
+            ai_call_score: response.data,
+            transcript: response.transcript || selectedCall.transcript 
+          });
         }
         fetchCallRecords();
       }
