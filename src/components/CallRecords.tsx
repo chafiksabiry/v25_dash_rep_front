@@ -342,26 +342,58 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
             </div>
             <div className="p-8 space-y-8 overflow-y-auto max-h-[70vh]">
               {selectedCall.ai_call_score && (
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-2xl text-center">
-                    <Brain className="w-5 h-5 text-emerald-500 mx-auto mb-2" />
-                    <div className="text-[10px] font-black text-emerald-600 uppercase mb-1">Sentiment</div>
-                    <div className="text-2xl font-black text-emerald-700">{selectedCall.ai_call_score['Sentiment analysis']?.score || 0}%</div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-2xl text-center">
+                      <Brain className="w-5 h-5 text-emerald-500 mx-auto mb-2" />
+                      <div className="text-[10px] font-black text-emerald-600 uppercase mb-1">Sentiment</div>
+                      <div className="text-2xl font-black text-emerald-700">{selectedCall.ai_call_score['Sentiment analysis']?.score || 0}%</div>
+                    </div>
+                    <div className="bg-indigo-50/50 border border-indigo-100 p-4 rounded-2xl text-center">
+                      <Zap className="w-5 h-5 text-indigo-500 mx-auto mb-2" />
+                      <div className="text-[10px] font-black text-indigo-600 uppercase mb-1">Fluency</div>
+                      <div className="text-2xl font-black text-indigo-700">{selectedCall.ai_call_score['Agent fluency']?.score || 0}%</div>
+                    </div>
+                    <div className="bg-amber-50/50 border border-amber-100 p-4 rounded-2xl text-center">
+                      <Shield className="w-5 h-5 text-amber-500 mx-auto mb-2" />
+                      <div className="text-[10px] font-black text-amber-600 uppercase mb-1">Fraud</div>
+                      <div className="text-2xl font-black text-amber-700">{selectedCall.ai_call_score['Fraud detection']?.score || 0}%</div>
+                    </div>
+                    <div className="bg-harx-50/50 border border-harx-100 p-4 rounded-2xl text-center">
+                      <PlayCircle className="w-5 h-5 text-harx-500 mx-auto mb-2" />
+                      <div className="text-[10px] font-black text-harx-600 uppercase mb-1">Overall</div>
+                      <div className="text-2xl font-black text-harx-700">{selectedCall.ai_call_score.overall?.score || 0}%</div>
+                    </div>
                   </div>
-                  <div className="bg-indigo-50/50 border border-indigo-100 p-4 rounded-2xl text-center">
-                    <Zap className="w-5 h-5 text-indigo-500 mx-auto mb-2" />
-                    <div className="text-[10px] font-black text-indigo-600 uppercase mb-1">Fluency</div>
-                    <div className="text-2xl font-black text-indigo-700">{selectedCall.ai_call_score['Agent fluency']?.score || 0}%</div>
-                  </div>
-                  <div className="bg-amber-50/50 border border-amber-100 p-4 rounded-2xl text-center">
-                    <Shield className="w-5 h-5 text-amber-500 mx-auto mb-2" />
-                    <div className="text-[10px] font-black text-amber-600 uppercase mb-1">Fraud</div>
-                    <div className="text-2xl font-black text-amber-700">{selectedCall.ai_call_score['Fraud detection']?.score || 0}%</div>
-                  </div>
-                  <div className="bg-harx-50/50 border border-harx-100 p-4 rounded-2xl text-center">
-                    <PlayCircle className="w-5 h-5 text-harx-500 mx-auto mb-2" />
-                    <div className="text-[10px] font-black text-harx-600 uppercase mb-1">Overall</div>
-                    <div className="text-2xl font-black text-harx-700">{selectedCall.ai_call_score.overall?.score || 0}%</div>
+
+                  <div className="bg-gray-50/50 rounded-3xl border border-gray-100 p-6 space-y-6">
+                    <div className="flex items-center gap-2 px-2">
+                       <Brain className="w-4 h-4 text-harx-500" />
+                       <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Analysis Insights</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-6">
+                      {selectedCall.ai_call_score['Sentiment analysis']?.feedback && (
+                        <div className="space-y-1">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 block">Sentiment & Tone</span>
+                          <p className="text-xs text-gray-600 leading-relaxed italic">"{selectedCall.ai_call_score['Sentiment analysis'].feedback}"</p>
+                        </div>
+                      )}
+                      
+                      {selectedCall.ai_call_score['Agent fluency']?.feedback && (
+                        <div className="space-y-1">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-indigo-600 block">Agent Fluency</span>
+                          <p className="text-xs text-gray-600 leading-relaxed italic">"{selectedCall.ai_call_score['Agent fluency'].feedback}"</p>
+                        </div>
+                      )}
+
+                      {selectedCall.ai_call_score['overall']?.feedback && (
+                        <div className="pt-4 border-t border-gray-100 space-y-1">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-harx-600 block">Summary & Actionable Tip</span>
+                          <p className="text-xs font-semibold text-gray-700 leading-relaxed">"{selectedCall.ai_call_score['overall'].feedback}"</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -386,64 +418,10 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                 </div>
               )}
 
-              {/* Technical Details Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 px-2">
-                  <Info className="w-4 h-4 text-harx-500" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Technical Details</span>
-                </div>
-                
-                <div className="bg-gray-50/50 rounded-3xl border border-gray-100 p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                  <div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">Call ID</span>
-                    <span className="text-xs font-mono text-gray-600 break-all">
-                      {(selectedCall._id as any).$oid || selectedCall._id}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">SID</span>
-                    <span className="text-xs font-mono text-gray-600 break-all">{selectedCall.sid || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">Direction</span>
-                    <span className="text-xs font-bold text-gray-700 uppercase">{selectedCall.direction}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">Duration</span>
-                    <span className="text-xs font-bold text-gray-700">{selectedCall.duration}s</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">From</span>
-                    <span className="text-xs font-bold text-gray-700">{selectedCall.from || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">To</span>
-                    <span className="text-xs font-bold text-gray-700">{selectedCall.to || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">Provider</span>
-                    <span className="text-xs font-bold text-gray-700 uppercase">{selectedCall.provider || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">Status</span>
-                    <span className="text-xs font-bold text-emerald-600 uppercase italic">{selectedCall.status}</span>
-                  </div>
-                  <div className="md:col-span-2 grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
-                    <div>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">Created At</span>
-                      <span className="text-[10px] text-gray-500">
-                        {new Date((selectedCall.createdAt as any).$date || selectedCall.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">Updated At</span>
-                      <span className="text-[10px] text-gray-500">
-                        {new Date((selectedCall.updatedAt as any).$date || selectedCall.updatedAt).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* Technical Details Section - Hidden as per user request */}
+              {/* <div className="space-y-4">
+                ... 
+              </div> */}
             </div>
           </div>
         </div>,
