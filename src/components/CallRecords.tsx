@@ -104,15 +104,24 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
           
           if (gigId) {
             console.log(`🎯 Filtering by Gig ID: ${gigId}`);
-            filteredCalls = filteredCalls.filter((call: any) => 
-              call.gigId === gigId || call.gig === gigId
-            );
+            filteredCalls = filteredCalls.filter((call: any) => {
+              const leadGigId = call.lead?.gigId || call.lead?.gig;
+              const leadGigIdStr = typeof leadGigId === 'object' ? (leadGigId._id || leadGigId.$oid) : (leadGigId || '');
+              
+              console.log(`DEBUG: Call [${call._id}] - Lead present: ${!!call.lead}, Lead GigId: ${leadGigIdStr}, Filter GigId: ${gigId}`);
+              
+              // Priority 1: Direct gigId on call
+              if (call.gigId === gigId || call.gig === gigId) return true;
+              
+              // Priority 2: GigId on lead object
+              return leadGigIdStr === gigId;
+            });
           }
           
           if (leadId) {
             console.log(`🎯 Filtering by Lead ID: ${leadId}`);
             filteredCalls = filteredCalls.filter((call: any) => 
-              call.lead?._id === leadId || call.leadId === leadId
+              call.lead?._id === leadId || call.leadId === leadId || call.lead === leadId
             );
           }
 
