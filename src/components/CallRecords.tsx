@@ -41,6 +41,11 @@ interface CallRecord {
   childCalls?: string[];
   from?: string;
   to?: string;
+  transcript?: {
+    speaker: string;
+    text: string;
+    timestamp?: string;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -417,6 +422,34 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
               {(selectedCall.recording_url || selectedCall.recording_url_cloudinary) && (
                 <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100">
                   <audio controls src={selectedCall.recording_url_cloudinary || selectedCall.recording_url} className="w-full" />
+                </div>
+              )}
+
+              {/* Transcription Section */}
+              {selectedCall.transcript && selectedCall.transcript.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 px-2">
+                    <Info className="w-4 h-4 text-harx-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Transcription</span>
+                  </div>
+                  <div className="bg-gray-50/50 rounded-3xl border border-gray-100 p-6 max-h-64 overflow-y-auto space-y-4 shadow-inner">
+                    {selectedCall.transcript.map((turn, index) => (
+                      <div key={index} className={`flex flex-col ${turn.speaker?.toLowerCase().includes('agent') ? 'items-start' : 'items-end'}`}>
+                        <span className={`text-[9px] font-black uppercase tracking-widest mb-1 ${
+                          turn.speaker?.toLowerCase().includes('agent') ? 'text-indigo-600' : 'text-emerald-600'
+                        }`}>
+                          {turn.speaker}
+                        </span>
+                        <div className={`max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed ${
+                          turn.speaker?.toLowerCase().includes('agent') 
+                            ? 'bg-indigo-50 text-indigo-900 rounded-tl-none border border-indigo-100' 
+                            : 'bg-emerald-50 text-emerald-900 rounded-tr-none border border-emerald-100'
+                        }`}>
+                          {turn.text}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
