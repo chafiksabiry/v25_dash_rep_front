@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-  Phone, Mail, Globe, Clock, User, Video,
+  Phone, Mail, Clock, User, Video,
   Paperclip, Image, MoreHorizontal, PhoneOutgoing, XCircle,
   ChevronLeft, ChevronRight, ChevronDown, Filter, Layout
 } from 'lucide-react';

@@ -316,15 +316,14 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
             </div>
           )}
         </div>
- 
       {/* Call Detail Modal */}
       {selectedCall && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
           <div 
-            className="absolute inset-0 bg-gray-900/60 backdrop-blur-md" 
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" 
             onClick={() => setSelectedCall(null)}
           ></div>
-          <div className="relative w-full max-w-2xl bg-white/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 fade-in duration-300">
+          <div className="relative w-full max-w-xl bg-white rounded-[2rem] shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 fade-in duration-300 flex flex-col">
             <div className="relative h-32 bg-gradient-harx p-8 flex items-end justify-between overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl -mr-32 -mt-32"></div>
               <div className="relative z-10 flex items-center gap-4 text-white">
