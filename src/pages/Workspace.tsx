@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import {
   Phone, Mail, Globe, Clock, User, Video,
   Paperclip, Image, MoreHorizontal, PhoneOutgoing, XCircle,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, ChevronDown, Filter, Layout
 } from 'lucide-react';
 import { CallInterface } from '../components/CallInterface';
 import { useAuth } from '../contexts/AuthContext';
@@ -51,6 +51,7 @@ export function Workspace() {
   const [totalPages, setTotalPages] = useState(1);
   const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
   const [selectedGigId, setSelectedGigId] = useState<string>(gigId || '');
+  const [isGigDropdownOpen, setIsGigDropdownOpen] = useState(false);
   const [showCallInterface, setShowCallInterface] = useState(false);
   const { user } = useAuth();
 
@@ -429,27 +430,67 @@ export function Workspace() {
         <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-6">Workspace</h1>
         
         {enrolledGigs.length > 0 && (
-          <div className="flex flex-col items-start space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Active Gig</span>
-            <select
-              value={selectedGigId}
-              onChange={(e) => {
-                setSelectedGigId(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-white border border-gray-200 rounded-xl px-6 py-2.5 text-xs font-black uppercase tracking-widest text-gray-700 focus:outline-none focus:ring-2 focus:ring-harx-500 transition-all shadow-sm hover:border-harx-200 appearance-none cursor-pointer min-w-[200px]"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7' /%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 1rem center',
-                backgroundSize: '1em'
-              }}
-            >
-              <option value="">All My Leads</option>
-              {enrolledGigs.map(g => (
-                <option key={g._id} value={g._id}>{g.title}</option>
-              ))}
-            </select>
+          <div className="flex flex-col items-start space-y-2 relative">
+            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 flex items-center gap-1.5">
+              <Filter className="w-3 h-3" />
+              Active Gig
+            </span>
+            
+            <div className="relative min-w-[280px]">
+              <button
+                onClick={() => setIsGigDropdownOpen(!isGigDropdownOpen)}
+                className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-3.5 flex items-center justify-between text-xs font-black uppercase tracking-widest text-gray-700 hover:border-harx-200 hover:shadow-xl hover:shadow-harx-500/5 transition-all duration-300 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-harx flex items-center justify-center shadow-lg shadow-harx-500/20 group-hover:scale-110 transition-transform duration-300">
+                    <Layout className="w-4 h-4 text-white" />
+                  </div>
+                  <span>
+                    {selectedGigId 
+                      ? enrolledGigs.find(g => g._id === selectedGigId)?.title 
+                      : 'All My Leads'}
+                  </span>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-500 ${isGigDropdownOpen ? 'rotate-180 text-harx-500' : ''}`} />
+              </button>
+
+              {isGigDropdownOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsGigDropdownOpen(false)}
+                  ></div>
+                  <div className="absolute top-full left-0 right-0 mt-3 bg-white/90 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-2xl shadow-harx-500/10 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                    <button
+                      onClick={() => {
+                        setSelectedGigId('');
+                        setCurrentPage(1);
+                        setIsGigDropdownOpen(false);
+                      }}
+                      className={`w-full px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 hover:bg-gray-50 ${!selectedGigId ? 'text-harx-600 bg-harx-50/50' : 'text-gray-500'}`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${!selectedGigId ? 'bg-harx-500' : 'bg-gray-200'}`}></div>
+                      All My Leads
+                    </button>
+                    <div className="h-px bg-gray-100 mx-4 my-1 opacity-50"></div>
+                    {enrolledGigs.map((g) => (
+                      <button
+                        key={g._id}
+                        onClick={() => {
+                          setSelectedGigId(g._id);
+                          setCurrentPage(1);
+                          setIsGigDropdownOpen(false);
+                        }}
+                        className={`w-full px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 hover:bg-harx-50/50 ${selectedGigId === g._id ? 'text-harx-600 bg-harx-50/50' : 'text-gray-500 hover:text-harx-500'}`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${selectedGigId === g._id ? 'bg-harx-500 animate-pulse' : 'bg-transparent border border-gray-200'}`}></div>
+                        {g.title}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>
