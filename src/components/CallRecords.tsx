@@ -235,13 +235,6 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                         <Phone className={`w-6 h-6 ${
                           record.direction === 'inbound' ? 'text-blue-600' : 'text-green-600'
                         }`} />
-                        <div className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-xs font-medium ${
-                          record.direction === 'inbound'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-green-100 text-green-700'
-                        }`}>
-                          {record.direction === 'inbound' ? 'In' : 'Out'}
-                        </div>
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
