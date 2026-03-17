@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Phone, Clock, Download, PhoneOutgoing, Info, Brain, X, User, ExternalLink, PlayCircle, Shield, Zap, RefreshCw } from 'lucide-react';
+import { Phone, Clock, Download, PhoneOutgoing, Info, Brain, X, User, ExternalLink, PlayCircle, Shield, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
 
@@ -398,20 +398,22 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                 </div>
               )}
 
-              <div className="flex gap-4">
-                <button 
-                  onClick={() => handleAnalyzeCall(selectedCall._id || (selectedCall as any).$oid)}
-                  disabled={analyzingCallId === (selectedCall._id || (selectedCall as any).$oid)}
-                  className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-bold text-sm transition-all duration-300 ${
-                    analyzingCallId === (selectedCall._id || (selectedCall as any).$oid) 
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                    : 'bg-harx-500 text-white hover:bg-harx-600 shadow-lg shadow-harx-200'
-                  }`}
-                >
-                  <RefreshCw className={`w-4 h-4 ${analyzingCallId === (selectedCall._id || (selectedCall as any).$oid) ? 'animate-spin' : ''}`} />
-                  {analyzingCallId === (selectedCall._id || (selectedCall as any).$oid) ? 'Analyzing...' : 'Re-analyze with AI'}
-                </button>
-              </div>
+              {!selectedCall.ai_call_score && (
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => handleAnalyzeCall(selectedCall._id || (selectedCall as any).$oid)}
+                    disabled={analyzingCallId === (selectedCall._id || (selectedCall as any).$oid)}
+                    className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-bold text-sm transition-all duration-300 ${
+                      analyzingCallId === (selectedCall._id || (selectedCall as any).$oid) 
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                      : 'bg-harx-500 text-white hover:bg-harx-600 shadow-lg shadow-harx-200'
+                    }`}
+                  >
+                    <Brain className={`w-4 h-4 ${analyzingCallId === (selectedCall._id || (selectedCall as any).$oid) ? 'animate-spin' : ''}`} />
+                    {analyzingCallId === (selectedCall._id || (selectedCall as any).$oid) ? 'Analyzing...' : 'Analyze with AI'}
+                  </button>
+                </div>
+              )}
               {(selectedCall.recording_url || selectedCall.recording_url_cloudinary) && (
                 <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100">
                   <audio controls src={selectedCall.recording_url_cloudinary || selectedCall.recording_url} className="w-full" />
