@@ -47,13 +47,18 @@ interface CallRecord {
 
 interface Lead {
   _id: string;
-  name: string;
-  company: string;
-  email: string;
-  phone: string;
-  status: 'new' | 'contacted' | 'qualified' | 'proposal' | 'won' | 'lost';
-  value: number;
-  probability: number;
+  name?: string;
+  First_Name?: string;
+  Last_Name?: string;
+  company?: string;
+  Deal_Name?: string;
+  email?: string;
+  Email_1?: string;
+  phone?: string;
+  Phone?: string;
+  status?: 'new' | 'contacted' | 'qualified' | 'proposal' | 'won' | 'lost';
+  value?: number;
+  probability?: number;
   source?: string;
   assignedTo?: string;
   lastContact?: Date;
@@ -235,19 +240,20 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                       <div>
                         <div className="flex items-center space-x-2">
                           <h3 className="font-semibold text-gray-900">
-                            {record.lead?.name || record.to || record.from || 'Unknown Customer'}
+                            {record.lead?.First_Name ? `${record.lead.First_Name} ${record.lead.Last_Name || ''}`.trim() : 
+                             record.lead?.name || record.to || record.from || 'Unknown Customer'}
                           </h3>
-                          {(record.lead?.company || (record.lead && !record.lead.name)) && (
+                          {(record.lead?.company || record.lead?.Deal_Name || (record.lead && !record.lead.name && !record.lead.First_Name)) && (
                             <span className="text-sm text-gray-500">
-                              • {record.lead?.company || 'Lead'}
+                              • {record.lead?.company || record.lead?.Deal_Name || 'Lead'}
                             </span>
                           )}
                         </div>
                         <div className="mt-1 text-sm text-gray-500 space-y-2.5">
-                          {(record.lead?.phone || record.to || record.from) && (
+                          {(record.lead?.Phone || record.lead?.phone || record.to || record.from) && (
                             <p className="flex items-center">
                               <Phone className="w-4 h-4 mr-1.5" />
-                              {record.lead?.phone || record.to || record.from}
+                              {record.lead?.Phone || record.lead?.phone || record.to || record.from}
                             </p>
                           )}
                           <p className="flex items-center">
