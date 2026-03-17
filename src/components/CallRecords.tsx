@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Phone, Clock, Download, PhoneOutgoing, Info, Brain, X, User, ExternalLink, PlayCircle, Shield, Zap } from 'lucide-react';
+import { Phone, Clock, PhoneOutgoing, Info, Brain, X, User, ExternalLink, PlayCircle, Shield, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
 
@@ -89,7 +89,6 @@ interface CallRecordsProps {
 export function CallRecords({ gigId, leadId }: CallRecordsProps) {
   console.log('📞 Call Records component initializing');
   const navigate = useNavigate();
-  const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [callRecords, setCallRecords] = useState<CallRecord[]>([]);
   const [selectedCall, setSelectedCall] = useState<CallRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -189,21 +188,6 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-900">Call Records & Quality Assurance</h2>
-        <div className="flex items-center space-x-3">
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2"
-          >
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-          </select>
-          <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-            <Download className="w-4 h-4" />
-            <span>Export</span>
-          </button>
-        </div>
       </div>
 
       <div className="flex space-x-4 border-b border-gray-200">
