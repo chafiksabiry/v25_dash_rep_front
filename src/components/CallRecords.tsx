@@ -38,6 +38,8 @@ interface CallRecord {
     };
   };
   childCalls?: string[];
+  from?: string;
+  to?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,6 +65,7 @@ interface Lead {
       sentiment?: string;
     };
   };
+  gigId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -96,24 +99,18 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
         
         if (response && response.success && Array.isArray(response.data)) {
           console.log(`✅ Successfully retrieved ${response.data.length} call records`);
-          if (response.data.length > 0) {
-            console.log("🔍 Sample call record structure:", JSON.stringify(response.data[0], null, 2));
-          }
           
           let filteredCalls = response.data;
           
           if (gigId) {
-            console.log(`🎯 Filtering by Gig ID: ${gigId}`);
             filteredCalls = filteredCalls.filter((call: any) => {
-              const leadGigId = call.lead?.gigId || call.lead?.gig;
-              const leadGigIdStr = typeof leadGigId === 'object' ? (leadGigId._id || leadGigId.$oid) : (leadGigId || '');
-              
-              console.log(`DEBUG: Call [${call._id}] - Lead present: ${!!call.lead}, Lead GigId: ${leadGigIdStr}, Filter GigId: ${gigId}`);
-              
               // Priority 1: Direct gigId on call
               if (call.gigId === gigId || call.gig === gigId) return true;
               
               // Priority 2: GigId on lead object
+              const leadGigId = call.lead?.gigId || call.lead?.gig;
+              const leadGigIdStr = typeof leadGigId === 'object' ? (leadGigId._id || leadGigId.$oid) : (leadGigId || '');
+              
               return leadGigIdStr === gigId;
             });
           }
@@ -238,19 +235,19 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                       <div>
                         <div className="flex items-center space-x-2">
                           <h3 className="font-semibold text-gray-900">
-                            {record.lead?.name || 'Unknown Customer'}
+                            {record.lead?.name || record.to || record.from || 'Unknown Customer'}
                           </h3>
-                          {record.lead?.company && (
+                          {(record.lead?.company || (record.lead && !record.lead.name)) && (
                             <span className="text-sm text-gray-500">
-                              • {record.lead.company}
+                              • {record.lead?.company || 'Lead'}
                             </span>
                           )}
                         </div>
                         <div className="mt-1 text-sm text-gray-500 space-y-2.5">
-                          {record.lead?.phone && (
+                          {(record.lead?.phone || record.to || record.from) && (
                             <p className="flex items-center">
                               <Phone className="w-4 h-4 mr-1.5" />
-                              {record.lead.phone}
+                              {record.lead?.phone || record.to || record.from}
                             </p>
                           )}
                           <p className="flex items-center">
