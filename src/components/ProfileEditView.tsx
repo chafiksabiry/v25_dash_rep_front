@@ -1588,26 +1588,26 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     setHasShownCompletionToast(false); // Reset completion toast state
     setVideoUploaded(false); // Reset upload status for new recording
 
-    // Start timer (max 60 seconds)
+    // Start timer (max 600 seconds)
     recordingTimerRef.current = setInterval(() => {
       setRecordingTime(prev => {
         const newTime = prev + 1;
         
-        // Show warning at 45 seconds (15 seconds left)
-        if (newTime === 45) {
+        // Show warning at 540 seconds (1 minute left)
+        if (newTime === 540) {
           setShowTimeWarning(true);
         }
         
-        // Stop at exactly 60 seconds - 1 minute limit reached
-        if (newTime === 60) {
+        // Stop at exactly 600 seconds - 10 minute limit reached
+        if (newTime === 600) {
           stopRecordingAndHideCamera();
-          showToast('✅ Recording complete! 1-minute limit reached.', 'success');
-          return 60;
+          showToast('✅ Recording complete! 10-minute limit reached.', 'success');
+          return 600;
         }
         
-        // Prevent going over 60 seconds
-        if (newTime > 60) {
-          return 60;
+        // Prevent going over 600 seconds
+        if (newTime > 600) {
+          return 600;
         }
         
         return newTime;
@@ -2423,10 +2423,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   </span>
                 )}
               </div>
-              <p className="text-gray-600 mb-3">Record a 1-minute video to introduce yourself and showcase your personality</p>
+              <p className="text-gray-600 mb-3">Record a 10-minute video to introduce yourself and showcase your personality</p>
               <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg w-fit">
                 <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                <span className="font-medium">Maximum duration: 1 minute (recording will stop automatically)</span>
+                <span className="font-medium">Maximum duration: 10 minutes (recording will stop automatically)</span>
               </div>
             </div>
 
@@ -2675,7 +2675,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                 <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-700 mb-2">No video recorded yet</h3>
                 <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
-                  Record a 1-minute video to introduce yourself and help others get to know you better
+                  Record a 10-minute video to introduce yourself and help others get to know you better
                 </p>
                 <button
                   onClick={startCamera}
