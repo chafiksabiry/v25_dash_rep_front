@@ -2529,13 +2529,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                      
                      {/* Timer */}
                      <div className={`absolute top-2 right-2 px-2 py-1 rounded text-sm font-mono transition-colors ${
-                       recordingTime >= 55 
+                       recordingTime >= 595 
                          ? 'bg-red-600 text-white animate-pulse' 
-                         : recordingTime >= 45 
+                         : recordingTime >= 540 
                          ? 'bg-orange-600 text-white' 
                          : 'bg-black bg-opacity-75 text-white'
                      }`}>
-                       {formatTime(recordingTime)} / 1:00
+                       {formatTime(recordingTime)} / 10:00
                      </div>
                   </div>
 
@@ -2567,26 +2567,26 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                        <div className="bg-gray-200 rounded-full h-2">
                          <div 
                            className={`h-2 rounded-full transition-all duration-1000 ${
-                             recordingTime >= 55 
+                             recordingTime >= 595 
                                ? 'bg-red-600 animate-pulse' 
-                               : recordingTime >= 45 
+                               : recordingTime >= 540 
                                ? 'bg-orange-500' 
                                : 'bg-blue-600'
                            }`}
-                           style={{ width: `${(recordingTime / 60) * 100}%` }}
+                           style={{ width: `${(recordingTime / 600) * 100}%` }}
                          ></div>
                        </div>
                        
                        {/* Time Warning Message */}
                        {showTimeWarning && (
                          <div className={`mt-2 text-center font-medium ${
-                           recordingTime >= 55 
+                           recordingTime >= 595 
                              ? 'text-red-600 animate-pulse' 
                              : 'text-orange-600'
                          }`}>
-                           {recordingTime >= 55 
+                           {recordingTime >= 595 
                              ? '⚠️ Recording will stop in 5 seconds!' 
-                             : '⚠️ Approaching 1-minute limit!'
+                             : '⚠️ Approaching 10-minute limit!'
                            }
                          </div>
                        )}
@@ -2629,7 +2629,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                            ? `Video uploaded successfully (${formatTime(recordingTime)})` 
                            : `Video recorded successfully (${formatTime(recordingTime)})`
                          }
-                         {recordingTime >= 60 && " - Max duration reached"}
+                         {recordingTime >= 600 && " - Max duration reached"}
                        </span>
                      </div>
                      
