@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PhoneOff, Brain, Volume2, MicOff, Mic, Headphones } from 'lucide-react';
+import { PhoneOff, Brain, Volume2, MicOff, Mic, Headphones, Shield } from 'lucide-react';
 import StatusCard from './StatusCard';
 import { useAgent } from '../../contexts/AgentContext';
 
@@ -55,7 +55,7 @@ const TopStatusBar: React.FC = () => {
       <div className="grid grid-cols-4 gap-3 min-h-[110px]">
         {/* CALL CARD */}
         <StatusCard
-          icon={<PhoneOff size={20} className="text-white" />}
+          icon={<PhoneOff size={20} className={state.callState.isActive ? "text-white" : "text-emerald-500"} />}
           title="Call Status"
           value={state.callState.isActive
             ? <span className="text-white font-black animate-pulse">ACTIVE CALL</span>
@@ -65,6 +65,7 @@ const TopStatusBar: React.FC = () => {
           className={state.callState.isActive 
             ? "bg-gradient-to-br from-emerald-500 to-teal-600 border-none shadow-lg shadow-emerald-500/20" 
             : "bg-white border-gray-100"}
+          iconClassName={state.callState.isActive ? "bg-white/20 border-white/30" : "bg-emerald-50 border-emerald-100"}
           expandable
           expanded={callExpanded}
           onToggle={() => setCallExpanded(e => !e)}
@@ -73,7 +74,7 @@ const TopStatusBar: React.FC = () => {
         {/* RECORDING CARD */}
         <div className="relative group">
           <StatusCard
-            icon={<Mic size={20} className={state.callState.isRecording ? "text-white" : "text-gray-400"} />}
+            icon={<Mic size={20} className={state.callState.isRecording ? "text-white" : "text-rose-500"} />}
             title="Recording"
             value={state.callState.isRecording ? (
               <span className="text-white font-black animate-pulse">LIVE REC</span>
@@ -94,6 +95,7 @@ const TopStatusBar: React.FC = () => {
             className={state.callState.isRecording 
               ? "bg-gradient-to-br from-red-600 to-rose-700 border-none shadow-lg shadow-red-500/30" 
               : "bg-white border-gray-100"}
+            iconClassName={state.callState.isRecording ? "bg-white/20 border-white/30" : "bg-rose-50 border-rose-100"}
           />
           {state.callState.isActive && (
             <button
@@ -131,6 +133,7 @@ const TopStatusBar: React.FC = () => {
           expanded={profileExpanded}
           onToggle={() => setProfileExpanded(e => !e)}
           className="bg-white border-gray-100 hover:border-indigo-200 group"
+          iconClassName="bg-indigo-50 border-indigo-100"
         />
 
         {/* AUDIO OUTPUT CARD */}
@@ -171,6 +174,7 @@ const TopStatusBar: React.FC = () => {
             </div>
           }
           className="bg-white border-gray-100 hover:border-cyan-200"
+          iconClassName="bg-cyan-50 border-cyan-100"
         />
       </div>
       {callExpanded && (
@@ -195,27 +199,31 @@ const TopStatusBar: React.FC = () => {
               <div className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Audio Hardware</div>
               <div className="flex space-x-3">
                 <button
-                  className={`flex-1 p-4 rounded-2xl transition-all flex flex-col items-center gap-2 border ${state.isMicMuted ? 'bg-rose-50 border-rose-100 text-rose-500' : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-emerald-200 hover:bg-emerald-50'}`}
+                  className={`flex-1 p-4 rounded-3xl transition-all flex flex-col items-center gap-3 border-2 ${state.isMicMuted ? 'bg-rose-50 border-rose-100/50 text-rose-500' : 'bg-emerald-50 border-emerald-100/50 text-emerald-600 hover:border-emerald-200 hover:bg-emerald-100/50'}`}
                   onClick={handleToggleMic}
                 >
-                  {state.isMicMuted ? <MicOff size={24} /> : <Mic size={24} />}
+                  <div className={`p-3 rounded-2xl ${state.isMicMuted ? 'bg-rose-100' : 'bg-emerald-100 shadow-sm'}`}>
+                    {state.isMicMuted ? <MicOff size={24} /> : <Mic size={24} />}
+                  </div>
                   <span className="text-[10px] font-black uppercase tracking-widest">{state.isMicMuted ? 'Muted' : 'Mic Active'}</span>
                 </button>
                 <button
-                  className={`flex-1 p-4 rounded-2xl transition-all flex flex-col items-center gap-2 border ${state.isSpeakerPhone ? 'bg-cyan-50 border-cyan-100 text-cyan-600' : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-indigo-200 hover:bg-indigo-50'}`}
+                  className={`flex-1 p-4 rounded-3xl transition-all flex flex-col items-center gap-3 border-2 ${state.isSpeakerPhone ? 'bg-cyan-50 border-cyan-100/50 text-cyan-600' : 'bg-indigo-50 border-indigo-100/50 text-indigo-600 hover:border-indigo-200 hover:bg-indigo-100/50'}`}
                   onClick={handleToggleSpeaker}
                 >
-                  {state.isSpeakerPhone ? <Volume2 size={24} /> : <Headphones size={24} />}
+                  <div className={`p-3 rounded-2xl ${state.isSpeakerPhone ? 'bg-cyan-100' : 'bg-indigo-100 shadow-sm'}`}>
+                    {state.isSpeakerPhone ? <Volume2 size={24} /> : <Headphones size={24} />}
+                  </div>
                   <span className="text-[10px] font-black uppercase tracking-widest">{state.isSpeakerPhone ? 'Speaker' : 'Headset'}</span>
                 </button>
               </div>
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center px-1">
                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Master Volume</span>
                   <span className="text-xs font-black text-cyan-500">{Math.round(state.volume * 100)}%</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Volume2 size={16} className="text-gray-300" />
+                <div className="flex items-center gap-3 px-1">
+                  <Volume2 size={16} className="text-cyan-400" />
                   <input
                     type="range" min="0" max="1" step="0.01" value={state.volume}
                     onChange={(e) => dispatch({ type: 'UPDATE_VOLUME', volume: parseFloat(e.target.value) })}
@@ -227,32 +235,33 @@ const TopStatusBar: React.FC = () => {
             {/* Call Status */}
             <div className="space-y-6">
               <div className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Live Connection</div>
-              <div className={`h-[160px] rounded-3xl flex flex-col items-center justify-center gap-4 border-2 border-dashed transition-all ${state.callState.isActive ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-100'}`}>
-                <div className={`p-4 rounded-full ${state.callState.isActive ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'bg-gray-200 text-gray-400'}`}>
+              <div className={`h-[180px] rounded-[32px] flex flex-col items-center justify-center gap-5 border-2 border-dashed transition-all ${state.callState.isActive ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-100'}`}>
+                <div className={`p-5 rounded-3xl ${state.callState.isActive ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'bg-gray-200 text-gray-400'}`}>
                   <PhoneOff size={32} />
                 </div>
-                <span className={`text-sm font-black uppercase tracking-[0.2em] ${state.callState.isActive ? 'text-emerald-600' : 'text-gray-400'}`}>
-                  {state.callState.isActive ? 'Call in Progress' : 'No Active Session'}
+                <span className={`text-xs font-black uppercase tracking-[0.3em] ${state.callState.isActive ? 'text-emerald-600' : 'text-gray-400'}`}>
+                  {state.callState.isActive ? 'Active Stream' : 'Offline'}
                 </span>
               </div>
             </div>
             {/* Recording */}
             <div className="space-y-6">
               <div className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Data Capture</div>
-              <div className="bg-gray-900 rounded-3xl p-6 flex flex-col h-[160px] justify-between shadow-xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${state.callState.isRecording ? 'bg-red-500 animate-pulse' : 'bg-white/20'}`} />
-                    <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">
-                      {state.callState.isRecording ? 'Recording...' : 'Idle'}
+              <div className="bg-gray-900 rounded-[32px] p-7 flex flex-col h-[180px] justify-between shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+                <div className="flex items-center justify-between relative z-10">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2.5 h-2.5 rounded-full ${state.callState.isRecording ? 'bg-rose-500 animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.6)]' : 'bg-white/20'}`} />
+                    <span className="text-[11px] font-black text-white/70 uppercase tracking-widest">
+                      {state.callState.isRecording ? 'Capturing Audio' : 'Secure Vault'}
                     </span>
                   </div>
                   {state.callState.isActive && (
                     <button
                       onClick={handleToggleRecording}
-                      className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${state.callState.isRecording
-                        ? 'bg-red-500 text-white hover:bg-red-600'
-                        : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'}`}
+                      className={`px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all ${state.callState.isRecording
+                        ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30'
+                        : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'}`}
                     >
                       {state.callState.isRecording ? 'Stop' : 'Start'}
                     </button>
@@ -261,10 +270,12 @@ const TopStatusBar: React.FC = () => {
                 {state.callState.recordingUrl && (
                   <button
                     onClick={() => window.open(state.callState.recordingUrl!, '_blank')}
-                    className="w-full bg-white text-gray-900 py-3 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-gray-100 transition-all"
+                    className="w-full bg-white text-gray-900 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-gray-50 transition-all shadow-xl active:scale-95"
                   >
-                    <Headphones size={16} />
-                    <span>Playback File</span>
+                    <div className="p-1.5 bg-rose-50 rounded-lg">
+                      <Headphones size={14} className="text-rose-500" />
+                    </div>
+                    <span>Access Recording</span>
                   </button>
                 )}
               </div>
@@ -274,74 +285,90 @@ const TopStatusBar: React.FC = () => {
       )}
       {profileExpanded && agentProfile && (
         <div className="bg-white/80 backdrop-blur-xl border border-gray-100 rounded-3xl mt-4 p-8 w-full max-w-[1800px] mx-auto shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-3xl font-black text-white shadow-xl shadow-indigo-500/20 transform rotate-3">
+          <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center space-x-7">
+              <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center text-4xl font-black text-white shadow-2xl shadow-indigo-500/30 transform -rotate-2 relative">
+                <div className="absolute inset-0 bg-white/20 rounded-3xl mix-blend-overlay" />
                 {agentProfile.personalInfo.name.charAt(0)}
               </div>
               <div>
-                <h2 className="text-3xl font-black text-gray-900 leading-tight tracking-tight">{agentProfile.personalInfo.name}</h2>
-                <div className="flex items-center gap-3 mt-2">
+                <h2 className="text-4xl font-black text-gray-900 leading-tight tracking-tighter">{agentProfile.personalInfo.name}</h2>
+                <div className="flex items-center gap-4 mt-3">
                   {agentProfile.professionalSummary?.currentRole && (
-                    <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border border-indigo-100">
+                    <span className="bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm">
                       {agentProfile.professionalSummary.currentRole}
                     </span>
                   )}
-                  <span className="text-gray-400 text-xs font-bold">{agentProfile.personalInfo.email}</span>
+                  <span className="text-gray-400 text-xs font-black uppercase tracking-wider">{agentProfile.personalInfo.email}</span>
                 </div>
               </div>
             </div>
             <button
-               className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400 hover:text-gray-900"
+               className="p-3 hover:bg-gray-100 rounded-2xl transition-all text-gray-400 hover:text-gray-900 shadow-sm border border-gray-100"
               onClick={() => setProfileExpanded(false)}
             >
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 12H6" /></svg>
+              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M18 12H6" /></svg>
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-8 text-gray-700">
-            <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-6">
-              <h3 className="text-indigo-500 font-black uppercase text-[10px] mb-4 tracking-[0.2em]">Expertise Summary</h3>
-              <p className="text-sm leading-relaxed text-gray-600 font-medium">
+          <div className="grid grid-cols-3 gap-10 text-gray-700">
+            <div className="bg-gray-50/50 border border-gray-100 rounded-3xl p-8 transition-all hover:shadow-xl hover:bg-white group">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-indigo-50 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                  <Brain size={18} className="text-indigo-500" />
+                </div>
+                <h3 className="text-indigo-500 font-black uppercase text-[11px] tracking-[0.25em]">Expertise Summary</h3>
+              </div>
+              <p className="text-sm leading-relaxed text-gray-600 font-bold">
                 {agentProfile.professionalSummary?.yearsOfExperience ? (
-                  <>Experience: <span className="text-gray-900 font-black">{agentProfile.professionalSummary.yearsOfExperience}</span> in sales and customer fulfillment.</>
-                ) : "Highly skilled representative providing personalized voice interaction and strategic engagement."}
+                  <>Experience: <span className="text-indigo-600 font-black">{agentProfile.professionalSummary.yearsOfExperience}</span> in high-stakes sales and strategic fulfillment architecture.</>
+                ) : "Senior voice representative leveraging intelligent adaptive coaching for maximized conversion."}
               </p>
             </div>
 
-            <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-6">
-              <h3 className="text-indigo-500 font-black uppercase text-[10px] mb-4 tracking-[0.2em]">Identity & Loc</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400 font-bold">Phone</span>
+            <div className="bg-gray-50/50 border border-gray-100 rounded-3xl p-8 transition-all hover:shadow-xl hover:bg-white group">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-emerald-50 rounded-xl group-hover:bg-emerald-100 transition-colors">
+                  <Shield size={18} className="text-emerald-500" />
+                </div>
+                <h3 className="text-emerald-600 font-black uppercase text-[11px] tracking-[0.25em]">Identity & Network</h3>
+              </div>
+              <div className="space-y-4 text-sm">
+                <div className="flex justify-between items-center group-hover:px-1 transition-all">
+                  <span className="text-gray-400 font-black text-[10px] uppercase tracking-widest">Phone</span>
                   <span className="text-gray-900 font-black tracking-tight">{agentProfile.personalInfo.phone || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400 font-bold">Location</span>
+                <div className="flex justify-between items-center group-hover:px-1 transition-all">
+                  <span className="text-gray-400 font-black text-[10px] uppercase tracking-widest">Location</span>
                   <span className="text-gray-900 font-black tracking-tight">{agentProfile.personalInfo.location || 'Remote'}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400 font-bold">Network</span>
-                  <span className="text-emerald-500 flex items-center font-black">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2 shadow-lg shadow-emerald-500/50 animate-pulse"></span>
-                    SECURE
+                <div className="flex justify-between items-center bg-emerald-50/50 p-2 rounded-xl border border-emerald-100/50">
+                  <span className="text-emerald-700/60 font-black text-[10px] uppercase tracking-widest">Secure Uplink</span>
+                  <span className="text-emerald-600 flex items-center font-black">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse"></span>
+                    VERIFIED
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-indigo-900 to-indigo-950 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform duration-700">
-                <Brain size={80} className="text-white" />
+            <div className="bg-gradient-to-br from-indigo-900 to-indigo-950 rounded-[40px] p-8 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.07] group-hover:rotate-12 group-hover:scale-110 transition-all duration-1000">
+                <Brain size={160} className="text-white" />
               </div>
-              <h3 className="text-indigo-300 font-black uppercase text-[10px] mb-4 tracking-[0.2em] relative z-10">AI Methodology</h3>
-              <div className="flex items-center gap-3 relative z-10">
-                <div className="bg-white/10 p-2 rounded-xl backdrop-blur-md">
-                  <Brain size={24} className="text-white" />
+              <h3 className="text-indigo-400/80 font-black uppercase text-[11px] mb-8 tracking-[0.3em] relative z-10">Neural Architecture</h3>
+              <div className="flex flex-col gap-6 relative z-10">
+                <div className="flex items-center gap-5">
+                  <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-xl border border-white/10 shadow-xl group-hover:scale-110 transition-transform">
+                    <Brain size={32} className="text-indigo-300" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-white font-black text-xl uppercase tracking-tighter">REPS ACTIVE</span>
+                    <span className="text-indigo-400/80 text-[10px] font-black uppercase tracking-widest">Adaptive Core V25</span>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-white font-black text-sm uppercase tracking-wider">REPS V25</span>
-                  <span className="text-indigo-300 text-[10px] font-bold">Adaptive Coaching Engine</span>
+                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-indigo-500 w-[85%] rounded-full animate-pulse shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
                 </div>
               </div>
             </div>

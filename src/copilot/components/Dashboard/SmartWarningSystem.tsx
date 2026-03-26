@@ -23,13 +23,15 @@ export const SmartWarningSystem: React.FC = () => {
                         }`}
                 >
                     <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            {warning.severity === 'critical' ? (
-                                <ShieldAlert className="w-5 h-5 text-red-500" />
-                            ) : (
-                                <AlertTriangle className="w-5 h-5 text-orange-500" />
-                            )}
-                            <span className="font-bold text-white uppercase tracking-wider text-sm">
+                        <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-xl backdrop-blur-md shadow-sm border ${warning.severity === 'critical' ? 'bg-red-500/10 border-red-500/20' : 'bg-orange-500/10 border-orange-500/20'}`}>
+                                {warning.severity === 'critical' ? (
+                                    <ShieldAlert className="w-5 h-5 text-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)]" />
+                                ) : (
+                                    <AlertTriangle className="w-5 h-5 text-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.4)]" />
+                                )}
+                            </div>
+                            <span className="font-black text-white uppercase tracking-[0.1em] text-[13px]">
                                 {warning.title}
                             </span>
                         </div>
