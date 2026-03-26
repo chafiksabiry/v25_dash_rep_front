@@ -545,6 +545,26 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
               {/* <div className="space-y-4">
                 ... 
               </div> */}
+              {/* Technical Information Section */}
+              <div className="pt-6 border-t border-gray-100">
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Technical Information</h4>
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Call ID</span>
+                    <span className="text-[11px] font-mono text-gray-700 bg-white px-2 py-0.5 rounded border border-gray-200">
+                      {selectedCall._id || (selectedCall as any).$oid}
+                    </span>
+                  </div>
+                  {selectedCall.sid && (
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Twilio SID</span>
+                      <span className="text-[11px] font-mono text-gray-700 bg-white px-2 py-0.5 rounded border border-gray-200">
+                        {selectedCall.sid}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>,
