@@ -16,10 +16,10 @@ import SmartWarningSystem from './SmartWarningSystem';
 // Placeholders stylés pour les widgets vides
 /*
 const PlaceholderCard = ({ icon, title, subtitle }: { icon: React.ReactNode, title: string, subtitle: string }) => (
-  <div className="bg-[#232f47] rounded-xl flex flex-col items-center justify-center p-6 min-h-[140px] h-full">
+  <div className="bg-white border border-gray-100 rounded-xl flex flex-col items-center justify-center p-6 min-h-[140px] h-full">
     <div className="mb-2">{icon}</div>
-    <div className="text-white font-semibold text-lg mb-1">{title}</div>
-    <div className="text-slate-400 text-sm text-center">{subtitle}</div>
+    <div className="text-gray-900 font-semibold text-lg mb-1">{title}</div>
+    <div className="text-gray-500 text-sm text-center">{subtitle}</div>
   </div>
 );
 */
@@ -33,7 +33,7 @@ const repsPhases = [
   { id: 'documents', name: 'Documents/Quote', icon: '📄', color: 'bg-gradient-to-r from-indigo-500/20 to-indigo-600/20 text-indigo-400' },
   { id: 'objections', name: 'Objection Handling', icon: '⚠️', color: 'bg-gradient-to-r from-orange-500/20 to-orange-600/20 text-orange-400' },
   { id: 'closing', name: 'Confirmation & Closing', icon: '🤝', color: 'bg-gradient-to-r from-teal-500/20 to-teal-600/20 text-teal-400' },
-  { id: 'postcall', name: 'Post-Call Actions', icon: '✅', color: 'bg-gradient-to-r from-slate-500/20 to-slate-600/20 text-slate-400' }
+  { id: 'postcall', name: 'Post-Call Actions', icon: '✅', color: 'bg-gradient-to-r from-slate-500/20 to-slate-600/20 text-gray-500' }
 ];
 
 const DashboardGrid: React.FC = () => {
@@ -65,12 +65,12 @@ const DashboardGrid: React.FC = () => {
               {state.personalityProfile ? (
                 <div className="flex flex-col items-center">
                   <div className="flex gap-2 justify-center mb-2">
-                    <span className={`rounded px-2 py-1 font-bold ${state.personalityProfile.primaryType === 'D' ? 'bg-red-500 text-white' : 'bg-red-500/20 text-red-500/50'}`}>D</span>
-                    <span className={`rounded px-2 py-1 font-bold ${state.personalityProfile.primaryType === 'I' ? 'bg-yellow-400 text-white' : 'bg-yellow-400/20 text-yellow-400/50'}`}>I</span>
-                    <span className={`rounded px-2 py-1 font-bold ${state.personalityProfile.primaryType === 'S' ? 'bg-green-500 text-white' : 'bg-green-500/20 text-green-500/50'}`}>S</span>
-                    <span className={`rounded px-2 py-1 font-bold ${state.personalityProfile.primaryType === 'C' ? 'bg-blue-500 text-white' : 'bg-blue-500/20 text-blue-500/50'}`}>C</span>
+                    <span className={`rounded px-2 py-1 font-bold ${state.personalityProfile.primaryType === 'D' ? 'bg-red-500 text-gray-900' : 'bg-red-500/20 text-red-500/50'}`}>D</span>
+                    <span className={`rounded px-2 py-1 font-bold ${state.personalityProfile.primaryType === 'I' ? 'bg-yellow-400 text-gray-900' : 'bg-yellow-400/20 text-yellow-400/50'}`}>I</span>
+                    <span className={`rounded px-2 py-1 font-bold ${state.personalityProfile.primaryType === 'S' ? 'bg-green-500 text-gray-900' : 'bg-green-500/20 text-green-500/50'}`}>S</span>
+                    <span className={`rounded px-2 py-1 font-bold ${state.personalityProfile.primaryType === 'C' ? 'bg-blue-500 text-gray-900' : 'bg-blue-500/20 text-blue-500/50'}`}>C</span>
                   </div>
-                  <div className="text-white font-bold text-center capitalize">{state.personalityProfile.primaryType} Profile Detected</div>
+                  <div className="text-gray-900 font-bold text-center capitalize">{state.personalityProfile.primaryType} Profile Detected</div>
                 </div>
               ) : (
                 <>
@@ -80,7 +80,7 @@ const DashboardGrid: React.FC = () => {
                     <span className="bg-green-500/20 text-green-500/50 rounded px-2 py-1 font-bold">S</span>
                     <span className="bg-blue-500/20 text-blue-500/50 rounded px-2 py-1 font-bold">C</span>
                   </div>
-                  <div className="text-slate-400 text-sm text-center w-full">Start call to analyze</div>
+                  <div className="text-gray-500 text-sm text-center w-full">Start call to analyze</div>
                 </>
               )}
             </div>
@@ -95,12 +95,12 @@ const DashboardGrid: React.FC = () => {
           title="Transaction Progress"
           value={
             <div className="flex flex-col w-full">
-              <span className="text-slate-500 font-bold text-2xl mb-1">0%</span>
-              <span className="text-slate-500 text-sm mb-1">Success Probability</span>
+              <span className="text-gray-400 font-bold text-2xl mb-1">0%</span>
+              <span className="text-gray-400 text-sm mb-1">Success Probability</span>
               <div className="w-full h-2 bg-slate-500/30 rounded-full mb-1">
                 <div className="h-2 rounded-full bg-slate-600" style={{ width: '0%' }} />
               </div>
-              <span className="text-slate-500 text-sm">0% to goal</span>
+              <span className="text-gray-400 text-sm">0% to goal</span>
             </div>
           }
           disabled
@@ -111,8 +111,8 @@ const DashboardGrid: React.FC = () => {
           title="Call Structure"
           value={
             <div className="flex flex-col items-center justify-center w-full mt-2">
-              <MapPin className="w-10 h-10 text-slate-500 mb-5" />
-              <span className="text-slate-500 text-base text-center">No active methodology</span>
+              <MapPin className="w-10 h-10 text-gray-400 mb-5" />
+              <span className="text-gray-400 text-base text-center">No active methodology</span>
             </div>
           }
           disabled
@@ -123,8 +123,8 @@ const DashboardGrid: React.FC = () => {
           title="Coaching"
           value={
             <div className="flex flex-col items-center justify-center w-full mt-2">
-              <GraduationCap className="w-10 h-10 text-slate-500 mb-5" />
-              <span className="text-slate-500 text-base text-center">Start call for coaching</span>
+              <GraduationCap className="w-10 h-10 text-gray-400 mb-5" />
+              <span className="text-gray-400 text-base text-center">Start call for coaching</span>
             </div>
           }
           disabled
@@ -135,8 +135,8 @@ const DashboardGrid: React.FC = () => {
           title="Targeting"
           value={
             <div className="flex flex-col items-center justify-center w-full mt-2">
-              <Target className="w-10 h-10 text-slate-500 mb-5" />
-              <span className="text-slate-500 text-base text-center">No transaction goal set</span>
+              <Target className="w-10 h-10 text-gray-400 mb-5" />
+              <span className="text-gray-400 text-base text-center">No transaction goal set</span>
             </div>
           }
           disabled
@@ -147,8 +147,8 @@ const DashboardGrid: React.FC = () => {
           title="Recommendations"
           value={
             <div className="flex flex-col items-center justify-center w-full mt-2">
-              <Lightbulb className="w-10 h-10 text-slate-500 mb-5" />
-              <span className="text-slate-500 text-base text-center">No recommendations yet</span>
+              <Lightbulb className="w-10 h-10 text-gray-400 mb-5" />
+              <span className="text-gray-400 text-base text-center">No recommendations yet</span>
             </div>
           }
           disabled
@@ -206,7 +206,7 @@ const DashboardGrid: React.FC = () => {
       {discExpanded && (
         <button
           onClick={() => discSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-all duration-200 z-50"
+          className="fixed bottom-6 right-6 bg-blue-500 hover:bg-blue-600 text-gray-900 p-3 rounded-full shadow-lg transition-all duration-200 z-50"
           title="Scroll to DISC Analysis"
         >
           <ArrowUp className="w-5 h-5" />
@@ -219,8 +219,8 @@ const DashboardGrid: React.FC = () => {
         <div className="col-span-7 flex flex-col space-y-6">
           <div className="relative h-full">
             <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] rounded-2xl" />
-              <div className="relative z-20 bg-slate-900/90 text-blue-400 text-[10px] font-black px-4 py-1.5 rounded-full border border-blue-500/20 shadow-2xl uppercase tracking-[0.2em] animate-pulse">
+              <div className="absolute inset-0 bg-white/60 text-gray-900 border border-gray-200 backdrop-blur-[2px] rounded-2xl" />
+              <div className="relative z-20 bg-white border border-gray-200 text-gray-600 text-[10px] shadow-sm font-black px-4 py-1.5 rounded-full border border-blue-500/20 shadow-2xl uppercase tracking-[0.2em] animate-pulse">
                 Coming Soon
               </div>
             </div>
@@ -231,8 +231,8 @@ const DashboardGrid: React.FC = () => {
 
           <div className="relative h-[400px]">
             <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] rounded-2xl" />
-              <div className="relative z-20 bg-slate-900/90 text-blue-400 text-[10px] font-black px-4 py-1.5 rounded-full border border-blue-500/20 shadow-2xl uppercase tracking-[0.2em] animate-pulse">
+              <div className="absolute inset-0 bg-white/60 text-gray-900 border border-gray-200 backdrop-blur-[2px] rounded-2xl" />
+              <div className="relative z-20 bg-white border border-gray-200 text-gray-600 text-[10px] shadow-sm font-black px-4 py-1.5 rounded-full border border-blue-500/20 shadow-2xl uppercase tracking-[0.2em] animate-pulse">
                 Coming Soon
               </div>
             </div>
@@ -255,8 +255,8 @@ const DashboardGrid: React.FC = () => {
         <div className="col-span-5 h-full">
           <div className="relative h-full min-h-[500px]">
             <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] rounded-2xl" />
-              <div className="relative z-20 bg-slate-900/90 text-blue-400 text-[10px] font-black px-4 py-1.5 rounded-full border border-blue-500/20 shadow-2xl uppercase tracking-[0.2em] animate-pulse">
+              <div className="absolute inset-0 bg-white/60 text-gray-900 border border-gray-200 backdrop-blur-[2px] rounded-2xl" />
+              <div className="relative z-20 bg-white border border-gray-200 text-gray-600 text-[10px] shadow-sm font-black px-4 py-1.5 rounded-full border border-blue-500/20 shadow-2xl uppercase tracking-[0.2em] animate-pulse">
                 Coming Soon
               </div>
             </div>
@@ -271,8 +271,8 @@ const DashboardGrid: React.FC = () => {
       <div className="grid grid-cols-1 gap-6 mt-6">
         <div className="relative">
           <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] rounded-2xl" />
-            <div className="relative z-20 bg-slate-900/90 text-harx-400 text-[10px] font-black px-4 py-1.5 rounded-full border border-harx-500/20 shadow-2xl uppercase tracking-[0.2em] animate-pulse">
+            <div className="absolute inset-0 bg-white/60 text-gray-900 border border-gray-200 backdrop-blur-[2px] rounded-2xl" />
+            <div className="relative z-20 bg-white border border-gray-200 text-gray-600 text-[10px] shadow-sm font-black px-4 py-1.5 rounded-full border border-harx-500/20 shadow-2xl uppercase tracking-[0.2em] animate-pulse">
               Coming Soon
             </div>
           </div>
@@ -282,7 +282,7 @@ const DashboardGrid: React.FC = () => {
                 <div className="p-2 bg-blue-500/10 rounded-xl mr-3 group-hover:bg-blue-500/20 transition-all">
                   <Brain className="text-blue-400" />
                 </div>
-                <span className="text-lg font-black text-white tracking-widest uppercase">Adaptive Script Prompter</span>
+                <span className="text-lg font-black text-gray-900 tracking-widest uppercase">Adaptive Script Prompter</span>
               </div>
               <div className="flex flex-col items-center justify-center flex-1 opacity-50">
                 <FileText className="w-10 h-10 text-blue-500/30 mb-4" />

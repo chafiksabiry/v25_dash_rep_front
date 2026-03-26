@@ -60,11 +60,11 @@ const TopStatusBar: React.FC = () => {
     <div className="w-full max-w-[1800px] mx-auto px-2 py-2 overflow-x-auto">
       <div className="grid grid-cols-9 gap-2 h-[120px]">
         <StatusCard
-          icon={<PhoneOff size={20} className="text-slate-200" />}
+          icon={<PhoneOff size={20} className="text-gray-700" />}
           title="Call"
           value={state.callState.isActive
             ? <span className="text-green-400 font-semibold">Active</span>
-            : <span className="text-slate-400 font-semibold">Inactive</span>
+            : <span className="text-gray-500 font-semibold">Inactive</span>
           }
           expandable
           expanded={callExpanded}
@@ -79,8 +79,8 @@ const TopStatusBar: React.FC = () => {
                   handleToggleRecording();
                 }}
                 className={`flex items-center space-x-1 px-3 py-1 rounded-full text-[10px] font-bold transition-all shadow-lg ${state.callState.isRecording
-                  ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
-                  : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                  ? 'bg-red-500 hover:bg-red-600 text-gray-900 animate-pulse'
+                  : 'bg-gray-100 hover:bg-slate-600 text-gray-700'
                   }`}
               >
                 <Mic size={10} fill={state.callState.isRecording ? "white" : "none"} />
@@ -89,23 +89,23 @@ const TopStatusBar: React.FC = () => {
             )}
           </div>
           <StatusCard
-            icon={<CheckSquare size={20} className="text-slate-200" />}
+            icon={<CheckSquare size={20} className="text-gray-700" />}
             title="Recording"
             value={state.callState.isRecording ? (
-              <span className="bg-red-500 px-3 py-1 rounded-full text-xs font-semibold text-white animate-pulse">RECORDING</span>
+              <span className="bg-red-500 px-3 py-1 rounded-full text-xs font-semibold text-gray-900 animate-pulse">RECORDING</span>
             ) : state.callState.recordingUrl ? (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   window.open(state.callState.recordingUrl!, '_blank');
                 }}
-                className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-full text-xs font-semibold text-white flex items-center space-x-1 transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-full text-xs font-semibold text-gray-900 flex items-center space-x-1 transition-colors"
               >
                 <Headphones size={12} />
                 <span>LISTEN</span>
               </button>
             ) : (
-              <span className="bg-[#22304a] px-3 py-1 rounded-full text-xs font-semibold text-slate-200">STOPPED</span>
+              <span className="bg-gray-100 border border-gray-200 px-3 py-1 rounded-full text-xs font-semibold text-gray-700">STOPPED</span>
             )}
           />
         </div>
@@ -127,11 +127,11 @@ const TopStatusBar: React.FC = () => {
             icon={<Brain size={20} className="text-blue-400" />}
             title="Rep Profile"
             value={agentProfile ? (
-              <span className="text-white font-bold leading-tight line-clamp-1">
+              <span className="text-gray-900 font-bold leading-tight line-clamp-1">
                 {agentProfile.personalInfo.name}
               </span>
             ) : (
-              <span className="text-slate-400 font-semibold tracking-tighter">Analyzing...</span>
+              <span className="text-gray-500 font-semibold tracking-tighter">Analyzing...</span>
             )}
             subtitle={agentProfile?.professionalSummary?.currentRole && (
               <span className="text-blue-300 text-[10px] font-bold uppercase truncate block">{agentProfile.professionalSummary.currentRole}</span>
@@ -168,7 +168,7 @@ const TopStatusBar: React.FC = () => {
           <StatusCard
             icon={state.isSpeakerPhone ? <Volume2 size={20} className="text-blue-400" /> : <Headphones size={20} className="text-blue-400" />}
             title="Audio Output"
-            value={state.isSpeakerPhone ? <span className="text-blue-400 font-semibold">Speaker</span> : <span className="text-slate-300 font-semibold">Headset</span>}
+            value={state.isSpeakerPhone ? <span className="text-blue-400 font-semibold">Speaker</span> : <span className="text-gray-600 font-semibold">Headset</span>}
             subtitle={
               <div 
                 className="w-full flex items-center mt-1"
@@ -184,7 +184,7 @@ const TopStatusBar: React.FC = () => {
                   step="0.01"
                   value={state.volume}
                   onChange={(e) => dispatch({ type: 'UPDATE_VOLUME', volume: parseFloat(e.target.value) })}
-                  className="w-full h-1 bg-[#3a4661] rounded-lg appearance-none cursor-pointer accent-blue-500"
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   title="Volume"
                 />
               </div>
@@ -199,7 +199,7 @@ const TopStatusBar: React.FC = () => {
               ? <div className="flex flex-col">
                 <span className="text-green-400 font-semibold">Active ({Math.round(analysisConfidence * 100)}%)</span>
               </div>
-              : <span className="text-slate-400 font-semibold">Idle</span>
+              : <span className="text-gray-500 font-semibold">Idle</span>
             }
             disabled
           />
@@ -214,11 +214,11 @@ const TopStatusBar: React.FC = () => {
         </div>
       </div>
       {callExpanded && (
-        <div className="bg-[#232f47] rounded-xl mt-4 p-6 w-full max-w-[1800px] mx-auto">
+        <div className="bg-white border border-gray-100 rounded-xl mt-4 p-6 w-full max-w-[1800px] mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Call Controls & Recording</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Call Controls & Recording</h2>
             <button
-              className="text-slate-400 hover:text-white text-xl"
+              className="text-gray-500 hover:text-gray-900 text-xl"
               onClick={() => setCallExpanded(false)}
               aria-label="Collapse call controls"
             >
@@ -228,17 +228,17 @@ const TopStatusBar: React.FC = () => {
           <div className="flex gap-x-16">
             {/* Audio Controls */}
             <div className="flex-1">
-              <div className="text-lg font-semibold text-white mb-2">Audio Controls</div>
+              <div className="text-lg font-semibold text-gray-900 mb-2">Audio Controls</div>
               <div className="flex space-x-3 mb-4">
                 <button
-                  className="bg-[#1b253a] p-3 rounded-lg text-slate-300 hover:bg-[#22304a]"
+                  className="bg-gray-50 border border-gray-100 p-3 rounded-lg text-gray-600 hover:bg-gray-100 border border-gray-200"
                   onClick={handleToggleMic}
                   aria-label={state.isMicMuted ? 'Unmute microphone' : 'Mute microphone'}
                 >
-                  {state.isMicMuted ? <MicOff size={20} className="text-slate-300" /> : <Mic size={20} className="text-slate-300" />}
+                  {state.isMicMuted ? <MicOff size={20} className="text-gray-600" /> : <Mic size={20} className="text-gray-600" />}
                 </button>
                 <button
-                  className={`p-3 rounded-lg transition-colors ${state.isSpeakerPhone ? 'bg-blue-600/20 text-blue-400' : 'bg-[#1b253a] text-slate-300 hover:bg-[#22304a]'}`}
+                  className={`p-3 rounded-lg transition-colors ${state.isSpeakerPhone ? 'bg-blue-600/20 text-blue-400' : 'bg-gray-50 border border-gray-100 text-gray-600 hover:bg-gray-100 border border-gray-200'}`}
                   onClick={handleToggleSpeaker}
                   aria-label={state.isSpeakerPhone ? 'Switch to headset' : 'Switch to speaker'}
                   title={state.isSpeakerPhone ? 'Switch to headset' : 'Switch to speaker'}
@@ -247,7 +247,7 @@ const TopStatusBar: React.FC = () => {
                 </button>
               </div>
               <div className="flex flex-col space-y-2">
-                <div className="flex justify-between items-center text-xs text-slate-400">
+                <div className="flex justify-between items-center text-xs text-gray-500">
                   <span>Volume Application</span>
                   <span>{Math.round(state.volume * 100)}%</span>
                 </div>
@@ -260,7 +260,7 @@ const TopStatusBar: React.FC = () => {
                     step="0.01"
                     value={state.volume}
                     onChange={(e) => dispatch({ type: 'UPDATE_VOLUME', volume: parseFloat(e.target.value) })}
-                    className="w-full h-2 bg-[#3a4661] rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
                     title="Attention: Le navigateur ne peut pas contrôler le volume global de Windows, uniquement le volume de l'application."
                   />
                 </div>
@@ -268,20 +268,20 @@ const TopStatusBar: React.FC = () => {
             </div>
             {/* Call Status */}
             <div className="flex-1">
-              <div className="text-lg font-semibold text-white mb-2">Call Status</div>
+              <div className="text-lg font-semibold text-gray-900 mb-2">Call Status</div>
               {state.callState.isActive ? (
                 <span className="text-green-400 font-semibold">Active</span>
               ) : (
-                <span className="text-slate-400 font-semibold">Inactive</span>
+                <span className="text-gray-500 font-semibold">Inactive</span>
               )}
             </div>
             <div className="flex-1">
-              <div className="text-lg font-semibold text-white mb-2">Recording Status</div>
-              <div className="bg-[#1b253a] rounded-lg p-4 flex flex-col space-y-3">
+              <div className="text-lg font-semibold text-gray-900 mb-2">Recording Status</div>
+              <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div className={`w-3 h-3 rounded-full ${state.callState.isRecording ? 'bg-red-500 animate-pulse' : 'bg-slate-500'}`}></div>
-                    <span className="text-slate-200">
+                    <span className="text-gray-700">
                       {state.callState.isRecording ? 'Recording Live' : 'Recording Stopped'}
                     </span>
                   </div>
@@ -300,7 +300,7 @@ const TopStatusBar: React.FC = () => {
                 {state.callState.recordingUrl && (
                   <button
                     onClick={() => window.open(state.callState.recordingUrl!, '_blank')}
-                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors w-full justify-center"
+                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-gray-900 px-4 py-2 rounded-lg transition-colors w-full justify-center"
                   >
                     <Play size={16} fill="white" />
                     <span className="font-semibold text-sm">Play Recording</span>
@@ -312,11 +312,11 @@ const TopStatusBar: React.FC = () => {
         </div>
       )}
       {metricsExpanded && (
-        <div className="bg-[#232f47] rounded-xl mt-4 p-6 w-full max-w-[1800px] mx-auto">
+        <div className="bg-white border border-gray-100 rounded-xl mt-4 p-6 w-full max-w-[1800px] mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Call Metrics Details</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Call Metrics Details</h2>
             <button
-              className="text-slate-400 hover:text-white text-xl"
+              className="text-gray-500 hover:text-gray-900 text-xl"
               onClick={() => setMetricsExpanded(false)}
               aria-label="Collapse metrics details"
             >
@@ -325,46 +325,46 @@ const TopStatusBar: React.FC = () => {
           </div>
           <div className="grid grid-cols-4 gap-6">
             {/* Clarity */}
-            <div className="bg-[#26314a] rounded-lg p-4 flex flex-col">
+            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col">
               <div className="flex items-center mb-2">
                 <span className="text-blue-400 text-xl mr-2">🎯</span>
-                <span className="font-bold text-white text-lg">Clarity</span>
+                <span className="font-bold text-gray-900 text-lg">Clarity</span>
               </div>
               <span className={`text-2xl font-bold mb-2 ${state.callMetrics.clarity < 50 ? 'text-red-400' : 'text-green-400'}`}>{Math.round(state.callMetrics.clarity)}%</span>
-              <div className="w-full h-2 bg-[#3a4661] rounded-full">
+              <div className="w-full h-2 bg-gray-200 rounded-full">
                 <div className="bg-blue-400 h-2 rounded-full transition-all duration-500" style={{ width: `${state.callMetrics.clarity}%` }}></div>
               </div>
             </div>
             {/* Empathy */}
-            <div className="bg-[#26314a] rounded-lg p-4 flex flex-col">
+            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col">
               <div className="flex items-center mb-2">
                 <span className="text-blue-400 text-xl mr-2">❤️</span>
-                <span className="font-bold text-white text-lg">Empathy</span>
+                <span className="font-bold text-gray-900 text-lg">Empathy</span>
               </div>
               <span className={`text-2xl font-bold mb-2 ${state.callMetrics.empathy < 50 ? 'text-red-400' : 'text-green-400'}`}>{Math.round(state.callMetrics.empathy)}%</span>
-              <div className="w-full h-2 bg-[#3a4661] rounded-full">
+              <div className="w-full h-2 bg-gray-200 rounded-full">
                 <div className="bg-blue-400 h-2 rounded-full transition-all duration-500" style={{ width: `${state.callMetrics.empathy}%` }}></div>
               </div>
             </div>
             {/* Assertiveness */}
-            <div className="bg-[#26314a] rounded-lg p-4 flex flex-col">
+            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col">
               <div className="flex items-center mb-2">
                 <span className="text-yellow-400 text-xl mr-2">💪</span>
-                <span className="font-bold text-white text-lg">Assertiveness</span>
+                <span className="font-bold text-gray-900 text-lg">Assertiveness</span>
               </div>
               <span className={`text-2xl font-bold mb-2 ${state.callMetrics.assertiveness < 50 ? 'text-red-400' : 'text-green-400'}`}>{Math.round(state.callMetrics.assertiveness)}%</span>
-              <div className="w-full h-2 bg-[#3a4661] rounded-full">
+              <div className="w-full h-2 bg-gray-200 rounded-full">
                 <div className="bg-yellow-400 h-2 rounded-full transition-all duration-500" style={{ width: `${state.callMetrics.assertiveness}%` }}></div>
               </div>
             </div>
             {/* Efficiency */}
-            <div className="bg-[#26314a] rounded-lg p-4 flex flex-col">
+            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col">
               <div className="flex items-center mb-2">
                 <span className="text-yellow-400 text-xl mr-2">⚡</span>
-                <span className="font-bold text-white text-lg">Efficiency</span>
+                <span className="font-bold text-gray-900 text-lg">Efficiency</span>
               </div>
               <span className={`text-2xl font-bold mb-2 ${state.callMetrics.efficiency < 50 ? 'text-red-400' : 'text-green-400'}`}>{Math.round(state.callMetrics.efficiency)}%</span>
-              <div className="w-full h-2 bg-[#3a4661] rounded-full">
+              <div className="w-full h-2 bg-gray-200 rounded-full">
                 <div className="bg-yellow-400 h-2 rounded-full transition-all duration-500" style={{ width: `${state.callMetrics.efficiency}%` }}></div>
               </div>
             </div>
@@ -372,11 +372,11 @@ const TopStatusBar: React.FC = () => {
         </div>
       )}
       {warningsExpanded && (
-        <div className="bg-[#232f47] rounded-xl mt-4 p-6 w-full max-w-[1800px] mx-auto">
+        <div className="bg-white border border-gray-100 rounded-xl mt-4 p-6 w-full max-w-[1800px] mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Active Warnings</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Active Warnings</h2>
             <button
-              className="text-slate-400 hover:text-white text-xl"
+              className="text-gray-500 hover:text-gray-900 text-xl"
               onClick={() => setWarningsExpanded(false)}
               aria-label="Collapse warnings details"
             >
@@ -386,12 +386,12 @@ const TopStatusBar: React.FC = () => {
           <div className="flex flex-col gap-4 w-full">
             {state.smartWarnings.filter(w => !w.resolved).length > 0 ? (
               state.smartWarnings.filter(w => !w.resolved).map((warning, index) => (
-                <div key={index} className="bg-[#26314a] rounded-lg p-4 border-l-4 border-red-500">
+                <div key={index} className="bg-gray-50 border border-gray-100 rounded-lg p-4 border-l-4 border-red-500">
                   <div className="flex justify-between items-start">
-                    <div className="font-bold text-white">{warning.title}</div>
-                    <span className="text-[10px] text-slate-400">{warning.detectedAt.toLocaleTimeString()}</span>
+                    <div className="font-bold text-gray-900">{warning.title}</div>
+                    <span className="text-[10px] text-gray-500">{warning.detectedAt.toLocaleTimeString()}</span>
                   </div>
-                  <div className="text-sm text-slate-200 mt-1">{warning.message}</div>
+                  <div className="text-sm text-gray-700 mt-1">{warning.message}</div>
                 </div>
               ))
             ) : (
@@ -404,55 +404,55 @@ const TopStatusBar: React.FC = () => {
         </div>
       )}
       {profileExpanded && agentProfile && (
-        <div className="bg-[#232f47] rounded-xl mt-4 p-8 w-full max-w-[1800px] mx-auto shadow-2xl border border-blue-500/20 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="bg-white border border-gray-100 rounded-xl mt-4 p-8 w-full max-w-[1800px] mx-auto shadow-2xl border border-blue-500/20 animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg border-2 border-blue-400/30">
+              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-2xl font-bold text-gray-900 shadow-lg border-2 border-blue-400/30">
                 {agentProfile.personalInfo.name.charAt(0)}
               </div>
               <div>
-                <h2 className="text-3xl font-bold text-white leading-tight">{agentProfile.personalInfo.name}</h2>
+                <h2 className="text-3xl font-bold text-gray-900 leading-tight">{agentProfile.personalInfo.name}</h2>
                 <div className="flex items-center space-x-3 mt-1 text-blue-300 font-medium">
                   {agentProfile.professionalSummary?.currentRole && (
                     <span className="bg-blue-900/40 px-3 py-1 rounded-full text-xs uppercase tracking-widest border border-blue-500/30">
                       {agentProfile.professionalSummary.currentRole}
                     </span>
                   )}
-                  <span className="text-slate-400 text-sm">{agentProfile.personalInfo.email}</span>
+                  <span className="text-gray-500 text-sm">{agentProfile.personalInfo.email}</span>
                 </div>
               </div>
             </div>
             <button
-              className="text-slate-400 hover:text-white transition-colors"
+              className="text-gray-500 hover:text-gray-900 transition-colors"
               onClick={() => setProfileExpanded(false)}
             >
               <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-8 text-slate-200">
-            <div className="bg-[#1b253a] rounded-xl p-6 border border-slate-700/50">
+          <div className="grid grid-cols-3 gap-8 text-gray-700">
+            <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 border border-gray-100">
               <h3 className="text-blue-400 font-bold uppercase text-xs mb-4 tracking-tighter">Professional Summary</h3>
-              <p className="text-sm leading-relaxed text-slate-300">
+              <p className="text-sm leading-relaxed text-gray-600">
                 {agentProfile.professionalSummary?.yearsOfExperience ? (
-                  <>Experience: <span className="text-white font-medium">{agentProfile.professionalSummary.yearsOfExperience}</span> in sales and customer engagement.</>
+                  <>Experience: <span className="text-gray-900 font-medium">{agentProfile.professionalSummary.yearsOfExperience}</span> in sales and customer engagement.</>
                 ) : "No experience summary provided."}
               </p>
             </div>
 
-            <div className="bg-[#1b253a] rounded-xl p-6 border border-slate-700/50">
+            <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 border border-gray-100">
               <h3 className="text-blue-400 font-bold uppercase text-xs mb-4 tracking-tighter">Contact & Location</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Phone</span>
-                  <span className="text-slate-200 font-mono">{agentProfile.personalInfo.phone || 'N/A'}</span>
+                  <span className="text-gray-400">Phone</span>
+                  <span className="text-gray-700 font-mono">{agentProfile.personalInfo.phone || 'N/A'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Location</span>
-                  <span className="text-slate-200">{agentProfile.personalInfo.location || 'Remote'}</span>
+                  <span className="text-gray-400">Location</span>
+                  <span className="text-gray-700">{agentProfile.personalInfo.location || 'Remote'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Status</span>
+                  <span className="text-gray-400">Status</span>
                   <span className="text-green-400 flex items-center">
                     <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
                     Connected
@@ -461,9 +461,9 @@ const TopStatusBar: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-[#1b253a] rounded-xl p-6 border border-slate-700/50">
+            <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 border border-gray-100">
               <h3 className="text-blue-400 font-bold uppercase text-xs mb-4 tracking-tighter">Current Methodology</h3>
-              <div className="flex items-center space-x-2 text-sm text-slate-300">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <div className="bg-harx-alt-500/20 p-2 rounded-lg">
                   <Shield size={20} className="text-blue-400" />
                 </div>

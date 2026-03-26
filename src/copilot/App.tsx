@@ -15,7 +15,7 @@ function AppContent() {
   return (
     <TranscriptionProvider destinationZone={destinationZone || undefined}>
       <TranscriptionBridge />
-      <div className="bg-mesh-gradient overflow-hidden rounded-3xl" style={{ minHeight: 'calc(100vh - 150px)' }}>
+      <div className="bg-transparent overflow-hidden rounded-3xl" style={{ minHeight: 'calc(100vh - 150px)' }}>
         <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="pt-2 pb-0">
             <TopStatusBar />
