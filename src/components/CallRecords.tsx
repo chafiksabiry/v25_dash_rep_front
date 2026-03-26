@@ -402,6 +402,19 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
               </button>
             </div>
             <div className="p-8 space-y-8 overflow-y-auto max-h-[70vh]">
+              {/* Technical Information Section */}
+              <div className="pb-6 border-b border-gray-100">
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Technical Information</h4>
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-100/50 rounded-2xl border border-gray-100">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Call ID :</span>
+                    <span className="text-[11px] font-mono font-bold text-gray-600">
+                      {selectedCall._id || (selectedCall as any).$oid}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Call Details Badges */}
               <div className="flex flex-wrap gap-3">
                 <div className="bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-2xl flex items-center gap-2">
@@ -545,18 +558,6 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
               {/* <div className="space-y-4">
                 ... 
               </div> */}
-              {/* Technical Information Section */}
-              <div className="pt-6 border-t border-gray-100">
-                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Technical Information</h4>
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="flex items-center justify-between p-3 bg-gray-100/50 rounded-2xl border border-gray-100">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Call ID :</span>
-                    <span className="text-[11px] font-mono font-bold text-gray-600">
-                      {selectedCall._id || (selectedCall as any).$oid}
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>,
