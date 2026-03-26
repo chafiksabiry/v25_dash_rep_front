@@ -137,57 +137,61 @@ const DashboardGrid: React.FC = () => {
                   </div>
                 )}
 
-                {/* Phased Script Content */}
-                {Object.entries(scriptByPhase).map(([phase, replicas]) => (
-                  <div key={phase} className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="h-px flex-1 bg-gray-100"></div>
-                      <span className="text-[10px] font-black text-gray-410 uppercase tracking-[0.2em] px-2">{phase}</span>
-                      <div className="h-px flex-1 bg-gray-100"></div>
-                    </div>
-                    <div className="space-y-3">
-                      {(replicas as any[]).map((item, idx) => (
-                        <div 
-                          key={idx} 
-                          className={`group/replica relative flex gap-3 p-4 rounded-2xl border transition-all duration-300 ${
-                            item.actor === 'agent' 
-                              ? 'bg-indigo-50/40 border-indigo-100/60 ml-4' 
-                              : 'bg-emerald-50/40 border-emerald-100/60 mr-4'
-                          }`}
-                        >
-                          <div className={`mt-0.5 p-1.5 rounded-lg h-fit ${
-                            item.actor === 'agent' ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'
-                          }`}>
-                            {item.actor === 'agent' ? <Bot className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
-                          </div>
-                          <div className="space-y-1 flex-1">
-                            <div className="flex items-center justify-between">
-                              <span className={`text-[9px] font-black uppercase tracking-widest ${
-                                item.actor === 'agent' ? 'text-indigo-500' : 'text-emerald-500'
-                              }`}>
-                                {item.actor === 'agent' ? 'Representative' : 'Lead'}
-                              </span>
-                              <button 
-                                onClick={() => navigator.clipboard.writeText(item.replica)}
-                                className="opacity-0 group-hover/replica:opacity-100 transition-opacity p-1 hover:bg-white/50 rounded-md"
-                                title="Copy to clipboard"
-                              >
-                                <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                                </svg>
-                              </button>
-                            </div>
-                            <p className={`text-sm leading-relaxed font-bold ${
-                              item.actor === 'agent' ? 'text-indigo-900' : 'text-emerald-900'
-                            }`}>
-                              {item.replica}
-                            </p>
-                          </div>
+                {/* Phased Script Content - Scrollable Area */}
+                <div className="max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent pr-4 -mr-4">
+                  <div className="space-y-6">
+                    {Object.entries(scriptByPhase).map(([phase, replicas]) => (
+                      <div key={phase} className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-px flex-1 bg-gray-100"></div>
+                          <span className="text-[10px] font-black text-gray-410 uppercase tracking-[0.2em] px-2">{phase}</span>
+                          <div className="h-px flex-1 bg-gray-100"></div>
                         </div>
-                      ))}
-                    </div>
+                        <div className="space-y-3">
+                          {(replicas as any[]).map((item, idx) => (
+                            <div 
+                              key={idx} 
+                              className={`group/replica relative flex gap-3 p-4 rounded-2xl border transition-all duration-300 ${
+                                item.actor === 'agent' 
+                                  ? 'bg-indigo-50/40 border-indigo-100/60 ml-4' 
+                                  : 'bg-emerald-50/40 border-emerald-100/60 mr-4'
+                              }`}
+                            >
+                              <div className={`mt-0.5 p-1.5 rounded-lg h-fit ${
+                                item.actor === 'agent' ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'
+                              }`}>
+                                {item.actor === 'agent' ? <Bot className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
+                              </div>
+                              <div className="space-y-1 flex-1">
+                                <div className="flex items-center justify-between">
+                                  <span className={`text-[9px] font-black uppercase tracking-widest ${
+                                    item.actor === 'agent' ? 'text-indigo-500' : 'text-emerald-500'
+                                  }`}>
+                                    {item.actor === 'agent' ? 'Representative' : 'Lead'}
+                                  </span>
+                                  <button 
+                                    onClick={() => navigator.clipboard.writeText(item.replica)}
+                                    className="opacity-0 group-hover/replica:opacity-100 transition-opacity p-1 hover:bg-white/50 rounded-md"
+                                    title="Copy to clipboard"
+                                  >
+                                    <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                                    </svg>
+                                  </button>
+                                </div>
+                                <p className={`text-sm leading-relaxed font-bold ${
+                                  item.actor === 'agent' ? 'text-indigo-900' : 'text-emerald-900'
+                                }`}>
+                                  {item.replica}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
             ) : (
               <div className="text-center py-10 bg-gray-50/30 rounded-2xl border border-dashed border-gray-200">
