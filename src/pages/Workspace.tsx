@@ -466,7 +466,7 @@ export function Workspace() {
                   <span>
                     {selectedGigId 
                       ? enrolledGigs.find(g => g._id === selectedGigId)?.title 
-                      : 'All My Leads'}
+                      : 'All My Gigs'}
                   </span>
                 </div>
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-500 ${isGigDropdownOpen ? 'rotate-180 text-harx-500' : ''}`} />
@@ -488,7 +488,7 @@ export function Workspace() {
                       className={`w-full px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 hover:bg-gray-50 ${!selectedGigId ? 'text-harx-600 bg-harx-50/50' : 'text-gray-500'}`}
                     >
                       <div className={`w-2 h-2 rounded-full ${!selectedGigId ? 'bg-harx-500' : 'bg-gray-200'}`}></div>
-                      All My Leads
+                      All My Gigs
                     </button>
                     <div className="h-px bg-gray-100 mx-4 my-1 opacity-50"></div>
                     {enrolledGigs.map((g) => (
