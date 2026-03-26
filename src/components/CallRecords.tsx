@@ -421,7 +421,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                 </div>
               )}
 
-              {!selectedCall.ai_call_score && (
+              {(!selectedCall.ai_call_score || !selectedCall.transcript || selectedCall.transcript.length === 0) && (
                 <div className="flex gap-4">
                   <button 
                     onClick={() => handleAnalyzeCall(selectedCall._id || (selectedCall as any).$oid)}
@@ -433,7 +433,9 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                     }`}
                   >
                     <Brain className={`w-4 h-4 ${analyzingCallId === (selectedCall._id || (selectedCall as any).$oid) ? 'animate-spin' : ''}`} />
-                    {analyzingCallId === (selectedCall._id || (selectedCall as any).$oid) ? 'Analyzing...' : 'Analyze with AI'}
+                    {analyzingCallId === (selectedCall._id || (selectedCall as any).$oid) 
+                      ? 'Analyzing...' 
+                      : (selectedCall.ai_call_score ? 'Re-analyze & Transcribe' : 'Analyze with AI')}
                   </button>
                 </div>
               )}
