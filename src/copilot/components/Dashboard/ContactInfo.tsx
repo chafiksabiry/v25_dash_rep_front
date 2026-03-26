@@ -7,7 +7,7 @@ import { useTranscription } from '../../contexts/TranscriptionContext';
 import { useLead } from '../../hooks/useLead';
 import { useAgentProfile } from '../../hooks/useAgentProfile';
 import {
-  Phone, Mail, Calendar, Briefcase
+  Phone, Mail, Calendar, Briefcase, Mic, MicOff, Volume2, Headphones
 } from 'lucide-react';
 
 interface TokenResponse {
@@ -32,6 +32,14 @@ export function ContactInfo() {
   const [currentCallSid, setCurrentCallSid] = useState<string | null>(null);
   const isRecordingRef = useRef(false);
   const localStreamRef = useRef<MediaStream | null>(null);
+
+  const handleToggleMic = () => {
+    dispatch({ type: 'TOGGLE_MIC' });
+  };
+
+  const handleToggleSpeaker = () => {
+    dispatch({ type: 'TOGGLE_OUTPUT_MODE' });
+  };
 
   // Synchronize ref with global state
   useEffect(() => {
@@ -439,10 +447,29 @@ export function ContactInfo() {
           </div>
         </div >
         {/* Actions à droite */}
-        < div className="flex items-center space-x-2" >
-          <button className="bg-white border border-gray-100 text-gray-400 hover:text-harx-600 hover:bg-harx-50 p-2 rounded-xl cursor-not-allowed transition-all" title="Coming Soon"><Mail className="w-4 h-4" /></button>
-          <button className="bg-gradient-harx text-white p-2 rounded-xl shadow-md shadow-harx-500/20 hover:-translate-y-0.5 transition-all"><Phone className="w-4 h-4" /></button>
-          <button className="bg-white border border-gray-100 text-gray-400 hover:text-harx-600 hover:bg-harx-50 p-2 rounded-xl cursor-not-allowed transition-all" title="Coming Soon"><Calendar className="w-4 h-4" /></button>
+        <div className="flex items-center space-x-2">
+          {/* Mute Toggle */}
+          <button 
+            onClick={handleToggleMic}
+            className={`p-2 rounded-xl border transition-all ${state.isMicMuted ? 'bg-red-50 text-red-500 border-red-100 shadow-sm' : 'bg-white text-gray-400 hover:text-harx-600 hover:bg-harx-50 border-gray-100'}`}
+            title={state.isMicMuted ? 'Unmute microphone' : 'Mute microphone'}
+          >
+            {state.isMicMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </button>
+
+          {/* Speaker Toggle */}
+          <button 
+            onClick={handleToggleSpeaker}
+            className={`p-2 rounded-xl border transition-all ${!state.isSpeakerPhone ? 'bg-blue-50 text-blue-500 border-blue-100 shadow-sm' : 'bg-white text-gray-400 hover:text-harx-600 hover:bg-harx-50 border-gray-100'}`}
+            title={state.isSpeakerPhone ? 'Switch to headset' : 'Switch to speaker'}
+          >
+            {!state.isSpeakerPhone ? <Headphones className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </button>
+
+          {/* Other Actions */}
+          <button className="bg-white border border-gray-100 text-gray-400 hover:text-harx-600 hover:bg-harx-50 p-2 rounded-xl cursor-not-allowed transition-all" title="Coming Soon">
+            <Calendar className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </>
