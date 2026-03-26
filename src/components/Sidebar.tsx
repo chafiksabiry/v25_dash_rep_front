@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -36,13 +36,22 @@ interface SidebarProps {
 
 export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, setIsCollapsed }: SidebarProps) {
   const { logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const isPhaseCompleted = (phaseNumber: number): boolean => {
     if (!phases) return false;
     return phases[`phase${phaseNumber}` as keyof Phases]?.status === 'completed';
   };
 
-  const [isWorkspaceOpen, setIsWorkspaceOpen] = React.useState(false);
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = React.useState(location.pathname.includes('/workspace'));
+
+  // Ensure workspace is open if we navigate there externally
+  useEffect(() => {
+    if (location.pathname.includes('/workspace')) {
+      setIsWorkspaceOpen(true);
+    }
+  }, [location.pathname]);
 
   const navItems = [
     {
@@ -173,11 +182,15 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                 {isWorkspaceOpen && (
                   <div className="ml-5 pl-2 border-l border-white/10 space-y-1 animate-in slide-in-from-top-1 duration-200">
                     {item.subItems.map((sub) => {
-                      const isSubActive = window.location.search.includes(sub.path.split('?')[1]);
+                      const isSubActive = location.search.includes(sub.path.split('?')[1]);
                       return (
                         <NavLink
                           key={sub.path}
                           to={sub.path}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate(sub.path);
+                          }}
                           className={`flex w-full items-center rounded-xl transition-all duration-300 group relative space-x-3 py-2.5 px-4 ${
                             isSubActive
                               ? 'bg-gradient-to-r from-harx-500/20 to-transparent text-white border-l-2 border-harx-500'

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Phone, Mail, User,
   Paperclip, Image, MoreHorizontal, PhoneOutgoing, XCircle,
@@ -40,6 +40,7 @@ interface APIResponse {
 
 export function Workspace() {
   const location = useLocation();
+  const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
   const urlLeadId = searchParams.get('leadId');
   const urlTab = searchParams.get('tab');
@@ -518,8 +519,8 @@ export function Workspace() {
             key={tool.id}
             onClick={() => {
               setActiveTab(tool.id);
-              // Update URL correctly
-              window.history.pushState({}, '', `${window.location.pathname}?tab=${tool.id}`);
+              // Use navigate instead of pushState for reactivity
+              navigate(`${window.location.pathname}?tab=${tool.id}`, { replace: true });
             }}
             className={`flex items-center justify-center space-x-3 px-8 py-4 rounded-2xl transition-all duration-300 border ${activeTab === tool.id
               ? 'bg-gradient-harx text-white border-transparent shadow-xl shadow-harx-500/25 -translate-y-1'
