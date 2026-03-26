@@ -36,7 +36,7 @@ const TopStatusBar: React.FC = () => {
 
   const handleToggleRecording = async () => {
     const { sid, isRecording } = state.callState;
-    const userId = "6807abfc2c1ca099fe2b13c5"; // Using hardcoded agent ID for now
+    const userId = localStorage.getItem('agentId') || ""; // Fetch active agent ID with fallback
 
     if (!sid) {
       console.error('No active call SID found for recording toggle');

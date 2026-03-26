@@ -5,7 +5,7 @@ import { TwilioCallService } from '../services/twilioCallService';
 export const useCallStorage = () => {
   const { state, dispatch } = useAgent();
   const storeCall = useCallback(async (callSid: string, leadId: string, isRecordingOverride?: boolean) => {
-    const agentId = localStorage.getItem('agentId') || "6807abfc2c1ca099fe2b13c5"; // Fetch active agent ID with fallback
+    const agentId = localStorage.getItem('agentId') || ""; // Fetch active agent ID with fallback
 
     try {
       const callData = await TwilioCallService.storeCallInDB({
