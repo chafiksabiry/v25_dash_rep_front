@@ -1,6 +1,30 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Phone, Clock, PhoneOutgoing, Info, Brain, X, User, ExternalLink, PlayCircle, Shield, Zap } from 'lucide-react';
+import { 
+  Phone, 
+  Clock, 
+  Calendar, 
+  ChevronRight, 
+  Brain, 
+  ChevronDown, 
+  ChevronUp, 
+  CheckCircle2, 
+  AlertCircle, 
+  PhoneOutgoing,
+  Search,
+  Filter,
+  ArrowRight,
+  TrendingUp,
+  MessageSquare,
+  ShieldCheck,
+  Star,
+  Info,
+  X,
+  User,
+  Shield,
+  Zap,
+  PlayCircle
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
 
@@ -62,6 +86,10 @@ interface Lead {
   Email_1?: string;
   phone?: string;
   Phone?: string;
+  gigId?: {
+    _id: string;
+    title: string;
+  };
   status?: 'new' | 'contacted' | 'qualified' | 'proposal' | 'won' | 'lost';
   value?: number;
   probability?: number;
@@ -76,7 +104,6 @@ interface Lead {
       sentiment?: string;
     };
   };
-  gigId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -229,9 +256,9 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                             {record.lead?.First_Name ? `${record.lead.First_Name} ${record.lead.Last_Name || ''}`.trim() : 
                              record.lead?.name || record.to || record.from || 'Unknown Customer'}
                           </h3>
-                          {(record.lead?.company || record.lead?.Deal_Name) && (
+                          {(record.lead?.gigId?.title || record.lead?.company || record.lead?.Deal_Name) && (
                             <span className="text-sm text-gray-500">
-                              • {record.lead?.company || record.lead?.Deal_Name}
+                              • {record.lead?.gigId?.title || record.lead?.company || record.lead?.Deal_Name}
                             </span>
                           )}
                         </div>
@@ -254,15 +281,20 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                               })()}
                             </p>
                           )}
-                          <p className="flex items-center">
-                            <Clock className="w-4 h-4 mr-1.5" />
-                            {new Date(record.startTime).toLocaleString()}
-                            {record.duration && (
-                              <span className="ml-2">
-                                • {Math.floor(record.duration / 60)}:{String(record.duration % 60).padStart(2, '0')}
-                              </span>
-                            )}
-                          </p>
+                          <div className="flex items-center gap-4 text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">
+                             <div className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+                               <Clock className="w-3 h-3" />
+                               <span>{record.duration || 0}s</span>
+                             </div>
+                             <div className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+                               <Calendar className="w-3 h-3" />
+                               <span>{new Date(record.startTime || record.createdAt).toLocaleDateString()}</span>
+                             </div>
+                             <div className="flex items-center gap-1.5">
+                               <div className={`w-1.5 h-1.5 rounded-full ${record.direction === 'inbound' ? 'bg-blue-400' : 'bg-green-400'}`}></div>
+                               <span>{record.direction}</span>
+                             </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -348,6 +380,18 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                   <h3 className="text-2xl font-black tracking-tight">
                     {selectedCall.lead?.First_Name ? `${selectedCall.lead.First_Name} ${selectedCall.lead.Last_Name || ''}` : selectedCall.lead?.name || 'Customer'}
                   </h3>
+                  {selectedCall.lead?.gigId?.title && (
+                    <div className="flex items-center gap-1.5 text-white/80 text-xs font-bold uppercase tracking-wider mt-1">
+                      <Star className="w-3 h-3" />
+                      <span>{selectedCall.lead.gigId.title}</span>
+                    </div>
+                  )}
+                  {selectedCall.lead?.company && (
+                    <div className="flex items-center gap-1.5 text-white/70 text-xs mt-0.5">
+                      <ShieldCheck className="w-3 h-3" />
+                      <span>{selectedCall.lead.company}</span>
+                    </div>
+                  )}
                 </div>
               </div>
               <button onClick={() => {
@@ -358,6 +402,29 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
               </button>
             </div>
             <div className="p-8 space-y-8 overflow-y-auto max-h-[70vh]">
+              {/* Call Details Badges */}
+              <div className="flex flex-wrap gap-3">
+                <div className="bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-2xl flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-gray-400" />
+                  <span className="text-xs font-black text-gray-600 uppercase tracking-widest">{selectedCall.duration}s</span>
+                </div>
+                <div className="bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-2xl flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                  <span className="text-xs font-black text-gray-600 uppercase tracking-widest">
+                    {new Date(selectedCall.startTime || selectedCall.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-2xl flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${selectedCall.direction === 'inbound' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                  <span className="text-xs font-black text-gray-600 uppercase tracking-widest">{selectedCall.direction}</span>
+                </div>
+                {selectedCall.status && (
+                  <div className="bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-2xl flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="text-xs font-black text-emerald-700 uppercase tracking-widest">{selectedCall.status}</span>
+                  </div>
+                )}
+              </div>
               {(selectedCall.recording_url || selectedCall.recording_url_cloudinary) && (
                 <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100">
                   <audio controls src={selectedCall.recording_url_cloudinary || selectedCall.recording_url} className="w-full" />
