@@ -16,6 +16,7 @@ import { Community } from './pages/Community';
 import { WalletPage } from './pages/Wallet';
 import { ImportLeads } from './pages/ImportLeads';
 import { SessionPlanning } from './pages/SessionPlanning';
+import { Subscription } from './pages/Subscription';
 import CallReportCard from './components/CallReport';
 import { fetchProfileFromAPI } from './utils/profileUtils';
 import { PhaseProtectedRoute } from './components/ProtectedRoute';
@@ -244,6 +245,7 @@ function AppContent() {
                   <WalletPage />
                 </PhaseProtectedRoute>
               } />
+              <Route path="/subscription" element={<Subscription />} />
               <Route path="*" element={<Navigate to="/profile" replace />} />
             </Routes>
           </main>

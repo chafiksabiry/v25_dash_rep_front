@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing } from 'lucide-react';
+import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing, CreditCard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 // Declare qiankun global variables
@@ -94,6 +94,12 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       label: 'Operations',
       path: '/operations',
       isAccessible: () => isPhaseCompleted(5)
+    },
+    {
+      icon: CreditCard,
+      label: 'Subscription',
+      path: '/subscription',
+      isAccessible: () => true
     },
   ];
 
