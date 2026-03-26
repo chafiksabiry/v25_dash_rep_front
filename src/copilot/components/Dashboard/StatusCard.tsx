@@ -24,16 +24,11 @@ const statusColors = {
 
 const StatusCard: React.FC<StatusCardProps> = ({
   icon, title, value, subtitle, status, expandable, expanded, onToggle, children, disabled, disabledTitle = "Coming Soon"
-}) => (
-  <div className={`relative glass-card rounded-2xl shadow-sm py-3 px-3 w-full h-full flex flex-col justify-between transition-all duration-300 hover:border-harx-200 ${disabled ? 'opacity-50 grayscale-[0.5]' : 'hover:shadow-md'}`}>
-    {disabled && (
-      <div className="absolute inset-0 z-10 flex items-center justify-center p-2">
-        <div className="absolute inset-0 bg-white/5 rounded-2xl backdrop-blur-[1px]" />
-        <span className="relative z-20 bg-white/90 text-harx-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-harx-200 uppercase tracking-widest shadow-sm">
-          {disabledTitle}
-        </span>
-      </div>
-    )}
+}) => {
+  if (disabled) return null;
+  
+  return (
+    <div className="relative glass-card rounded-2xl shadow-sm py-3 px-3 w-full h-full flex flex-col justify-between transition-all duration-300 hover:border-harx-200 hover:shadow-md">
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-2 text-gray-400">
         <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-[14px] border border-gray-100 transition-all group-hover:bg-harx-50 group-hover:border-harx-100 group-hover:text-harx-500">
@@ -54,7 +49,8 @@ const StatusCard: React.FC<StatusCardProps> = ({
     {children && expanded && !disabled && (
       <div className="mt-2 text-xs text-gray-500">{children}</div>
     )}
-  </div>
-);
+    </div>
+  );
+};
 
 export default StatusCard; 
