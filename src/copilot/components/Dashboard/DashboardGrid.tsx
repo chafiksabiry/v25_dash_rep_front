@@ -55,8 +55,8 @@ const DashboardGrid: React.FC = () => {
   const fullTranscription = transcriptTexts.join(' ');
 
   return (
-    <div className="w-full pb-8">
-      <div className="grid grid-cols-6 gap-x-6 gap-y-6 my-6 w-full h-[180px]">
+    <div className="w-full pb-4">
+      <div className="grid grid-cols-6 gap-x-3 gap-y-3 my-3 w-full h-[120px]">
         <StatusCard
           icon={<Brain className="text-blue-400" />}
           title="DISC Profile"

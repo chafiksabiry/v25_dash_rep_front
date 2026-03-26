@@ -57,8 +57,8 @@ const TopStatusBar: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-[1800px] mx-auto px-2 py-2 overflow-x-auto">
-      <div className="grid grid-cols-9 gap-2 h-[120px]">
+    <div className="w-full max-w-[1800px] mx-auto px-2 py-1 overflow-x-auto">
+      <div className="grid grid-cols-9 gap-2 h-[80px]">
         <StatusCard
           icon={<PhoneOff size={20} className="text-gray-700" />}
           title="Call"

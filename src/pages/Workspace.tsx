@@ -415,7 +415,7 @@ export function Workspace() {
         );
       case 'copilot':
         return (
-          <div className="w-full bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-gray-100 overflow-hidden" style={{ minHeight: '800px' }}>
+          <div className="w-full bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-gray-100 overflow-hidden" style={{ minHeight: '600px' }}>
             {selectedLead || urlLeadId ? <CopilotApp /> : (
                <div className="flex flex-col items-center justify-center h-full pt-32 text-gray-400">
                  <Phone className="w-16 h-16 mb-4 opacity-50" />

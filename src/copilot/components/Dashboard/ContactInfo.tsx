@@ -364,7 +364,7 @@ export function ContactInfo() {
 
   return (
     <>
-      <div className="bg-white/80 border border-gray-100 backdrop-blur-md rounded-3xl shadow-sm px-8 py-5 flex items-center justify-between mt-4 mb-4">
+      <div className="bg-white/80 border border-gray-100 backdrop-blur-md rounded-2xl shadow-sm px-5 py-3 flex items-center justify-between mt-2 mb-2">
         {/* Avatar + Infos */}
         {/* Avatar + Infos */}
         <div className="flex items-center space-x-4">
@@ -377,7 +377,7 @@ export function ContactInfo() {
             <div className="text-red-500 text-sm font-medium">Error: {leadError}</div>
           ) : (
             <>
-              <div className="w-14 h-14 rounded-full bg-gradient-harx flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-harx-500/20">
+              <div className="w-10 h-10 rounded-full bg-gradient-harx flex items-center justify-center text-white text-xl font-bold shadow-sm shadow-harx-500/20">
                 {contact.avatar ? (
                   <img src={contact.avatar} alt={contact.name} className="w-14 h-14 rounded-full object-cover" />
                 ) : (
@@ -385,8 +385,8 @@ export function ContactInfo() {
                 )}
               </div>
               <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className="text-lg font-black text-gray-900 tracking-tight">{contact.name}</span>
+                <div className="flex items-center space-x-2 mb-0.5">
+                  <span className="text-base font-black text-gray-900 tracking-tight">{contact.name}</span>
                   <span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-bold border border-emerald-500/30 uppercase tracking-wider">qualified</span>
                   <span className="bg-harx-50 text-harx-600 text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-xl border border-harx-100 flex items-center">
                     <Briefcase className="w-3 h-3 mr-1" />
@@ -402,23 +402,23 @@ export function ContactInfo() {
           )}
         </div>
         {/* Bouton Start Call + Tabs */}
-        <div className="flex-1 flex flex-col items-center">
+          <div className="flex-1 flex flex-col items-center">
           {callStatus === 'active' ? (
             <button
               onClick={endCall}
-              className="w-56 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl font-bold text-lg transition-all duration-300 shadow-lg bg-red-600 hover:bg-red-700 text-white hover:-translate-y-0.5"
+              className="w-48 flex items-center justify-center space-x-2 px-3 py-2 rounded-xl font-bold text-base transition-all duration-300 shadow-md bg-red-600 hover:bg-red-700 text-white hover:-translate-y-0.5"
             >
-              <Phone className="w-5 h-5 mr-2" />
+              <Phone className="w-4 h-4 mr-2" />
               End Call
             </button>
           ) : (
             <button
               onClick={handleStartCall}
               disabled={isCallLoading || callStatus === 'initiating'}
-              className={`w-56 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl font-bold text-lg transition-all duration-300 shadow-lg hover:-translate-y-0.5
+              className={`w-48 flex items-center justify-center space-x-2 px-3 py-2 rounded-xl font-bold text-base transition-all duration-300 shadow-md hover:-translate-y-0.5
                   ${isCallLoading || callStatus === 'initiating' ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200' : 'bg-gradient-harx text-white shadow-harx-500/20 active:scale-95'}`}
             >
-              <Phone className="w-5 h-5 mr-2" />
+              <Phone className="w-4 h-4 mr-2" />
               {isCallLoading || callStatus === 'initiating' ? '...' : 'Call'}
             </button>
           )}
@@ -439,10 +439,10 @@ export function ContactInfo() {
           </div>
         </div >
         {/* Actions à droite */}
-        < div className="flex items-center space-x-3" >
-          <button className="bg-white border border-gray-100 text-gray-400 hover:text-harx-600 hover:bg-harx-50 p-2.5 rounded-xl cursor-not-allowed transition-all" title="Coming Soon"><Mail className="w-5 h-5" /></button>
-          <button className="bg-gradient-harx text-white p-2.5 rounded-xl shadow-lg shadow-harx-500/20 hover:-translate-y-0.5 transition-all"><Phone className="w-5 h-5" /></button>
-          <button className="bg-white border border-gray-100 text-gray-400 hover:text-harx-600 hover:bg-harx-50 p-2.5 rounded-xl cursor-not-allowed transition-all" title="Coming Soon"><Calendar className="w-5 h-5" /></button>
+        < div className="flex items-center space-x-2" >
+          <button className="bg-white border border-gray-100 text-gray-400 hover:text-harx-600 hover:bg-harx-50 p-2 rounded-xl cursor-not-allowed transition-all" title="Coming Soon"><Mail className="w-4 h-4" /></button>
+          <button className="bg-gradient-harx text-white p-2 rounded-xl shadow-md shadow-harx-500/20 hover:-translate-y-0.5 transition-all"><Phone className="w-4 h-4" /></button>
+          <button className="bg-white border border-gray-100 text-gray-400 hover:text-harx-600 hover:bg-harx-50 p-2 rounded-xl cursor-not-allowed transition-all" title="Coming Soon"><Calendar className="w-4 h-4" /></button>
         </div>
       </div>
     </>
