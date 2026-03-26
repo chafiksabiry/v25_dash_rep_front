@@ -163,15 +163,15 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                       : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
                   }`}
                 >
-                  <div className={`p-2 rounded-xl transition-all shrink-0 ${isWorkspaceOpen || window.location.pathname.includes(item.path) ? 'bg-harx-500/20 text-harx-400' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
+                  <div className={`p-2 rounded-xl transition-all shrink-0 ${isWorkspaceOpen || window.location.pathname.includes(item.path) ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
                     <item.icon className="h-5 w-5" />
                   </div>
                   <span className="font-black text-sm tracking-tight whitespace-nowrap overflow-hidden flex-1 text-left">{item.label}</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isWorkspaceOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isWorkspaceOpen ? 'rotate-180 text-harx-400' : 'text-gray-400'}`} />
                 </button>
                 
                 {isWorkspaceOpen && (
-                  <div className="ml-4 pl-4 border-l border-white/5 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                  <div className="ml-5 pl-2 border-l border-white/10 space-y-1 animate-in slide-in-from-top-1 duration-200">
                     {item.subItems.map((sub) => (
                       <NavLink
                         key={sub.path}
@@ -179,13 +179,15 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                         className={({ isActive }) =>
                           `flex w-full items-center rounded-xl transition-all duration-300 group relative space-x-3 py-2.5 px-4 ${
                             isActive
-                              ? 'bg-harx-500/15 text-harx-400 border border-harx-500/20'
+                              ? 'bg-gradient-to-r from-harx-500/20 to-transparent text-white border-l-2 border-harx-500'
                               : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
                           }`
                         }
                       >
-                        <sub.icon className="h-3.5 w-3.5" />
-                        <span className="font-bold text-[13px] tracking-tight">{sub.label}</span>
+                        <sub.icon className={`h-3.5 w-3.5 transition-colors ${window.location.search.includes(sub.path.split('?')[1]) ? 'text-harx-400' : 'text-current'}`} />
+                        <span className={`font-black text-[11px] uppercase tracking-widest ${window.location.search.includes(sub.path.split('?')[1]) ? 'text-white' : 'text-current'}`}>
+                          {sub.label}
+                        </span>
                       </NavLink>
                     ))}
                   </div>

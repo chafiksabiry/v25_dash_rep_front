@@ -516,14 +516,18 @@ export function Workspace() {
         {workspaceTools.map((tool) => (
           <button
             key={tool.id}
-            onClick={() => setActiveTab(tool.id)}
-            className={`flex items-center justify-center space-x-2 p-4 rounded-xl transition-all border ${activeTab === tool.id
-              ? 'bg-gradient-harx text-white border-transparent shadow-lg shadow-harx-500/20 -translate-y-0.5'
-              : 'bg-white text-gray-400 border-gray-100 hover:border-harx-100 hover:text-harx-600'
+            onClick={() => {
+              setActiveTab(tool.id);
+              // Update URL correctly
+              window.history.pushState({}, '', `${window.location.pathname}?tab=${tool.id}`);
+            }}
+            className={`flex items-center justify-center space-x-3 px-8 py-4 rounded-2xl transition-all duration-300 border ${activeTab === tool.id
+              ? 'bg-gradient-harx text-white border-transparent shadow-xl shadow-harx-500/25 -translate-y-1'
+              : 'bg-white/50 backdrop-blur-sm text-gray-400 border-gray-100 hover:border-harx-200 hover:bg-white hover:text-harx-600 hover:shadow-lg hover:shadow-harx-500/5'
               }`}
           >
-            <tool.icon className={`w-5 h-5 ${activeTab === tool.id ? 'text-white' : 'text-current'}`} />
-            <span className="text-[10px] font-black uppercase tracking-widest">{tool.label}</span>
+            <tool.icon className={`w-5 h-5 transition-transform duration-500 ${activeTab === tool.id ? 'text-white scale-110' : 'text-current group-hover:scale-110'}`} />
+            <span className="text-[11px] font-black uppercase tracking-[0.2em]">{tool.label}</span>
           </button>
         ))}
       </div>
