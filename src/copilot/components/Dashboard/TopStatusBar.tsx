@@ -113,27 +113,24 @@ const TopStatusBar: React.FC = () => {
           )}
         </div>
 
-        {/* REP PROFILE CARD */}
+        {/* REP PROFILE CARD - GRAYED OUT */}
         <StatusCard
-          icon={<Brain size={20} className="text-indigo-500" />}
+          icon={<Brain size={20} className="text-gray-400" />}
           title="Rep Profile"
           value={agentProfile ? (
-            <div className="flex flex-col">
-              <span className="text-gray-900 font-black text-sm uppercase truncate">
+            <div className="flex flex-col opacity-50">
+              <span className="text-gray-900 font-bold text-sm uppercase truncate">
                 {agentProfile.personalInfo.name}
               </span>
-              <span className="text-indigo-400 text-[9px] font-bold uppercase tracking-widest truncate line-clamp-1">
+              <span className="text-gray-400 text-[9px] font-bold uppercase tracking-widest truncate line-clamp-1">
                 {agentProfile.professionalSummary?.currentRole || 'Sales Representative'}
               </span>
             </div>
           ) : (
             <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Loading...</span>
           )}
-          expandable
-          expanded={profileExpanded}
-          onToggle={() => setProfileExpanded(e => !e)}
-          className="bg-white border-gray-100 hover:border-indigo-200 group"
-          iconClassName="bg-indigo-50 border-indigo-100"
+          className="bg-gray-50 border-gray-100 cursor-not-allowed opacity-60 grayscale"
+          iconClassName="bg-gray-100 border-gray-200"
         />
 
         {/* AUDIO OUTPUT CARD */}
