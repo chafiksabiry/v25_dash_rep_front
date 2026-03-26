@@ -113,16 +113,25 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
         if (gigId) {
           filteredCalls = filteredCalls.filter((call: any) => {
             if (call.gigId === gigId || call.gig === gigId) return true;
-            const leadGigId = call.lead?.gigId || call.lead?.gig;
-            const leadGigIdStr = typeof leadGigId === 'object' ? (leadGigId._id || leadGigId.$oid) : (leadGigId || '');
-            return leadGigIdStr === gigId;
+            const leadObj = call.lead;
+            if (leadObj && typeof leadObj === 'object') {
+              const leadGigId = leadObj.gigId || leadObj.gig;
+              if (leadGigId) {
+                const leadGigIdStr = typeof leadGigId === 'object' ? (leadGigId._id || leadGigId.$oid) : leadGigId;
+                if (leadGigIdStr === gigId) return true;
+                return false; // Specifically mismatched gig
+              }
+            }
+            // If we don't know the gig because backend didn't populate it, allow it to show
+            return true;
           });
         }
         
         if (leadId) {
-          filteredCalls = filteredCalls.filter((call: any) => 
-            call.lead?._id === leadId || call.leadId === leadId || call.lead === leadId
-          );
+          filteredCalls = filteredCalls.filter((call: any) => {
+            const callLeadId = typeof call.lead === 'object' ? (call.lead?._id || call.lead?.$oid) : call.lead;
+            return callLeadId === leadId || call.leadId === leadId;
+          });
         }
 
         setCallRecords(filteredCalls);
@@ -245,9 +254,9 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                             {record.lead?.First_Name ? `${record.lead.First_Name} ${record.lead.Last_Name || ''}`.trim() : 
                              record.lead?.name || record.to || record.from || 'Unknown Customer'}
                           </h3>
-                          {(record.lead?.company || record.lead?.Deal_Name || (record.lead && !record.lead.name && !record.lead.First_Name)) && (
+                          {(record.lead?.company || record.lead?.Deal_Name) && (
                             <span className="text-sm text-gray-500">
-                              • {record.lead?.company || record.lead?.Deal_Name || 'Lead'}
+                              • {record.lead?.company || record.lead?.Deal_Name}
                             </span>
                           )}
                         </div>

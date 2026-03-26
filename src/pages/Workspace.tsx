@@ -348,7 +348,7 @@ export function Workspace() {
       case 'calls':
         return (
           <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-3xl p-8 overflow-y-auto shadow-sm border border-gray-100">
-            <CallRecords gigId={selectedGigId} />
+            <CallRecords gigId={selectedGigId} leadId={urlLeadId || undefined} />
           </div>
         );
 
