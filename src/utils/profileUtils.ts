@@ -116,10 +116,11 @@ export const fetchProfileFromAPI = async () => {
     console.log("🔑 userId found (Any source):", userId);
   }
 
-  if (!userId) {
-    console.error('❌ No userId found based on run mode:', runMode);
-    throw new Error('User ID not found');
-  }
+    if (!userId) {
+      console.error('❌ No userId found based on run mode:', runMode);
+      window.location.href = '/auth';
+      throw new Error('User ID not found');
+    }
 
   console.log(`👤 Using userId: ${userId}`);
 
@@ -389,6 +390,7 @@ export const getUserId = (): string => {
 
   if (!userId) {
     console.error('❌ No userId found based on run mode:', runMode);
+    window.location.href = '/auth';
     throw new Error('User ID not found');
   }
 
