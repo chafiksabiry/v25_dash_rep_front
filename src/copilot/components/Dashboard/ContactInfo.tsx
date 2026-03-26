@@ -397,7 +397,7 @@ export function ContactInfo() {
                   <span className="text-lg font-black text-gray-900 tracking-tight">{contact.name}</span>
                 </div>
                 
-                <div className="flex items-center space-x-6 mt-1.5 ml-1">
+                <div className="flex flex-col space-y-2 mt-2 ml-1">
                   {/* Email Section */}
                   <div className="flex items-center space-x-2 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
                     <div className="p-1 bg-blue-50 rounded-lg">
@@ -411,7 +411,7 @@ export function ContactInfo() {
                     <div className="p-1 bg-indigo-50 rounded-lg">
                       <Briefcase className="w-3.5 h-3.5 text-indigo-500" />
                     </div>
-                    <span className="text-gray-500">GiG : <span className="text-indigo-600">{(gig as any)?.title || 'Standard Project'}</span></span>
+                    <span className="text-gray-500 uppercase tracking-widest">GiG ; <span className="text-indigo-600 font-black">{(gig as any)?.title || 'Standard Project'}</span></span>
                   </div>
                 </div>
               </div>
