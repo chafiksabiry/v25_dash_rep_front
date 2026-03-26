@@ -9,6 +9,7 @@ import { CallInterface } from '../components/CallInterface';
 import { useAuth } from '../contexts/AuthContext';
 import { Skeleton } from '../components/ui/Skeleton';
 import { CallRecords } from '../components/CallRecords';
+import CopilotApp from '../copilot/App';
 
 interface Lead {
   _id?: string;
@@ -41,6 +42,8 @@ interface APIResponse {
 
 export function Workspace() {
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const urlLeadId = searchParams.get('leadId');
   const gigId = location.state?.gigId;
   const [activeTab, setActiveTab] = useState('voice');
   const [message, setMessage] = useState('');
@@ -150,6 +153,7 @@ export function Workspace() {
   const workspaceTools = [
     { id: 'voice', label: 'Leads', icon: User },
     { id: 'calls', label: 'Call History', icon: PhoneOutgoing },
+    { id: 'copilot', label: 'Copilot', icon: Phone },
   ];
 
   const renderWorkspace = () => {
@@ -409,6 +413,18 @@ export function Workspace() {
             </div>
           </div>
         );
+      case 'copilot':
+        return (
+          <div className="w-full bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-gray-100 overflow-hidden" style={{ minHeight: '800px' }}>
+            {selectedLead || urlLeadId ? <CopilotApp /> : (
+               <div className="flex flex-col items-center justify-center h-full pt-32 text-gray-400">
+                 <Phone className="w-16 h-16 mb-4 opacity-50" />
+                 <p className="text-sm font-bold uppercase tracking-widest">No lead selected</p>
+                 <p className="text-xs mt-2">Please select a lead from the Leads tab to start a call.</p>
+               </div>
+            )}
+          </div>
+        );
       default:
         return null;
     }
@@ -420,8 +436,10 @@ export function Workspace() {
   };
 
   const handleCallClick = (lead: Lead) => {
-    const leadId = lead._id || lead.id;
-    window.location.href = `/copilot?leadId=${leadId}`;
+    const leadIdString = lead._id || lead.id;
+    window.history.pushState({}, '', `${window.location.pathname}?leadId=${leadIdString}`);
+    setSelectedLead(lead);
+    setActiveTab('copilot');
   };
 
   return (
