@@ -13,6 +13,7 @@ interface StatusCardProps {
   children?: ReactNode;
   disabled?: boolean;
   disabledTitle?: string;
+  className?: string;
 }
 
 const statusColors = {
@@ -23,12 +24,15 @@ const statusColors = {
 };
 
 const StatusCard: React.FC<StatusCardProps> = ({
-  icon, title, value, subtitle, status, expandable, expanded, onToggle, children, disabled, disabledTitle = "Coming Soon"
+  icon, title, value, subtitle, status, expandable, expanded, onToggle, children, disabled, className
 }) => {
   if (disabled) return null;
   
+  const baseClasses = "relative glass-card rounded-2xl shadow-sm py-3 px-3 w-full h-full flex flex-col justify-between transition-all duration-300 hover:shadow-md";
+  const finalClasses = className ? `${baseClasses} ${className}` : `${baseClasses} bg-white border border-gray-100 hover:border-harx-200`;
+
   return (
-    <div className="relative glass-card rounded-2xl shadow-sm py-3 px-3 w-full h-full flex flex-col justify-between transition-all duration-300 hover:border-harx-200 hover:shadow-md">
+    <div className={finalClasses}>
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-2 text-gray-400">
         <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-[14px] border border-gray-100 transition-all group-hover:bg-harx-50 group-hover:border-harx-100 group-hover:text-harx-500">

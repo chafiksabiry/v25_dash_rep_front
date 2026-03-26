@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { PhoneOff, BarChart2, Brain, Shield, Target, Volume2, Activity, TrendingUp, MicOff, Mic, CheckSquare, Play, Headphones } from 'lucide-react';
+import { PhoneOff, Brain, Volume2, MicOff, Mic, Headphones } from 'lucide-react';
 import StatusCard from './StatusCard';
 import { useAgent } from '../../contexts/AgentContext';
-import { useTranscription } from '../../contexts/TranscriptionContext';
+
 import { useAgentProfile } from '../../hooks/useAgentProfile';
 import { TwilioCallService } from '../../services/twilioCallService';
 import { useAudioVisualizer } from '../../hooks/useAudioVisualizer';
@@ -13,16 +13,10 @@ const TopStatusBar: React.FC = () => {
   // Use real-time audio visualizer if stream is available
   useAudioVisualizer(state.mediaStream);
   const { profile: agentProfile } = useAgentProfile();
-  const {
-    currentPhase: aiCurrentPhase,
-    analysisConfidence,
-    isActive: isTranscriptionActive
-  } = useTranscription();
+
 
   const [callExpanded, setCallExpanded] = useState(false);
-  const [metricsExpanded, setMetricsExpanded] = useState(false);
   const [profileExpanded, setProfileExpanded] = useState(false);
-  const [warningsExpanded, setWarningsExpanded] = useState(false);
 
   // Mute/unmute microphone
   const handleToggleMic = () => {
@@ -57,126 +51,113 @@ const TopStatusBar: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-[1800px] mx-auto px-2 py-2 overflow-x-auto overflow-y-hidden">
-      <div className="grid grid-cols-4 gap-2 min-h-[100px]">
+    <div className="w-full max-w-[1800px] mx-auto px-2 py-2">
+      <div className="grid grid-cols-4 gap-3 min-h-[110px]">
+        {/* CALL CARD */}
         <StatusCard
-          icon={<PhoneOff size={20} className="text-gray-700" />}
-          title="Call"
+          icon={<PhoneOff size={20} className="text-white" />}
+          title="Call Status"
           value={state.callState.isActive
-            ? <span className="text-green-400 font-semibold">Active</span>
-            : <span className="text-gray-500 font-semibold">Inactive</span>
+            ? <span className="text-white font-black animate-pulse">ACTIVE CALL</span>
+            : <span className="text-white/60 font-bold uppercase tracking-widest text-xs">Waiting...</span>
           }
+          status="info"
+          className={state.callState.isActive 
+            ? "bg-gradient-to-br from-emerald-500 to-teal-600 border-none shadow-lg shadow-emerald-500/20" 
+            : "bg-white border-gray-100"}
           expandable
           expanded={callExpanded}
           onToggle={() => setCallExpanded(e => !e)}
         />
-        <div className="relative w-full h-full">
-          <div className="absolute inset-x-0 bottom-[-10px] z-20 flex justify-center">
-            {state.callState.isActive && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleToggleRecording();
-                }}
-                className={`flex items-center space-x-1 px-3 py-1 rounded-full text-[10px] font-bold transition-all shadow-lg ${state.callState.isRecording
-                  ? 'bg-red-500 hover:bg-red-600 text-gray-900 animate-pulse'
-                  : 'bg-gray-100 hover:bg-slate-600 text-gray-700'
-                  }`}
-              >
-                <Mic size={10} fill={state.callState.isRecording ? "white" : "none"} />
-                <span>{state.callState.isRecording ? 'STOP REC' : 'START REC'}</span>
-              </button>
-            )}
-          </div>
+
+        {/* RECORDING CARD */}
+        <div className="relative group">
           <StatusCard
-            icon={<CheckSquare size={20} className="text-gray-700" />}
+            icon={<Mic size={20} className={state.callState.isRecording ? "text-white" : "text-gray-400"} />}
             title="Recording"
             value={state.callState.isRecording ? (
-              <span className="bg-red-500 px-3 py-1 rounded-full text-xs font-semibold text-gray-900 animate-pulse">RECORDING</span>
+              <span className="text-white font-black animate-pulse">LIVE REC</span>
             ) : state.callState.recordingUrl ? (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   window.open(state.callState.recordingUrl!, '_blank');
                 }}
-                className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-full text-xs font-semibold text-gray-900 flex items-center space-x-1 transition-colors"
+                className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20 transition-all flex items-center gap-1.5"
               >
                 <Headphones size={12} />
-                <span>LISTEN</span>
+                <span>Play</span>
               </button>
             ) : (
-              <span className="bg-gray-100 border border-gray-200 px-3 py-1 rounded-full text-xs font-semibold text-gray-700">STOPPED</span>
+              <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Stopped</span>
             )}
+            className={state.callState.isRecording 
+              ? "bg-gradient-to-br from-red-600 to-rose-700 border-none shadow-lg shadow-red-500/30" 
+              : "bg-white border-gray-100"}
           />
+          {state.callState.isActive && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleRecording();
+              }}
+              className={`absolute top-2 right-2 p-1.5 rounded-xl transition-all ${state.callState.isRecording 
+                ? 'bg-white/20 text-white hover:bg-white/40' 
+                : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+              title={state.callState.isRecording ? 'Stop Recording' : 'Start Recording'}
+            >
+              {state.callState.isRecording ? <MicOff size={14} /> : <Mic size={14} />}
+            </button>
+          )}
         </div>
-        <div className="relative w-full h-full">
-          <StatusCard
-            icon={<BarChart2 size={20} className="text-green-400" />}
-            title="Metrics"
-            value={<span className={`${state.callMetrics.overallScore < 50 ? 'text-red-400' : 'text-green-400'} font-extrabold`}>{Math.round(state.callMetrics.overallScore)}%</span>}
-            subtitle={<span>Overall Score</span>}
-            status={state.callMetrics.overallScore < 50 ? "danger" : state.callMetrics.overallScore < 80 ? "warning" : "success"}
-            expandable
-            expanded={metricsExpanded}
-            onToggle={() => setMetricsExpanded(e => !e)}
-            disabled
-          />
-        </div>
-        <div className="relative w-full h-full">
-          <StatusCard
-            icon={<Brain size={20} className="text-blue-400" />}
-            title="Rep Profile"
-            value={agentProfile ? (
-              <span className="text-gray-900 font-bold leading-tight line-clamp-1">
+
+        {/* REP PROFILE CARD */}
+        <StatusCard
+          icon={<Brain size={20} className="text-indigo-500" />}
+          title="Rep Profile"
+          value={agentProfile ? (
+            <div className="flex flex-col">
+              <span className="text-gray-900 font-black text-sm uppercase truncate">
                 {agentProfile.personalInfo.name}
               </span>
-            ) : (
-              <span className="text-gray-500 font-semibold tracking-tighter">Analyzing...</span>
-            )}
-            subtitle={agentProfile?.professionalSummary?.currentRole && (
-              <span className="text-blue-300 text-[10px] font-bold uppercase truncate block">{agentProfile.professionalSummary.currentRole}</span>
-            )}
-            expandable
-            expanded={profileExpanded}
-            onToggle={() => setProfileExpanded(e => !e)}
-          />
-        </div>
-        <div className="relative w-full h-full">
-          <StatusCard
-            icon={<Shield size={20} className={state.smartWarnings.filter(w => !w.resolved).length > 0 ? "text-red-400" : "text-cyan-400"} />}
-            title="Warnings"
-            value={state.smartWarnings.filter(w => !w.resolved).length > 0
-              ? <span className="text-red-400 font-semibold">{state.smartWarnings.filter(w => !w.resolved).length} Active</span>
-              : <span className="text-green-400 font-semibold">All Clear</span>
-            }
-            status={state.smartWarnings.filter(w => !w.resolved).length > 0 ? "danger" : "success"}
-            expandable
-            expanded={warningsExpanded}
-            onToggle={() => setWarningsExpanded(e => !e)}
-            disabled
-          />
-        </div>
-        <StatusCard
-          icon={<Target size={20} className="text-cyan-400" />}
-          title="Transaction"
-          value={<span className="text-red-400 font-extrabold">0%</span>}
-          subtitle={<span>Success Rate</span>}
-          status="danger"
-          disabled
+              <span className="text-indigo-400 text-[9px] font-bold uppercase tracking-widest truncate line-clamp-1">
+                {agentProfile.professionalSummary?.currentRole || 'Sales Representative'}
+              </span>
+            </div>
+          ) : (
+            <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Loading...</span>
+          )}
+          expandable
+          expanded={profileExpanded}
+          onToggle={() => setProfileExpanded(e => !e)}
+          className="bg-white border-gray-100 hover:border-indigo-200 group"
         />
-        <div className="relative w-full h-full">
-          <StatusCard
-            icon={state.isSpeakerPhone ? <Volume2 size={20} className="text-blue-400" /> : <Headphones size={20} className="text-blue-400" />}
-            title="Audio Output"
-            value={state.isSpeakerPhone ? <span className="text-blue-400 font-semibold">Speaker</span> : <span className="text-gray-600 font-semibold">Headset</span>}
-            subtitle={
+
+        {/* AUDIO OUTPUT CARD */}
+        <StatusCard
+          icon={state.isSpeakerPhone ? <Volume2 size={20} className="text-cyan-500" /> : <Headphones size={20} className="text-cyan-500" />}
+          title="Audio Output"
+          value={
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-900 font-black text-xs uppercase">
+                  {state.isSpeakerPhone ? 'Speaker' : 'Headset'}
+                </span>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleSpeaker();
+                  }}
+                  className="px-2 py-0.5 bg-cyan-50 text-cyan-600 rounded-lg text-[8px] font-black uppercase tracking-widest border border-cyan-100 hover:bg-cyan-100 transition-all"
+                >
+                  Switch
+                </button>
+              </div>
               <div 
-                className="w-full flex items-center mt-1"
+                className="w-full flex items-center"
                 onClick={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
               >
-                <Volume2 size={12} className={state.volume === 0 ? "text-slate-600 mr-2" : "text-blue-400 mr-2"} />
+                <Volume2 size={12} className={state.volume === 0 ? "text-gray-400 mr-2" : "text-cyan-400 mr-2"} />
                 <input
                   type="range"
                   min="0"
@@ -184,126 +165,106 @@ const TopStatusBar: React.FC = () => {
                   step="0.01"
                   value={state.volume}
                   onChange={(e) => dispatch({ type: 'UPDATE_VOLUME', volume: parseFloat(e.target.value) })}
-                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                  title="Volume"
+                  className="w-full h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-cyan-500"
                 />
               </div>
-            }
-          />
-        </div>
-        <div className="relative w-full h-full">
-          <StatusCard
-            icon={<Activity size={20} className={isTranscriptionActive ? "text-green-400" : "text-violet-400"} />}
-            title="AI Status"
-            value={isTranscriptionActive
-              ? <div className="flex flex-col">
-                <span className="text-green-400 font-semibold">Active ({Math.round(analysisConfidence * 100)}%)</span>
-              </div>
-              : <span className="text-gray-500 font-semibold">Idle</span>
-            }
-            disabled
-          />
-        </div>
-        <div className="relative w-full h-full">
-          <StatusCard
-            icon={<TrendingUp size={20} className="text-yellow-400" />}
-            title="Phase"
-            value={<span className="text-yellow-400 font-semibold whitespace-nowrap">{state.callState.currentPhase || aiCurrentPhase || 'No active phase'}</span>}
-            disabled
-          />
-        </div>
+            </div>
+          }
+          className="bg-white border-gray-100 hover:border-cyan-200"
+        />
       </div>
       {callExpanded && (
-        <div className="bg-white border border-gray-100 rounded-xl mt-4 p-6 w-full max-w-[1800px] mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Call Controls & Recording</h2>
+        <div className="bg-white/80 backdrop-blur-xl border border-gray-100 rounded-3xl mt-4 p-8 w-full max-w-[1800px] mx-auto shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/10 rounded-xl">
+                <PhoneOff size={24} className="text-emerald-500" />
+              </div>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">Call Controls & Recording</h2>
+            </div>
             <button
-              className="text-gray-500 hover:text-gray-900 text-xl"
+              className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400 hover:text-gray-900"
               onClick={() => setCallExpanded(false)}
-              aria-label="Collapse call controls"
             >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" /></svg>
+              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 12H6" /></svg>
             </button>
           </div>
-          <div className="flex gap-x-16">
+          <div className="grid grid-cols-3 gap-12">
             {/* Audio Controls */}
-            <div className="flex-1">
-              <div className="text-lg font-semibold text-gray-900 mb-2">Audio Controls</div>
-              <div className="flex space-x-3 mb-4">
+            <div className="space-y-6">
+              <div className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Audio Hardware</div>
+              <div className="flex space-x-3">
                 <button
-                  className="bg-gray-50 border border-gray-100 p-3 rounded-lg text-gray-600 hover:bg-gray-100 border border-gray-200"
+                  className={`flex-1 p-4 rounded-2xl transition-all flex flex-col items-center gap-2 border ${state.isMicMuted ? 'bg-rose-50 border-rose-100 text-rose-500' : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-emerald-200 hover:bg-emerald-50'}`}
                   onClick={handleToggleMic}
-                  aria-label={state.isMicMuted ? 'Unmute microphone' : 'Mute microphone'}
                 >
-                  {state.isMicMuted ? <MicOff size={20} className="text-gray-600" /> : <Mic size={20} className="text-gray-600" />}
+                  {state.isMicMuted ? <MicOff size={24} /> : <Mic size={24} />}
+                  <span className="text-[10px] font-black uppercase tracking-widest">{state.isMicMuted ? 'Muted' : 'Mic Active'}</span>
                 </button>
                 <button
-                  className={`p-3 rounded-lg transition-colors ${state.isSpeakerPhone ? 'bg-blue-600/20 text-blue-400' : 'bg-gray-50 border border-gray-100 text-gray-600 hover:bg-gray-100 border border-gray-200'}`}
+                  className={`flex-1 p-4 rounded-2xl transition-all flex flex-col items-center gap-2 border ${state.isSpeakerPhone ? 'bg-cyan-50 border-cyan-100 text-cyan-600' : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-indigo-200 hover:bg-indigo-50'}`}
                   onClick={handleToggleSpeaker}
-                  aria-label={state.isSpeakerPhone ? 'Switch to headset' : 'Switch to speaker'}
-                  title={state.isSpeakerPhone ? 'Switch to headset' : 'Switch to speaker'}
                 >
-                  {state.isSpeakerPhone ? <Volume2 size={20} /> : <Headphones size={20} />}
+                  {state.isSpeakerPhone ? <Volume2 size={24} /> : <Headphones size={24} />}
+                  <span className="text-[10px] font-black uppercase tracking-widest">{state.isSpeakerPhone ? 'Speaker' : 'Headset'}</span>
                 </button>
               </div>
-              <div className="flex flex-col space-y-2">
-                <div className="flex justify-between items-center text-xs text-gray-500">
-                  <span>Volume Application</span>
-                  <span>{Math.round(state.volume * 100)}%</span>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Master Volume</span>
+                  <span className="text-xs font-black text-cyan-500">{Math.round(state.volume * 100)}%</span>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Volume2 size={16} className={state.volume === 0 ? "text-slate-600" : "text-blue-400"} />
+                <div className="flex items-center gap-3">
+                  <Volume2 size={16} className="text-gray-300" />
                   <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={state.volume}
+                    type="range" min="0" max="1" step="0.01" value={state.volume}
                     onChange={(e) => dispatch({ type: 'UPDATE_VOLUME', volume: parseFloat(e.target.value) })}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                    title="Attention: Le navigateur ne peut pas contrôler le volume global de Windows, uniquement le volume de l'application."
+                    className="w-full h-1.5 bg-gray-100 rounded-full appearance-none cursor-pointer accent-cyan-500"
                   />
                 </div>
               </div>
             </div>
             {/* Call Status */}
-            <div className="flex-1">
-              <div className="text-lg font-semibold text-gray-900 mb-2">Call Status</div>
-              {state.callState.isActive ? (
-                <span className="text-green-400 font-semibold">Active</span>
-              ) : (
-                <span className="text-gray-500 font-semibold">Inactive</span>
-              )}
+            <div className="space-y-6">
+              <div className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Live Connection</div>
+              <div className={`h-[160px] rounded-3xl flex flex-col items-center justify-center gap-4 border-2 border-dashed transition-all ${state.callState.isActive ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-100'}`}>
+                <div className={`p-4 rounded-full ${state.callState.isActive ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'bg-gray-200 text-gray-400'}`}>
+                  <PhoneOff size={32} />
+                </div>
+                <span className={`text-sm font-black uppercase tracking-[0.2em] ${state.callState.isActive ? 'text-emerald-600' : 'text-gray-400'}`}>
+                  {state.callState.isActive ? 'Call in Progress' : 'No Active Session'}
+                </span>
+              </div>
             </div>
-            <div className="flex-1">
-              <div className="text-lg font-semibold text-gray-900 mb-2">Recording Status</div>
-              <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col space-y-3">
+            {/* Recording */}
+            <div className="space-y-6">
+              <div className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Data Capture</div>
+              <div className="bg-gray-900 rounded-3xl p-6 flex flex-col h-[160px] justify-between shadow-xl">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-3 h-3 rounded-full ${state.callState.isRecording ? 'bg-red-500 animate-pulse' : 'bg-slate-500'}`}></div>
-                    <span className="text-gray-700">
-                      {state.callState.isRecording ? 'Recording Live' : 'Recording Stopped'}
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${state.callState.isRecording ? 'bg-red-500 animate-pulse' : 'bg-white/20'}`} />
+                    <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">
+                      {state.callState.isRecording ? 'Recording...' : 'Idle'}
                     </span>
                   </div>
                   {state.callState.isActive && (
                     <button
                       onClick={handleToggleRecording}
-                      className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${state.callState.isRecording
-                        ? 'bg-red-900/30 text-red-500 border border-red-500/50 hover:bg-red-900/50'
-                        : 'bg-green-900/30 text-green-500 border border-green-500/50 hover:bg-green-900/50'
-                        }`}
+                      className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${state.callState.isRecording
+                        ? 'bg-red-500 text-white hover:bg-red-600'
+                        : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'}`}
                     >
-                      {state.callState.isRecording ? 'STOP' : 'START'}
+                      {state.callState.isRecording ? 'Stop' : 'Start'}
                     </button>
                   )}
                 </div>
                 {state.callState.recordingUrl && (
                   <button
                     onClick={() => window.open(state.callState.recordingUrl!, '_blank')}
-                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-gray-900 px-4 py-2 rounded-lg transition-colors w-full justify-center"
+                    className="w-full bg-white text-gray-900 py-3 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-gray-100 transition-all"
                   >
-                    <Play size={16} fill="white" />
-                    <span className="font-semibold text-sm">Play Recording</span>
+                    <Headphones size={16} />
+                    <span>Playback File</span>
                   </button>
                 )}
               </div>
@@ -311,163 +272,77 @@ const TopStatusBar: React.FC = () => {
           </div>
         </div>
       )}
-      {metricsExpanded && (
-        <div className="bg-white border border-gray-100 rounded-xl mt-4 p-6 w-full max-w-[1800px] mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Call Metrics Details</h2>
-            <button
-              className="text-gray-500 hover:text-gray-900 text-xl"
-              onClick={() => setMetricsExpanded(false)}
-              aria-label="Collapse metrics details"
-            >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" /></svg>
-            </button>
-          </div>
-          <div className="grid grid-cols-4 gap-6">
-            {/* Clarity */}
-            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col">
-              <div className="flex items-center mb-2">
-                <span className="text-blue-400 text-xl mr-2">🎯</span>
-                <span className="font-bold text-gray-900 text-lg">Clarity</span>
-              </div>
-              <span className={`text-2xl font-bold mb-2 ${state.callMetrics.clarity < 50 ? 'text-red-400' : 'text-green-400'}`}>{Math.round(state.callMetrics.clarity)}%</span>
-              <div className="w-full h-2 bg-gray-200 rounded-full">
-                <div className="bg-blue-400 h-2 rounded-full transition-all duration-500" style={{ width: `${state.callMetrics.clarity}%` }}></div>
-              </div>
-            </div>
-            {/* Empathy */}
-            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col">
-              <div className="flex items-center mb-2">
-                <span className="text-blue-400 text-xl mr-2">❤️</span>
-                <span className="font-bold text-gray-900 text-lg">Empathy</span>
-              </div>
-              <span className={`text-2xl font-bold mb-2 ${state.callMetrics.empathy < 50 ? 'text-red-400' : 'text-green-400'}`}>{Math.round(state.callMetrics.empathy)}%</span>
-              <div className="w-full h-2 bg-gray-200 rounded-full">
-                <div className="bg-blue-400 h-2 rounded-full transition-all duration-500" style={{ width: `${state.callMetrics.empathy}%` }}></div>
-              </div>
-            </div>
-            {/* Assertiveness */}
-            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col">
-              <div className="flex items-center mb-2">
-                <span className="text-yellow-400 text-xl mr-2">💪</span>
-                <span className="font-bold text-gray-900 text-lg">Assertiveness</span>
-              </div>
-              <span className={`text-2xl font-bold mb-2 ${state.callMetrics.assertiveness < 50 ? 'text-red-400' : 'text-green-400'}`}>{Math.round(state.callMetrics.assertiveness)}%</span>
-              <div className="w-full h-2 bg-gray-200 rounded-full">
-                <div className="bg-yellow-400 h-2 rounded-full transition-all duration-500" style={{ width: `${state.callMetrics.assertiveness}%` }}></div>
-              </div>
-            </div>
-            {/* Efficiency */}
-            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col">
-              <div className="flex items-center mb-2">
-                <span className="text-yellow-400 text-xl mr-2">⚡</span>
-                <span className="font-bold text-gray-900 text-lg">Efficiency</span>
-              </div>
-              <span className={`text-2xl font-bold mb-2 ${state.callMetrics.efficiency < 50 ? 'text-red-400' : 'text-green-400'}`}>{Math.round(state.callMetrics.efficiency)}%</span>
-              <div className="w-full h-2 bg-gray-200 rounded-full">
-                <div className="bg-yellow-400 h-2 rounded-full transition-all duration-500" style={{ width: `${state.callMetrics.efficiency}%` }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {warningsExpanded && (
-        <div className="bg-white border border-gray-100 rounded-xl mt-4 p-6 w-full max-w-[1800px] mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Active Warnings</h2>
-            <button
-              className="text-gray-500 hover:text-gray-900 text-xl"
-              onClick={() => setWarningsExpanded(false)}
-              aria-label="Collapse warnings details"
-            >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" /></svg>
-            </button>
-          </div>
-          <div className="flex flex-col gap-4 w-full">
-            {state.smartWarnings.filter(w => !w.resolved).length > 0 ? (
-              state.smartWarnings.filter(w => !w.resolved).map((warning, index) => (
-                <div key={index} className="bg-gray-50 border border-gray-100 rounded-lg p-4 border-l-4 border-red-500">
-                  <div className="flex justify-between items-start">
-                    <div className="font-bold text-gray-900">{warning.title}</div>
-                    <span className="text-[10px] text-gray-500">{warning.detectedAt.toLocaleTimeString()}</span>
-                  </div>
-                  <div className="text-sm text-gray-700 mt-1">{warning.message}</div>
-                </div>
-              ))
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Shield size={64} className="text-green-500 mb-6" />
-                <span className="text-green-400 text-xl font-semibold">All systems normal</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       {profileExpanded && agentProfile && (
-        <div className="bg-white border border-gray-100 rounded-xl mt-4 p-8 w-full max-w-[1800px] mx-auto shadow-2xl border border-blue-500/20 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="bg-white/80 backdrop-blur-xl border border-gray-100 rounded-3xl mt-4 p-8 w-full max-w-[1800px] mx-auto shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-2xl font-bold text-gray-900 shadow-lg border-2 border-blue-400/30">
+            <div className="flex items-center space-x-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-3xl font-black text-white shadow-xl shadow-indigo-500/20 transform rotate-3">
                 {agentProfile.personalInfo.name.charAt(0)}
               </div>
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 leading-tight">{agentProfile.personalInfo.name}</h2>
-                <div className="flex items-center space-x-3 mt-1 text-blue-300 font-medium">
+                <h2 className="text-3xl font-black text-gray-900 leading-tight tracking-tight">{agentProfile.personalInfo.name}</h2>
+                <div className="flex items-center gap-3 mt-2">
                   {agentProfile.professionalSummary?.currentRole && (
-                    <span className="bg-blue-900/40 px-3 py-1 rounded-full text-xs uppercase tracking-widest border border-blue-500/30">
+                    <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border border-indigo-100">
                       {agentProfile.professionalSummary.currentRole}
                     </span>
                   )}
-                  <span className="text-gray-500 text-sm">{agentProfile.personalInfo.email}</span>
+                  <span className="text-gray-400 text-xs font-bold">{agentProfile.personalInfo.email}</span>
                 </div>
               </div>
             </div>
             <button
-              className="text-gray-500 hover:text-gray-900 transition-colors"
+               className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400 hover:text-gray-900"
               onClick={() => setProfileExpanded(false)}
             >
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
+              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 12H6" /></svg>
             </button>
           </div>
 
           <div className="grid grid-cols-3 gap-8 text-gray-700">
-            <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 border border-gray-100">
-              <h3 className="text-blue-400 font-bold uppercase text-xs mb-4 tracking-tighter">Professional Summary</h3>
-              <p className="text-sm leading-relaxed text-gray-600">
+            <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-6">
+              <h3 className="text-indigo-500 font-black uppercase text-[10px] mb-4 tracking-[0.2em]">Expertise Summary</h3>
+              <p className="text-sm leading-relaxed text-gray-600 font-medium">
                 {agentProfile.professionalSummary?.yearsOfExperience ? (
-                  <>Experience: <span className="text-gray-900 font-medium">{agentProfile.professionalSummary.yearsOfExperience}</span> in sales and customer engagement.</>
-                ) : "No experience summary provided."}
+                  <>Experience: <span className="text-gray-900 font-black">{agentProfile.professionalSummary.yearsOfExperience}</span> in sales and customer fulfillment.</>
+                ) : "Highly skilled representative providing personalized voice interaction and strategic engagement."}
               </p>
             </div>
 
-            <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 border border-gray-100">
-              <h3 className="text-blue-400 font-bold uppercase text-xs mb-4 tracking-tighter">Contact & Location</h3>
+            <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-6">
+              <h3 className="text-indigo-500 font-black uppercase text-[10px] mb-4 tracking-[0.2em]">Identity & Loc</h3>
               <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Phone</span>
-                  <span className="text-gray-700 font-mono">{agentProfile.personalInfo.phone || 'N/A'}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold">Phone</span>
+                  <span className="text-gray-900 font-black tracking-tight">{agentProfile.personalInfo.phone || 'N/A'}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Location</span>
-                  <span className="text-gray-700">{agentProfile.personalInfo.location || 'Remote'}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold">Location</span>
+                  <span className="text-gray-900 font-black tracking-tight">{agentProfile.personalInfo.location || 'Remote'}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Status</span>
-                  <span className="text-green-400 flex items-center">
-                    <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
-                    Connected
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold">Network</span>
+                  <span className="text-emerald-500 flex items-center font-black">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2 shadow-lg shadow-emerald-500/50 animate-pulse"></span>
+                    SECURE
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 border border-gray-100">
-              <h3 className="text-blue-400 font-bold uppercase text-xs mb-4 tracking-tighter">Current Methodology</h3>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <div className="bg-harx-alt-500/20 p-2 rounded-lg">
-                  <Shield size={20} className="text-blue-400" />
+            <div className="bg-gradient-to-br from-indigo-900 to-indigo-950 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform duration-700">
+                <Brain size={80} className="text-white" />
+              </div>
+              <h3 className="text-indigo-300 font-black uppercase text-[10px] mb-4 tracking-[0.2em] relative z-10">AI Methodology</h3>
+              <div className="flex items-center gap-3 relative z-10">
+                <div className="bg-white/10 p-2 rounded-xl backdrop-blur-md">
+                  <Brain size={24} className="text-white" />
                 </div>
-                <span>REPS Adaptive Coaching Active</span>
+                <div className="flex flex-col">
+                  <span className="text-white font-black text-sm uppercase tracking-wider">REPS V25</span>
+                  <span className="text-indigo-300 text-[10px] font-bold">Adaptive Coaching Engine</span>
+                </div>
               </div>
             </div>
           </div>
