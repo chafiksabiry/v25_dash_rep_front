@@ -277,11 +277,29 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                         {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
                       </span>
                       
-                      {record.ai_call_score?.overall?.score !== undefined && record.ai_call_score?.overall?.score !== null && (
+                      {record.ai_call_score?.overall?.score !== undefined && record.ai_call_score?.overall?.score !== null ? (
                         <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 rounded-full">
                           <Brain className="w-4 h-4" />
                           <span className="font-medium">{record.ai_call_score.overall.score}%</span>
                         </div>
+                      ) : (
+                        record.recording_url_cloudinary && (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAnalyzeCall(record._id || (record as any).$oid);
+                            }}
+                            disabled={analyzingCallId === (record._id || (record as any).$oid)}
+                            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${
+                              analyzingCallId === (record._id || (record as any).$oid) 
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                : 'bg-harx-50 text-harx-600 hover:bg-harx-100 border border-harx-200'
+                            }`}
+                          >
+                            <Brain className={`w-3 h-3 ${analyzingCallId === (record._id || (record as any).$oid) ? 'animate-spin' : ''}`} />
+                            <span>{analyzingCallId === (record._id || (record as any).$oid) ? 'Analyzing...' : 'Analyze'}</span>
+                          </button>
+                        )
                       )}
 
                       <button 
