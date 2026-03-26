@@ -172,24 +172,25 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                 
                 {isWorkspaceOpen && (
                   <div className="ml-5 pl-2 border-l border-white/10 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                    {item.subItems.map((sub) => (
-                      <NavLink
-                        key={sub.path}
-                        to={sub.path}
-                        className={({ isActive }) =>
-                          `flex w-full items-center rounded-xl transition-all duration-300 group relative space-x-3 py-2.5 px-4 ${
-                            isActive
+                    {item.subItems.map((sub) => {
+                      const isSubActive = window.location.search.includes(sub.path.split('?')[1]);
+                      return (
+                        <NavLink
+                          key={sub.path}
+                          to={sub.path}
+                          className={`flex w-full items-center rounded-xl transition-all duration-300 group relative space-x-3 py-2.5 px-4 ${
+                            isSubActive
                               ? 'bg-gradient-to-r from-harx-500/20 to-transparent text-white border-l-2 border-harx-500'
                               : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
-                          }`
-                        }
-                      >
-                        <sub.icon className={`h-3.5 w-3.5 transition-colors ${window.location.search.includes(sub.path.split('?')[1]) ? 'text-harx-400' : 'text-current'}`} />
-                        <span className={`font-black text-[11px] uppercase tracking-widest ${window.location.search.includes(sub.path.split('?')[1]) ? 'text-white' : 'text-current'}`}>
-                          {sub.label}
-                        </span>
-                      </NavLink>
-                    ))}
+                          }`}
+                        >
+                          <sub.icon className={`h-3.5 w-3.5 transition-colors ${isSubActive ? 'text-harx-400' : 'text-current'}`} />
+                          <span className={`font-black text-[11px] uppercase tracking-widest ${isSubActive ? 'text-harx-400' : 'text-current'}`}>
+                            {sub.label}
+                          </span>
+                        </NavLink>
+                      );
+                    })}
                   </div>
                 )}
               </>
