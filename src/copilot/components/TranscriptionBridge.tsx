@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useAgent } from '../contexts/AgentContext';
 import { useTranscription } from '../contexts/TranscriptionContext';
 import { TranscriptionMessage } from '../services/transcriptionService';
+// @ts-ignore
 import { v4 as uuidv4 } from 'uuid';
 import { processAiAnalysis } from '../services/aiAnalysisBridge';
 
@@ -32,10 +33,12 @@ export const TranscriptionBridge: React.FC = () => {
                     }
                 });
 
-                // Trigger AI analysis on final transcripts with context from Ref
-                if (message.type === 'final') {
-                    processAiAnalysis(message.text, dispatch, transcriptsRef.current);
-                }
+                // Trigger AI analysis on final transcripts
+                processAiAnalysis(message.text, dispatch, transcriptsRef.current);
+            } else if (message.type === 'interim' && message.text.trim().length > 40) {
+                // Also trigger analysis on long interims to be more proactive
+                // We don't dispatch it as an entry yet, but we run the analysis
+                processAiAnalysis(message.text, dispatch, transcriptsRef.current);
             }
 
             // Handle AI Analysis (Phase changes, metrics, etc)

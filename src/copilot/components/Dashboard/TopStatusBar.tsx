@@ -77,7 +77,30 @@ const TopStatusBar: React.FC = () => {
             icon={<Mic size={20} className={state.callState.isRecording ? "text-white" : "text-rose-500"} />}
             title="Recording"
             value={state.callState.isRecording ? (
-              <span className="text-white font-black animate-pulse">LIVE REC</span>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-black animate-pulse">LIVE REC</span>
+                  {state.callState.isActive && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleRecording();
+                      }}
+                      className="px-2 py-0.5 bg-white/20 text-white rounded-lg text-[8px] font-black uppercase tracking-widest border border-white/30 hover:bg-white/40 transition-all"
+                    >
+                      Stop
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex gap-1">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="w-1 h-3 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.1}s` }} />
+                    ))}
+                  </div>
+                  <span className="text-[8px] font-bold text-white/60 uppercase tracking-widest">Capturing...</span>
+                </div>
+              </div>
             ) : state.callState.recordingUrl ? (
               <button
                 onClick={(e) => {
@@ -90,27 +113,28 @@ const TopStatusBar: React.FC = () => {
                 <span>Play</span>
               </button>
             ) : (
-              <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Stopped</span>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Stopped</span>
+                  {state.callState.isActive && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleRecording();
+                      }}
+                      className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-lg text-[8px] font-black uppercase tracking-widest border border-gray-200 hover:bg-gray-200 transition-all"
+                    >
+                      Start
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
             className={state.callState.isRecording 
               ? "bg-gradient-to-br from-red-600 to-rose-700 border-none shadow-lg shadow-red-500/30" 
               : "bg-white border-gray-100"}
             iconClassName={state.callState.isRecording ? "bg-white/20 border-white/30" : "bg-rose-50 border-rose-100"}
           />
-          {state.callState.isActive && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleRecording();
-              }}
-              className={`absolute top-2 right-2 p-1.5 rounded-xl transition-all ${state.callState.isRecording 
-                ? 'bg-white/20 text-white hover:bg-white/40' 
-                : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-              title={state.callState.isRecording ? 'Stop Recording' : 'Start Recording'}
-            >
-              {state.callState.isRecording ? <MicOff size={14} /> : <Mic size={14} />}
-            </button>
-          )}
         </div>
 
         {/* REP PROFILE CARD - GRAYED OUT */}
