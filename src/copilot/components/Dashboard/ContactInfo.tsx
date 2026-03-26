@@ -7,7 +7,7 @@ import { useTranscription } from '../../contexts/TranscriptionContext';
 import { useLead } from '../../hooks/useLead';
 import { useAgentProfile } from '../../hooks/useAgentProfile';
 import {
-  Phone, Mail, Calendar, Briefcase, Mic, MicOff, Volume2, Headphones, Shield
+  Phone, Mail, Calendar, Briefcase, Mic, MicOff, Volume2, Headphones
 } from 'lucide-react';
 
 interface TokenResponse {
@@ -396,7 +396,6 @@ export function ContactInfo() {
                 <div className="flex items-center space-x-3 mb-0.5">
                   <span className="text-lg font-black text-gray-900 tracking-tight">{contact.name}</span>
                   <div className="flex items-center gap-2">
-                    <span className="bg-emerald-50 text-emerald-600 text-[10px] px-2.5 py-0.5 rounded-full font-black border border-emerald-100 uppercase tracking-widest shadow-sm">qualified</span>
                     <div className="flex items-center bg-indigo-50 text-indigo-600 text-[10px] uppercase font-black tracking-[0.2em] px-3 py-1 rounded-xl border border-indigo-100 shadow-sm">
                       <div className="p-1 bg-white rounded-lg mr-2">
                         <Briefcase className="w-3 h-3 text-indigo-500" />
@@ -444,20 +443,6 @@ export function ContactInfo() {
             <span className="text-gray-600">{maskPhone(contact.phone)}</span>
           </div>
 
-          <div className="flex items-center space-x-6 mt-4">
-            <div className="flex items-center text-indigo-600 text-xs font-black uppercase tracking-widest bg-indigo-50/50 px-3 py-1.5 rounded-xl border border-indigo-100/50">
-               <div className="p-1 bg-white rounded-lg mr-2 shadow-sm">
-                <Mail className="w-3 h-3 text-indigo-500" />
-               </div>
-               Transcript: <span className="ml-1.5 text-gray-900">0</span>
-            </div>
-            <span className="flex items-center text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] opacity-50 cursor-not-allowed bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100" title="Coming Soon">
-              <div className="p-1 bg-white rounded-lg mr-2">
-                <Shield className="w-3 h-3 text-gray-300" />
-              </div>
-              Knowledge Base
-            </span>
-          </div>
         </div >
         {/* Actions à droite */}
         <div className="flex items-center space-x-3 bg-gray-50/50 p-2 rounded-2xl border border-gray-100">
