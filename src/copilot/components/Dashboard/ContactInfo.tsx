@@ -393,22 +393,26 @@ export function ContactInfo() {
                 )}
               </div>
               <div>
-                <div className="flex items-center space-x-3 mb-0.5">
+                <div className="flex flex-col space-y-0.5">
                   <span className="text-lg font-black text-gray-900 tracking-tight">{contact.name}</span>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center bg-indigo-50 text-indigo-600 text-[10px] uppercase font-black tracking-[0.2em] px-3 py-1 rounded-xl border border-indigo-100 shadow-sm">
-                      <div className="p-1 bg-white rounded-lg mr-2">
-                        <Briefcase className="w-3 h-3 text-indigo-500" />
-                      </div>
-                      {(gig as any)?.title || 'Project'}
-                    </div>
-                  </div>
                 </div>
-                <div className="flex items-center space-x-2 text-gray-400 font-bold uppercase tracking-widest text-[10px] mt-1.5 ml-1">
-                  <div className="p-1 bg-blue-50 rounded-lg">
-                    <Mail className="w-3.5 h-3.5 text-blue-500" />
+                
+                <div className="flex items-center space-x-6 mt-1.5 ml-1">
+                  {/* Email Section */}
+                  <div className="flex items-center space-x-2 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                    <div className="p-1 bg-blue-50 rounded-lg">
+                      <Mail className="w-3.5 h-3.5 text-blue-500" />
+                    </div>
+                    <span className="text-gray-500">{contact.email}</span>
                   </div>
-                  <span className="text-gray-500">{contact.email}</span>
+
+                  {/* Gig Section */}
+                  <div className="flex items-center space-x-2 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                    <div className="p-1 bg-indigo-50 rounded-lg">
+                      <Briefcase className="w-3.5 h-3.5 text-indigo-500" />
+                    </div>
+                    <span className="text-gray-500">GiG : <span className="text-indigo-600">{(gig as any)?.title || 'Standard Project'}</span></span>
+                  </div>
                 </div>
               </div>
             </>
