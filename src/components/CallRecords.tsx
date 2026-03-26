@@ -108,32 +108,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
       const response = await api.calls.getByAgentId(agentId);
       
       if (response && response.success && Array.isArray(response.data)) {
-        let filteredCalls = response.data;
-        
-        if (gigId) {
-          filteredCalls = filteredCalls.filter((call: any) => {
-            if (call.gigId === gigId || call.gig === gigId) return true;
-            const leadObj = call.lead;
-            if (leadObj && typeof leadObj === 'object') {
-              const leadGigId = leadObj.gigId || leadObj.gig;
-              if (leadGigId) {
-                const leadGigIdStr = typeof leadGigId === 'object' ? (leadGigId._id || leadGigId.$oid) : leadGigId;
-                if (leadGigIdStr === gigId) return true;
-                return false; // Specifically mismatched gig
-              }
-            }
-            // If we don't know the gig because backend didn't populate it, allow it to show
-            return true;
-          });
-        }
-        
-        if (leadId) {
-          filteredCalls = filteredCalls.filter((call: any) => {
-            const callLeadId = typeof call.lead === 'object' ? (call.lead?._id || call.lead?.$oid) : call.lead;
-            return callLeadId === leadId || call.leadId === leadId;
-          });
-        }
-
+        const filteredCalls = response.data;
         setCallRecords(filteredCalls);
       } else {
         throw new Error(response.message || 'Failed to fetch call records');
