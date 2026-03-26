@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import SmartWarningSystem from './SmartWarningSystem';
+import RealTimeCoaching from './RealTimeCoaching';
 import { useLead } from '../../hooks/useLead';
 import { useGigScript } from '../../hooks/useGigScript';
 import { ChevronDown, ChevronUp, User, Bot, Sparkles } from 'lucide-react';
@@ -19,7 +20,7 @@ const DashboardGrid: React.FC = () => {
   const activeScript = scripts[selectedScriptIndex];
 
   // Group script by phase if available
-  const scriptByPhase = activeScript?.script?.reduce((acc, item) => {
+  const scriptByPhase = activeScript?.script?.reduce((acc: any, item: any) => {
     if (!acc[item.phase]) acc[item.phase] = [];
     acc[item.phase].push(item);
     return acc;
@@ -28,9 +29,12 @@ const DashboardGrid: React.FC = () => {
   const hasScriptsInCollection = scripts.length > 0;
 
   return (
-    <div className="w-full pb-4 space-y-4">
-      {/* AI Overlays */}
-      <SmartWarningSystem />
+    <div className="w-full pb-4 space-y-6">
+      {/* AI Overlays & Real-time Analysis */}
+      <div className="space-y-6">
+        <RealTimeCoaching />
+        <SmartWarningSystem />
+      </div>
 
       {/* Scripts Collection Section */}
       <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-500">
@@ -75,7 +79,7 @@ const DashboardGrid: React.FC = () => {
                 {/* Script Selector Tabs if multiple scripts exist */}
                 {scripts.length > 1 && (
                   <div className="flex flex-wrap gap-2 mb-6 p-1 bg-gray-50 rounded-2xl border border-gray-100">
-                    {scripts.map((s, idx) => (
+                    {scripts.map((s: any, idx: number) => (
                       <button
                         key={idx}
                         onClick={() => setSelectedScriptIndex(idx)}
