@@ -13,7 +13,8 @@ export const useCallStorage = () => {
         agentId,
         leadId,
         userId: agentId,
-        isRecording: isRecordingOverride !== undefined ? isRecordingOverride : state.callState.isRecording
+        isRecording: isRecordingOverride !== undefined ? isRecordingOverride : state.callState.isRecording,
+        transcript: state.transcript // Send the real-time transcript to the backend
       });
 
       if (callData && callData.recording_url_cloudinary) {
@@ -22,7 +23,7 @@ export const useCallStorage = () => {
     } catch (error) {
       console.error('Failed to store call in database:', error);
     }
-  }, [state.callState.isRecording]);
+  }, [state.callState.isRecording, state.transcript]);
 
   return { storeCall };
 }; 

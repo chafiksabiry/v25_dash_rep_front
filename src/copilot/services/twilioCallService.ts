@@ -6,6 +6,7 @@ export interface CallStorageData {
   leadId: string;
   userId: string;
   isRecording: boolean;
+  transcript?: any[];
 }
 
 export class TwilioCallService {
@@ -19,7 +20,7 @@ export class TwilioCallService {
       }
 
       // Step 2: Get call details from Twilio
-      const result = await axios.post(`${import.meta.env.VITE_API_URL_CALL}/api/calls/call-details`, {
+      const result = await axios.post(`${import.meta.env.VITE_API_URL_CALL || import.meta.env.VITE_CALLS_API_URL}/api/calls/call-details`, {
         callSid: data.callSid,
         userId: data.userId
       });
@@ -29,20 +30,28 @@ export class TwilioCallService {
       // Step 3: Fetch recording from Cloudinary if available (ONLY if isRecording is true)
       let cloudinaryRecord = { data: { url: null } };
       if (data.isRecording && call && call.recordingUrl) {
-        cloudinaryRecord = await axios.post(`${import.meta.env.VITE_API_URL_CALL}/api/calls/fetch-recording`, {
+        cloudinaryRecord = await axios.post(`${import.meta.env.VITE_API_URL_CALL || import.meta.env.VITE_CALLS_API_URL}/api/calls/fetch-recording`, {
           recordingUrl: call.recordingUrl,
           userId: data.userId
         });
       }
 
+      // Format transcript for backend (from TranscriptEntry to { speaker, text, timestamp })
+      const formattedTranscript = data.transcript?.map(entry => ({
+        speaker: entry.participantId === 'agent-1' ? 'Agent' : entry.participantId === 'customer-1' ? 'Customer' : 'Speaker',
+        text: entry.text,
+        timestamp: entry.timestamp.toISOString()
+      }));
+
       // Step 4: Store call in database
-      const callInDB = await axios.post(`${import.meta.env.VITE_API_URL_CALL}/api/calls/store-call`, {
+      const callInDB = await axios.post(`${import.meta.env.VITE_API_URL_CALL || import.meta.env.VITE_CALLS_API_URL}/api/calls/store-call`, {
         CallSid: data.callSid,
         agentId: data.agentId,
         leadId: data.leadId,
         call,
         cloudinaryrecord: cloudinaryRecord.data.url,
-        userId: data.userId
+        userId: data.userId,
+        transcript: formattedTranscript
       });
 
       console.log('📝 Call stored in DB:', (callInDB.data as any)._id);
