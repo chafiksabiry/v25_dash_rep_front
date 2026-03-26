@@ -519,8 +519,8 @@ export function Workspace() {
             key={tool.id}
             onClick={() => {
               setActiveTab(tool.id);
-              // Use navigate instead of pushState for reactivity
-              navigate(`${window.location.pathname}?tab=${tool.id}`, { replace: true });
+              // Use relative navigation to only update the query param
+              navigate(`?tab=${tool.id}`, { replace: true });
             }}
             className={`flex items-center justify-center space-x-3 px-8 py-4 rounded-2xl transition-all duration-300 border ${activeTab === tool.id
               ? 'bg-gradient-harx text-white border-transparent shadow-xl shadow-harx-500/25 -translate-y-1'
