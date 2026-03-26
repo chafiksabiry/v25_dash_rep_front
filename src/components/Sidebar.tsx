@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Users, Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 // Declare qiankun global variables
@@ -42,12 +42,14 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
     return phases[`phase${phaseNumber}` as keyof Phases]?.status === 'completed';
   };
 
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = React.useState(false);
+
   const navItems = [
     {
       icon: UserCircle,
       label: 'Profile',
       path: '/profile',
-      isAccessible: () => true // Always accessible
+      isAccessible: () => true
     },
     {
       icon: LayoutDashboard,
@@ -65,19 +67,18 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       icon: Monitor,
       label: 'Workspace',
       path: '/workspace',
-      isAccessible: () => isPhaseCompleted(4)
+      isAccessible: () => isPhaseCompleted(4),
+      subItems: [
+        { label: 'Leads', path: '/workspace?tab=voice', icon: User },
+        { label: 'Call History', path: '/workspace?tab=calls', icon: PhoneOutgoing },
+        { label: 'Copilot', path: '/workspace?tab=copilot', icon: Phone }
+      ]
     },
     {
       icon: Calendar,
       label: 'Session Planning',
       path: '/session-planning',
-      isAccessible: () => true // Temporarily enabled for testing
-    },
-    {
-      icon: Users,
-      label: 'Leads',
-      path: '/import-leads',
-      isAccessible: () => isPhaseCompleted(5)
+      isAccessible: () => true
     },
     {
       icon: Settings,
@@ -93,20 +94,19 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
     console.log('🔒 Access Control Status:', {
       phases,
       availableNavItems: filteredNavItems.map(item => item.label),
-      restrictedNavItems: navItems
-        .filter(item => !item.isAccessible())
-        .map(item => item.label)
     });
   }, [phases]);
 
   return (
     <div 
-      className={`fixed inset-y-0 left-0 z-30 bg-gradient-to-b from-[#0f111a] to-[#150a11] text-white transition-all duration-300 ease-in-out md:relative shadow-2xl border-r border-white/10 flex flex-col overflow-visible ${
+      className={`fixed inset-y-0 left-0 z-30 bg-gradient-to-b from-[#0f111a] to-[#150a11] text-white transition-all duration-300 ease-in-out md:relative shadow-2xl border-r border-white/10 flex flex-col overflow-y-auto overflow-x-hidden ${
         !isSidebarOpen
           ? '-translate-x-full md:translate-x-0'
           : 'translate-x-0'
       } ${isCollapsed ? 'w-20' : 'w-72'}`}
+      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
+      <style>{`div::-webkit-scrollbar { display: none; }`}</style>
       {/* Toggle Button - Modern Floating Style */}
       <button 
         onClick={() => setIsCollapsed(!isCollapsed)}
@@ -115,7 +115,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
         {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
 
-      <div className={`h-[90px] flex items-center justify-between border-b border-white/5 bg-[#0a0b14]/50 backdrop-blur-sm transition-all duration-300 ${isCollapsed ? 'px-4 justify-center' : 'px-6'}`}>
+      <div className={`h-[90px] flex items-center justify-between border-b border-white/5 bg-[#0a0b14]/50 backdrop-blur-sm transition-all duration-300 shrink-0 ${isCollapsed ? 'px-4 justify-center' : 'px-6'}`}>
         <div className="flex items-center space-x-3.5">
           <div className="relative shrink-0">
             <div className="absolute inset-0 bg-gradient-to-br from-harx-500/40 to-harx-600/40 blur-md rounded-lg scale-90"></div>
@@ -150,37 +150,81 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
         )}
       </div>
 
-      <nav className="flex-1 px-4 py-4 flex flex-col min-h-0 space-y-2">
+      <nav className="flex-1 px-4 py-4 flex flex-col min-h-0 space-y-1">
         {filteredNavItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              `flex w-full items-center rounded-2xl transition-all duration-300 group relative ${
-                isCollapsed ? 'justify-center p-3' : 'space-x-3 py-3 px-5'
-              } ${
-                isActive
-                  ? 'bg-gradient-harx text-white shadow-xl shadow-harx-500/25 ring-1 ring-white/10'
-                  : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
-              }`
-            }
-          >
-            {({ isActive }) => (
+          <div key={item.path} className="space-y-1">
+            {item.subItems && !isCollapsed ? (
               <>
-                <div className={`p-2 rounded-xl transition-all shrink-0 ${isActive ? 'bg-white/20' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
-                  <item.icon className="h-5 w-5" />
-                </div>
-                {!isCollapsed && (
-                  <span className="font-black text-sm tracking-tight whitespace-nowrap overflow-hidden">{item.label}</span>
-                )}
-                {isCollapsed && (
-                  <div className="absolute left-16 bg-slate-900 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl border border-white/10">
-                    {item.label}
+                <button
+                  onClick={() => setIsWorkspaceOpen(!isWorkspaceOpen)}
+                  className={`flex w-full items-center rounded-2xl transition-all duration-300 group relative space-x-3 py-3 px-5 ${
+                    isWorkspaceOpen || window.location.pathname.includes(item.path)
+                      ? 'bg-white/5 text-white'
+                      : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
+                  }`}
+                >
+                  <div className={`p-2 rounded-xl transition-all shrink-0 ${isWorkspaceOpen || window.location.pathname.includes(item.path) ? 'bg-harx-500/20 text-harx-400' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <span className="font-black text-sm tracking-tight whitespace-nowrap overflow-hidden flex-1 text-left">{item.label}</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isWorkspaceOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {isWorkspaceOpen && (
+                  <div className="ml-4 pl-4 border-l border-white/5 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                    {item.subItems.map((sub) => (
+                      <NavLink
+                        key={sub.path}
+                        to={sub.path}
+                        className={({ isActive }) =>
+                          `flex w-full items-center rounded-xl transition-all duration-300 group relative space-x-3 py-2.5 px-4 ${
+                            isActive
+                              ? 'bg-harx-500/15 text-harx-400 border border-harx-500/20'
+                              : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
+                          }`
+                        }
+                      >
+                        <sub.icon className="h-3.5 w-3.5" />
+                        <span className="font-bold text-[13px] tracking-tight">{sub.label}</span>
+                      </NavLink>
+                    ))}
                   </div>
                 )}
               </>
+            ) : (
+              <NavLink
+                to={item.path}
+                className={({ isActive }) =>
+                  `flex w-full items-center rounded-2xl transition-all duration-300 group relative ${
+                    isCollapsed ? 'justify-center p-3' : 'space-x-3 py-3 px-5'
+                  } ${
+                    isActive
+                      ? 'bg-gradient-harx text-white shadow-xl shadow-harx-500/25 ring-1 ring-white/10'
+                      : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <div className={`p-2 rounded-xl transition-all shrink-0 ${isActive ? 'bg-white/20' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    {!isCollapsed && (
+                      <span className="font-black text-sm tracking-tight whitespace-nowrap overflow-hidden">{item.label}</span>
+                    )}
+                    {isCollapsed && item.subItems && (
+                       <div className="absolute top-0 right-0 w-2 h-2 bg-harx-500 rounded-full border-2 border-slate-950 translate-x-1/2 -translate-y-1/2"></div>
+                    )}
+                    {isCollapsed && (
+                      <div className="absolute left-16 bg-slate-900 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl border border-white/10">
+                        {item.label}
+                      </div>
+                    )}
+                  </>
+                )}
+              </NavLink>
             )}
-          </NavLink>
+          </div>
         ))}
       </nav>
 

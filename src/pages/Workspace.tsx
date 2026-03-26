@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-  Phone, Mail, Clock, User, Video,
+  Phone, Mail, User,
   Paperclip, Image, MoreHorizontal, PhoneOutgoing, XCircle,
   ChevronLeft, ChevronRight, ChevronDown, Filter, Layout
 } from 'lucide-react';
-import { CallInterface } from '../components/CallInterface';
-import { useAuth } from '../contexts/AuthContext';
 import { Skeleton } from '../components/ui/Skeleton';
 import { CallRecords } from '../components/CallRecords';
 import CopilotApp from '../copilot/App';
@@ -44,9 +42,17 @@ export function Workspace() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const urlLeadId = searchParams.get('leadId');
+  const urlTab = searchParams.get('tab');
   const gigId = location.state?.gigId;
-  const [activeTab, setActiveTab] = useState('voice');
+  const [activeTab, setActiveTab] = useState(urlTab && ['voice', 'calls', 'copilot'].includes(urlTab) ? urlTab : 'voice');
   const [message, setMessage] = useState('');
+  // Sync activeTab with URL
+  useEffect(() => {
+    if (urlTab && ['voice', 'calls', 'copilot'].includes(urlTab)) {
+      setActiveTab(urlTab);
+    }
+  }, [urlTab]);
+
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoadingLeads, setIsLoadingLeads] = useState(false);
@@ -55,8 +61,6 @@ export function Workspace() {
   const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
   const [selectedGigId, setSelectedGigId] = useState<string>(gigId || '');
   const [isGigDropdownOpen, setIsGigDropdownOpen] = useState(false);
-  const [showCallInterface, setShowCallInterface] = useState(false);
-  const { user } = useAuth();
 
   useEffect(() => {
     fetchEnrolledGigs();
@@ -428,11 +432,6 @@ export function Workspace() {
       default:
         return null;
     }
-  };
-
-  const handleCallEnd = () => {
-    setShowCallInterface(false);
-    setSelectedLead(null);
   };
 
   const handleCallClick = (lead: Lead) => {
