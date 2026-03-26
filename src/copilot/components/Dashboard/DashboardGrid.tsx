@@ -44,7 +44,7 @@ const DashboardGrid: React.FC = () => {
             </div>
             <div className="flex flex-col items-start text-left">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Scripts Collection</h3>
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Script</h3>
                 {hasScriptsInCollection && (
                   <span className="flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-[8px] font-black text-indigo-600 rounded-full border border-indigo-100 uppercase tracking-widest">
                     {scripts.length} {scripts.length > 1 ? 'Scripts' : 'Script'} Found
