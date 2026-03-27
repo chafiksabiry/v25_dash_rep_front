@@ -61,7 +61,11 @@ const globalState = {
 
     try {
       globalState.isSaving = true;
-      console.log("💾 Starting save process for CallSid:", globalState.currentCallSid);
+      console.log(`💾 [AIAssistant] Starting SAVE process for:
+        - CallSid: ${globalState.currentCallSid}
+        - AgentId: ${globalState.currentAgentId}
+        - LeadId: ${globalState.currentLeadId}
+        - Recording Enabled: ${isRecording}`);
 
       // Get the current messages
       const currentMessages = [...globalState.messages];
@@ -116,12 +120,18 @@ const globalState = {
         );
         console.log('✅ AI messages stored successfully:', resultStock.data);
       } else {
-        console.warn('⚠️ No AI messages to store');
+        console.warn('⚠️ No AI messages to store for this call');
       }
 
+      console.log("🏁 [AIAssistant] Save process completed successfully");
       return callInDB;
-    } catch (error) {
-      console.error("❌ Error saving call:", error);
+    } catch (error: any) {
+      console.error("❌ [AIAssistant] Error saving call:", error);
+      console.error("Error context:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw error;
     } finally {
       globalState.isSaving = false;

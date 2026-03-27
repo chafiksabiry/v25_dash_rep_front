@@ -25,12 +25,14 @@ export function ContactInfo() {
   } = useTranscription();
 
   const { dispatch, state } = useAgent();
+  const [isRecording, setIsRecording] = useState(true);
+  const isRecordingRef = useRef(true);
+  const callSidRef = useRef<string | null>(null);
   const [isCallLoading, setIsCallLoading] = useState(false);
   const [activeConnection, setActiveConnection] = useState<any>(null);
   const [, setActiveDevice] = useState<Device | null>(null);
   const [callStatus, setCallStatus] = useState<string>('idle');
   const [currentCallSid, setCurrentCallSid] = useState<string | null>(null);
-  const isRecordingRef = useRef(false);
   const localStreamRef = useRef<MediaStream | null>(null);
 
   const handleToggleMic = () => {
@@ -42,7 +44,10 @@ export function ContactInfo() {
   };
   
   const handleToggleRecording = () => {
-    dispatch({ type: 'TOGGLE_RECORDING' });
+    const newVal = !isRecording;
+    setIsRecording(newVal);
+    isRecordingRef.current = newVal;
+    dispatch({ type: 'TOGGLE_RECORDING', payload: newVal });
   };
 
   // Synchronize ref with global state
@@ -231,11 +236,52 @@ export function ContactInfo() {
         console.log("CallSid:", callSid);
       });
 
+      const cleanup = () => {
+        // Cleanup local stream
+        if (localStreamRef.current) {
+          localStreamRef.current.getTracks().forEach(track => track.stop());
+          localStreamRef.current = null;
+        }
+        // Stop transcription
+        stopTranscription();
+        // Clear global state
+        dispatch({ type: 'SET_MEDIA_STREAM', mediaStream: null });
+        dispatch({ type: 'CLEAR_TWILIO_CONNECTION' });
+        dispatch({ type: 'END_CALL' });
+      };
+
+      // Register disconnect listener once
+      conn.on('disconnect', async () => {
+        console.log('🔴 Call disconnected - Starting cleanup and save');
+        
+        const sidToSave = callSidRef.current;
+        const recordingStatus = isRecordingRef.current;
+        
+        try {
+          if (sidToSave) {
+            console.log(`💾 Triggering save for SID: ${sidToSave} (Recording: ${recordingStatus})`);
+            await storeCall(sidToSave, contact.id, recordingStatus);
+            console.log('✅ Call details saved successfully via disconnect handler');
+          } else {
+            console.warn('⚠️ No SID available in Ref during disconnect');
+          }
+        } catch (error) {
+          console.error('❌ Error saving call in disconnect handler:', error);
+        } finally {
+          cleanup();
+          setCallStatus('idle');
+          setActiveConnection(null); // Changed from setConnection(null)
+          setCurrentCallSid(null);
+          callSidRef.current = null;
+        }
+      });
+
       conn.on('accept', () => {
         console.log("✅ Call accepted");
         const Sid = conn.parameters?.CallSid;
         console.log("CallSid recupéré", Sid);
         setCurrentCallSid(Sid);
+        callSidRef.current = Sid; // Update ref
         setCallStatus('active');
 
         // Ajout : dispatcher l'action START_CALL dans le contexte global

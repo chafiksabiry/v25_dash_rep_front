@@ -60,6 +60,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   const [isMuted, setIsMuted] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isRecording, setIsRecording] = useState(true);
+  const isRecordingRef = useRef(true);
   const [callStatus, setCallStatus] = useState<CallStatus>("idle");
   const [connection, setConnection] = useState<Call | null>(null);
   const [device, setDevice] = useState<Device | null>(null);
@@ -480,9 +481,10 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
 
                     // Save call details using global state
                     if (currentCallSid) {
-                      // Pass the recording status to ensure we respect "Stop Recording"
-                      await AIAssistantAPI.saveCallToDB(isRecording);
-                      console.log(`✅ Successfully saved call details to DB (Recording: ${isRecording})`);
+                      // Use Ref to get the latest value regardless of closure
+                      const finalRecordingStatus = isRecordingRef.current;
+                      await AIAssistantAPI.saveCallToDB(finalRecordingStatus);
+                      console.log(`✅ Successfully saved call details to DB (Recording: ${finalRecordingStatus})`);
                       if (onCallSaved) {
                         onCallSaved();
                       }
@@ -547,8 +549,10 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   };
 
   const handleToggleRecording = () => {
-    setIsRecording(!isRecording);
-    console.log(`⏺️ Recording toggled: ${!isRecording}`);
+    const newVal = !isRecording;
+    setIsRecording(newVal);
+    isRecordingRef.current = newVal;
+    console.log(`⏺️ Recording toggled: ${newVal}`);
   };
 
   const handleEndCall = async () => {
