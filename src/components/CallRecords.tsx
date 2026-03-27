@@ -13,7 +13,8 @@ import {
   User,
   Shield,
   Zap,
-  PlayCircle
+  PlayCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
@@ -191,11 +192,21 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
         <h2 className="text-xl font-semibold text-gray-900">Call Records & Quality Assurance</h2>
       </div>
 
-      <div className="flex space-x-4 border-b border-gray-200">
+      <div className="flex justify-between items-center border-b border-gray-200">
+        <div className="flex space-x-4">
+          <button
+            className="px-4 py-2 font-black uppercase text-[10px] tracking-widest text-harx-600 border-b-2 border-harx-600"
+          >
+            Recent Calls
+          </button>
+        </div>
         <button
-          className="px-4 py-2 font-black uppercase text-[10px] tracking-widest text-harx-600 border-b-2 border-harx-600"
+          onClick={fetchCallRecords}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 py-1.5 mb-2 text-[10px] font-black uppercase tracking-widest text-gray-500 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-all shadow-sm"
         >
-          Recent Calls
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-harx-500' : ''}`} />
+          <span>Refresh</span>
         </button>
       </div>
 
