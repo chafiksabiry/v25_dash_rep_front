@@ -360,7 +360,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                   </div>
 
                   {/* Inline Expanded Call Details */}
-                  {selectedCall && (selectedCall._id === record._id || (selectedCall as any).$oid === (record as any).$oid) && (
+                  {isSameCall(selectedCall, record) && (
                     <div 
                       className="mt-6 border-t border-gray-100 pt-6 animate-in slide-in-from-top-2 fade-in duration-300 cursor-default"
                       onClick={(e) => e.stopPropagation()}
