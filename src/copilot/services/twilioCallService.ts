@@ -14,9 +14,9 @@ export class TwilioCallService {
     try {
       console.log('🔄 Starting call storage process...');
 
-      // Step 1: Wait for Twilio to process the recording (5s) - ONLY if recording
+      // Step 1: Wait for Twilio to process the recording (7s) - ONLY if recording
       if (data.isRecording) {
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 7000));
       }
 
       // Step 2: Get call details from Twilio

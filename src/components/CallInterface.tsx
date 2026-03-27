@@ -238,9 +238,8 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
           console.log("✅ Call accepted");
           const Sid = conn.parameters.CallSid;
           console.log("CallSid recupéré", Sid);
-          setCallSid(Sid);
           // Set call details in global state
-          AIAssistantAPI.setCallDetails(Sid, agentId);
+          AIAssistantAPI.setCallDetails(Sid, agentId, callId);
           setCallStatus("active");
 
           // Wait a moment for the media stream to be ready
