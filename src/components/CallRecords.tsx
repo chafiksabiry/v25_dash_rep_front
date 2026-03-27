@@ -181,6 +181,13 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
 
   console.log(`🖥️ Rendering Call Records component with ${callRecords.length} records`);
 
+  const isSameCall = (c1: CallRecord | null, c2: CallRecord | null) => {
+    if (!c1 || !c2) return false;
+    const id1 = typeof c1._id === 'object' ? (c1._id as any).$oid : c1._id;
+    const id2 = typeof c2._id === 'object' ? (c2._id as any).$oid : c2._id;
+    return id1 === id2;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -227,16 +234,16 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
             <div className="divide-y divide-gray-200">
               {callRecords.map((record: CallRecord) => (
                 <div 
-                  key={record._id} 
+                  key={typeof record._id === 'object' ? (record._id as any).$oid : record._id} 
                   onClick={() => {
-                    if (selectedCall && (selectedCall._id === record._id || (selectedCall as any).$oid === (record as any).$oid)) {
+                    if (isSameCall(selectedCall, record)) {
                       setSelectedCall(null);
                     } else {
                       setSelectedCall(record);
                       setShowTranscript(false);
                     }
                   }}
-                  className={`p-6 transition-all duration-300 cursor-pointer group ${selectedCall && (selectedCall._id === record._id || (selectedCall as any).$oid === (record as any).$oid) ? 'bg-gray-50 ring-1 ring-inset ring-harx-100' : 'hover:bg-gray-50'}`}
+                  className={`p-6 transition-all duration-300 cursor-pointer group ${isSameCall(selectedCall, record) ? 'bg-gray-50 ring-1 ring-inset ring-harx-100' : 'hover:bg-gray-50'}`}
                 >
                   <div className="flex justify-between">
                     {/* Left side - Call info */}
