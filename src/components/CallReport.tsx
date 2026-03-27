@@ -27,6 +27,7 @@ interface CallReport {
     "Agent fluency": { score: number; feedback: string };
     "Sentiment analysis": { score: number; feedback: string };
     "Fraud detection": { score: number; feedback: string };
+    "Script adherence"?: { score: number; feedback: string };
     "overall": { score: number; feedback: string };
 }
 
@@ -46,7 +47,7 @@ function CallReportCard() {
     const [call, setCall] = useState<Call | null>(callPased || null);
     const [report, setReport] = useState<CallReport>(callPased?.ai_call_score || initialReport);
 
-    const [transcription, setTranscription] = useState<string | null>(null);
+    const [transcription, setTranscription] = useState<any[] | string | null>(null);
     const [summary, setSummary] = useState<{ "key-ideas": Array<Record<string, string>> }>({ "key-ideas": [] });
     const [callPostActions, setCallPostActions] = useState<[]>([]);
 
@@ -222,8 +223,13 @@ function CallReportCard() {
                         <h3 className="text-sm font-medium text-purple-900">Call Transcription</h3>
                     </div>
                     {loadingTranscription ? <LoadingSpinner text="Generating call transcription ..." /> : errorTranscription ? <p className="text-red-500">{errorTranscription}</p> : (
-                        <div className="bg-gray-100 p-3 rounded-md text-sm text-gray-800">
-                            {transcription}
+                        <div className="bg-gray-100 p-3 rounded-md text-sm text-gray-800 space-y-2 max-h-96 overflow-y-auto">
+                            {Array.isArray(transcription) ? transcription.map((item, idx) => (
+                                <div key={idx} className="flex flex-col mb-2">
+                                    <span className="font-bold text-xs text-purple-600">{item.speaker} {item.timestamp ? `[${item.timestamp}]` : ''}</span>
+                                    <span className="text-gray-700">{item.text}</span>
+                                </div>
+                            )) : transcription}
                         </div>
                     )}
                 </div>
