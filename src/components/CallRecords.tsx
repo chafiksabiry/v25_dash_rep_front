@@ -2,7 +2,6 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { 
   Phone,
-  Clock,
   Calendar,
   Brain,
   CheckCircle2,
@@ -278,12 +277,8 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           )}
                           <div className="flex items-center gap-4 text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">
                              <div className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
-                               <Clock className="w-3 h-3" />
-                               <span>{record.duration || 0}s</span>
-                             </div>
-                             <div className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
                                <Calendar className="w-3 h-3" />
-                               <span>{new Date(record.startTime || record.createdAt).toLocaleDateString()}</span>
+                               <span>{new Date(record.startTime || record.createdAt).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                              </div>
                              <div className="flex items-center gap-1.5">
                                <div className={`w-1.5 h-1.5 rounded-full ${record.direction === 'inbound' ? 'bg-blue-400' : 'bg-green-400'}`}></div>
@@ -366,13 +361,9 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                               <span className="text-xs font-mono font-bold text-gray-600">{record._id || (record as any).$oid}</span>
                             </div>
                             <div className="bg-white border border-gray-100 px-3 py-1.5 rounded-xl flex items-center gap-2">
-                              <Clock className="w-3.5 h-3.5 text-gray-400" />
-                              <span className="text-xs font-black text-gray-600 uppercase tracking-widest">{record.duration}s</span>
-                            </div>
-                            <div className="bg-white border border-gray-100 px-3 py-1.5 rounded-xl flex items-center gap-2">
                               <Calendar className="w-3.5 h-3.5 text-gray-400" />
                               <span className="text-xs font-black text-gray-600 uppercase tracking-widest">
-                                {new Date(record.startTime || record.createdAt).toLocaleDateString()}
+                                {new Date(record.startTime || record.createdAt).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
                             <div className="bg-white border border-gray-100 px-3 py-1.5 rounded-xl flex items-center gap-2">
