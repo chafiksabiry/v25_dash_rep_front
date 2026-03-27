@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Phone, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { Phone, Mic, MicOff, Volume2, VolumeX, StopCircle } from 'lucide-react';
 import { Device, Call } from '@twilio/voice-sdk';
 import axios from 'axios';
 import ReactDOM from 'react-dom';
@@ -59,6 +59,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const [isRecording, setIsRecording] = useState(true);
   const [callStatus, setCallStatus] = useState<CallStatus>("idle");
   const [connection, setConnection] = useState<Call | null>(null);
   const [device, setDevice] = useState<Device | null>(null);
@@ -479,8 +480,9 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
 
                     // Save call details using global state
                     if (currentCallSid) {
-                      await AIAssistantAPI.saveCallToDB();
-                      console.log("✅ Successfully saved call details to DB");
+                      // Pass the recording status to ensure we respect "Stop Recording"
+                      await AIAssistantAPI.saveCallToDB(isRecording);
+                      console.log(`✅ Successfully saved call details to DB (Recording: ${isRecording})`);
                       if (onCallSaved) {
                         onCallSaved();
                       }
@@ -544,6 +546,11 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
     setIsAudioEnabled(!isAudioEnabled);
   };
 
+  const handleToggleRecording = () => {
+    setIsRecording(!isRecording);
+    console.log(`⏺️ Recording toggled: ${!isRecording}`);
+  };
+
   const handleEndCall = async () => {
     try {
       console.log("🔴 Manual call end initiated");
@@ -564,9 +571,6 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
         // The disconnect handler will handle cleanup and saving
         connection.disconnect();
       }
-      
-      // Close the interface
-      onEnd();
     } catch (error) {
       console.error('❌ Error ending call:', error);
       onEnd();
@@ -943,6 +947,13 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
           ) : (
             <VolumeX className="w-6 h-6 mx-auto" />
           )}
+        </button>
+        <button
+          onClick={handleToggleRecording}
+          className={`p-4 rounded-full ${isRecording ? 'bg-emerald-100 text-emerald-600 animate-pulse' : 'bg-gray-100 text-gray-400'}`}
+          title={isRecording ? 'Stop Recording' : 'Start Recording'}
+        >
+          <StopCircle className="w-6 h-6 mx-auto" />
         </button>
       </div>
 

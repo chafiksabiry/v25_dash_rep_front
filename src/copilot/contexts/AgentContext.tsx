@@ -64,6 +64,7 @@ export type AgentAction =
   | { type: 'START_CALL'; participants: Participant[]; contact?: Lead; sid?: string }
   | { type: 'END_CALL' }
   | { type: 'SET_RECORDING_URL'; url: string }
+  | { type: 'TOGGLE_RECORDING' }
   | { type: 'UPDATE_CALL_STATE'; callState: Partial<CallState> }
   | { type: 'TOGGLE_AI_LISTENING' }
   | { type: 'UPDATE_AUDIO_LEVEL'; level: number }
@@ -182,6 +183,15 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
         },
         isAIListening: false,
         audioLevel: 0
+      };
+
+    case 'TOGGLE_RECORDING':
+      return {
+        ...state,
+        callState: {
+          ...state.callState,
+          isRecording: !state.callState.isRecording
+        }
       };
 
     case 'SET_RECORDING_URL':

@@ -7,7 +7,7 @@ import { useTranscription } from '../../contexts/TranscriptionContext';
 import { useLead } from '../../hooks/useLead';
 import { useAgentProfile } from '../../hooks/useAgentProfile';
 import {
-  Phone, Mail, Calendar, Briefcase, Mic, MicOff, Volume2, Headphones
+  Phone, Mail, Calendar, Briefcase, Mic, MicOff, Volume2, Headphones, StopCircle
 } from 'lucide-react';
 
 interface TokenResponse {
@@ -39,6 +39,10 @@ export function ContactInfo() {
 
   const handleToggleSpeaker = () => {
     dispatch({ type: 'TOGGLE_OUTPUT_MODE' });
+  };
+  
+  const handleToggleRecording = () => {
+    dispatch({ type: 'TOGGLE_RECORDING' });
   };
 
   // Synchronize ref with global state
@@ -298,8 +302,9 @@ export function ContactInfo() {
         // Stop transcription
         await stopTranscription();
 
-        // Store call in database when it disconnects
+        // Store call in database when it disconnects (handles both agent and lead hangup)
         if (currentCallSid && contact.id) {
+          console.log(`💾 Call disconnected. Triggering storage for SID: ${currentCallSid}. Recording: ${isRecordingRef.current}`);
           await storeCall(currentCallSid, contact.id, isRecordingRef.current);
         }
 
@@ -351,10 +356,8 @@ export function ContactInfo() {
     // Stop transcription
     await stopTranscription();
 
-    // Store call in database when it ends
-    if (currentCallSid && contact.id) {
-      await storeCall(currentCallSid, contact.id);
-    }
+    // REMOVED: storeCall from here because it's now handled in conn.on('disconnect')
+    // to ensure it triggers for both agent and lead hangups.
 
     // Ajout : dispatch END_CALL pour mettre à jour le context global
     dispatch({ type: 'END_CALL' });
@@ -467,6 +470,17 @@ export function ContactInfo() {
           >
             {!state.isSpeakerPhone ? <Headphones className="w-4.5 h-4.5" /> : <Volume2 className="w-4.5 h-4.5" />}
           </button>
+
+          {/* Recording Toggle */}
+          {callStatus === 'active' && (
+            <button 
+              onClick={handleToggleRecording}
+              className={`p-2.5 rounded-xl border transition-all shadow-sm ${state.callState.isRecording ? 'bg-emerald-500 text-white border-emerald-600 animate-pulse' : 'bg-white text-gray-400 border-gray-100'}`}
+              title={state.callState.isRecording ? 'Stop recording' : 'Start recording'}
+            >
+              <StopCircle className={`w-4.5 h-4.5 ${state.callState.isRecording ? 'text-white' : 'text-gray-300'}`} />
+            </button>
+          )}
 
           {/* Other Actions */}
           <button className="bg-white border border-gray-200 text-gray-300 p-2.5 rounded-xl cursor-not-allowed opacity-50" title="Coming Soon">

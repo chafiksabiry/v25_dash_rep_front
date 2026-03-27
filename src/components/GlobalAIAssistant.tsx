@@ -53,7 +53,7 @@ const globalState = {
     if (leadId) globalState.currentLeadId = leadId;
     globalState.notifySubscribers();
   },
-  saveCallToDB: async () => {
+  saveCallToDB: async (isRecording: boolean = true) => {
     if (globalState.isSaving || !globalState.currentCallSid) {
       console.log("⚠️ Save already in progress or no CallSid available");
       return;
@@ -80,7 +80,8 @@ const globalState = {
       console.log("📞 Call details retrieved from Twilio:", call);
       
       let cloudinaryRecord = { data: { url: null } };
-      if (call.recordingUrl) {
+      // Only fetch recording if isRecording is true and Twilio has a URL
+      if (isRecording && call.recordingUrl) {
         console.log("🎵 Fetching recording from:", call.recordingUrl);
         cloudinaryRecord = await axios.post(`${import.meta.env.VITE_API_URL_CALL}/api/calls/fetch-recording`, {
           recordingUrl: call.recordingUrl,
@@ -166,8 +167,8 @@ if (typeof window !== 'undefined') {
     setCallDetails: (callSid: string, agentId: string, leadId?: string) => {
       globalState.setCallDetails(callSid, agentId, leadId);
     },
-    saveCallToDB: async () => {
-      return await globalState.saveCallToDB();
+    saveCallToDB: async (isRecording?: boolean) => {
+      return await globalState.saveCallToDB(isRecording);
     }
   };
 }
