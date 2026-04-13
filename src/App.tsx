@@ -10,6 +10,7 @@ import { GigDetails } from './pages/GigDetails';
 import { Profile } from './pages/Profile';
 import { Payouts } from './pages/Payouts';
 import { Learning } from './pages/Learning';
+import { Training } from './pages/Training';
 import { Operations } from './pages/Operations';
 import { Workspace } from './pages/Workspace';
 import { Community } from './pages/Community';
@@ -219,6 +220,11 @@ function AppContent() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/payouts" element={<Payouts />} />
               <Route path="/learning" element={<Learning />} />
+              <Route path="/training" element={
+                <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
+                  <Training />
+                </PhaseProtectedRoute>
+              } />
               <Route path="/operations" element={<Operations />} />
               <Route path="/workspace" element={
                 <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing } from 'lucide-react';
+import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing, GraduationCap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 // Declare qiankun global variables
@@ -70,6 +70,12 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       icon: Briefcase,
       label: 'Marketplace',
       path: '/gigs-marketplace',
+      isAccessible: () => isPhaseCompleted(4)
+    },
+    {
+      icon: GraduationCap,
+      label: 'Training',
+      path: '/training',
       isAccessible: () => isPhaseCompleted(4)
     },
     {
