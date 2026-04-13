@@ -598,63 +598,76 @@ export function Training() {
       )}
 
       {!listLoading && !error && selectedJourney && (
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-            <h3 className="truncate text-sm font-black text-gray-900">{journeyTitle(selectedJourney)}</h3>
-            <button
-              type="button"
-              onClick={() => setSelectedJourneyId(null)}
-              className="rounded-lg border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50"
-            >
-              Close
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-[260px_1fr]">
-            <aside className="border-r border-gray-100 p-3">
-              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-gray-400">Modules</p>
-              <ul className="space-y-1">
+        <div className="overflow-hidden rounded-2xl border border-harx-100 bg-white shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-[230px_1fr]">
+            <aside className="border-r border-harx-100 bg-white p-3">
+              <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-harx-500">Modules</p>
+              <div className="space-y-1.5">
                 {extractModules(selectedJourney).map((m, idx) => (
-                  <li key={String(m._id || m.id || idx)} className="rounded-lg border border-gray-100 px-2 py-1.5">
-                    <p className="text-xs font-semibold text-gray-700">
+                  <div
+                    key={String(m._id || m.id || idx)}
+                    className="rounded-xl border border-gray-100 bg-white px-2.5 py-2"
+                  >
+                    <p className="text-xs font-bold text-gray-800">
                       {idx + 1}. {String(m.title || `Module ${idx + 1}`)}
                     </p>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </aside>
-            <div className="p-4">
-              {(() => {
-                const slides = extractSlides(selectedJourney);
-                if (slides.length === 0) {
-                  return <p className="text-sm text-gray-500">No slides available for this training.</p>;
-                }
-                const s = slides[activeSlide] || slides[0];
-                return (
-                  <div>
-                    <div className="rounded-xl border border-gray-100 bg-gradient-to-b from-white to-gray-50 p-4">
-                      <h4 className="text-xl font-black text-gray-900">{String(s.title || 'Slide')}</h4>
-                      {s.subtitle ? <p className="mt-1 text-sm font-semibold text-harx-700">{String(s.subtitle)}</p> : null}
-                      {s.content ? <p className="mt-3 text-sm text-gray-600">{String(s.content)}</p> : null}
-                      {Array.isArray(s.bullets) && s.bullets.length > 0 ? (
-                        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-gray-700">
-                          {s.bullets.slice(0, 5).map((b, i) => (
-                            <li key={i}>{String(b)}</li>
-                          ))}
-                        </ul>
-                      ) : null}
-                    </div>
-                    <div className="mt-3 flex items-center justify-between">
+            <div className="bg-slate-50">
+              <div className="flex items-center gap-3 border-b border-harx-100 bg-white px-4 py-2.5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedJourneyId(null)}
+                  className="rounded-xl border border-harx-200 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-harx-600 hover:bg-harx-50"
+                >
+                  Back to list
+                </button>
+                <h3 className="truncate text-sm font-black text-harx-700">{journeyTitle(selectedJourney)}</h3>
+              </div>
+              <div className="relative p-4 md:p-5">
+                {(() => {
+                  const slides = extractSlides(selectedJourney);
+                  if (slides.length === 0) {
+                    return <p className="text-sm text-gray-500">No slides available for this training.</p>;
+                  }
+                  const s = slides[activeSlide] || slides[0];
+                  return (
+                    <>
+                      <div className="relative overflow-hidden rounded-3xl border border-fuchsia-200 bg-gradient-to-br from-[#1f1b4f] via-[#251a5f] to-[#2b1656] p-7 text-white shadow-xl">
+                        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-fuchsia-500/20" />
+                        <div className="pointer-events-none absolute -left-10 bottom-[-30px] h-32 w-32 rounded-full bg-rose-500/20" />
+                        <h4 className="max-w-4xl text-3xl font-black leading-tight md:text-5xl">
+                          {String(s.title || 'Slide')}
+                        </h4>
+                        {s.subtitle ? (
+                          <p className="mt-4 inline-block rounded-2xl border border-white/30 bg-white/5 px-4 py-2 text-lg font-semibold text-rose-200">
+                            {String(s.subtitle)}
+                          </p>
+                        ) : null}
+                        {s.content ? (
+                          <p className="mt-5 max-w-4xl text-base leading-7 text-white/95">
+                            {String(s.content)}
+                          </p>
+                        ) : null}
+                        {Array.isArray(s.bullets) && s.bullets.length > 0 ? (
+                          <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-white/90">
+                            {s.bullets.slice(0, 5).map((b, i) => (
+                              <li key={i}>{String(b)}</li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => setActiveSlide((p) => Math.max(0, p - 1))}
                         disabled={activeSlide === 0}
-                        className="rounded-lg border border-gray-200 p-2 text-gray-600 disabled:opacity-40"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full border border-rose-200 bg-white p-3 text-fuchsia-600 shadow-lg disabled:opacity-40"
                       >
-                        <ChevronLeft className="h-4 w-4" />
+                        <ChevronLeft className="h-5 w-5" />
                       </button>
-                      <span className="text-xs font-semibold text-gray-500">
-                        {activeSlide + 1} / {slides.length}
-                      </span>
                       <button
                         type="button"
                         onClick={() => {
@@ -670,14 +683,23 @@ export function Training() {
                           }
                         }}
                         disabled={activeSlide >= slides.length - 1}
-                        className="rounded-lg border border-gray-200 p-2 text-gray-600 disabled:opacity-40"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full border border-rose-200 bg-white p-3 text-fuchsia-600 shadow-lg disabled:opacity-40"
                       >
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-5 w-5" />
                       </button>
-                    </div>
-                  </div>
-                );
-              })()}
+
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="rounded-full border border-rose-100 bg-white px-3 py-1 text-xs font-bold text-gray-600 shadow-sm">
+                          {activeSlide + 1} / {slides.length}
+                        </span>
+                        <span className="rounded-full border border-rose-100 bg-white px-3 py-1 text-xs font-bold text-gray-600 shadow-sm">
+                          1 / {extractModules(selectedJourney).length || 1}
+                        </span>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         </div>
