@@ -89,11 +89,18 @@ async function fetchEnrolledGigsForAgent(
   const base = String(import.meta.env.VITE_MATCHING_API_URL || '').replace(/\/$/, '');
   if (!base) return [];
 
+  console.log('[Training] fetchEnrolledGigsForAgent:start', { agentId, base });
   const res = await fetch(
     `${base}/gig-agents/agents/${encodeURIComponent(agentId)}/gigs?status=enrolled`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
-  if (!res.ok) return [];
+  if (!res.ok) {
+    console.warn('[Training] fetchEnrolledGigsForAgent:non-ok', {
+      status: res.status,
+      statusText: res.statusText
+    });
+    return [];
+  }
   const data = (await res.json()) as { gigs?: unknown[] };
   const gigs = Array.isArray(data.gigs) ? data.gigs : [];
   const out: { gigId: string; title: string }[] = [];
@@ -107,6 +114,10 @@ async function fetchEnrolledGigsForAgent(
       });
     }
   }
+  console.log('[Training] fetchEnrolledGigsForAgent:done', {
+    count: out.length,
+    gigs: out.map((g) => ({ gigId: g.gigId, title: g.title }))
+  });
   return out;
 }
 
@@ -179,6 +190,7 @@ export function Training() {
           await Promise.all(
             enrolled.map(async ({ gigId, title }) => {
               try {
+                console.log('[Training] fetchByGig:start', { gigId, title });
                 const r = await axios.get<{ success?: boolean; data?: unknown[] }>(
                   `${base}/training_journeys/gig/${encodeURIComponent(gigId)}`,
                   {
@@ -186,13 +198,18 @@ export function Training() {
                     validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
                   }
                 );
+                console.log('[Training] fetchByGig:response', {
+                  gigId,
+                  status: r.status,
+                  count: Array.isArray(r.data?.data) ? r.data.data.length : 0
+                });
                 if (r.status === 404) return;
                 const arr = Array.isArray(r.data?.data) ? r.data.data : [];
                 arr.forEach((j) =>
                   mergeJourney(byId, j as Record<string, unknown>, title, gigId)
                 );
               } catch {
-                /* network */
+                console.warn('[Training] fetchByGig:error', { gigId });
               }
             })
           );
@@ -251,6 +268,7 @@ export function Training() {
 
     (async () => {
       try {
+        console.log('[Training] refetchSelectedGig:start', { gigFilter });
         const r = await axios.get<{ success?: boolean; data?: unknown[] }>(
           `${base}/training_journeys/gig/${encodeURIComponent(gigFilter)}`,
           {
@@ -258,6 +276,11 @@ export function Training() {
             validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
           }
         );
+        console.log('[Training] refetchSelectedGig:response', {
+          gigFilter,
+          status: r.status,
+          count: Array.isArray(r.data?.data) ? r.data.data.length : 0
+        });
         if (cancelled) return;
         if (r.status === 404) {
           setGigFetchedJourneys([]);
@@ -277,6 +300,7 @@ export function Training() {
         setGigFetchOutcome({ gigId: gigFilter, kind: 'ok' });
       } catch {
         if (!cancelled) {
+          console.warn('[Training] refetchSelectedGig:error', { gigFilter });
           setGigFetchedJourneys([]);
           setGigFetchOutcome({ gigId: gigFilter, kind: 'error' });
         }
