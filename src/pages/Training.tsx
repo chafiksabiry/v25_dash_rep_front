@@ -22,7 +22,7 @@ function openTrainingJourney(journeyId: string) {
 }
 
 function journeyTitle(j: Record<string, unknown>): string {
-  return String(j.title || j.name || 'Formation').trim();
+  return String(j.title || j.name || 'Training').trim();
 }
 
 function gigLabel(j: JourneyRow): string | null {
@@ -60,6 +60,15 @@ function mergeJourney(
   map.set(id, row);
 }
 
+function dedupeAndSort(rows: JourneyRow[]): JourneyRow[] {
+  const m = new Map<string, JourneyRow>();
+  for (const j of rows) {
+    const k = journeyKey(j);
+    if (k && !m.has(k)) m.set(k, j);
+  }
+  return Array.from(m.values()).sort((a, b) => journeyTitle(a).localeCompare(journeyTitle(b), 'en'));
+}
+
 async function fetchEnrolledGigsForAgent(
   agentId: string,
   token: string
@@ -93,11 +102,17 @@ export function Training() {
   const [journeys, setJourneys] = useState<JourneyRow[]>([]);
   const [enrolledGigs, setEnrolledGigs] = useState<{ gigId: string; title: string }[]>([]);
   const [gigFilter, setGigFilter] = useState<string>('__all__');
+  /** Trainings returned by GET /training_journeys/gig/:id when a single gig is selected */
+  const [gigFetchedJourneys, setGigFetchedJourneys] = useState<JourneyRow[]>([]);
+  const [gigFetchLoading, setGigFetchLoading] = useState(false);
 
-  const filteredJourneys = useMemo(() => {
+  const displayJourneys = useMemo(() => {
     if (gigFilter === '__all__') return journeys;
-    return journeys.filter((j) => String(j.__gigId || '') === gigFilter);
-  }, [journeys, gigFilter]);
+    const fromGlobal = journeys.filter((j) => String(j.__gigId || '') === gigFilter);
+    return dedupeAndSort([...gigFetchedJourneys, ...fromGlobal]);
+  }, [journeys, gigFilter, gigFetchedJourneys]);
+
+  const listLoading = loading || (gigFilter !== '__all__' && gigFetchLoading);
 
   useEffect(() => {
     const repId = getAgentId();
@@ -105,13 +120,13 @@ export function Training() {
     const token = getAuthToken() || '';
 
     if (!repId) {
-      setError('Profil REP introuvable (connectez-vous à nouveau).');
+      setError('Rep profile not found. Please sign in again.');
       setLoading(false);
       return;
     }
     if (!base) {
       setError(
-        'Variable VITE_TRAINING_API_URL ou VITE_TRAINING_BACKEND_URL manquante (URL du backend training, sans slash final).'
+        'Missing VITE_TRAINING_API_URL or VITE_TRAINING_BACKEND_URL (training API base URL, no trailing slash).'
       );
       setLoading(false);
       return;
@@ -130,7 +145,6 @@ export function Training() {
           setEnrolledGigs([]);
         }
 
-        // 1) Parcours où le rep est explicitement dans enrolledRepIds (lancement ciblé)
         try {
           const repRes = await axios.get<unknown[]>(
             `${base}/training_journeys/rep/${encodeURIComponent(repId)}`,
@@ -139,10 +153,9 @@ export function Training() {
           const repList = Array.isArray(repRes.data) ? repRes.data : [];
           repList.forEach((j) => mergeJourney(byId, j as Record<string, unknown>));
         } catch {
-          /* optionnel si route absente */
+          /* optional */
         }
 
-        // 2) Parcours publiés pour chaque gig où le rep est enrolled (matching)
         if (token && enrolled.length > 0) {
           await Promise.all(
             enrolled.map(async ({ gigId, title }) => {
@@ -160,14 +173,14 @@ export function Training() {
                   mergeJourney(byId, j as Record<string, unknown>, title, gigId)
                 );
               } catch {
-                /* réseau / erreur */
+                /* network */
               }
             })
           );
         }
 
         const merged = Array.from(byId.values()).sort((a, b) =>
-          journeyTitle(a).localeCompare(journeyTitle(b), 'fr')
+          journeyTitle(a).localeCompare(journeyTitle(b), 'en')
         );
         if (!cancelled) setJourneys(merged);
       } catch (e: unknown) {
@@ -182,7 +195,7 @@ export function Training() {
               ? e.message
               : '';
         if (!cancelled) {
-          setError(msg || 'Impossible de charger les formations.');
+          setError(msg || 'Could not load trainings.');
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -194,27 +207,88 @@ export function Training() {
     };
   }, []);
 
+  // When user picks a gig, refetch trainings for that gig so the list updates even if the initial bulk load failed
+  useEffect(() => {
+    if (gigFilter === '__all__') {
+      setGigFetchedJourneys([]);
+      setGigFetchLoading(false);
+      return;
+    }
+
+    const base = trainingApiBase();
+    const token = getAuthToken() || '';
+    if (!base || !token) {
+      setGigFetchedJourneys([]);
+      return;
+    }
+
+    const gigTitle =
+      enrolledGigs.find((g) => g.gigId === gigFilter)?.title || 'Gig';
+    let cancelled = false;
+    setGigFetchLoading(true);
+
+    (async () => {
+      try {
+        const r = await axios.get<{ success?: boolean; data?: unknown[] }>(
+          `${base}/training_journeys/gig/${encodeURIComponent(gigFilter)}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
+          }
+        );
+        if (cancelled) return;
+        if (r.status === 404) {
+          setGigFetchedJourneys([]);
+          return;
+        }
+        const arr = Array.isArray(r.data?.data) ? r.data.data : [];
+        const rows: JourneyRow[] = arr.map((raw) => {
+          const j = raw as Record<string, unknown>;
+          return {
+            ...j,
+            __gigId: gigFilter,
+            __gigTitle: gigTitle,
+          };
+        });
+        setGigFetchedJourneys(rows);
+      } catch {
+        if (!cancelled) setGigFetchedJourneys([]);
+      } finally {
+        if (!cancelled) setGigFetchLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gigFilter, enrolledGigs]);
+
+  const selectedGigTitle =
+    gigFilter === '__all__'
+      ? null
+      : enrolledGigs.find((g) => g.gigId === gigFilter)?.title || null;
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Training</h1>
           <p className="text-sm text-gray-500 mt-1 font-medium">
-            Formations liées à vos gigs où vous êtes inscrit, et parcours où vous avez été ajouté
-            explicitement par l’entreprise.
+            Trainings linked to gigs you are enrolled in, plus journeys your company assigned to you
+            directly.
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:min-w-[280px] sm:items-end">
           <div className="flex items-center gap-2 rounded-xl bg-harx-500/10 border border-harx-500/20 px-4 py-2 text-harx-700 self-start sm:self-end">
             <BookOpen className="w-5 h-5 shrink-0" />
-            <span className="text-xs font-black uppercase tracking-widest">Mes gigs & parcours</span>
+            <span className="text-xs font-black uppercase tracking-widest">My gigs & paths</span>
           </div>
           <div className="w-full sm:w-auto">
             <label
               htmlFor="training-gig-filter"
               className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-gray-400"
             >
-              Gig inscrit (Marketplace)
+              Enrolled gig (Marketplace)
             </label>
             <div className="relative">
               <select
@@ -226,8 +300,8 @@ export function Training() {
               >
                 <option value="__all__">
                   {enrolledGigs.length === 0 && !loading
-                    ? 'Aucun gig enrolled'
-                    : 'Tous les gigs inscrits'}
+                    ? 'No enrolled gigs'
+                    : 'All enrolled gigs'}
                 </option>
                 {enrolledGigs.map((g) => (
                   <option key={g.gigId} value={g.gigId}>
@@ -237,53 +311,65 @@ export function Training() {
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             </div>
+            {gigFilter !== '__all__' && selectedGigTitle && !listLoading && (
+              <p className="mt-2 text-xs font-semibold text-harx-700">
+                Showing trainings for: <span className="text-gray-900">{selectedGigTitle}</span>
+              </p>
+            )}
             {enrolledGigs.length === 0 && !loading && !error && (
               <p className="mt-2 text-xs text-amber-700 font-medium">
-                Aucun gig « Enrolled » détecté via l’API matching — vérifiez le Marketplace ou la
-                connexion.
+                No enrolled gigs from the matching API — check the Marketplace or your connection.
               </p>
             )}
           </div>
         </div>
       </div>
 
-      {loading && (
+      {listLoading && (
         <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-gray-600">
           <Loader2 className="w-6 h-6 animate-spin text-harx-500" />
-          <span className="font-medium">Chargement des formations…</span>
+          <span className="font-medium">
+            {gigFilter !== '__all__' && gigFetchLoading
+              ? 'Loading trainings for this gig…'
+              : 'Loading trainings…'}
+          </span>
         </div>
       )}
 
-      {!loading && error && (
+      {!listLoading && error && (
         <div className="flex gap-3 rounded-2xl border border-red-100 bg-red-50/80 p-4 text-red-800">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <p className="text-sm font-medium">{error}</p>
         </div>
       )}
 
-      {!loading && !error && journeys.length === 0 && (
+      {!listLoading && !error && gigFilter === '__all__' && journeys.length === 0 && (
         <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-center text-gray-500">
-          <p className="font-medium">Aucune formation trouvée pour vos gigs inscrits.</p>
+          <p className="font-medium">No trainings found for your enrolled gigs.</p>
           <p className="text-sm mt-2">
-            Être inscrit à un gig n’ajoute pas automatiquement un parcours : l’entreprise doit avoir
-            créé un training pour ce gig (statut actif / rehearsal / completed). Sinon, la liste
-            reste vide même si le Marketplace affiche « Enrolled ».
+            Enrolling in a gig does not create a training by itself: the company must publish a
+            training for that gig (status active, rehearsal, or completed). The list can stay empty
+            even if the Marketplace shows “Enrolled”.
           </p>
         </div>
       )}
 
-      {!loading && !error && journeys.length > 0 && filteredJourneys.length === 0 && (
-        <div className="rounded-2xl border border-amber-100 bg-amber-50/80 p-6 text-amber-900 text-sm font-medium">
-          Aucune formation pour le gig sélectionné. Choisissez « Tous les gigs inscrits » ou un autre
-          gig, ou vérifiez que l’API training expose bien{' '}
-          <code className="rounded bg-white/80 px-1 py-0.5 text-xs">/training_journeys/gig/…</code>{' '}
-          (déploiement backend à jour).
+      {!listLoading && !error && gigFilter !== '__all__' && displayJourneys.length === 0 && (
+        <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-center text-gray-500">
+          <p className="font-medium">No trainings for this gig yet.</p>
+          <p className="text-sm mt-2">
+            The training API returned no published journeys for this gig, or the endpoint{' '}
+            <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">
+              GET /training_journeys/gig/:gigId
+            </code>{' '}
+            is not deployed on your backend. Ask your admin to deploy the latest training service.
+          </p>
         </div>
       )}
 
-      {!loading && !error && filteredJourneys.length > 0 && (
+      {!listLoading && !error && displayJourneys.length > 0 && (
         <ul className="space-y-4">
-          {filteredJourneys.map((j) => {
+          {displayJourneys.map((j) => {
             const id = journeyKey(j);
             const gig = gigLabel(j);
             const status = String(j.status || '—');
@@ -315,7 +401,7 @@ export function Training() {
                   onClick={() => openTrainingJourney(id)}
                   className="shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white px-5 py-3 text-xs font-black uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-40"
                 >
-                  Ouvrir
+                  Open
                   <ExternalLink className="w-4 h-4" />
                 </button>
               </li>
