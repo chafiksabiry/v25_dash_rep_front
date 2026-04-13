@@ -34,10 +34,12 @@ interface SidebarProps {
   setIsCollapsed: (isCollapsed: boolean) => void;
 }
 
+type TrainingSidebarSlide = { title: string; globalIndex: number };
+
 type TrainingSidebarModule = {
   title: string;
   sections: string[];
-  slides: string[];
+  slides: TrainingSidebarSlide[];
 };
 
 export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, setIsCollapsed }: SidebarProps) {
@@ -54,8 +56,8 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
   const [isTrainingOpen, setIsTrainingOpen] = React.useState(location.pathname.includes('/training'));
   const [trainingModules, setTrainingModules] = React.useState<TrainingSidebarModule[]>([]);
   const [activeTrainingModuleIndex, setActiveTrainingModuleIndex] = React.useState<number>(0);
-  /** Module indices whose "Slides" nested dropdown is open */
-  const [openTrainingSlidesIndexes, setOpenTrainingSlidesIndexes] = React.useState<number[]>([]);
+  const [openTrainingModuleIndexes, setOpenTrainingModuleIndexes] = React.useState<number[]>([]);
+  const [activeTrainingSlideIndex, setActiveTrainingSlideIndex] = React.useState(0);
 
   // Ensure workspace is open if we navigate there externally
   useEffect(() => {
@@ -77,7 +79,15 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
             ? parsed.map((m: any, idx: number) => ({
                 title: String(m?.title || `Module ${idx + 1}`),
                 sections: Array.isArray(m?.sections) ? m.sections.map((s: any) => String(s)) : [],
-                slides: Array.isArray(m?.slides) ? m.slides.map((s: any) => String(s)) : []
+                slides: Array.isArray(m?.slides)
+                  ? m.slides.map((s: any, si: number): TrainingSidebarSlide => {
+                      if (typeof s === 'string') return { title: s, globalIndex: -1 };
+                      return {
+                        title: String(s?.title ?? `Slide ${si + 1}`),
+                        globalIndex: typeof s?.globalIndex === 'number' ? s.globalIndex : -1
+                      };
+                    })
+                  : []
               }))
             : []
         );
@@ -86,7 +96,9 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       }
       const idx = parseInt(localStorage.getItem('repTrainingSidebarActiveModuleIndex') || '0', 10);
       setActiveTrainingModuleIndex(Number.isFinite(idx) ? idx : 0);
-      setOpenTrainingSlidesIndexes((prev) => {
+      const sIdx = parseInt(localStorage.getItem('repTrainingSidebarActiveSlideIndex') || '0', 10);
+      setActiveTrainingSlideIndex(Number.isFinite(sIdx) ? sIdx : 0);
+      setOpenTrainingModuleIndexes((prev) => {
         if (Number.isFinite(idx)) {
           return prev.includes(idx) ? prev : [...prev, idx];
         }
@@ -246,60 +258,73 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                   <div className="ml-5 pl-2 border-l border-white/10 space-y-1 animate-in slide-in-from-top-1 duration-200">
                     {item.subItems.map((sub: any, idx) => {
                       const isActiveSub = activeTrainingModuleIndex === idx && location.pathname.includes('/training');
-                      const slidesOpen = openTrainingSlidesIndexes.includes(idx);
-                      const slideList = Array.isArray(sub.slides) ? sub.slides : [];
-                      const hasSlides = slideList.length > 0;
+                      const moduleOpen = openTrainingModuleIndexes.includes(idx);
+                      const slideList: TrainingSidebarSlide[] = Array.isArray(sub.slides) ? sub.slides : [];
+                      const rowModuleClasses = (active: boolean) =>
+                        `flex w-full items-center justify-between rounded-xl transition-all duration-300 py-2.5 px-4 ${
+                          active
+                            ? 'bg-gradient-to-r from-harx-500/20 to-transparent text-white border-l-2 border-harx-500'
+                            : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
+                        }`;
+                      const titleModuleClasses = (active: boolean) =>
+                        `truncate text-left font-black text-[11px] uppercase tracking-widest ${active ? 'text-harx-400' : 'text-current'}`;
                       return (
-                        <div key={sub.path} className="rounded-xl space-y-0.5">
-                          <div
-                            className={`rounded-xl py-2.5 px-4 ${
-                              isActiveSub
-                                ? 'bg-gradient-to-r from-harx-500/20 to-transparent text-white border-l-2 border-harx-500'
-                                : 'text-gray-500'
-                            }`}
+                        <div key={sub.path} className="rounded-xl space-y-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOpenTrainingModuleIndexes((prev) =>
+                                prev.includes(idx) ? prev.filter((x) => x !== idx) : [...prev, idx]
+                              )
+                            }
+                            className={rowModuleClasses(isActiveSub)}
                           >
-                            <p className={`text-left font-black text-[11px] uppercase tracking-widest ${isActiveSub ? 'text-harx-400' : 'text-current'}`}>
+                            <p className={`flex-1 min-w-0 pr-2 ${titleModuleClasses(isActiveSub)}`}>
                               {idx + 1}. {sub.label}
                             </p>
-                          </div>
-                          <div className="ml-2 pl-2 border-l border-white/10">
-                            {hasSlides ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setOpenTrainingSlidesIndexes((prev) =>
-                                      prev.includes(idx) ? prev.filter((x) => x !== idx) : [...prev, idx]
-                                    )
-                                  }
-                                  className="flex w-full items-center justify-between rounded-lg py-2 px-3 text-left transition-colors hover:bg-white/5"
-                                >
-                                  <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">
-                                    Slides ({slideList.length})
-                                  </span>
-                                  <ChevronDown
-                                    className={`h-3.5 w-3.5 shrink-0 transition-transform ${
-                                      slidesOpen ? 'rotate-180 text-harx-400' : 'text-gray-500'
-                                    }`}
-                                  />
-                                </button>
-                                {slidesOpen && (
-                                  <div className="mb-1 space-y-0.5 pb-1 pl-2">
-                                    {slideList.map((slide: string, slideIdx: number) => (
-                                      <p
-                                        key={`${sub.path}-slide-${slideIdx}`}
-                                        className="truncate border-l border-white/10 pl-2 text-[10px] font-semibold normal-case tracking-normal text-gray-400"
-                                      >
-                                        {slide}
+                            <ChevronDown
+                              className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                                moduleOpen ? 'rotate-180 text-harx-400' : 'text-gray-500'
+                              }`}
+                            />
+                          </button>
+                          {moduleOpen && (
+                            <div className="ml-2 space-y-1 border-l border-white/10 pl-2">
+                              {slideList.length === 0 ? (
+                                <div className={rowModuleClasses(false)}>
+                                  <p className={titleModuleClasses(false)}>No slides</p>
+                                </div>
+                              ) : (
+                                slideList.map((slide, slideIdx) => {
+                                  const isSlideActive =
+                                    slide.globalIndex >= 0 &&
+                                    slide.globalIndex === activeTrainingSlideIndex &&
+                                    location.pathname.includes('/training');
+                                  return (
+                                    <button
+                                      key={`${sub.path}-slide-${slideIdx}`}
+                                      type="button"
+                                      onClick={() => {
+                                        if (!location.pathname.includes('/training')) navigate('/training');
+                                        if (slide.globalIndex >= 0) {
+                                          window.dispatchEvent(
+                                            new CustomEvent('rep-training-goto-slide', {
+                                              detail: { index: slide.globalIndex }
+                                            })
+                                          );
+                                        }
+                                      }}
+                                      className={rowModuleClasses(isSlideActive)}
+                                    >
+                                      <p className={`w-full min-w-0 ${titleModuleClasses(isSlideActive)}`}>
+                                        {slideIdx + 1}. {slide.title}
                                       </p>
-                                    ))}
-                                  </div>
-                                )}
-                              </>
-                            ) : (
-                              <p className="py-2 px-3 text-[10px] font-semibold text-gray-500">No slides</p>
-                            )}
-                          </div>
+                                    </button>
+                                  );
+                                })
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}

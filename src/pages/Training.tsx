@@ -379,7 +379,7 @@ export function Training() {
           return {
             title: String(m.title || `Module ${i + 1}`),
             sections,
-            slides: [] as string[]
+            slides: [] as { title: string; globalIndex: number }[]
           };
         })
       : [];
@@ -395,7 +395,11 @@ export function Training() {
       for (let i = 0; i < modules.length; i++) {
         const take = base + (remainder > 0 ? 1 : 0);
         if (remainder > 0) remainder -= 1;
-        modules[i].slides = slideTitles.slice(cursor, cursor + take);
+        const chunk = slideTitles.slice(cursor, cursor + take);
+        modules[i].slides = chunk.map((title, j) => ({
+          title,
+          globalIndex: cursor + j
+        }));
         cursor += take;
       }
     }
@@ -409,8 +413,22 @@ export function Training() {
         : 0;
     localStorage.setItem('repTrainingSidebarModules', JSON.stringify(modules));
     localStorage.setItem('repTrainingSidebarActiveModuleIndex', String(activeModuleIndex));
+    localStorage.setItem('repTrainingSidebarActiveSlideIndex', String(activeSlide));
     window.dispatchEvent(new CustomEvent('rep-training-modules-updated'));
   }, [selectedJourney, activeSlide]);
+
+  useEffect(() => {
+    const onGotoSlide = (ev: Event) => {
+      const e = ev as CustomEvent<{ index?: number }>;
+      const idx = e.detail?.index;
+      if (typeof idx !== 'number' || idx < 0 || !selectedJourney) return;
+      const n = extractSlides(selectedJourney).length;
+      if (n === 0) return;
+      setActiveSlide(Math.min(Math.max(0, idx), n - 1));
+    };
+    window.addEventListener('rep-training-goto-slide', onGotoSlide as EventListener);
+    return () => window.removeEventListener('rep-training-goto-slide', onGotoSlide as EventListener);
+  }, [selectedJourney]);
 
   useEffect(() => {
     if (!repId) return;
