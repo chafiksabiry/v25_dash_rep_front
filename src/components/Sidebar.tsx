@@ -54,7 +54,8 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
   const [isTrainingOpen, setIsTrainingOpen] = React.useState(location.pathname.includes('/training'));
   const [trainingModules, setTrainingModules] = React.useState<TrainingSidebarModule[]>([]);
   const [activeTrainingModuleIndex, setActiveTrainingModuleIndex] = React.useState<number>(0);
-  const [openTrainingModuleIndexes, setOpenTrainingModuleIndexes] = React.useState<number[]>([]);
+  /** Module indices whose "Slides" nested dropdown is open */
+  const [openTrainingSlidesIndexes, setOpenTrainingSlidesIndexes] = React.useState<number[]>([]);
 
   // Ensure workspace is open if we navigate there externally
   useEffect(() => {
@@ -85,7 +86,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       }
       const idx = parseInt(localStorage.getItem('repTrainingSidebarActiveModuleIndex') || '0', 10);
       setActiveTrainingModuleIndex(Number.isFinite(idx) ? idx : 0);
-      setOpenTrainingModuleIndexes((prev) => {
+      setOpenTrainingSlidesIndexes((prev) => {
         if (Number.isFinite(idx)) {
           return prev.includes(idx) ? prev : [...prev, idx];
         }
@@ -128,6 +129,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       subItems: trainingModules.map((module, idx) => ({
         label: module.title,
         sections: module.sections,
+        slides: module.slides,
         path: `/training#module-${idx + 1}`
       }))
     },
@@ -244,17 +246,13 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                   <div className="ml-5 pl-2 border-l border-white/10 space-y-1 animate-in slide-in-from-top-1 duration-200">
                     {item.subItems.map((sub: any, idx) => {
                       const isActiveSub = activeTrainingModuleIndex === idx && location.pathname.includes('/training');
-                      const isOpen = openTrainingModuleIndexes.includes(idx);
+                      const slidesOpen = openTrainingSlidesIndexes.includes(idx);
+                      const slideList = Array.isArray(sub.slides) ? sub.slides : [];
+                      const hasSlides = slideList.length > 0;
                       return (
-                        <div key={sub.path} className="rounded-xl">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setOpenTrainingModuleIndexes((prev) =>
-                                prev.includes(idx) ? prev.filter((x) => x !== idx) : [...prev, idx]
-                              )
-                            }
-                            className={`flex w-full items-center justify-between rounded-xl transition-all duration-300 py-2.5 px-4 ${
+                        <div key={sub.path} className="rounded-xl space-y-0.5">
+                          <div
+                            className={`rounded-xl py-2.5 px-4 ${
                               isActiveSub
                                 ? 'bg-gradient-to-r from-harx-500/20 to-transparent text-white border-l-2 border-harx-500'
                                 : 'text-gray-500'
@@ -263,34 +261,45 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                             <p className={`text-left font-black text-[11px] uppercase tracking-widest ${isActiveSub ? 'text-harx-400' : 'text-current'}`}>
                               {idx + 1}. {sub.label}
                             </p>
-                            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-180 text-harx-400' : 'text-gray-500'}`} />
-                          </button>
-                          {isOpen && Array.isArray(sub.slides) && sub.slides.length > 0 && (
-                            <div className="mt-1 ml-4 space-y-0.5 border-l border-white/10 pl-3">
-                              {sub.slides.map((slide: string, slideIdx: number) => (
-                                <p
-                                  key={`${sub.path}-slide-${slideIdx}`}
-                                  className="truncate text-[10px] font-semibold normal-case tracking-normal text-gray-400"
+                          </div>
+                          <div className="ml-2 pl-2 border-l border-white/10">
+                            {hasSlides ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setOpenTrainingSlidesIndexes((prev) =>
+                                      prev.includes(idx) ? prev.filter((x) => x !== idx) : [...prev, idx]
+                                    )
+                                  }
+                                  className="flex w-full items-center justify-between rounded-lg py-2 px-3 text-left transition-colors hover:bg-white/5"
                                 >
-                                  - {slide}
-                                </p>
-                              ))}
-                            </div>
-                          )}
-                          {isOpen && (!Array.isArray(sub.slides) || sub.slides.length === 0) && (
-                            <p className="mt-1 ml-4 pl-3 text-[10px] font-semibold text-gray-500">
-                              - No slides
-                            </p>
-                          )}
-                          {Array.isArray(sub.sections) && sub.sections.length > 0 && isOpen && (
-                            <div className="mt-1 ml-4 space-y-0.5 border-l border-white/10 pl-3">
-                              {sub.sections.slice(0, 2).map((section: string, sIdx: number) => (
-                                <p key={`${sub.path}-section-${sIdx}`} className="truncate text-[10px] font-semibold normal-case tracking-normal text-gray-500">
-                                  • {section}
-                                </p>
-                              ))}
-                            </div>
-                          )}
+                                  <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                                    Slides ({slideList.length})
+                                  </span>
+                                  <ChevronDown
+                                    className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                                      slidesOpen ? 'rotate-180 text-harx-400' : 'text-gray-500'
+                                    }`}
+                                  />
+                                </button>
+                                {slidesOpen && (
+                                  <div className="mb-1 space-y-0.5 pb-1 pl-2">
+                                    {slideList.map((slide: string, slideIdx: number) => (
+                                      <p
+                                        key={`${sub.path}-slide-${slideIdx}`}
+                                        className="truncate border-l border-white/10 pl-2 text-[10px] font-semibold normal-case tracking-normal text-gray-400"
+                                      >
+                                        {slide}
+                                      </p>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <p className="py-2 px-3 text-[10px] font-semibold text-gray-500">No slides</p>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
