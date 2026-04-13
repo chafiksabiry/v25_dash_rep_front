@@ -269,7 +269,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                   </div>
                 )}
               </>
-            ) : item.subItems && !isCollapsed ? (
+            ) : item.subItems && item.subItems.length > 0 && !isCollapsed ? (
               <>
                 <button
                   onClick={() => setIsWorkspaceOpen(!isWorkspaceOpen)}
