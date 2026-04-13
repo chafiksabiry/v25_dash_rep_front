@@ -255,21 +255,33 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                   <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isTrainingOpen ? 'rotate-180 text-harx-400' : 'text-gray-400'}`} />
                 </button>
                 {isTrainingOpen && (
-                  <div className="ml-5 pl-2 border-l border-white/10 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                  <div className="ml-4 pl-3 border-l border-white/[0.08] space-y-0.5 animate-in slide-in-from-top-1 duration-200">
                     {item.subItems.map((sub: any, idx) => {
                       const isActiveSub = activeTrainingModuleIndex === idx && location.pathname.includes('/training');
                       const moduleOpen = openTrainingModuleIndexes.includes(idx);
                       const slideList: TrainingSidebarSlide[] = Array.isArray(sub.slides) ? sub.slides : [];
-                      const rowModuleClasses = (active: boolean) =>
-                        `flex w-full items-center justify-between rounded-xl transition-all duration-300 py-2.5 px-4 ${
+                      const moduleRow = (active: boolean) =>
+                        `group/mod flex w-full items-center justify-between gap-2 rounded-lg transition-all duration-200 py-2 px-2.5 ${
                           active
-                            ? 'bg-gradient-to-r from-harx-500/20 to-transparent text-white border-l-2 border-harx-500'
-                            : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
+                            ? 'bg-white/[0.06] text-white shadow-[inset_3px_0_0_0] shadow-harx-500'
+                            : 'text-gray-400 hover:bg-white/[0.04] hover:text-gray-200'
                         }`;
-                      const titleModuleClasses = (active: boolean) =>
-                        `truncate text-left font-black text-[11px] uppercase tracking-widest ${active ? 'text-harx-400' : 'text-current'}`;
+                      const moduleTitle = (active: boolean) =>
+                        `min-w-0 flex-1 truncate text-left text-[10px] font-bold uppercase tracking-wider leading-tight ${
+                          active ? 'text-harx-200' : 'text-gray-400 group-hover/mod:text-gray-300'
+                        }`;
+                      const slideRow = (active: boolean) =>
+                        `group/sl flex w-full items-start gap-2 rounded-md py-1.5 pl-2.5 pr-2 text-left transition-all duration-200 ${
+                          active
+                            ? 'bg-harx-500/[0.12] text-harx-100 ring-1 ring-harx-500/20'
+                            : 'text-gray-500 hover:bg-white/[0.03] hover:text-gray-300'
+                        }`;
+                      const slideTitle = (active: boolean) =>
+                        `min-w-0 flex-1 text-left text-[9.5px] font-medium leading-snug tracking-wide ${
+                          active ? 'text-harx-50' : 'text-gray-500 group-hover/sl:text-gray-400'
+                        }`;
                       return (
-                        <div key={sub.path} className="rounded-xl space-y-1">
+                        <div key={sub.path} className="space-y-0.5">
                           <button
                             type="button"
                             onClick={() =>
@@ -277,22 +289,27 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                                 prev.includes(idx) ? prev.filter((x) => x !== idx) : [...prev, idx]
                               )
                             }
-                            className={rowModuleClasses(isActiveSub)}
+                            className={moduleRow(isActiveSub)}
                           >
-                            <p className={`flex-1 min-w-0 pr-2 ${titleModuleClasses(isActiveSub)}`}>
-                              {idx + 1}. {sub.label}
+                            <p className={moduleTitle(isActiveSub)}>
+                              <span className="mr-1 font-extrabold tabular-nums text-harx-500/90">{idx + 1}.</span>
+                              {sub.label}
                             </p>
                             <ChevronDown
-                              className={`h-3.5 w-3.5 shrink-0 transition-transform ${
-                                moduleOpen ? 'rotate-180 text-harx-400' : 'text-gray-500'
+                              className={`h-3 w-3 shrink-0 opacity-70 transition-transform duration-200 ${
+                                moduleOpen ? 'rotate-180 text-harx-400' : 'text-gray-500 group-hover/mod:text-gray-400'
                               }`}
                             />
                           </button>
                           {moduleOpen && (
-                            <div className="ml-2 space-y-1 border-l border-white/10 pl-2">
+                            <div className="relative ml-1.5 pl-2.5 pt-0.5 pb-0.5">
+                              <div
+                                className="pointer-events-none absolute left-0 top-1 bottom-1 w-px bg-gradient-to-b from-harx-500/35 via-white/12 to-transparent"
+                                aria-hidden
+                              />
                               {slideList.length === 0 ? (
-                                <div className={rowModuleClasses(false)}>
-                                  <p className={titleModuleClasses(false)}>No slides</p>
+                                <div className={`${slideRow(false)} opacity-70`}>
+                                  <p className={slideTitle(false)}>No slides</p>
                                 </div>
                               ) : (
                                 slideList.map((slide, slideIdx) => {
@@ -314,11 +331,16 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                                           );
                                         }
                                       }}
-                                      className={rowModuleClasses(isSlideActive)}
+                                      className={slideRow(isSlideActive)}
                                     >
-                                      <p className={`w-full min-w-0 ${titleModuleClasses(isSlideActive)}`}>
-                                        {slideIdx + 1}. {slide.title}
-                                      </p>
+                                      <span
+                                        className={`mt-0.5 shrink-0 tabular-nums text-[9px] font-bold ${
+                                          isSlideActive ? 'text-harx-400' : 'text-gray-600'
+                                        }`}
+                                      >
+                                        {slideIdx + 1}.
+                                      </span>
+                                      <p className={slideTitle(isSlideActive)}>{slide.title}</p>
                                     </button>
                                   );
                                 })
