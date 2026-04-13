@@ -69,6 +69,19 @@ function dedupeAndSort(rows: JourneyRow[]): JourneyRow[] {
   return Array.from(m.values()).sort((a, b) => journeyTitle(a).localeCompare(journeyTitle(b), 'en'));
 }
 
+/** Matching API may return Mongo extended JSON `{ $oid }` instead of a plain string. */
+function normalizeMongoId(raw: unknown): string {
+  if (raw == null) return '';
+  if (typeof raw === 'string') return raw.trim();
+  if (typeof raw === 'object' && raw !== null && '$oid' in raw) {
+    return String((raw as { $oid: string }).$oid || '').trim();
+  }
+  if (typeof raw === 'object' && raw !== null && '_id' in raw) {
+    return normalizeMongoId((raw as { _id: unknown })._id);
+  }
+  return String(raw).trim();
+}
+
 async function fetchEnrolledGigsForAgent(
   agentId: string,
   token: string
@@ -85,11 +98,12 @@ async function fetchEnrolledGigsForAgent(
   const gigs = Array.isArray(data.gigs) ? data.gigs : [];
   const out: { gigId: string; title: string }[] = [];
   for (const item of gigs) {
-    const g = item as { gig?: { _id?: string; title?: string } };
-    if (g.gig?._id) {
+    const g = item as { gig?: { _id?: unknown; title?: string } };
+    const gigId = normalizeMongoId(g.gig?._id);
+    if (gigId) {
       out.push({
-        gigId: String(g.gig._id),
-        title: String(g.gig.title || 'Gig').trim() || 'Gig',
+        gigId,
+        title: String(g.gig?.title || 'Gig').trim() || 'Gig',
       });
     }
   }
