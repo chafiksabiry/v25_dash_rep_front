@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { BookOpen, ExternalLink, Briefcase, Loader2, AlertCircle } from 'lucide-react';
+import { BookOpen, ExternalLink, Briefcase, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 
 type JourneyRow = Record<string, unknown> & { __gigTitle?: string; __gigId?: string };
@@ -91,6 +91,13 @@ export function Training() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [journeys, setJourneys] = useState<JourneyRow[]>([]);
+  const [enrolledGigs, setEnrolledGigs] = useState<{ gigId: string; title: string }[]>([]);
+  const [gigFilter, setGigFilter] = useState<string>('__all__');
+
+  const filteredJourneys = useMemo(() => {
+    if (gigFilter === '__all__') return journeys;
+    return journeys.filter((j) => String(j.__gigId || '') === gigFilter);
+  }, [journeys, gigFilter]);
 
   useEffect(() => {
     const repId = getAgentId();
@@ -115,6 +122,14 @@ export function Training() {
       try {
         const byId = new Map<string, JourneyRow>();
 
+        let enrolled: { gigId: string; title: string }[] = [];
+        if (token) {
+          enrolled = await fetchEnrolledGigsForAgent(repId, token);
+          if (!cancelled) setEnrolledGigs(enrolled);
+        } else if (!cancelled) {
+          setEnrolledGigs([]);
+        }
+
         // 1) Parcours où le rep est explicitement dans enrolledRepIds (lancement ciblé)
         try {
           const repRes = await axios.get<unknown[]>(
@@ -128,21 +143,24 @@ export function Training() {
         }
 
         // 2) Parcours publiés pour chaque gig où le rep est enrolled (matching)
-        if (token) {
-          const enrolled = await fetchEnrolledGigsForAgent(repId, token);
+        if (token && enrolled.length > 0) {
           await Promise.all(
             enrolled.map(async ({ gigId, title }) => {
               try {
                 const r = await axios.get<{ success?: boolean; data?: unknown[] }>(
                   `${base}/training_journeys/gig/${encodeURIComponent(gigId)}`,
-                  { headers: { Authorization: `Bearer ${token}` } }
+                  {
+                    headers: { Authorization: `Bearer ${token}` },
+                    validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
+                  }
                 );
+                if (r.status === 404) return;
                 const arr = Array.isArray(r.data?.data) ? r.data.data : [];
                 arr.forEach((j) =>
                   mergeJourney(byId, j as Record<string, unknown>, title, gigId)
                 );
               } catch {
-                /* gig sans training */
+                /* réseau / erreur */
               }
             })
           );
@@ -179,16 +197,53 @@ export function Training() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Training</h1>
           <p className="text-sm text-gray-500 mt-1 font-medium">
             Formations liées à vos gigs où vous êtes inscrit, et parcours où vous avez été ajouté
             explicitement par l’entreprise.
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-xl bg-harx-500/10 border border-harx-500/20 px-4 py-2 text-harx-700">
-          <BookOpen className="w-5 h-5 shrink-0" />
-          <span className="text-xs font-black uppercase tracking-widest">Mes gigs & parcours</span>
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:min-w-[280px] sm:items-end">
+          <div className="flex items-center gap-2 rounded-xl bg-harx-500/10 border border-harx-500/20 px-4 py-2 text-harx-700 self-start sm:self-end">
+            <BookOpen className="w-5 h-5 shrink-0" />
+            <span className="text-xs font-black uppercase tracking-widest">Mes gigs & parcours</span>
+          </div>
+          <div className="w-full sm:w-auto">
+            <label
+              htmlFor="training-gig-filter"
+              className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-gray-400"
+            >
+              Gig inscrit (Marketplace)
+            </label>
+            <div className="relative">
+              <select
+                id="training-gig-filter"
+                value={gigFilter}
+                onChange={(e) => setGigFilter(e.target.value)}
+                disabled={loading}
+                className="w-full min-w-[260px] appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm font-bold text-gray-800 shadow-sm transition-colors focus:border-harx-500 focus:outline-none focus:ring-2 focus:ring-harx-500/20 disabled:cursor-wait disabled:opacity-70"
+              >
+                <option value="__all__">
+                  {enrolledGigs.length === 0 && !loading
+                    ? 'Aucun gig enrolled'
+                    : 'Tous les gigs inscrits'}
+                </option>
+                {enrolledGigs.map((g) => (
+                  <option key={g.gigId} value={g.gigId}>
+                    {g.title}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            </div>
+            {enrolledGigs.length === 0 && !loading && !error && (
+              <p className="mt-2 text-xs text-amber-700 font-medium">
+                Aucun gig « Enrolled » détecté via l’API matching — vérifiez le Marketplace ou la
+                connexion.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -217,9 +272,18 @@ export function Training() {
         </div>
       )}
 
-      {!loading && !error && journeys.length > 0 && (
+      {!loading && !error && journeys.length > 0 && filteredJourneys.length === 0 && (
+        <div className="rounded-2xl border border-amber-100 bg-amber-50/80 p-6 text-amber-900 text-sm font-medium">
+          Aucune formation pour le gig sélectionné. Choisissez « Tous les gigs inscrits » ou un autre
+          gig, ou vérifiez que l’API training expose bien{' '}
+          <code className="rounded bg-white/80 px-1 py-0.5 text-xs">/training_journeys/gig/…</code>{' '}
+          (déploiement backend à jour).
+        </div>
+      )}
+
+      {!loading && !error && filteredJourneys.length > 0 && (
         <ul className="space-y-4">
-          {journeys.map((j) => {
+          {filteredJourneys.map((j) => {
             const id = journeyKey(j);
             const gig = gigLabel(j);
             const status = String(j.status || '—');
