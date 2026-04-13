@@ -407,7 +407,7 @@ export function Training() {
   };
 
   return (
-    <div className="space-y-6 w-full">
+    <div className={selectedJourney ? 'w-full h-[calc(100vh-120px)]' : 'space-y-6 w-full'}>
       {!selectedJourney && (
         <>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -602,9 +602,9 @@ export function Training() {
       )}
 
       {!listLoading && !error && selectedJourney && (
-        <div className="overflow-hidden rounded-2xl border border-harx-100 bg-white shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-[230px_1fr]">
-            <aside className="border-r border-harx-100 bg-white p-3">
+        <div className="h-full overflow-hidden rounded-2xl border border-harx-100 bg-white shadow-sm">
+          <div className="grid h-full grid-cols-1 md:grid-cols-[230px_1fr]">
+            <aside className="h-full overflow-y-auto border-r border-harx-100 bg-white p-3">
               <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-harx-500">Modules</p>
               <div className="space-y-1.5">
                 {extractModules(selectedJourney).map((m, idx) => (
@@ -619,7 +619,7 @@ export function Training() {
                 ))}
               </div>
             </aside>
-            <div className="bg-slate-50">
+            <div className="flex h-full min-h-0 flex-col bg-slate-50">
               <div className="flex items-center gap-3 border-b border-harx-100 bg-white px-4 py-2.5">
                 <button
                   type="button"
@@ -630,7 +630,7 @@ export function Training() {
                 </button>
                 <h3 className="truncate text-sm font-black text-harx-700">{journeyTitle(selectedJourney)}</h3>
               </div>
-              <div className="relative p-4 md:p-5">
+              <div className="relative flex-1 p-4 md:p-5">
                 {(() => {
                   const slides = extractSlides(selectedJourney);
                   if (slides.length === 0) {
@@ -639,7 +639,7 @@ export function Training() {
                   const s = slides[activeSlide] || slides[0];
                   return (
                     <>
-                      <div className="relative overflow-hidden rounded-3xl border border-fuchsia-200 bg-gradient-to-br from-[#1f1b4f] via-[#251a5f] to-[#2b1656] p-7 text-white shadow-xl">
+                      <div className="relative h-[calc(100%-48px)] min-h-[420px] overflow-hidden rounded-3xl border border-fuchsia-200 bg-gradient-to-br from-[#1f1b4f] via-[#251a5f] to-[#2b1656] p-7 text-white shadow-xl">
                         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-fuchsia-500/20" />
                         <div className="pointer-events-none absolute -left-10 bottom-[-30px] h-32 w-32 rounded-full bg-rose-500/20" />
                         <h4 className="max-w-4xl text-3xl font-black leading-tight md:text-5xl">
