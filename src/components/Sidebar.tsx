@@ -199,7 +199,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       <nav className="flex-1 px-4 py-4 flex flex-col min-h-0 space-y-1">
         {filteredNavItems.map((item) => (
           <div key={item.path} className="space-y-1">
-            {item.label === 'Training' && item.subItems && !isCollapsed ? (
+            {item.label === 'Training' && Array.isArray(item.subItems) && item.subItems.length > 0 && !isCollapsed ? (
               <>
                 <button
                   onClick={() => {
@@ -220,29 +220,23 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                 </button>
                 {isTrainingOpen && (
                   <div className="ml-5 pl-2 border-l border-white/10 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                    {item.subItems.length === 0 ? (
-                      <div className="rounded-xl py-2 px-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">
-                        No modules yet
-                      </div>
-                    ) : (
-                      item.subItems.map((sub, idx) => {
-                        const isActiveSub = activeTrainingModuleIndex === idx && location.pathname.includes('/training');
-                        return (
-                          <div
-                            key={sub.path}
-                            className={`flex w-full items-center rounded-xl transition-all duration-300 group relative space-x-3 py-2.5 px-4 ${
-                              isActiveSub
-                                ? 'bg-gradient-to-r from-harx-500/20 to-transparent text-white border-l-2 border-harx-500'
-                                : 'text-gray-500'
-                            }`}
-                          >
-                            <span className={`font-black text-[11px] uppercase tracking-widest ${isActiveSub ? 'text-harx-400' : 'text-current'}`}>
-                              {idx + 1}. {sub.label}
-                            </span>
-                          </div>
-                        );
-                      })
-                    )}
+                    {item.subItems.map((sub, idx) => {
+                      const isActiveSub = activeTrainingModuleIndex === idx && location.pathname.includes('/training');
+                      return (
+                        <div
+                          key={sub.path}
+                          className={`flex w-full items-center rounded-xl transition-all duration-300 group relative space-x-3 py-2.5 px-4 ${
+                            isActiveSub
+                              ? 'bg-gradient-to-r from-harx-500/20 to-transparent text-white border-l-2 border-harx-500'
+                              : 'text-gray-500'
+                          }`}
+                        >
+                          <span className={`font-black text-[11px] uppercase tracking-widest ${isActiveSub ? 'text-harx-400' : 'text-current'}`}>
+                            {idx + 1}. {sub.label}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </>
