@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
   BookOpen,
-  ExternalLink,
   Briefcase,
   Loader2,
   AlertCircle,
@@ -590,15 +589,6 @@ export function Training() {
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-harx-600 text-white px-4 py-3 text-xs font-black uppercase tracking-widest hover:bg-harx-700 transition-colors disabled:opacity-40"
                   >
                     Continue
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!id}
-                    onClick={() => openTrainingJourney(id)}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white px-4 py-3 text-xs font-black uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-40"
-                  >
-                    Open
-                    <ExternalLink className="w-4 h-4" />
                   </button>
                 </div>
               </li>
