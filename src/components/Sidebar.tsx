@@ -34,6 +34,11 @@ interface SidebarProps {
   setIsCollapsed: (isCollapsed: boolean) => void;
 }
 
+type TrainingSidebarModule = {
+  title: string;
+  sections: string[];
+};
+
 export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, setIsCollapsed }: SidebarProps) {
   const { logout } = useAuth();
   const location = useLocation();
@@ -46,7 +51,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
 
   const [isWorkspaceOpen, setIsWorkspaceOpen] = React.useState(location.pathname.includes('/workspace'));
   const [isTrainingOpen, setIsTrainingOpen] = React.useState(location.pathname.includes('/training'));
-  const [trainingModules, setTrainingModules] = React.useState<string[]>([]);
+  const [trainingModules, setTrainingModules] = React.useState<TrainingSidebarModule[]>([]);
   const [activeTrainingModuleIndex, setActiveTrainingModuleIndex] = React.useState<number>(0);
 
   // Ensure workspace is open if we navigate there externally
@@ -64,7 +69,14 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       try {
         const raw = localStorage.getItem('repTrainingSidebarModules');
         const parsed = raw ? JSON.parse(raw) : [];
-        setTrainingModules(Array.isArray(parsed) ? parsed.map((m) => String(m)) : []);
+        setTrainingModules(
+          Array.isArray(parsed)
+            ? parsed.map((m: any, idx: number) => ({
+                title: String(m?.title || `Module ${idx + 1}`),
+                sections: Array.isArray(m?.sections) ? m.sections.map((s: any) => String(s)) : []
+              }))
+            : []
+        );
       } catch {
         setTrainingModules([]);
       }
@@ -104,8 +116,9 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       label: 'Training',
       path: '/training',
       isAccessible: () => isPhaseCompleted(4),
-      subItems: trainingModules.map((label, idx) => ({
-        label,
+      subItems: trainingModules.map((module, idx) => ({
+        label: module.title,
+        sections: module.sections,
         path: `/training#module-${idx + 1}`
       }))
     },
@@ -220,7 +233,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                 </button>
                 {isTrainingOpen && (
                   <div className="ml-5 pl-2 border-l border-white/10 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                    {item.subItems.map((sub, idx) => {
+                    {item.subItems.map((sub: any, idx) => {
                       const isActiveSub = activeTrainingModuleIndex === idx && location.pathname.includes('/training');
                       return (
                         <div
@@ -231,9 +244,25 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                               : 'text-gray-500'
                           }`}
                         >
-                          <span className={`font-black text-[11px] uppercase tracking-widest ${isActiveSub ? 'text-harx-400' : 'text-current'}`}>
-                            {idx + 1}. {sub.label}
-                          </span>
+                          <div className="min-w-0">
+                            <p className={`font-black text-[11px] uppercase tracking-widest ${isActiveSub ? 'text-harx-400' : 'text-current'}`}>
+                              {idx + 1}. {sub.label}
+                            </p>
+                            {Array.isArray(sub.sections) && sub.sections.length > 0 && (
+                              <div className="mt-1 space-y-0.5">
+                                {sub.sections.slice(0, 4).map((section: string, sIdx: number) => (
+                                  <p key={`${sub.path}-section-${sIdx}`} className="truncate text-[10px] font-semibold normal-case tracking-normal text-gray-400">
+                                    - {section}
+                                  </p>
+                                ))}
+                                {sub.sections.length > 4 && (
+                                  <p className="text-[10px] font-semibold text-gray-500">
+                                    +{sub.sections.length - 4} more
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}

@@ -364,7 +364,23 @@ export function Training() {
 
   useEffect(() => {
     const modules = selectedJourney
-      ? extractModules(selectedJourney).map((m, i) => String(m.title || `Module ${i + 1}`))
+      ? extractModules(selectedJourney).map((m, i) => {
+          const sections = Array.isArray(m.sections)
+            ? m.sections
+                .map((s, si) => {
+                  if (typeof s === 'string') return s;
+                  if (typeof s === 'object' && s !== null && 'title' in (s as Record<string, unknown>)) {
+                    return String((s as { title?: unknown }).title || `Section ${si + 1}`);
+                  }
+                  return `Section ${si + 1}`;
+                })
+                .filter(Boolean)
+            : [];
+          return {
+            title: String(m.title || `Module ${i + 1}`),
+            sections
+          };
+        })
       : [];
     const slides = selectedJourney ? extractSlides(selectedJourney) : [];
     const activeModuleIndex =
@@ -625,22 +641,6 @@ export function Training() {
 
       {!listLoading && !error && selectedJourney && (
         <div className="h-full overflow-hidden rounded-2xl border border-harx-100 bg-white shadow-sm">
-          <div className="grid h-full grid-cols-1 md:grid-cols-[230px_1fr]">
-            <aside className="h-full overflow-y-auto border-r border-harx-100 bg-white p-3">
-              <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-harx-500">Modules</p>
-              <div className="space-y-1.5">
-                {extractModules(selectedJourney).map((m, idx) => (
-                  <div
-                    key={String(m._id || m.id || idx)}
-                    className="rounded-xl border border-gray-100 bg-white px-2.5 py-2"
-                  >
-                    <p className="text-xs font-bold text-gray-800">
-                      {idx + 1}. {String(m.title || `Module ${idx + 1}`)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </aside>
             <div className="flex h-full min-h-0 flex-col bg-slate-50">
               <div className="flex items-center gap-3 border-b border-harx-100 bg-white px-4 py-2.5">
                 <button
@@ -744,7 +744,6 @@ export function Training() {
                 })()}
               </div>
             </div>
-          </div>
         </div>
       )}
     </div>
