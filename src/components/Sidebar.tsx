@@ -37,6 +37,7 @@ interface SidebarProps {
 type TrainingSidebarModule = {
   title: string;
   sections: string[];
+  slides: string[];
 };
 
 export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, setIsCollapsed }: SidebarProps) {
@@ -53,6 +54,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
   const [isTrainingOpen, setIsTrainingOpen] = React.useState(location.pathname.includes('/training'));
   const [trainingModules, setTrainingModules] = React.useState<TrainingSidebarModule[]>([]);
   const [activeTrainingModuleIndex, setActiveTrainingModuleIndex] = React.useState<number>(0);
+  const [openTrainingModuleIndexes, setOpenTrainingModuleIndexes] = React.useState<number[]>([]);
 
   // Ensure workspace is open if we navigate there externally
   useEffect(() => {
@@ -73,7 +75,8 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
           Array.isArray(parsed)
             ? parsed.map((m: any, idx: number) => ({
                 title: String(m?.title || `Module ${idx + 1}`),
-                sections: Array.isArray(m?.sections) ? m.sections.map((s: any) => String(s)) : []
+                sections: Array.isArray(m?.sections) ? m.sections.map((s: any) => String(s)) : [],
+                slides: Array.isArray(m?.slides) ? m.slides.map((s: any) => String(s)) : []
               }))
             : []
         );
@@ -82,6 +85,12 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       }
       const idx = parseInt(localStorage.getItem('repTrainingSidebarActiveModuleIndex') || '0', 10);
       setActiveTrainingModuleIndex(Number.isFinite(idx) ? idx : 0);
+      setOpenTrainingModuleIndexes((prev) => {
+        if (Number.isFinite(idx)) {
+          return prev.includes(idx) ? prev : [...prev, idx];
+        }
+        return prev;
+      });
     };
     readTrainingSidebarData();
     window.addEventListener('rep-training-modules-updated', readTrainingSidebarData as EventListener);
@@ -235,34 +244,53 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                   <div className="ml-5 pl-2 border-l border-white/10 space-y-1 animate-in slide-in-from-top-1 duration-200">
                     {item.subItems.map((sub: any, idx) => {
                       const isActiveSub = activeTrainingModuleIndex === idx && location.pathname.includes('/training');
+                      const isOpen = openTrainingModuleIndexes.includes(idx);
                       return (
-                        <div
-                          key={sub.path}
-                          className={`flex w-full items-center rounded-xl transition-all duration-300 group relative space-x-3 py-2.5 px-4 ${
-                            isActiveSub
-                              ? 'bg-gradient-to-r from-harx-500/20 to-transparent text-white border-l-2 border-harx-500'
-                              : 'text-gray-500'
-                          }`}
-                        >
-                          <div className="min-w-0">
-                            <p className={`font-black text-[11px] uppercase tracking-widest ${isActiveSub ? 'text-harx-400' : 'text-current'}`}>
+                        <div key={sub.path} className="rounded-xl">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOpenTrainingModuleIndexes((prev) =>
+                                prev.includes(idx) ? prev.filter((x) => x !== idx) : [...prev, idx]
+                              )
+                            }
+                            className={`flex w-full items-center justify-between rounded-xl transition-all duration-300 py-2.5 px-4 ${
+                              isActiveSub
+                                ? 'bg-gradient-to-r from-harx-500/20 to-transparent text-white border-l-2 border-harx-500'
+                                : 'text-gray-500'
+                            }`}
+                          >
+                            <p className={`text-left font-black text-[11px] uppercase tracking-widest ${isActiveSub ? 'text-harx-400' : 'text-current'}`}>
                               {idx + 1}. {sub.label}
                             </p>
-                            {Array.isArray(sub.sections) && sub.sections.length > 0 && (
-                              <div className="mt-1 space-y-0.5">
-                                {sub.sections.slice(0, 4).map((section: string, sIdx: number) => (
-                                  <p key={`${sub.path}-section-${sIdx}`} className="truncate text-[10px] font-semibold normal-case tracking-normal text-gray-400">
-                                    - {section}
-                                  </p>
-                                ))}
-                                {sub.sections.length > 4 && (
-                                  <p className="text-[10px] font-semibold text-gray-500">
-                                    +{sub.sections.length - 4} more
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-180 text-harx-400' : 'text-gray-500'}`} />
+                          </button>
+                          {isOpen && Array.isArray(sub.slides) && sub.slides.length > 0 && (
+                            <div className="mt-1 ml-4 space-y-0.5 border-l border-white/10 pl-3">
+                              {sub.slides.map((slide: string, slideIdx: number) => (
+                                <p
+                                  key={`${sub.path}-slide-${slideIdx}`}
+                                  className="truncate text-[10px] font-semibold normal-case tracking-normal text-gray-400"
+                                >
+                                  - {slide}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                          {isOpen && (!Array.isArray(sub.slides) || sub.slides.length === 0) && (
+                            <p className="mt-1 ml-4 pl-3 text-[10px] font-semibold text-gray-500">
+                              - No slides
+                            </p>
+                          )}
+                          {Array.isArray(sub.sections) && sub.sections.length > 0 && isOpen && (
+                            <div className="mt-1 ml-4 space-y-0.5 border-l border-white/10 pl-3">
+                              {sub.sections.slice(0, 2).map((section: string, sIdx: number) => (
+                                <p key={`${sub.path}-section-${sIdx}`} className="truncate text-[10px] font-semibold normal-case tracking-normal text-gray-500">
+                                  • {section}
+                                </p>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}

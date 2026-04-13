@@ -378,10 +378,27 @@ export function Training() {
             : [];
           return {
             title: String(m.title || `Module ${i + 1}`),
-            sections
+            sections,
+            slides: [] as string[]
           };
         })
       : [];
+    if (selectedJourney && modules.length > 0) {
+      const slideTitles = extractSlides(selectedJourney).map((s, idx) =>
+        String(s.title || `Slide ${idx + 1}`)
+      );
+      const totalSlides = slideTitles.length;
+      const totalModules = modules.length;
+      const base = totalModules > 0 ? Math.floor(totalSlides / totalModules) : 0;
+      let remainder = totalModules > 0 ? totalSlides % totalModules : 0;
+      let cursor = 0;
+      for (let i = 0; i < modules.length; i++) {
+        const take = base + (remainder > 0 ? 1 : 0);
+        if (remainder > 0) remainder -= 1;
+        modules[i].slides = slideTitles.slice(cursor, cursor + take);
+        cursor += take;
+      }
+    }
     const slides = selectedJourney ? extractSlides(selectedJourney) : [];
     const activeModuleIndex =
       modules.length > 0 && slides.length > 0
