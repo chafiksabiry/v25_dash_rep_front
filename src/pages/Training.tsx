@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BookOpen, ExternalLink, Briefcase, Loader2, AlertCircle } from 'lucide-react';
-import { getAgentId } from '../utils/authUtils';
+import { getAgentId, getAuthToken } from '../utils/authUtils';
+
+type JourneyRow = Record<string, unknown> & { __gigTitle?: string; __gigId?: string };
 
 function trainingApiBase(): string {
-  return String(import.meta.env.VITE_TRAINING_API_URL || '').replace(/\/$/, '');
+  const raw =
+    import.meta.env.VITE_TRAINING_API_URL ||
+    import.meta.env.VITE_TRAINING_BACKEND_URL ||
+    '';
+  return String(raw).replace(/\/$/, '');
 }
 
 function openTrainingJourney(journeyId: string) {
@@ -19,24 +25,78 @@ function journeyTitle(j: Record<string, unknown>): string {
   return String(j.title || j.name || 'Formation').trim();
 }
 
-function gigLabel(j: Record<string, unknown>): string | null {
+function gigLabel(j: JourneyRow): string | null {
+  if (j.__gigTitle) return String(j.__gigTitle);
   const g = j.gigId;
   if (g == null) return null;
   if (typeof g === 'object' && g !== null && 'title' in g) {
     return String((g as { title?: string }).title || '').trim() || null;
   }
   const s = String(g);
-  return s.length > 8 ? `${s.slice(0, 8)}…` : s;
+  return s.length > 10 ? `${s.slice(0, 10)}…` : s;
+}
+
+function journeyKey(j: Record<string, unknown>): string {
+  return String(j._id || j.id || '').trim();
+}
+
+function mergeJourney(
+  map: Map<string, JourneyRow>,
+  j: Record<string, unknown>,
+  gigTitle?: string,
+  gigId?: string
+) {
+  const id = journeyKey(j);
+  if (!id) return;
+  const prev = map.get(id);
+  if (prev) {
+    if (gigTitle && !prev.__gigTitle) prev.__gigTitle = gigTitle;
+    if (gigId && !prev.__gigId) prev.__gigId = gigId;
+    return;
+  }
+  const row: JourneyRow = { ...j };
+  if (gigTitle) row.__gigTitle = gigTitle;
+  if (gigId) row.__gigId = gigId;
+  map.set(id, row);
+}
+
+async function fetchEnrolledGigsForAgent(
+  agentId: string,
+  token: string
+): Promise<{ gigId: string; title: string }[]> {
+  const base = String(import.meta.env.VITE_MATCHING_API_URL || '').replace(/\/$/, '');
+  if (!base) return [];
+
+  const res = await fetch(
+    `${base}/gig-agents/agents/${encodeURIComponent(agentId)}/gigs?status=enrolled`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (!res.ok) return [];
+  const data = (await res.json()) as { gigs?: unknown[] };
+  const gigs = Array.isArray(data.gigs) ? data.gigs : [];
+  const out: { gigId: string; title: string }[] = [];
+  for (const item of gigs) {
+    const g = item as { gig?: { _id?: string; title?: string } };
+    if (g.gig?._id) {
+      out.push({
+        gigId: String(g.gig._id),
+        title: String(g.gig.title || 'Gig').trim() || 'Gig',
+      });
+    }
+  }
+  return out;
 }
 
 export function Training() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [journeys, setJourneys] = useState<Record<string, unknown>[]>([]);
+  const [journeys, setJourneys] = useState<JourneyRow[]>([]);
 
   useEffect(() => {
     const repId = getAgentId();
     const base = trainingApiBase();
+    const token = getAuthToken() || '';
+
     if (!repId) {
       setError('Profil REP introuvable (connectez-vous à nouveau).');
       setLoading(false);
@@ -44,7 +104,7 @@ export function Training() {
     }
     if (!base) {
       setError(
-        'Variable VITE_TRAINING_API_URL manquante (URL du backend training, ex. https://…/ sans slash final).'
+        'Variable VITE_TRAINING_API_URL ou VITE_TRAINING_BACKEND_URL manquante (URL du backend training, sans slash final).'
       );
       setLoading(false);
       return;
@@ -53,26 +113,58 @@ export function Training() {
     let cancelled = false;
     (async () => {
       try {
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        const res = await axios.get<unknown[]>(
-          `${base}/training_journeys/rep/${encodeURIComponent(repId)}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          }
+        const byId = new Map<string, JourneyRow>();
+
+        // 1) Parcours où le rep est explicitement dans enrolledRepIds (lancement ciblé)
+        try {
+          const repRes = await axios.get<unknown[]>(
+            `${base}/training_journeys/rep/${encodeURIComponent(repId)}`,
+            { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
+          );
+          const repList = Array.isArray(repRes.data) ? repRes.data : [];
+          repList.forEach((j) => mergeJourney(byId, j as Record<string, unknown>));
+        } catch {
+          /* optionnel si route absente */
+        }
+
+        // 2) Parcours publiés pour chaque gig où le rep est enrolled (matching)
+        if (token) {
+          const enrolled = await fetchEnrolledGigsForAgent(repId, token);
+          await Promise.all(
+            enrolled.map(async ({ gigId, title }) => {
+              try {
+                const r = await axios.get<{ success?: boolean; data?: unknown[] }>(
+                  `${base}/training_journeys/gig/${encodeURIComponent(gigId)}`,
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+                const arr = Array.isArray(r.data?.data) ? r.data.data : [];
+                arr.forEach((j) =>
+                  mergeJourney(byId, j as Record<string, unknown>, title, gigId)
+                );
+              } catch {
+                /* gig sans training */
+              }
+            })
+          );
+        }
+
+        const merged = Array.from(byId.values()).sort((a, b) =>
+          journeyTitle(a).localeCompare(journeyTitle(b), 'fr')
         );
-        const data = res.data;
-        const list = Array.isArray(data) ? data : [];
-        if (!cancelled) setJourneys(list as Record<string, unknown>[]);
+        if (!cancelled) setJourneys(merged);
       } catch (e: unknown) {
         const msg =
           axios.isAxiosError(e) && e.response?.data && typeof e.response.data === 'object'
-            ? String((e.response.data as { error?: string; message?: string }).error ||
-                (e.response.data as { message?: string }).message || '')
+            ? String(
+                (e.response.data as { error?: string; message?: string }).error ||
+                  (e.response.data as { message?: string }).message ||
+                  ''
+              )
             : e instanceof Error
               ? e.message
               : '';
         if (!cancelled) {
-          setError(msg || 'Impossible de charger les formations pour vos gigs.');
+          setError(msg || 'Impossible de charger les formations.');
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -90,12 +182,13 @@ export function Training() {
         <div>
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Training</h1>
           <p className="text-sm text-gray-500 mt-1 font-medium">
-            Formations auxquelles vous êtes inscrit pour vos gigs (parcours lancés par l’entreprise).
+            Formations liées à vos gigs où vous êtes inscrit, et parcours où vous avez été ajouté
+            explicitement par l’entreprise.
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-xl bg-harx-500/10 border border-harx-500/20 px-4 py-2 text-harx-700">
           <BookOpen className="w-5 h-5 shrink-0" />
-          <span className="text-xs font-black uppercase tracking-widest">Gig enrollments</span>
+          <span className="text-xs font-black uppercase tracking-widest">Mes gigs & parcours</span>
         </div>
       </div>
 
@@ -115,9 +208,11 @@ export function Training() {
 
       {!loading && !error && journeys.length === 0 && (
         <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-center text-gray-500">
-          <p className="font-medium">Aucune formation assignée pour le moment.</p>
+          <p className="font-medium">Aucune formation trouvée pour vos gigs inscrits.</p>
           <p className="text-sm mt-2">
-            Lorsqu’une entreprise vous inscrit à un parcours pour un gig, il apparaîtra ici.
+            Être inscrit à un gig n’ajoute pas automatiquement un parcours : l’entreprise doit avoir
+            créé un training pour ce gig (statut actif / rehearsal / completed). Sinon, la liste
+            reste vide même si le Marketplace affiche « Enrolled ».
           </p>
         </div>
       )}
@@ -125,7 +220,7 @@ export function Training() {
       {!loading && !error && journeys.length > 0 && (
         <ul className="space-y-4">
           {journeys.map((j) => {
-            const id = String(j._id || j.id || '');
+            const id = journeyKey(j);
             const gig = gigLabel(j);
             const status = String(j.status || '—');
             return (
@@ -143,9 +238,9 @@ export function Training() {
                       {status}
                     </span>
                     {gig ? (
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg bg-harx-500/10 text-harx-700 flex items-center gap-1">
-                        <Briefcase className="w-3 h-3" />
-                        Gig {gig}
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg bg-harx-500/10 text-harx-700 flex items-center gap-1 max-w-full">
+                        <Briefcase className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{gig}</span>
                       </span>
                     ) : null}
                   </div>
