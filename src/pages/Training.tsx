@@ -105,6 +105,11 @@ export function Training() {
   /** Trainings returned by GET /training_journeys/gig/:id when a single gig is selected */
   const [gigFetchedJourneys, setGigFetchedJourneys] = useState<JourneyRow[]>([]);
   const [gigFetchLoading, setGigFetchLoading] = useState(false);
+  /** Last completed per-gig fetch so empty-state copy matches reality (200 + [] vs 404 vs network). */
+  const [gigFetchOutcome, setGigFetchOutcome] = useState<{
+    gigId: string;
+    kind: 'ok' | 'not_found' | 'error';
+  } | null>(null);
 
   const displayJourneys = useMemo(() => {
     if (gigFilter === '__all__') return journeys;
@@ -212,6 +217,7 @@ export function Training() {
     if (gigFilter === '__all__') {
       setGigFetchedJourneys([]);
       setGigFetchLoading(false);
+      setGigFetchOutcome(null);
       return;
     }
 
@@ -219,6 +225,7 @@ export function Training() {
     const token = getAuthToken() || '';
     if (!base || !token) {
       setGigFetchedJourneys([]);
+      setGigFetchOutcome({ gigId: gigFilter, kind: 'error' });
       return;
     }
 
@@ -226,6 +233,7 @@ export function Training() {
       enrolledGigs.find((g) => g.gigId === gigFilter)?.title || 'Gig';
     let cancelled = false;
     setGigFetchLoading(true);
+    setGigFetchOutcome(null);
 
     (async () => {
       try {
@@ -239,6 +247,7 @@ export function Training() {
         if (cancelled) return;
         if (r.status === 404) {
           setGigFetchedJourneys([]);
+          setGigFetchOutcome({ gigId: gigFilter, kind: 'not_found' });
           return;
         }
         const arr = Array.isArray(r.data?.data) ? r.data.data : [];
@@ -251,8 +260,12 @@ export function Training() {
           };
         });
         setGigFetchedJourneys(rows);
+        setGigFetchOutcome({ gigId: gigFilter, kind: 'ok' });
       } catch {
-        if (!cancelled) setGigFetchedJourneys([]);
+        if (!cancelled) {
+          setGigFetchedJourneys([]);
+          setGigFetchOutcome({ gigId: gigFilter, kind: 'error' });
+        }
       } finally {
         if (!cancelled) setGigFetchLoading(false);
       }
@@ -357,13 +370,35 @@ export function Training() {
       {!listLoading && !error && gigFilter !== '__all__' && displayJourneys.length === 0 && (
         <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-center text-gray-500">
           <p className="font-medium">No trainings for this gig yet.</p>
-          <p className="text-sm mt-2">
-            The training API returned no published journeys for this gig, or the endpoint{' '}
-            <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">
-              GET /training_journeys/gig/:gigId
-            </code>{' '}
-            is not deployed on your backend. Ask your admin to deploy the latest training service.
-          </p>
+          {gigFetchOutcome?.gigId === gigFilter && gigFetchOutcome.kind === 'ok' ? (
+            <p className="text-sm mt-2">
+              The training service responded successfully but has no published journeys for this
+              gig. Your org may still be preparing content, the journey may still be in draft, or
+              the journey may be linked to a different gig id than the one in the Marketplace.
+              Only journeys with status active, rehearsal, or completed are shown.
+            </p>
+          ) : gigFetchOutcome?.gigId === gigFilter && gigFetchOutcome.kind === 'not_found' ? (
+            <p className="text-sm mt-2">
+              The training API returned 404 for{' '}
+              <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">
+                GET /training_journeys/gig/:gigId
+              </code>
+              . Deploy the latest training backend or verify API routing and the base URL in{' '}
+              <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">VITE_TRAINING_*</code>.
+            </p>
+          ) : gigFetchOutcome?.gigId === gigFilter && gigFetchOutcome.kind === 'error' ? (
+            <p className="text-sm mt-2">
+              Could not reach the training API for this gig (network error, CORS, or missing auth).
+              Check your connection, sign in again, and confirm{' '}
+              <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">VITE_TRAINING_*</code>{' '}
+              points at the training service.
+            </p>
+          ) : (
+            <p className="text-sm mt-2">
+              Select the gig again or refresh the page. If this persists, verify the training API URL
+              and that you are signed in.
+            </p>
+          )}
         </div>
       )}
 
