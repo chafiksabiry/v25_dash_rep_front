@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
   BookOpen,
@@ -102,6 +102,37 @@ function dedupeAndSort(rows: JourneyRow[]): JourneyRow[] {
     if (k && !m.has(k)) m.set(k, j);
   }
   return Array.from(m.values()).sort((a, b) => journeyTitle(a).localeCompare(journeyTitle(b), 'en'));
+}
+
+function getOrCreateTrainingSessionId(): string {
+  try {
+    let s = sessionStorage.getItem('harx_rep_training_session');
+    if (!s) {
+      s =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `ts-${Date.now()}`;
+      sessionStorage.setItem('harx_rep_training_session', s);
+    }
+    return s;
+  } catch {
+    return `ts-${Date.now()}`;
+  }
+}
+
+function slideProgressPayload(journey: JourneyRow, slideIndex: number) {
+  const slides = extractSlides(journey);
+  const modules = extractModules(journey);
+  const n = slides.length;
+  if (n <= 0) return null;
+  const clamped = Math.min(Math.max(0, slideIndex), n - 1);
+  const mIdx =
+    modules.length > 0
+      ? Math.min(modules.length - 1, Math.floor((clamped / Math.max(n - 1, 1)) * modules.length))
+      : 0;
+  const moduleId = String(modules[mIdx]?._id || modules[mIdx]?.id || `module-${mIdx + 1}`);
+  const pct = Math.min(100, Math.round(((clamped + 1) / n) * 100));
+  return { moduleId, pct, slideIndex: clamped, slideCount: n };
 }
 
 /** Matching API may return Mongo extended JSON `{ $oid }` instead of a plain string. */
@@ -450,34 +481,77 @@ export function Training() {
       .catch(() => undefined);
   }, [repId]);
 
-  const pushProgress = async (
-    journeyId: string,
-    moduleId: string,
-    progress: number,
-    status: 'not_started' | 'in_progress' | 'completed'
-  ) => {
-    if (!repId) return;
-    const base = trainingApiBase();
-    if (!base) return;
-    try {
-      const r = await axios.post<{ success?: boolean; data?: RepProgressRow }>(
-        `${base}/training_journeys/rep-progress`,
-        {
+  const pushProgress = useCallback(
+    async (
+      journeyId: string,
+      moduleId: string,
+      progress: number,
+      status: 'not_started' | 'in_progress' | 'completed'
+    ) => {
+      if (!repId) return;
+      const base = trainingApiBase();
+      if (!base) return;
+      try {
+        const r = await axios.post<{ success?: boolean; data?: RepProgressRow }>(
+          `${base}/training_journeys/rep-progress`,
+          {
+            repId,
+            journeyId,
+            moduleId,
+            progress,
+            status,
+            engagementScore: progress
+          }
+        );
+        if (r.data?.data) {
+          setProgressByJourney((prev) => ({ ...prev, [journeyId]: r.data.data as RepProgressRow }));
+        }
+      } catch (e) {
+        console.warn('[Training] rep-progress save failed', e);
+      }
+    },
+    [repId]
+  );
+
+  const postTrainingTrackingEvent = useCallback(
+    async (journeyId: string, moduleId: string, slideIndex: number, slideCount: number) => {
+      if (!repId) return;
+      const base = trainingApiBase();
+      if (!base) return;
+      try {
+        await axios.post(`${base}/training_journeys/tracking-events`, {
           repId,
           journeyId,
           moduleId,
-          progress,
-          status,
-          engagementScore: progress
-        }
-      );
-      if (r.data?.data) {
-        setProgressByJourney((prev) => ({ ...prev, [journeyId]: r.data.data as RepProgressRow }));
+          slideIndex,
+          event: 'slide_view',
+          sessionId: getOrCreateTrainingSessionId(),
+          meta: { slideCount }
+        });
+      } catch (e) {
+        console.warn('[Training] tracking-events save failed', e);
       }
-    } catch {
-      /* silent tracking fail */
-    }
-  };
+    },
+    [repId]
+  );
+
+  /** Persist slide position + append tracking row on any navigation (arrows, sidebar, Continue). */
+  useEffect(() => {
+    if (!selectedJourney || !repId) return;
+    const jid = journeyKey(selectedJourney);
+    if (!jid) return;
+    const payload = slideProgressPayload(selectedJourney, activeSlide);
+    if (!payload) return;
+
+    const t = window.setTimeout(() => {
+      const status: 'not_started' | 'in_progress' | 'completed' =
+        payload.pct >= 100 ? 'completed' : 'in_progress';
+      void pushProgress(jid, payload.moduleId, payload.pct, status);
+      void postTrainingTrackingEvent(jid, payload.moduleId, payload.slideIndex, payload.slideCount);
+    }, 400);
+
+    return () => window.clearTimeout(t);
+  }, [selectedJourney, activeSlide, repId, pushProgress, postTrainingTrackingEvent]);
 
   return (
     <div className={selectedJourney ? 'w-full h-[calc(100vh-120px)]' : 'space-y-6 w-full'}>
@@ -613,8 +687,13 @@ export function Training() {
             const progress = id ? progressByJourney[id] : undefined;
             const moduleTotal = Number(progress?.moduleTotal || modules.length || 0);
             const moduleFinished = Number(progress?.moduleFinished || 0);
-            const percent =
+            const modulePercent =
               moduleTotal > 0 ? Math.min(100, Math.round((moduleFinished / moduleTotal) * 100)) : 0;
+            const engagement = Number(progress?.engagementScore);
+            const engagementPercent =
+              Number.isFinite(engagement) ? Math.min(100, Math.round(engagement)) : 0;
+            /** Slide-level progress is stored in engagementScore; module counts stay for “X/6 modules”. */
+            const percent = Math.max(modulePercent, engagementPercent);
             return (
               <li
                 key={id || journeyTitle(j)}
@@ -647,6 +726,9 @@ export function Training() {
                     <p className="mt-1 text-[11px] text-gray-500">
                       {moduleFinished}/{moduleTotal || modules.length || 0} modules completed
                       {slides.length > 0 ? ` • ${slides.length} slides` : ''}
+                      {engagementPercent > 0 && slides.length > 0
+                        ? ` • ${engagementPercent}% slide progress`
+                        : ''}
                     </p>
                   </div>
                 </div>
@@ -658,8 +740,6 @@ export function Training() {
                       if (!id) return;
                       setSelectedJourneyId(id);
                       setActiveSlide(0);
-                      const firstModuleId = String(modules[0]?._id || modules[0]?.id || 'intro');
-                      void pushProgress(id, firstModuleId, 5, 'in_progress');
                     }}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-harx-600 text-white px-4 py-3 text-xs font-black uppercase tracking-widest hover:bg-harx-700 transition-colors disabled:opacity-40"
                   >
@@ -749,16 +829,7 @@ export function Training() {
                       <button
                         type="button"
                         onClick={() => {
-                          const next = Math.min(slides.length - 1, activeSlide + 1);
-                          setActiveSlide(next);
-                          const modules = extractModules(selectedJourney);
-                          const mIdx = modules.length > 0 ? Math.min(modules.length - 1, Math.floor((next / Math.max(slides.length - 1, 1)) * modules.length)) : 0;
-                          const moduleId = String(modules[mIdx]?._id || modules[mIdx]?.id || `module-${mIdx + 1}`);
-                          const pct = Math.min(100, Math.round(((next + 1) / slides.length) * 100));
-                          const jid = journeyKey(selectedJourney);
-                          if (jid) {
-                            void pushProgress(jid, moduleId, pct, pct >= 100 ? 'completed' : 'in_progress');
-                          }
+                          setActiveSlide((p) => Math.min(slides.length - 1, p + 1));
                         }}
                         disabled={activeSlide >= slides.length - 1}
                         className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full border border-rose-200 bg-white p-3 text-fuchsia-600 shadow-lg disabled:opacity-40"
@@ -771,7 +842,19 @@ export function Training() {
                           {activeSlide + 1} / {slides.length}
                         </span>
                         <span className="rounded-full border border-rose-100 bg-white px-3 py-1 text-xs font-bold text-gray-600 shadow-sm">
-                          1 / {extractModules(selectedJourney).length || 1}
+                          {(() => {
+                            const modCount = extractModules(selectedJourney).length || 1;
+                            const mIdx =
+                              modCount > 0
+                                ? Math.min(
+                                    modCount - 1,
+                                    Math.floor(
+                                      (activeSlide / Math.max(slides.length - 1, 1)) * modCount
+                                    )
+                                  )
+                                : 0;
+                            return `${mIdx + 1} / ${modCount}`;
+                          })()}
                         </span>
                       </div>
                     </>
