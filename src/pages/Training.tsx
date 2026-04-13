@@ -363,6 +363,23 @@ export function Training() {
   );
 
   useEffect(() => {
+    const modules = selectedJourney
+      ? extractModules(selectedJourney).map((m, i) => String(m.title || `Module ${i + 1}`))
+      : [];
+    const slides = selectedJourney ? extractSlides(selectedJourney) : [];
+    const activeModuleIndex =
+      modules.length > 0 && slides.length > 0
+        ? Math.min(
+            modules.length - 1,
+            Math.max(0, Math.floor((activeSlide / Math.max(slides.length - 1, 1)) * modules.length))
+          )
+        : 0;
+    localStorage.setItem('repTrainingSidebarModules', JSON.stringify(modules));
+    localStorage.setItem('repTrainingSidebarActiveModuleIndex', String(activeModuleIndex));
+    window.dispatchEvent(new CustomEvent('rep-training-modules-updated'));
+  }, [selectedJourney, activeSlide]);
+
+  useEffect(() => {
     if (!repId) return;
     const base = trainingApiBase();
     if (!base) return;

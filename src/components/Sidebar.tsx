@@ -45,13 +45,40 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
   };
 
   const [isWorkspaceOpen, setIsWorkspaceOpen] = React.useState(location.pathname.includes('/workspace'));
+  const [isTrainingOpen, setIsTrainingOpen] = React.useState(location.pathname.includes('/training'));
+  const [trainingModules, setTrainingModules] = React.useState<string[]>([]);
+  const [activeTrainingModuleIndex, setActiveTrainingModuleIndex] = React.useState<number>(0);
 
   // Ensure workspace is open if we navigate there externally
   useEffect(() => {
     if (location.pathname.includes('/workspace')) {
       setIsWorkspaceOpen(true);
     }
+    if (location.pathname.includes('/training')) {
+      setIsTrainingOpen(true);
+    }
   }, [location.pathname]);
+
+  useEffect(() => {
+    const readTrainingSidebarData = () => {
+      try {
+        const raw = localStorage.getItem('repTrainingSidebarModules');
+        const parsed = raw ? JSON.parse(raw) : [];
+        setTrainingModules(Array.isArray(parsed) ? parsed.map((m) => String(m)) : []);
+      } catch {
+        setTrainingModules([]);
+      }
+      const idx = parseInt(localStorage.getItem('repTrainingSidebarActiveModuleIndex') || '0', 10);
+      setActiveTrainingModuleIndex(Number.isFinite(idx) ? idx : 0);
+    };
+    readTrainingSidebarData();
+    window.addEventListener('rep-training-modules-updated', readTrainingSidebarData as EventListener);
+    window.addEventListener('storage', readTrainingSidebarData);
+    return () => {
+      window.removeEventListener('rep-training-modules-updated', readTrainingSidebarData as EventListener);
+      window.removeEventListener('storage', readTrainingSidebarData);
+    };
+  }, []);
 
   const navItems = [
     {
@@ -76,7 +103,11 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       icon: GraduationCap,
       label: 'Training',
       path: '/training',
-      isAccessible: () => isPhaseCompleted(4)
+      isAccessible: () => isPhaseCompleted(4),
+      subItems: trainingModules.map((label, idx) => ({
+        label,
+        path: `/training#module-${idx + 1}`
+      }))
     },
     {
       icon: Monitor,
@@ -168,7 +199,54 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       <nav className="flex-1 px-4 py-4 flex flex-col min-h-0 space-y-1">
         {filteredNavItems.map((item) => (
           <div key={item.path} className="space-y-1">
-            {item.subItems && !isCollapsed ? (
+            {item.label === 'Training' && item.subItems && !isCollapsed ? (
+              <>
+                <button
+                  onClick={() => {
+                    setIsTrainingOpen(!isTrainingOpen);
+                    if (!location.pathname.includes('/training')) navigate('/training');
+                  }}
+                  className={`flex w-full items-center rounded-2xl transition-all duration-300 group relative space-x-3 py-3 px-5 ${
+                    isTrainingOpen || window.location.pathname.includes(item.path)
+                      ? 'bg-white/5 text-white'
+                      : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
+                  }`}
+                >
+                  <div className={`p-2 rounded-xl transition-all shrink-0 ${isTrainingOpen || window.location.pathname.includes(item.path) ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <span className="font-black text-sm tracking-tight whitespace-nowrap overflow-hidden flex-1 text-left">{item.label}</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isTrainingOpen ? 'rotate-180 text-harx-400' : 'text-gray-400'}`} />
+                </button>
+                {isTrainingOpen && (
+                  <div className="ml-5 pl-2 border-l border-white/10 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                    {item.subItems.length === 0 ? (
+                      <div className="rounded-xl py-2 px-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                        No modules yet
+                      </div>
+                    ) : (
+                      item.subItems.map((sub, idx) => {
+                        const isActiveSub = activeTrainingModuleIndex === idx && location.pathname.includes('/training');
+                        return (
+                          <div
+                            key={sub.path}
+                            className={`flex w-full items-center rounded-xl transition-all duration-300 group relative space-x-3 py-2.5 px-4 ${
+                              isActiveSub
+                                ? 'bg-gradient-to-r from-harx-500/20 to-transparent text-white border-l-2 border-harx-500'
+                                : 'text-gray-500'
+                            }`}
+                          >
+                            <span className={`font-black text-[11px] uppercase tracking-widest ${isActiveSub ? 'text-harx-400' : 'text-current'}`}>
+                              {idx + 1}. {sub.label}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </>
+            ) : item.subItems && !isCollapsed ? (
               <>
                 <button
                   onClick={() => setIsWorkspaceOpen(!isWorkspaceOpen)}
