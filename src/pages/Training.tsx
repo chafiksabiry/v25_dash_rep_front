@@ -1,9 +1,28 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { BookOpen, ExternalLink, Briefcase, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
+import {
+  BookOpen,
+  ExternalLink,
+  Briefcase,
+  Loader2,
+  AlertCircle,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 
 type JourneyRow = Record<string, unknown> & { __gigTitle?: string; __gigId?: string };
+type ModuleRow = { _id?: string; id?: string; title?: string; sections?: unknown[] };
+type SlideRow = { title?: string; subtitle?: string; content?: string; bullets?: string[] };
+type RepProgressRow = {
+  journeyId?: string;
+  moduleTotal?: number;
+  moduleFinished?: number;
+  moduleInProgress?: number;
+  engagementScore?: number;
+  lastAccessed?: string;
+};
 
 function trainingApiBase(): string {
   const raw =
@@ -38,6 +57,18 @@ function gigLabel(j: JourneyRow): string | null {
 
 function journeyKey(j: Record<string, unknown>): string {
   return String(j._id || j.id || '').trim();
+}
+
+function extractModules(j: JourneyRow): ModuleRow[] {
+  const raw = (j.modules || []) as unknown[];
+  return Array.isArray(raw) ? (raw as ModuleRow[]) : [];
+}
+
+function extractSlides(j: JourneyRow): SlideRow[] {
+  const p = (j.presentation || {}) as Record<string, unknown>;
+  const slides = p.slides;
+  if (!Array.isArray(slides)) return [];
+  return slides as SlideRow[];
 }
 
 function mergeJourney(
@@ -122,6 +153,7 @@ async function fetchEnrolledGigsForAgent(
 }
 
 export function Training() {
+  const repId = getAgentId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [journeys, setJourneys] = useState<JourneyRow[]>([]);
@@ -135,6 +167,9 @@ export function Training() {
     gigId: string;
     kind: 'ok' | 'not_found' | 'error';
   } | null>(null);
+  const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [progressByJourney, setProgressByJourney] = useState<Record<string, RepProgressRow>>({});
 
   const displayJourneys = useMemo(() => {
     if (gigFilter === '__all__') return journeys;
@@ -145,7 +180,6 @@ export function Training() {
   const listLoading = loading || (gigFilter !== '__all__' && gigFetchLoading);
 
   useEffect(() => {
-    const repId = getAgentId();
     const base = trainingApiBase();
     const token = getAuthToken() || '';
 
@@ -319,6 +353,60 @@ export function Training() {
       ? null
       : enrolledGigs.find((g) => g.gigId === gigFilter)?.title || null;
 
+  const selectedJourney = useMemo(
+    () => displayJourneys.find((j) => journeyKey(j) === selectedJourneyId) || null,
+    [displayJourneys, selectedJourneyId]
+  );
+
+  useEffect(() => {
+    if (!repId) return;
+    const base = trainingApiBase();
+    if (!base) return;
+    axios
+      .get<{ success?: boolean; data?: RepProgressRow[] }>(
+        `${base}/training_journeys/rep/${encodeURIComponent(repId)}/trainings-progress`
+      )
+      .then((r) => {
+        const rows = Array.isArray(r.data?.data) ? r.data.data : [];
+        const map: Record<string, RepProgressRow> = {};
+        rows.forEach((row) => {
+          const key = String(row.journeyId || '').trim();
+          if (key) map[key] = row;
+        });
+        setProgressByJourney(map);
+      })
+      .catch(() => undefined);
+  }, [repId]);
+
+  const pushProgress = async (
+    journeyId: string,
+    moduleId: string,
+    progress: number,
+    status: 'not_started' | 'in_progress' | 'completed'
+  ) => {
+    if (!repId) return;
+    const base = trainingApiBase();
+    if (!base) return;
+    try {
+      const r = await axios.post<{ success?: boolean; data?: RepProgressRow }>(
+        `${base}/training_journeys/rep-progress`,
+        {
+          repId,
+          journeyId,
+          moduleId,
+          progress,
+          status,
+          engagementScore: progress
+        }
+      );
+      if (r.data?.data) {
+        setProgressByJourney((prev) => ({ ...prev, [journeyId]: r.data.data as RepProgressRow }));
+      }
+    } catch {
+      /* silent tracking fail */
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -446,6 +534,13 @@ export function Training() {
             const id = journeyKey(j);
             const gig = gigLabel(j);
             const status = String(j.status || '—');
+            const modules = extractModules(j);
+            const slides = extractSlides(j);
+            const progress = id ? progressByJourney[id] : undefined;
+            const moduleTotal = Number(progress?.moduleTotal || modules.length || 0);
+            const moduleFinished = Number(progress?.moduleFinished || 0);
+            const percent =
+              moduleTotal > 0 ? Math.min(100, Math.round((moduleFinished / moduleTotal) * 100)) : 0;
             return (
               <li
                 key={id || journeyTitle(j)}
@@ -467,20 +562,135 @@ export function Training() {
                       </span>
                     ) : null}
                   </div>
+                  <div className="mt-3">
+                    <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-gray-500">
+                      <span>Progress</span>
+                      <span>{percent}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-gray-100">
+                      <div className="h-2 rounded-full bg-harx-500" style={{ width: `${percent}%` }} />
+                    </div>
+                    <p className="mt-1 text-[11px] text-gray-500">
+                      {moduleFinished}/{moduleTotal || modules.length || 0} modules completed
+                      {slides.length > 0 ? ` • ${slides.length} slides` : ''}
+                    </p>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  disabled={!id}
-                  onClick={() => openTrainingJourney(id)}
-                  className="shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white px-5 py-3 text-xs font-black uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-40"
-                >
-                  Open
-                  <ExternalLink className="w-4 h-4" />
-                </button>
+                <div className="shrink-0 flex gap-2">
+                  <button
+                    type="button"
+                    disabled={!id}
+                    onClick={() => {
+                      if (!id) return;
+                      setSelectedJourneyId(id);
+                      setActiveSlide(0);
+                      const firstModuleId = String(modules[0]?._id || modules[0]?.id || 'intro');
+                      void pushProgress(id, firstModuleId, 5, 'in_progress');
+                    }}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-harx-600 text-white px-4 py-3 text-xs font-black uppercase tracking-widest hover:bg-harx-700 transition-colors disabled:opacity-40"
+                  >
+                    Continue
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!id}
+                    onClick={() => openTrainingJourney(id)}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white px-4 py-3 text-xs font-black uppercase tracking-widest hover:bg-black transition-colors disabled:opacity-40"
+                  >
+                    Open
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                </div>
               </li>
             );
           })}
         </ul>
+      )}
+
+      {!listLoading && !error && selectedJourney && (
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+            <h3 className="truncate text-sm font-black text-gray-900">{journeyTitle(selectedJourney)}</h3>
+            <button
+              type="button"
+              onClick={() => setSelectedJourneyId(null)}
+              className="rounded-lg border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+            >
+              Close
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-[260px_1fr]">
+            <aside className="border-r border-gray-100 p-3">
+              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-gray-400">Modules</p>
+              <ul className="space-y-1">
+                {extractModules(selectedJourney).map((m, idx) => (
+                  <li key={String(m._id || m.id || idx)} className="rounded-lg border border-gray-100 px-2 py-1.5">
+                    <p className="text-xs font-semibold text-gray-700">
+                      {idx + 1}. {String(m.title || `Module ${idx + 1}`)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+            <div className="p-4">
+              {(() => {
+                const slides = extractSlides(selectedJourney);
+                if (slides.length === 0) {
+                  return <p className="text-sm text-gray-500">No slides available for this training.</p>;
+                }
+                const s = slides[activeSlide] || slides[0];
+                return (
+                  <div>
+                    <div className="rounded-xl border border-gray-100 bg-gradient-to-b from-white to-gray-50 p-4">
+                      <h4 className="text-xl font-black text-gray-900">{String(s.title || 'Slide')}</h4>
+                      {s.subtitle ? <p className="mt-1 text-sm font-semibold text-harx-700">{String(s.subtitle)}</p> : null}
+                      {s.content ? <p className="mt-3 text-sm text-gray-600">{String(s.content)}</p> : null}
+                      {Array.isArray(s.bullets) && s.bullets.length > 0 ? (
+                        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-gray-700">
+                          {s.bullets.slice(0, 5).map((b, i) => (
+                            <li key={i}>{String(b)}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setActiveSlide((p) => Math.max(0, p - 1))}
+                        disabled={activeSlide === 0}
+                        className="rounded-lg border border-gray-200 p-2 text-gray-600 disabled:opacity-40"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span className="text-xs font-semibold text-gray-500">
+                        {activeSlide + 1} / {slides.length}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = Math.min(slides.length - 1, activeSlide + 1);
+                          setActiveSlide(next);
+                          const modules = extractModules(selectedJourney);
+                          const mIdx = modules.length > 0 ? Math.min(modules.length - 1, Math.floor((next / Math.max(slides.length - 1, 1)) * modules.length)) : 0;
+                          const moduleId = String(modules[mIdx]?._id || modules[mIdx]?.id || `module-${mIdx + 1}`);
+                          const pct = Math.min(100, Math.round(((next + 1) / slides.length) * 100));
+                          const jid = journeyKey(selectedJourney);
+                          if (jid) {
+                            void pushProgress(jid, moduleId, pct, pct >= 100 ? 'completed' : 'in_progress');
+                          }
+                        }}
+                        disabled={activeSlide >= slides.length - 1}
+                        className="rounded-lg border border-gray-200 p-2 text-gray-600 disabled:opacity-40"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
