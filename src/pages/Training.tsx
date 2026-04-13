@@ -70,6 +70,11 @@ function extractSlides(j: JourneyRow): SlideRow[] {
   return slides as SlideRow[];
 }
 
+function safeHex(raw: unknown, fallback: string): string {
+  const s = String(raw || '').trim();
+  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(s) ? s : fallback;
+}
+
 function mergeJourney(
   map: Map<string, JourneyRow>,
   j: Record<string, unknown>,
@@ -637,26 +642,43 @@ export function Training() {
                     return <p className="text-sm text-gray-500">No slides available for this training.</p>;
                   }
                   const s = slides[activeSlide] || slides[0];
+                  const vc = ((s as unknown as { visualConfig?: Record<string, unknown> }).visualConfig || {}) as Record<string, unknown>;
+                  const isDark = String(vc.theme || '').toLowerCase() === 'dark';
+                  const bg = safeHex(vc.backgroundHex, isDark ? '#1f1b4f' : '#ffffff');
+                  const fg = safeHex(vc.textHex, isDark ? '#ffffff' : '#0f172a');
+                  const accent = safeHex(vc.accentHex, '#F43F5E');
+                  const slideStyle: React.CSSProperties = {
+                    background: String(vc.layout || '').toLowerCase() === 'gradient'
+                      ? `linear-gradient(135deg, ${bg}, ${safeHex(vc.accentHex, '#6D28D9')})`
+                      : bg,
+                    color: fg
+                  };
                   return (
                     <>
-                      <div className="relative h-[calc(100%-48px)] min-h-[420px] overflow-hidden rounded-3xl border border-fuchsia-200 bg-gradient-to-br from-[#1f1b4f] via-[#251a5f] to-[#2b1656] p-7 text-white shadow-xl">
-                        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-fuchsia-500/20" />
-                        <div className="pointer-events-none absolute -left-10 bottom-[-30px] h-32 w-32 rounded-full bg-rose-500/20" />
-                        <h4 className="max-w-4xl text-3xl font-black leading-tight md:text-5xl">
+                      <div
+                        className="relative h-[calc(100%-48px)] min-h-[420px] overflow-hidden rounded-3xl border p-7 shadow-xl"
+                        style={{ ...slideStyle, borderColor: `${accent}55` }}
+                      >
+                        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full" style={{ backgroundColor: `${accent}33` }} />
+                        <div className="pointer-events-none absolute -left-10 bottom-[-30px] h-32 w-32 rounded-full" style={{ backgroundColor: `${accent}33` }} />
+                        <h4 className="max-w-4xl text-3xl font-black leading-tight md:text-5xl" style={{ color: fg }}>
                           {String(s.title || 'Slide')}
                         </h4>
                         {s.subtitle ? (
-                          <p className="mt-4 inline-block rounded-2xl border border-white/30 bg-white/5 px-4 py-2 text-lg font-semibold text-rose-200">
+                          <p
+                            className="mt-4 inline-block rounded-2xl border px-4 py-2 text-lg font-semibold"
+                            style={{ borderColor: `${fg}66`, color: accent, backgroundColor: `${fg}11` }}
+                          >
                             {String(s.subtitle)}
                           </p>
                         ) : null}
                         {s.content ? (
-                          <p className="mt-5 max-w-4xl text-base leading-7 text-white/95">
+                          <p className="mt-5 max-w-4xl text-base leading-7" style={{ color: fg }}>
                             {String(s.content)}
                           </p>
                         ) : null}
                         {Array.isArray(s.bullets) && s.bullets.length > 0 ? (
-                          <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-white/90">
+                          <ul className="mt-4 list-disc space-y-1 pl-5 text-sm" style={{ color: fg }}>
                             {s.bullets.slice(0, 5).map((b, i) => (
                               <li key={i}>{String(b)}</li>
                             ))}
