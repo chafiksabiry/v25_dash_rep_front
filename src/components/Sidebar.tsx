@@ -144,15 +144,13 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
   }, [phases]);
 
   return (
-    <div 
-      className={`fixed inset-y-0 left-0 z-30 bg-gradient-to-b from-[#0f111a] to-[#150a11] text-white transition-all duration-300 ease-in-out md:relative shadow-2xl border-r border-white/10 flex flex-col overflow-y-auto overflow-x-hidden ${
+    <div
+      className={`fixed inset-y-0 left-0 z-30 bg-gradient-to-b from-[#0f111a] to-[#150a11] text-white transition-all duration-300 ease-in-out md:relative shadow-2xl border-r border-white/10 flex flex-col overflow-hidden ${
         !isSidebarOpen
           ? '-translate-x-full md:translate-x-0'
           : 'translate-x-0'
       } ${isCollapsed ? 'w-20' : 'w-72'}`}
-      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
-      <style>{`div::-webkit-scrollbar { display: none; }`}</style>
       {/* Toggle Button - Modern Floating Style */}
       <button 
         onClick={() => setIsCollapsed(!isCollapsed)}
@@ -196,7 +194,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
         )}
       </div>
 
-      <nav className="flex-1 px-4 py-4 flex flex-col min-h-0 space-y-1">
+      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-1">
         {filteredNavItems.map((item) => (
           <div key={item.path} className="space-y-1">
             {item.label === 'Training' && Array.isArray(item.subItems) && item.subItems.length > 0 && !isCollapsed ? (
@@ -402,7 +400,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
         ))}
       </nav>
 
-      <div className={`bg-black/40 border-t border-white/5 transition-all duration-300 ${isCollapsed ? 'p-3 flex justify-center' : 'p-4'}`}>
+      <div className={`shrink-0 sticky bottom-0 bg-black/60 backdrop-blur-sm border-t border-white/5 transition-all duration-300 ${isCollapsed ? 'p-3 flex justify-center' : 'p-4'}`}>
         <button
           onClick={logout}
           className={`flex items-center rounded-xl transition-all duration-300 group font-bold text-sm text-gray-400 hover:bg-harx-600/20 hover:text-harx-400 ${
