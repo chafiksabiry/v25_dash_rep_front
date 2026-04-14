@@ -697,115 +697,41 @@ export function SessionPlanning() {
                             )}
                         </div>
                     ) : userRole === 'rep' ? (
-                        <div className="space-y-6">
-                            <div className="bg-white/80 backdrop-blur-md rounded-[2rem] shadow-sm border border-gray-100 p-8 flex flex-col md:flex-row md:items-center justify-between gap-8">
-                                <div className="flex items-center gap-6">
-                                    <div className="w-14 h-14 bg-harx-50 rounded-2xl flex items-center justify-center">
-                                        <Briefcase className="w-7 h-7 text-harx-600" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Strategic Project Selector</h2>
-                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mt-0.5">Choose your primary focus area</p>
-                                    </div>
-                                </div>
+                        <div className="space-y-5">
+                            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                                <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                    Enrolled gig
+                                </label>
                                 <select
-                                    className="min-w-[320px] bg-gray-50/50 border-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-700 py-4 px-6 focus:ring-4 focus:ring-harx-500/10 focus:border-harx-200 outline-none transition-all shadow-inner"
+                                    className="w-full md:max-w-[420px] bg-gray-50/70 border border-gray-100 rounded-xl text-[11px] font-black uppercase tracking-widest text-gray-700 py-3 px-4 focus:ring-2 focus:ring-harx-500/20 focus:border-harx-200 outline-none"
                                     value={selectedGigId || ''}
                                     onChange={(e) => setSelectedGigId(e.target.value === '' ? null : e.target.value)}
                                 >
-                                    <option value="">CHOOSE A STRATEGIC PROJECT...</option>
+                                    <option value="">Choose a strategic project...</option>
                                     {gigs.map((gig: Gig) => (
                                         <option key={gig.id} value={gig.id}>{gig.name.toUpperCase()}</option>
                                     ))}
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                                <div className="lg:col-span-2 space-y-8">
-                                    <HorizontalCalendar
-                                        selectedDate={selectedDate}
-                                        onDateSelect={setSelectedDate}
-                                        slots={slots.filter((slot: TimeSlot) => slot.repId === selectedRepId)}
-                                        selectedGigId={selectedGigId || ''}
-                                    />
+                            <HorizontalCalendar
+                                selectedDate={selectedDate}
+                                onDateSelect={setSelectedDate}
+                                slots={slots.filter((slot: TimeSlot) => slot.repId === selectedRepId)}
+                                selectedGigId={selectedGigId || ''}
+                            />
 
-                                    {selectedGigId ? (
-                                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                            <div className="flex items-center justify-between">
-                                                <h3 className="text-2xl font-black text-gray-900 flex items-center gap-4 tracking-tight uppercase">
-                                                    <div className="w-2 h-8 bg-gradient-harx rounded-full"></div>
-                                                    Available Slots
-                                                </h3>
-                                            </div>
-                                            <AvailableSlotsGrid
-                                                selectedDate={selectedDate}
-                                                gigId={selectedGigId}
-                                                onReservationMade={refreshData}
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="bg-white p-12 rounded-2xl border-2 border-dashed border-gray-200 text-center flex flex-col items-center justify-center space-y-4">
-                                            <div className="p-4 bg-gray-50 rounded-full">
-                                                <Briefcase className="w-12 h-12 text-gray-300" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-xl font-bold text-gray-900">No Project Selected</h3>
-                                                <p className="text-gray-500 mt-2">Please select a project above to see and reserve slots.</p>
-                                            </div>
-                                        </div>
-                                    )}
+                            {selectedGigId ? (
+                                <AvailableSlotsGrid
+                                    selectedDate={selectedDate}
+                                    gigId={selectedGigId}
+                                    onReservationMade={refreshData}
+                                />
+                            ) : (
+                                <div className="bg-white p-8 rounded-2xl border border-dashed border-gray-200 text-center text-gray-500 text-sm">
+                                    Select a gig to see available slots.
                                 </div>
-
-                                <div className="bg-white/80 backdrop-blur-md rounded-[2rem] shadow-sm border border-gray-100 p-8 space-y-8">
-                                    <div>
-                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-6 px-1 text-center">Weekly Strategy Overview</h3>
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-center p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Available Slots</span>
-                                                <span className="text-xl font-black text-gray-900 tracking-tight">
-                                                    {slots.filter((s: TimeSlot) =>
-                                                        s.repId === selectedRepId &&
-                                                        s.status === 'available' &&
-                                                        (!selectedGigId || s.gigId === selectedGigId)
-                                                    ).length}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between items-center p-4 bg-emerald-50 rounded-2xl border border-emerald-100 shadow-sm shadow-emerald-500/5">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Reserved Slots</span>
-                                                <span className="text-xl font-black text-emerald-700 tracking-tight">
-                                                    {slots.filter((s: TimeSlot) =>
-                                                        s.repId === selectedRepId &&
-                                                        s.status === 'reserved' &&
-                                                        (!selectedGigId || s.gigId === selectedGigId)
-                                                    ).length}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-8 border-t border-gray-100">
-                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-6 px-1 text-center">Project Allocation</h3>
-                                        <div className="space-y-3">
-                                            {gigs.filter(g => !selectedGigId || g.id === selectedGigId).slice(0, 3).map((gig: Gig) => {
-                                                const gigColor = stringToColor(gig.name);
-                                                const gigHours = slots
-                                                    .filter((s: TimeSlot) => s.repId === selectedRepId && s.gigId === gig.id && s.status === 'reserved')
-                                                    .reduce((sum: number, s: TimeSlot) => sum + (s.duration || 1), 0);
-                                                if (gigHours === 0 && selectedGigId) return null;
-                                                return (
-                                                    <div key={gig.id} className="flex justify-between items-center p-4 bg-white rounded-2xl border border-gray-50 hover:border-harx-100 transition-all group">
-                                                        <div className="flex items-center">
-                                                            <div className="w-1.5 h-6 rounded-full mr-4 transition-all group-hover:scale-y-125" style={{ backgroundColor: gigColor }}></div>
-                                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 truncate max-w-[120px]">{gig.name}</span>
-                                                        </div>
-                                                        <span className="text-lg font-black text-gray-900 tracking-tight">{gigHours}h</span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-8">
