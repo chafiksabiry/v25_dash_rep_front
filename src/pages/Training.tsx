@@ -518,16 +518,12 @@ export function Training() {
 
   const fetchSlideProgressSummary = useCallback(async () => {
     if (!repId) return;
-    if (gigFilter === '__all__') {
-      setSlideProgressSummary(null);
-      return;
-    }
     const base = trainingApiBase();
     if (!base) return;
     try {
       const r = await axios.get<{ success?: boolean; data?: RepSlideProgressSummary }>(
         `${base}/training_journeys/rep/${encodeURIComponent(repId)}/slide-progress-summary`,
-        { params: { gigId: gigFilter } }
+        gigFilter === '__all__' ? {} : { params: { gigId: gigFilter } }
       );
       setSlideProgressSummary(r.data?.data ?? null);
     } catch {
@@ -781,13 +777,24 @@ export function Training() {
             const progress = id ? progressByJourney[id] : undefined;
             const moduleTotal = Number(progress?.moduleTotal || modules.length || 0);
             const moduleFinished = Number(progress?.moduleFinished || 0);
-            const modulePercent =
-              moduleTotal > 0 ? Math.min(100, Math.round((moduleFinished / moduleTotal) * 100)) : 0;
             const engagement = Number(progress?.engagementScore);
             const engagementPercent =
               Number.isFinite(engagement) ? Math.min(100, Math.round(engagement)) : 0;
-            /** Slide-level progress is stored in engagementScore; module counts stay for “X/6 modules”. */
-            const percent = Math.max(modulePercent, engagementPercent);
+            const slideRow =
+              id && slideProgressSummary?.journeys
+                ? slideProgressSummary.journeys.find((x) => x.journeyId === id)
+                : undefined;
+            const slidesTotal =
+              slideRow && slideRow.slidesTotal > 0 ? slideRow.slidesTotal : slides.length;
+            let slidesSeen = slideRow?.slidesSeen ?? 0;
+            if (!slideRow && slidesTotal > 0 && engagementPercent > 0) {
+              slidesSeen = Math.min(
+                slidesTotal,
+                Math.round((engagementPercent / 100) * slidesTotal)
+              );
+            }
+            const slidePercent =
+              slidesTotal > 0 ? Math.min(100, Math.round((slidesSeen / slidesTotal) * 100)) : 0;
             return (
               <li
                 key={id || journeyTitle(j)}
@@ -796,9 +803,9 @@ export function Training() {
                 <div className="min-w-0 flex-1">
                   <h2 className="font-black text-gray-900 truncate">{journeyTitle(j)}</h2>
                   {j.description ? (
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">{String(j.description)}</p>
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-1">{String(j.description)}</p>
                   ) : null}
-                  <div className="flex flex-wrap gap-2 mt-3">
+                  <div className="flex flex-wrap gap-2 mt-2">
                     <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg bg-gray-100 text-gray-600">
                       {status}
                     </span>
@@ -812,16 +819,18 @@ export function Training() {
                   <div className="mt-3">
                     <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-gray-500">
                       <span>Progress</span>
-                      <span>{percent}%</span>
+                      <span className="tabular-nums">{slidesTotal > 0 ? `${slidePercent}%` : '—'}</span>
                     </div>
                     <div className="h-2 rounded-full bg-gray-100">
-                      <div className="h-2 rounded-full bg-harx-500" style={{ width: `${percent}%` }} />
+                      <div
+                        className="h-2 rounded-full bg-harx-500 transition-[width]"
+                        style={{ width: `${slidesTotal > 0 ? slidePercent : 0}%` }}
+                      />
                     </div>
-                    <p className="mt-1 text-[11px] text-gray-500">
+                    <p className="mt-1 text-[11px] text-gray-500 tabular-nums">
                       {moduleFinished}/{moduleTotal || modules.length || 0} modules completed
-                      {slides.length > 0 ? ` • ${slides.length} slides` : ''}
-                      {engagementPercent > 0 && slides.length > 0
-                        ? ` • ${engagementPercent}% slide progress`
+                      {slidesTotal > 0
+                        ? ` • ${slidesSeen}/${slidesTotal} slides • ${slidePercent}%`
                         : ''}
                     </p>
                   </div>
