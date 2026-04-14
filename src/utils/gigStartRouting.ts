@@ -46,6 +46,18 @@ function normalizeMatchingBase(): string {
   ).replace(/\/$/, '');
 }
 
+async function hasGigTrainings(gigId: string, headers?: Record<string, string>): Promise<boolean> {
+  const trainingBase = normalizeTrainingBase();
+  const res = await fetch(
+    `${trainingBase}/training_journeys/gig/${encodeURIComponent(gigId)}`,
+    headers ? { headers } : undefined
+  );
+  if (!res.ok) return false;
+  const payload = await res.json();
+  const rows = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+  return rows.length > 0;
+}
+
 export async function resolveGigStartRoute(gigId: string): Promise<StartRouteDecision> {
   const repId = getAgentId();
   const token = getAuthToken();
@@ -88,7 +100,8 @@ export async function resolveGigStartRoute(gigId: string): Promise<StartRouteDec
   const summary = await trainingRes.json();
   const trainingCount = Number(summary?.trainingCount || 0);
   const overallPercent = Number(summary?.overallPercent || 0);
-  const isTrainingComplete = trainingCount === 0 ? true : overallPercent >= 100;
+  const gigHasTrainings = await hasGigTrainings(gigId, headers);
+  const isTrainingComplete = gigHasTrainings ? overallPercent >= 100 : trainingCount === 0 ? true : overallPercent >= 100;
   if (!isTrainingComplete) {
     return { target: 'training', reason: 'Training incomplete for this gig' };
   }
