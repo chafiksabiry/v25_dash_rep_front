@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Users, Globe, Calendar, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchPendingRequests as fetchPendingRequestsUtil, fetchEnrolledGigsFromProfile } from '../utils/gigStatusUtils';
+import { resolveGigStartRoute } from '../utils/gigStartRouting';
 
 
 // Interface pour les gigs populés
@@ -335,6 +336,24 @@ export function GigsMarketplace() {
   const [applicationMessage, setApplicationMessage] = useState<{ gigId: string; message: string; type: 'success' | 'error' } | null>(null);
   const [expandedActivities, setExpandedActivities] = useState<Record<string, boolean>>({});
   const [expandedIndustries, setExpandedIndustries] = useState<Record<string, boolean>>({});
+
+  const handleSmartStart = async (gigId: string) => {
+    try {
+      const decision = await resolveGigStartRoute(gigId);
+      if (decision.target === 'training') {
+        navigate(`/training?gigId=${encodeURIComponent(gigId)}`);
+        return;
+      }
+      if (decision.target === 'session-planning') {
+        navigate(`/session-planning?gigId=${encodeURIComponent(gigId)}`);
+        return;
+      }
+      navigate(`/workspace?tab=copilot&gigId=${encodeURIComponent(gigId)}`, { state: { gigId } });
+    } catch (error) {
+      console.error('Error during smart start routing:', error);
+      navigate(`/training?gigId=${encodeURIComponent(gigId)}`);
+    }
+  };
 
   // Fonction pour obtenir le statut d'un gig pour l'agent connecté
   const getGigStatus = (gigId: string): 'enrolled' | 'invited' | 'pending' | 'none' => {
@@ -1487,7 +1506,7 @@ export function GigsMarketplace() {
                   {gigStatus === 'enrolled' ? (
                     <div className="flex gap-3">
                       <button
-                        onClick={() => navigate('/workspace', { state: { gigId: gig._id } })}
+                        onClick={() => handleSmartStart(gig._id)}
                         className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
                       >
                         🚀 Start
@@ -2069,7 +2088,7 @@ export function GigsMarketplace() {
 
                     <div className="mt-6 flex gap-3">
                       <button
-                        onClick={() => navigate('/workspace', { state: { gigId: enrolledGig.gig._id } })}
+                        onClick={() => handleSmartStart(enrolledGig.gig._id)}
                         className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
                       >
                         🚀 Start

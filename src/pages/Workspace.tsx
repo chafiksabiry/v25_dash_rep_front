@@ -79,7 +79,8 @@ export function Workspace() {
   const searchParams = new URLSearchParams(location.search);
   const urlLeadId = searchParams.get('leadId');
   const urlTab = searchParams.get('tab');
-  const gigId = location.state?.gigId;
+  const urlGigId = searchParams.get('gigId');
+  const gigId = location.state?.gigId || urlGigId;
   const [activeTab, setActiveTab] = useState(urlTab && ['voice', 'calls', 'copilot'].includes(urlTab) ? urlTab : 'voice');
   const [message, setMessage] = useState('');
   // Sync activeTab with URL
@@ -109,6 +110,12 @@ export function Workspace() {
   useEffect(() => {
     fetchEnrolledGigs();
   }, []);
+
+  useEffect(() => {
+    if (gigId && gigId !== selectedGigId) {
+      setSelectedGigId(gigId);
+    }
+  }, [gigId, selectedGigId]);
 
   useEffect(() => {
     if (activeTab === 'voice') {

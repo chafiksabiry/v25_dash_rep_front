@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { useLocation } from 'react-router-dom';
 import {
   BookOpen,
   Briefcase,
@@ -233,6 +234,7 @@ async function fetchEnrolledGigsForAgent(
 }
 
 export function Training() {
+  const location = useLocation();
   const repId = getAgentId();
   const { setTrainingNav, clearTrainingNav } = useRepTrainingNav();
   const [loading, setLoading] = useState(true);
@@ -240,6 +242,7 @@ export function Training() {
   const [journeys, setJourneys] = useState<JourneyRow[]>([]);
   const [enrolledGigs, setEnrolledGigs] = useState<{ gigId: string; title: string }[]>([]);
   const [gigFilter, setGigFilter] = useState<string>('__all__');
+  const [routeGigApplied, setRouteGigApplied] = useState(false);
   /** Trainings returned by GET /training_journeys/gig/:id when a single gig is selected */
   const [gigFetchedJourneys, setGigFetchedJourneys] = useState<JourneyRow[]>([]);
   const [gigFetchLoading, setGigFetchLoading] = useState(false);
@@ -248,6 +251,15 @@ export function Training() {
     gigId: string;
     kind: 'ok' | 'not_found' | 'error';
   } | null>(null);
+
+  const routeGigId = useMemo(() => {
+    const p = new URLSearchParams(location.search);
+    return String(p.get('gigId') || '').trim();
+  }, [location.search]);
+
+  useEffect(() => {
+    setRouteGigApplied(false);
+  }, [routeGigId]);
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [progressByJourney, setProgressByJourney] = useState<Record<string, RepProgressRow>>({});
@@ -434,6 +446,19 @@ export function Training() {
     gigFilter === '__all__'
       ? null
       : enrolledGigs.find((g) => g.gigId === gigFilter)?.title || null;
+
+  useEffect(() => {
+    if (routeGigApplied) return;
+    if (!routeGigId) {
+      setRouteGigApplied(true);
+      return;
+    }
+    if (enrolledGigs.length <= 0) return;
+    if (enrolledGigs.some((g) => g.gigId === routeGigId)) {
+      setGigFilter(routeGigId);
+    }
+    setRouteGigApplied(true);
+  }, [routeGigId, enrolledGigs, routeGigApplied]);
 
   const selectedJourney = useMemo(
     () => displayJourneys.find((j) => journeyKey(j) === selectedJourneyId) || null,

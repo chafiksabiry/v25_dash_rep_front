@@ -5,6 +5,7 @@ import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target
 import Cookies from 'js-cookie';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchEnrolledGigsFromProfile, fetchPendingRequests, refreshGigStatuses } from '../utils/gigStatusUtils';
+import { resolveGigStartRoute } from '../utils/gigStartRouting';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
 interface PopulatedGig {
@@ -411,6 +412,25 @@ export function GigDetails() {
   // États pour les statuts depuis le profil
   const [pendingGigIds, setPendingGigIds] = useState<string[]>([]);
   const [enrolledGigIds, setEnrolledGigIds] = useState<string[]>([]);
+
+  const handleSmartStart = async () => {
+    if (!gigId) return;
+    try {
+      const decision = await resolveGigStartRoute(gigId);
+      if (decision.target === 'training') {
+        navigate(`/training?gigId=${encodeURIComponent(gigId)}`);
+        return;
+      }
+      if (decision.target === 'session-planning') {
+        navigate(`/session-planning?gigId=${encodeURIComponent(gigId)}`);
+        return;
+      }
+      navigate(`/workspace?tab=copilot&gigId=${encodeURIComponent(gigId)}`, { state: { gigId } });
+    } catch (error) {
+      console.error('Error during smart start routing:', error);
+      navigate(`/training?gigId=${encodeURIComponent(gigId)}`);
+    }
+  };
 
   useEffect(() => {
     const fetchGigDetails = async () => {
@@ -1118,7 +1138,7 @@ export function GigDetails() {
                 {getAgentStatus() === 'enrolled' ? (
                   <div className="text-center">
                     <button
-                      onClick={() => window.location.href = '/copilot'}
+                      onClick={handleSmartStart}
                       className="inline-block px-8 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-xl font-black text-sm uppercase tracking-wider hover:shadow-lg hover:shadow-emerald-500/20 transition-all hover:-translate-y-0.5"
                     >
                       🚀 Start

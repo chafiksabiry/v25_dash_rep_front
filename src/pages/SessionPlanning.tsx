@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { HorizontalCalendar } from '../components/scheduler/HorizontalCalendar';
 import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company } from '../types/scheduler';
 import { Building, Clock, Briefcase, AlertCircle, Users, Brain } from 'lucide-react';
@@ -213,6 +214,7 @@ interface EnrolledGig {
 }
 
 export function SessionPlanning() {
+    const location = useLocation();
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [slots, setSlots] = useState<TimeSlot[]>([]);
     const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
@@ -235,6 +237,10 @@ export function SessionPlanning() {
     const [loadingGigs, setLoadingGigs] = useState<boolean>(true);
     const [showAttendancePanel] = useState<boolean>(false);
     const [showAIPanel] = useState<boolean>(true);
+    const routeGigId = useMemo(() => {
+        const p = new URLSearchParams(location.search);
+        return String(p.get('gigId') || '').trim();
+    }, [location.search]);
 
     const refreshData = async () => {
         if (!selectedRepId) return;
@@ -404,6 +410,17 @@ export function SessionPlanning() {
     useEffect(() => {
         refreshData();
     }, [selectedRepId, userRole, selectedGigId, selectedDate]);
+
+    useEffect(() => {
+        if (gigs.length <= 0) return;
+        if (routeGigId && gigs.some((g) => g.id === routeGigId)) {
+            setSelectedGigId(routeGigId);
+            return;
+        }
+        if (!selectedGigId) {
+            setSelectedGigId(gigs[0].id);
+        }
+    }, [gigs, routeGigId, selectedGigId]);
 
     const weeklyStats = useMemo<WeeklyStats>(() => {
         const stats: WeeklyStats = {
