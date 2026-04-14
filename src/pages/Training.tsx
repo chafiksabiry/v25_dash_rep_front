@@ -23,6 +23,22 @@ type RepProgressRow = {
   lastAccessed?: string;
 };
 
+/** Aligné sur GET /training_journeys/rep/:repId/slide-progress-summary */
+type RepSlideProgressSummary = {
+  trainingCount: number;
+  journeys: {
+    journeyId: string;
+    journeyTitle: string;
+    slidesSeen: number;
+    slidesTotal: number;
+    ratio: number;
+  }[];
+  sumOfRatios: number;
+  averageRatio: number;
+  overallPercent: number;
+  formulaHuman: string;
+};
+
 function trainingApiBase(): string {
   const raw =
     import.meta.env.VITE_TRAINING_API_URL ||
@@ -205,6 +221,7 @@ export function Training() {
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [progressByJourney, setProgressByJourney] = useState<Record<string, RepProgressRow>>({});
+  const [slideProgressSummary, setSlideProgressSummary] = useState<RepSlideProgressSummary | null>(null);
 
   const displayJourneys = useMemo(() => {
     if (gigFilter === '__all__') return journeys;
@@ -481,6 +498,24 @@ export function Training() {
       .catch(() => undefined);
   }, [repId]);
 
+  const fetchSlideProgressSummary = useCallback(async () => {
+    if (!repId) return;
+    const base = trainingApiBase();
+    if (!base) return;
+    try {
+      const r = await axios.get<{ success?: boolean; data?: RepSlideProgressSummary }>(
+        `${base}/training_journeys/rep/${encodeURIComponent(repId)}/slide-progress-summary`
+      );
+      setSlideProgressSummary(r.data?.data ?? null);
+    } catch {
+      setSlideProgressSummary(null);
+    }
+  }, [repId]);
+
+  useEffect(() => {
+    void fetchSlideProgressSummary();
+  }, [fetchSlideProgressSummary]);
+
   const pushProgress = useCallback(
     async (
       journeyId: string,
@@ -546,12 +581,22 @@ export function Training() {
     const t = window.setTimeout(() => {
       const status: 'not_started' | 'in_progress' | 'completed' =
         payload.pct >= 100 ? 'completed' : 'in_progress';
-      void pushProgress(jid, payload.moduleId, payload.pct, status);
-      void postTrainingTrackingEvent(jid, payload.moduleId, payload.slideIndex, payload.slideCount);
+      void (async () => {
+        await pushProgress(jid, payload.moduleId, payload.pct, status);
+        await postTrainingTrackingEvent(jid, payload.moduleId, payload.slideIndex, payload.slideCount);
+        await fetchSlideProgressSummary();
+      })();
     }, 400);
 
     return () => window.clearTimeout(t);
-  }, [selectedJourney, activeSlide, repId, pushProgress, postTrainingTrackingEvent]);
+  }, [
+    selectedJourney,
+    activeSlide,
+    repId,
+    pushProgress,
+    postTrainingTrackingEvent,
+    fetchSlideProgressSummary
+  ]);
 
   return (
     <div className={selectedJourney ? 'w-full h-[calc(100vh-120px)]' : 'space-y-6 w-full'}>
@@ -611,6 +656,35 @@ export function Training() {
           </div>
         </div>
       </div>
+
+      {!selectedJourney && slideProgressSummary && slideProgressSummary.trainingCount > 0 && (
+        <div className="rounded-2xl border border-harx-200 bg-gradient-to-br from-harx-50/90 to-white p-5 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-widest text-harx-600">
+            Progression globale (toutes les formations)
+          </p>
+          <p className="mt-2 text-2xl font-black text-gray-900 tabular-nums">
+            {slideProgressSummary.overallPercent} %
+          </p>
+          <p className="mt-2 text-sm font-medium text-gray-700 leading-relaxed">
+            {slideProgressSummary.formulaHuman}
+          </p>
+          <p className="mt-1 text-xs text-gray-500">
+            Somme des ratios : {slideProgressSummary.sumOfRatios.toFixed(4)} (ex. 3/15 + 2/7) — puis division
+            par {slideProgressSummary.trainingCount} formation
+            {slideProgressSummary.trainingCount > 1 ? 's' : ''} pour obtenir la moyenne.
+          </p>
+          <ul className="mt-4 space-y-2 border-t border-harx-100 pt-4 text-sm text-gray-700">
+            {slideProgressSummary.journeys.map((j) => (
+              <li key={j.journeyId} className="flex flex-wrap items-baseline justify-between gap-2">
+                <span className="min-w-0 font-semibold text-gray-900 truncate">{j.journeyTitle}</span>
+                <span className="shrink-0 tabular-nums text-gray-600">
+                  {j.slidesTotal > 0 ? `${j.slidesSeen} / ${j.slidesTotal} slides` : '—'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {listLoading && (
         <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-gray-600">
@@ -760,7 +834,10 @@ export function Training() {
               <div className="flex items-center gap-3 border-b border-harx-100 bg-white px-4 py-2.5">
                 <button
                   type="button"
-                  onClick={() => setSelectedJourneyId(null)}
+                  onClick={() => {
+                    setSelectedJourneyId(null);
+                    void fetchSlideProgressSummary();
+                  }}
                   className="rounded-xl border border-harx-200 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-harx-600 hover:bg-harx-50"
                 >
                   Back to list
