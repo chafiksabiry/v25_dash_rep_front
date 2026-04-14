@@ -13,6 +13,7 @@ import { getAgentId } from '../utils/authUtils';
 import { schedulerApi } from '../services/api/scheduler';
 import { slotApi } from '../services/api/slotApi';
 import { AvailableSlotsGrid } from '../components/scheduler/AvailableSlotsGrid';
+import { TypicalWeekPanel } from '../components/scheduler/TypicalWeekPanel';
 import { Skeleton } from '../components/ui/Skeleton';
 
 // Define ExternalGig type locally for API response mapping
@@ -719,6 +720,16 @@ export function SessionPlanning() {
                                     ))}
                                 </select>
                             </div>
+
+                            {selectedGigId ? (
+                                <TypicalWeekPanel
+                                    gigId={selectedGigId}
+                                    repId={selectedRepId}
+                                    selectedDate={selectedDate}
+                                    onSelectedDateChange={setSelectedDate}
+                                    onNotify={(message, type) => showNotification(type, message)}
+                                />
+                            ) : null}
 
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                                 <div className="lg:col-span-2 space-y-8">
