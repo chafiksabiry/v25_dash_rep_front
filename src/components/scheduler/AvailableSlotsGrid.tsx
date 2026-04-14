@@ -141,7 +141,7 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
 
     if (!gigId || gigId === '' || !selectedDate) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center text-gray-500 text-sm">
+            <div className="bg-white/90 rounded-2xl shadow-sm border border-harx-100 p-6 text-center text-gray-500 text-sm">
                 Select a gig to see available slots
             </div>
         );
@@ -169,31 +169,31 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
     } catch (error) {
         console.error('Error formatting date:', error);
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center text-red-500 text-sm">
+            <div className="bg-white/90 rounded-2xl shadow-sm border border-harx-100 p-6 text-center text-harx-600 text-sm">
                 Error: Invalid date format
             </div>
         );
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
+        <div className="bg-white/95 rounded-2xl shadow-sm border border-harx-100 overflow-hidden">
+            <div className="p-6 border-b border-harx-100 bg-gradient-to-r from-harx-50/60 to-white">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-blue-600" />
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <Calendar className="w-5 h-5 text-harx-600" />
+                        <h3 className="text-lg font-black text-gray-900 tracking-tight uppercase">
                             Available Slots - {dateStr ? format(selectedDate, 'MMMM d, yyyy') : 'Loading...'}
                         </h3>
                     </div>
                     {isPastDate && (
-                        <span className="text-xs text-amber-600 font-medium">Past date - viewing only</span>
+                        <span className="text-[10px] text-harx-600 font-black uppercase tracking-widest">Past date - viewing only</span>
                     )}
                 </div>
             </div>
 
             {message && (
                 <div className={`mx-6 mt-4 p-3 rounded-xl flex items-center gap-2 ${message.type === 'success'
-                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    ? 'bg-harx-50 text-harx-900 border border-harx-200'
                     : 'bg-red-50 text-red-800 border border-red-200'
                     }`}>
                     {message.type === 'success' ? (
@@ -207,7 +207,7 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
 
             <div className="divide-y divide-gray-100">
                 {loading ? (
-                    <div className="p-8 text-center text-gray-500">Loading slots...</div>
+                    <div className="p-8 text-center text-gray-500 font-medium">Loading slots...</div>
                 ) : daySlots.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                         No slots available for this date. The company may need to generate slots first.
@@ -225,7 +225,7 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                                 <div
                                     key={slot._id}
                                     className={`p-5 transition-all ${isReserved
-                                        ? 'bg-blue-50/50'
+                                        ? 'bg-harx-50/60'
                                         : isAvailable
                                             ? 'bg-white'
                                             : 'bg-gray-50'
@@ -251,7 +251,7 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                                                     </div>
                                                 </div>
                                                 {isReserved && (
-                                                    <div className="flex items-center gap-2 text-sm text-blue-600">
+                                                    <div className="flex items-center gap-2 text-sm text-harx-700">
                                                         <CheckCircle className="w-4 h-4" />
                                                         <span className="font-medium">You have reserved this slot</span>
                                                     </div>
@@ -263,11 +263,11 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                                                         <button
                                                             onClick={() => handleCancel(reservation!)}
                                                             disabled={cancellingReservationId === reservation?._id}
-                                                            className="px-4 py-2 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                            className="px-4 py-2 text-xs font-black uppercase tracking-widest text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                                         >
                                                             {cancellingReservationId === reservation?._id ? 'Cancelling...' : 'Cancel'}
                                                         </button>
-                                                        <span className="px-4 py-2 text-xs font-semibold text-blue-600 bg-blue-50 rounded-xl">
+                                                        <span className="px-4 py-2 text-xs font-black uppercase tracking-widest text-harx-700 bg-harx-50 rounded-xl border border-harx-100">
                                                             Reserved
                                                         </span>
                                                     </>
@@ -275,12 +275,12 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                                                     <button
                                                         onClick={() => handleReserve(slot)}
                                                         disabled={reservingSlotId === slot._id}
-                                                        className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                        className="px-4 py-2 text-xs font-black uppercase tracking-widest text-white bg-harx-600 rounded-xl hover:bg-harx-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                                     >
                                                         {reservingSlotId === slot._id ? 'Reserving...' : 'Reserve'}
                                                     </button>
                                                 ) : (
-                                                    <span className="px-4 py-2 text-xs font-semibold text-gray-400 bg-gray-100 rounded-xl">
+                                                    <span className="px-4 py-2 text-xs font-black uppercase tracking-widest text-gray-400 bg-gray-100 rounded-xl">
                                                         {slot.status === 'full' ? 'Full' : 'Unavailable'}
                                                     </span>
                                                 )}
@@ -292,7 +292,7 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                                                 <input
                                                     type="text"
                                                     placeholder="Add a note (e.g., 'I want to work on this slot')..."
-                                                    className="flex-1 bg-gray-50 border border-gray-100 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                                                    className="flex-1 bg-gray-50 border border-gray-100 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-harx-500/20 focus:border-harx-200 outline-none transition-all"
                                                     value={resNotes[slot._id!] || ''}
                                                     onChange={(e) => setResNotes(prev => ({ ...prev, [slot._id!]: e.target.value }))}
                                                 />
