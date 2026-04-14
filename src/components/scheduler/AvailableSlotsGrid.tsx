@@ -85,7 +85,7 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
 
         try {
             const note = resNotes[slot._id] || '';
-            await slotApi.reserveSlot(slot._id, repId, note);
+            await slotApi.reserveSlot(slot._id, repId, note, format(selectedDate, 'yyyy-MM-dd'));
             setMessage({ text: 'Slot reserved successfully!', type: 'success' });
 
             // Clear the note for this slot

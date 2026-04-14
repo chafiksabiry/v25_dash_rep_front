@@ -21,6 +21,7 @@ export interface Reservation {
     slotId: string;
     gigId: string;
     date: string;
+    reservationDate?: string;
     startTime: string;
     endTime: string;
     duration: number;
@@ -49,11 +50,17 @@ export const slotApi = {
     /**
      * Reserve a slot
      */
-    reserveSlot: async (slotId: string, repId: string, notes?: string): Promise<{ message: string; reservation: Reservation }> => {
+    reserveSlot: async (
+        slotId: string,
+        repId: string,
+        notes?: string,
+        reservationDate?: string
+    ): Promise<{ message: string; reservation: Reservation }> => {
         try {
             const response = await axios.post(`${MATCHING_API_URL}/slots/${slotId}/reserve`, {
                 repId,
-                notes
+                notes,
+                ...(reservationDate ? { reservationDate } : {})
             });
             return response.data;
         } catch (error: any) {

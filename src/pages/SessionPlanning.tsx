@@ -509,7 +509,12 @@ export function SessionPlanning() {
         try {
             const existing = updates.id ? slots.find(s => s.id === updates.id) : null;
             if (existing && (existing as any).capacity !== undefined && updates.status === 'reserved') {
-                await slotApi.reserveSlot(existing.id, selectedRepId, updates.notes || '');
+                await slotApi.reserveSlot(
+                    existing.id,
+                    selectedRepId,
+                    updates.notes || '',
+                    format(selectedDate, 'yyyy-MM-dd')
+                );
                 await refreshData();
                 showNotification('success', 'Slot reserved successfully');
                 return;
@@ -697,13 +702,13 @@ export function SessionPlanning() {
                             )}
                         </div>
                     ) : userRole === 'rep' ? (
-                        <div className="space-y-5">
-                            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-                                <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                        <div className="space-y-3">
+                            <div className="bg-white rounded-xl border border-harx-100 p-3.5 shadow-sm">
+                                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-gray-400">
                                     Enrolled gig
                                 </label>
                                 <select
-                                    className="w-full md:max-w-[420px] bg-gray-50/70 border border-gray-100 rounded-xl text-[11px] font-black uppercase tracking-widest text-gray-700 py-3 px-4 focus:ring-2 focus:ring-harx-500/20 focus:border-harx-200 outline-none"
+                                    className="w-full md:max-w-[420px] bg-gray-50/70 border border-harx-100 rounded-lg text-[11px] font-black uppercase tracking-widest text-gray-700 py-2.5 px-3.5 focus:ring-2 focus:ring-harx-500/20 focus:border-harx-200 outline-none"
                                     value={selectedGigId || ''}
                                     onChange={(e) => setSelectedGigId(e.target.value === '' ? null : e.target.value)}
                                 >

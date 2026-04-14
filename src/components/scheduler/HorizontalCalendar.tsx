@@ -20,39 +20,39 @@ export function HorizontalCalendar({ selectedDate, onDateSelect, slots, selected
     const prevPeriod = () => setBaseDate(subWeeks(baseDate, 2));
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-6 px-1">
+        <div className="bg-white rounded-xl shadow-sm border border-harx-100 p-4">
+            <div className="flex items-center justify-between mb-4 px-0.5">
                 <div className="flex items-center space-x-3">
-                    <div className="p-2.5 bg-blue-50 rounded-xl">
-                        <CalendarIcon className="w-5 h-5 text-blue-600" />
+                    <div className="p-2 bg-harx-50 rounded-xl">
+                        <CalendarIcon className="w-5 h-5 text-harx-600" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-900">Schedule</h2>
+                        <h2 className="text-lg font-black text-gray-900">Schedule</h2>
                         <p className="text-xs text-gray-500 mt-0.5">14-day outlook</p>
                     </div>
                 </div>
-                <div className="flex items-center space-x-6">
-                    <div className="hidden md:flex space-x-4 bg-gray-50/80 p-1.5 rounded-2xl border border-gray-100">
+                <div className="flex items-center space-x-3">
+                    <div className="hidden md:flex space-x-3 bg-harx-50/30 p-1 rounded-xl border border-harx-100">
                         <div className="flex items-center text-[10px] font-bold text-gray-500 px-3">
-                            <div className="w-2 h-2 rounded-full bg-purple-500 mr-2 shadow-sm"></div>
+                            <div className="w-2 h-2 rounded-full bg-harx-600 mr-2 shadow-sm"></div>
                             Booked
                         </div>
                         <div className="flex items-center text-[10px] font-bold text-gray-500 px-3 border-l border-gray-200">
-                            <div className="w-2 h-2 rounded-full bg-green-500 mr-2 shadow-sm"></div>
+                            <div className="w-2 h-2 rounded-full bg-harx-300 mr-2 shadow-sm"></div>
                             Open
                         </div>
                     </div>
 
-                    <div className="flex bg-gray-100 rounded-2xl p-1.5 space-x-1 border border-gray-200 shadow-inner">
+                    <div className="flex bg-gray-100 rounded-xl p-1 space-x-1 border border-gray-200 shadow-inner">
                         <button
                             onClick={prevPeriod}
-                            className="p-2 hover:bg-white hover:text-blue-600 hover:shadow-xl rounded-xl transition-all duration-300 text-gray-500"
+                            className="p-1.5 hover:bg-white hover:text-harx-600 hover:shadow rounded-lg transition-all duration-300 text-gray-500"
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                         <button
                             onClick={nextPeriod}
-                            className="p-2 hover:bg-white hover:text-blue-600 hover:shadow-xl rounded-xl transition-all duration-300 text-gray-500"
+                            className="p-1.5 hover:bg-white hover:text-harx-600 hover:shadow rounded-lg transition-all duration-300 text-gray-500"
                         >
                             <ChevronRight className="w-5 h-5" />
                         </button>
@@ -60,7 +60,7 @@ export function HorizontalCalendar({ selectedDate, onDateSelect, slots, selected
                 </div>
             </div>
 
-            <div className="grid grid-cols-7 gap-4">
+            <div className="grid grid-cols-7 gap-2.5">
                 {weekDays.map((day) => {
                     const isSelected = isSameDay(day, selectedDate);
                     const isToday = isSameDay(day, today);
@@ -75,35 +75,35 @@ export function HorizontalCalendar({ selectedDate, onDateSelect, slots, selected
                         <button
                             key={day.toString()}
                             onClick={() => onDateSelect(day)}
-                            className={`group relative flex flex-col items-center py-6 px-3 rounded-2xl transition-all duration-300 ${isSelected
-                                ? 'bg-blue-600 text-white shadow-2xl shadow-blue-400 scale-105 ring-4 ring-blue-50 z-10'
-                                : 'bg-white hover:bg-gray-50 text-gray-600 hover:scale-[1.03] border border-gray-100 border-transparent hover:border-gray-200'
+                            className={`group relative flex flex-col items-center py-4 px-2 rounded-xl transition-all duration-300 ${isSelected
+                                ? 'bg-harx-600 text-white shadow-lg shadow-harx-500/30 scale-[1.02] ring-2 ring-harx-100 z-10'
+                                : 'bg-white hover:bg-gray-50 text-gray-600 border border-gray-100 border-transparent hover:border-harx-100'
                                 }`}
                         >
                             {isToday && !isSelected && (
-                                <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></div>
+                                <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-harx-500 rounded-full animate-ping"></div>
                             )}
 
-                            <span className={`text-[10px] font-black uppercase mb-2 tracking-tighter ${isSelected ? 'text-blue-100' : 'text-gray-400 group-hover:text-gray-500'}`}>
+                            <span className={`text-[10px] font-black uppercase mb-1.5 tracking-tighter ${isSelected ? 'text-harx-100' : 'text-gray-400 group-hover:text-gray-500'}`}>
                                 {format(day, 'EEE')}
                             </span>
-                            <span className={`text-2xl font-black mb-3 tabular-nums ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                            <span className={`text-2xl font-black mb-2 tabular-nums ${isSelected ? 'text-white' : 'text-gray-900'}`}>
                                 {format(day, 'd')}
                             </span>
 
                             <div className="flex flex-col space-y-1 w-full mt-auto">
                                 {reservedSlots > 0 && (
-                                    <div className={`h-1 rounded-full transition-all duration-500 ${isSelected ? 'bg-white/40' : 'bg-purple-200 group-hover:bg-purple-400'} w-full`}>
+                                    <div className={`h-1 rounded-full transition-all duration-500 ${isSelected ? 'bg-white/40' : 'bg-harx-100 group-hover:bg-harx-200'} w-full`}>
                                         <div
-                                            className={`h-full rounded-full ${isSelected ? 'bg-white' : 'bg-purple-600'}`}
+                                            className={`h-full rounded-full ${isSelected ? 'bg-white' : 'bg-harx-600'}`}
                                             style={{ width: `${Math.min(100, (reservedSlots / (daySlots.length || 1)) * 100)}%` }}
                                         ></div>
                                     </div>
                                 )}
                                 {availableSlots > 0 && (
-                                    <div className={`h-1 rounded-full transition-all duration-500 ${isSelected ? 'bg-white/20' : 'bg-green-100 group-hover:bg-green-300'} w-full`}>
+                                    <div className={`h-1 rounded-full transition-all duration-500 ${isSelected ? 'bg-white/20' : 'bg-harx-100/70 group-hover:bg-harx-200'} w-full`}>
                                         <div
-                                            className={`h-full rounded-full ${isSelected ? 'bg-white/60' : 'bg-green-500'}`}
+                                            className={`h-full rounded-full ${isSelected ? 'bg-white/60' : 'bg-harx-400'}`}
                                             style={{ width: `${Math.min(100, (availableSlots / (daySlots.length || 1)) * 100)}%` }}
                                         ></div>
                                     </div>
@@ -113,7 +113,7 @@ export function HorizontalCalendar({ selectedDate, onDateSelect, slots, selected
                                 )}
                             </div>
 
-                            <span className={`text-[9px] font-black mt-2 uppercase tracking-tighter ${isSelected ? 'text-blue-100' : 'text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap'}`}>
+                            <span className={`text-[9px] font-black mt-1.5 uppercase tracking-tighter ${isSelected ? 'text-harx-100' : 'text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap'}`}>
                                 {daySlots.length} slots
                             </span>
                         </button>
