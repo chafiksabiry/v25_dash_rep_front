@@ -33,6 +33,8 @@ type RepSlideProgressSummary = {
     slidesSeen: number;
     slidesTotal: number;
     ratio: number;
+    /** Index 0-based pour reprendre au « Continue » (aligné backend) */
+    currentSlideIndex: number;
   }[];
   sumOfRatios: number;
   averageRatio: number;
@@ -145,6 +147,34 @@ function slideStableId(slide: unknown): string {
   const id = r.id;
   if (typeof id === 'string' && /^[a-f\d]{24}$/i.test(id.trim())) return id.trim();
   return '';
+}
+
+function clampTrainingSlideIndex(index: number, slideCount: number): number {
+  if (slideCount <= 0) return 0;
+  const i = Math.round(Number(index));
+  if (!Number.isFinite(i)) return 0;
+  return Math.min(slideCount - 1, Math.max(0, i));
+}
+
+/** Reprend la bonne slide : champ API `currentSlideIndex`, sinon repli engagement (comme le backend). */
+function initialSlideForContinue(
+  slideCount: number,
+  slideRow:
+    | { currentSlideIndex?: number; slidesSeen?: number; slidesTotal?: number }
+    | undefined,
+  engagementPercent: number
+): number {
+  if (slideCount <= 0) return 0;
+  if (
+    slideRow != null &&
+    typeof slideRow.currentSlideIndex === 'number' &&
+    Number.isFinite(slideRow.currentSlideIndex)
+  ) {
+    return clampTrainingSlideIndex(slideRow.currentSlideIndex, slideCount);
+  }
+  const eng = Math.min(100, Math.max(0, engagementPercent));
+  const approx = Math.round((eng / 100) * slideCount);
+  return clampTrainingSlideIndex(approx - 1, slideCount);
 }
 
 function slideProgressPayload(journey: JourneyRow, slideIndex: number) {
@@ -841,8 +871,9 @@ export function Training() {
                     disabled={!id}
                     onClick={() => {
                       if (!id) return;
+                      const slideCount = slides.length;
                       setSelectedJourneyId(id);
-                      setActiveSlide(0);
+                      setActiveSlide(initialSlideForContinue(slideCount, slideRow, engagementPercent));
                     }}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-harx-600 text-white px-4 py-3 text-xs font-black uppercase tracking-widest hover:bg-harx-700 transition-colors disabled:opacity-40"
                   >
