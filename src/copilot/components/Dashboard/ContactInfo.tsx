@@ -209,6 +209,7 @@ export function ContactInfo() {
         params: {
           To: phoneNumber,
           LeadId: contact.id, // Pass LeadId for dynamic Caller ID resolution
+          AgentId: localStorage.getItem('agentId') || '',
           MediaStream: true,
         },
         rtcConfiguration: {

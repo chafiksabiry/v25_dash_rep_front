@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Phone, Mail, User,
@@ -8,6 +8,8 @@ import {
 import { Skeleton } from '../components/ui/Skeleton';
 import { CallRecords } from '../components/CallRecords';
 import CopilotApp from '../copilot/App';
+import { getAgentId, getAuthToken } from '../utils/authUtils';
+import { slotApi } from '../services/api/slotApi';
 
 interface Lead {
   _id?: string;
@@ -38,6 +40,39 @@ interface APIResponse {
   data: Lead[];
 }
 
+type CopilotGuardState = {
+  loading: boolean;
+  isEnrolledInGig: boolean;
+  isTrainingComplete: boolean;
+  hasActiveReservationNow: boolean;
+  reservationWindowLabel: string | null;
+  reason: string | null;
+};
+
+function weekdayEnglish(d: Date): string {
+  return d.toLocaleDateString('en-US', { weekday: 'long' });
+}
+
+function parseTimeToMinutes(time: string): number | null {
+  const m = String(time || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (!Number.isFinite(h) || !Number.isFinite(min)) return null;
+  if (h < 0 || h > 23 || min < 0 || min > 59) return null;
+  return h * 60 + min;
+}
+
+function isTodayReservation(rawDate: unknown, now: Date): boolean {
+  const v = String(rawDate || '').trim();
+  if (!v) return false;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    const todayIso = now.toISOString().slice(0, 10);
+    return v === todayIso;
+  }
+  return v.toLowerCase() === weekdayEnglish(now).toLowerCase();
+}
+
 export function Workspace() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -62,6 +97,14 @@ export function Workspace() {
   const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
   const [selectedGigId, setSelectedGigId] = useState<string>(gigId || '');
   const [isGigDropdownOpen, setIsGigDropdownOpen] = useState(false);
+  const [copilotGuard, setCopilotGuard] = useState<CopilotGuardState>({
+    loading: false,
+    isEnrolledInGig: false,
+    isTrainingComplete: false,
+    hasActiveReservationNow: false,
+    reservationWindowLabel: null,
+    reason: 'Select an enrolled gig.'
+  });
 
   useEffect(() => {
     fetchEnrolledGigs();
@@ -72,6 +115,123 @@ export function Workspace() {
       fetchLeads(currentPage);
     }
   }, [activeTab, selectedGigId, currentPage]);
+
+  const canUseCopilot = useMemo(
+    () =>
+      copilotGuard.isEnrolledInGig &&
+      copilotGuard.isTrainingComplete &&
+      copilotGuard.hasActiveReservationNow,
+    [copilotGuard]
+  );
+
+  useEffect(() => {
+    const evaluateCopilotGuard = async () => {
+      if (!selectedGigId) {
+        setCopilotGuard({
+          loading: false,
+          isEnrolledInGig: false,
+          isTrainingComplete: false,
+          hasActiveReservationNow: false,
+          reservationWindowLabel: null,
+          reason: 'Select an enrolled gig.'
+        });
+        return;
+      }
+
+      const token = getAuthToken();
+      const repId = getAgentId() || localStorage.getItem('agentId') || '';
+      if (!repId) {
+        setCopilotGuard({
+          loading: false,
+          isEnrolledInGig: false,
+          isTrainingComplete: false,
+          hasActiveReservationNow: false,
+          reservationWindowLabel: null,
+          reason: 'Rep not authenticated.'
+        });
+        return;
+      }
+
+      const isEnrolledInGig = enrolledGigs.some((g) => g._id === selectedGigId);
+      if (!isEnrolledInGig) {
+        setCopilotGuard({
+          loading: false,
+          isEnrolledInGig: false,
+          isTrainingComplete: false,
+          hasActiveReservationNow: false,
+          reservationWindowLabel: null,
+          reason: 'You must be enrolled in this gig.'
+        });
+        return;
+      }
+
+      setCopilotGuard((prev) => ({ ...prev, loading: true, reason: null }));
+
+      try {
+        const now = new Date();
+        const trainingBase = String(import.meta.env.VITE_TRAINING_API_URL || '').replace(/\/$/, '');
+        let isTrainingComplete = false;
+        if (trainingBase) {
+          const summaryRes = await fetch(
+            `${trainingBase}/training_journeys/rep/${encodeURIComponent(repId)}/slide-progress-summary?gigId=${encodeURIComponent(selectedGigId)}`,
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : undefined
+            }
+          );
+          if (summaryRes.ok) {
+            const summary = await summaryRes.json();
+            const overall = Number(summary?.overallPercent ?? 0);
+            const trainingCount = Number(summary?.trainingCount ?? 0);
+            isTrainingComplete = trainingCount === 0 ? true : overall >= 100;
+          }
+        }
+
+        const reservations = await slotApi.getReservations(repId, selectedGigId);
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        const activeReservation = (Array.isArray(reservations) ? reservations : []).find((r: any) => {
+          if (String(r?.status || '').toLowerCase() !== 'reserved') return false;
+          const reservationDay = r?.reservationDate || r?.date;
+          if (!isTodayReservation(reservationDay, now)) return false;
+          const start = parseTimeToMinutes(r?.startTime);
+          const end = parseTimeToMinutes(r?.endTime);
+          if (start == null || end == null || end <= start) return false;
+          return nowMinutes >= start && nowMinutes < end;
+        });
+
+        const hasActiveReservationNow = !!activeReservation;
+        const reservationWindowLabel = hasActiveReservationNow
+          ? `${activeReservation.startTime} - ${activeReservation.endTime}`
+          : null;
+
+        const reason = !isTrainingComplete
+          ? 'Complete all trainings for this gig before calling.'
+          : !hasActiveReservationNow
+            ? 'Calls are allowed only during your reserved slot for this gig.'
+            : null;
+
+        setCopilotGuard({
+          loading: false,
+          isEnrolledInGig,
+          isTrainingComplete,
+          hasActiveReservationNow,
+          reservationWindowLabel,
+          reason
+        });
+      } catch (error) {
+        console.error('Error evaluating copilot guard:', error);
+        setCopilotGuard({
+          loading: false,
+          isEnrolledInGig,
+          isTrainingComplete: false,
+          hasActiveReservationNow: false,
+          reservationWindowLabel: null,
+          reason: 'Unable to validate call conditions. Please try again.'
+        });
+      }
+    };
+
+    evaluateCopilotGuard();
+  }, [selectedGigId, enrolledGigs]);
 
   const fetchEnrolledGigs = async () => {
     const agentId = localStorage.getItem('agentId');
@@ -233,8 +393,14 @@ export function Workspace() {
                                 </span>
                               )}
                               <button
-                                className="px-6 py-2 bg-gradient-harx text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all hover:-translate-y-0.5 flex items-center gap-2"
+                                className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${
+                                  canUseCopilot
+                                    ? 'bg-gradient-harx text-white hover:shadow-lg hover:shadow-harx-500/20 hover:-translate-y-0.5'
+                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                }`}
+                                disabled={!canUseCopilot || copilotGuard.loading}
                                 onClick={() => handleCallClick(lead)}
+                                title={!canUseCopilot && copilotGuard.reason ? copilotGuard.reason : ''}
                               >
                                 <Phone className="w-3.5 h-3.5" />
                                 <span>Call</span>
@@ -421,7 +587,24 @@ export function Workspace() {
       case 'copilot':
         return (
           <div className="w-full bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-gray-100 overflow-hidden" style={{ minHeight: '600px' }}>
-            {selectedLead || urlLeadId ? <CopilotApp /> : (
+            {copilotGuard.loading ? (
+              <div className="flex flex-col items-center justify-center h-full pt-32 text-gray-400">
+                <p className="text-sm font-bold uppercase tracking-widest">Checking call permissions...</p>
+              </div>
+            ) : !canUseCopilot ? (
+              <div className="flex flex-col items-center justify-center h-full pt-24 text-center px-8">
+                <Phone className="w-12 h-12 mb-4 text-gray-300" />
+                <p className="text-sm font-black uppercase tracking-widest text-gray-700">Copilot Locked</p>
+                <p className="text-xs mt-2 text-gray-500 max-w-xl">
+                  {copilotGuard.reason || 'You cannot place calls right now.'}
+                </p>
+                {copilotGuard.reservationWindowLabel && (
+                  <p className="text-xs mt-2 text-emerald-600 font-bold">
+                    Active reserved window: {copilotGuard.reservationWindowLabel}
+                  </p>
+                )}
+              </div>
+            ) : (selectedLead || urlLeadId) ? <CopilotApp /> : (
                <div className="flex flex-col items-center justify-center h-full pt-32 text-gray-400">
                  <Phone className="w-16 h-16 mb-4 opacity-50" />
                  <p className="text-sm font-bold uppercase tracking-widest">No lead selected</p>
@@ -436,6 +619,7 @@ export function Workspace() {
   };
 
   const handleCallClick = (lead: Lead) => {
+    if (!canUseCopilot) return;
     const leadIdString = lead._id || lead.id;
     window.history.pushState({}, '', `${window.location.pathname}?leadId=${leadIdString}`);
     setSelectedLead(lead);
