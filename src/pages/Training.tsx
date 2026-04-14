@@ -464,6 +464,59 @@ export function Training() {
     () => displayJourneys.find((j) => journeyKey(j) === selectedJourneyId) || null,
     [displayJourneys, selectedJourneyId]
   );
+  const slideSummaryByJourney = useMemo(() => {
+    const map = new Map<string, RepSlideProgressSummary['journeys'][number]>();
+    const rows = Array.isArray(slideProgressSummary?.journeys) ? slideProgressSummary.journeys : [];
+    rows.forEach((row) => {
+      const id = String(row.journeyId || '').trim();
+      if (id) map.set(id, row);
+    });
+    return map;
+  }, [slideProgressSummary]);
+
+  const isJourneyCompleted = useCallback(
+    (journey: JourneyRow): boolean => {
+      const id = journeyKey(journey);
+      if (!id) return false;
+
+      const slideRow = slideSummaryByJourney.get(id);
+      if (slideRow) {
+        if (slideRow.slidesTotal > 0) {
+          return slideRow.slidesSeen >= slideRow.slidesTotal || slideRow.ratio >= 1;
+        }
+        return slideRow.ratio >= 1;
+      }
+
+      const progressRow = progressByJourney[id];
+      if (!progressRow) return false;
+      const finished = Number(progressRow.moduleFinished || 0);
+      const total = Number(progressRow.moduleTotal || 0);
+      return total > 0 && finished >= total;
+    },
+    [slideSummaryByJourney, progressByJourney]
+  );
+
+  const selectedJourneyGigId = useMemo(() => {
+    if (!selectedJourney) return '';
+    const fromJourney = String(selectedJourney.__gigId || '').trim();
+    if (fromJourney) return fromJourney;
+    if (gigFilter !== '__all__') return gigFilter;
+    return '';
+  }, [selectedJourney, gigFilter]);
+
+  const nextIncompleteJourneyForGig = useMemo(() => {
+    if (!selectedJourney) return null;
+    if (!selectedJourneyGigId) return null;
+    const currentId = journeyKey(selectedJourney);
+    return (
+      displayJourneys.find((j) => {
+        const id = journeyKey(j);
+        if (!id || id === currentId) return false;
+        if (String(j.__gigId || '').trim() !== selectedJourneyGigId) return false;
+        return !isJourneyCompleted(j);
+      }) || null
+    );
+  }, [selectedJourney, selectedJourneyGigId, displayJourneys, isJourneyCompleted]);
 
   useEffect(() => {
     return () => {
@@ -1013,6 +1066,52 @@ export function Training() {
                           })()}
                         </span>
                       </div>
+
+                      {activeSlide >= slides.length - 1 && (
+                        <div className="mt-4 rounded-2xl border border-harx-100 bg-white p-4 shadow-sm">
+                          <div className="text-sm font-black uppercase tracking-widest text-harx-600">Felicitations</div>
+                          <p className="mt-1 text-sm text-gray-700">
+                            Vous avez termine cette formation. Vous pouvez passer au Session Planning.
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const q = selectedJourneyGigId
+                                  ? `?gigId=${encodeURIComponent(selectedJourneyGigId)}`
+                                  : '';
+                                window.location.href = `/repdashboard/session-planning${q}`;
+                              }}
+                              className="inline-flex items-center justify-center rounded-xl bg-harx-600 px-4 py-2 text-xs font-black uppercase tracking-widest text-white transition-colors hover:bg-harx-700"
+                            >
+                              Aller a Session Planning
+                            </button>
+                            {nextIncompleteJourneyForGig && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const targetId = journeyKey(nextIncompleteJourneyForGig);
+                                  if (!targetId) return;
+                                  const nextSlideRow = slideSummaryByJourney.get(targetId);
+                                  const nextProgress = progressByJourney[targetId];
+                                  const engagementPercent = Math.min(
+                                    100,
+                                    Math.max(0, Number(nextProgress?.engagementScore || 0))
+                                  );
+                                  const targetSlides = extractSlides(nextIncompleteJourneyForGig);
+                                  setSelectedJourneyId(targetId);
+                                  setActiveSlide(
+                                    initialSlideForContinue(targetSlides.length, nextSlideRow, engagementPercent)
+                                  );
+                                }}
+                                className="inline-flex items-center justify-center rounded-xl border border-harx-200 bg-harx-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-harx-700 transition-colors hover:bg-harx-100"
+                              >
+                                Continuer les autres trainings
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </>
                   );
                 })()}
