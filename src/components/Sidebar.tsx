@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing, GraduationCap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useRepTrainingNav } from '../contexts/RepTrainingNavContext';
 
 // Declare qiankun global variables
 declare global {
@@ -34,7 +35,7 @@ interface SidebarProps {
   setIsCollapsed: (isCollapsed: boolean) => void;
 }
 
-type TrainingSidebarSlide = { title: string; globalIndex: number };
+type TrainingSidebarSlide = { title: string; globalIndex: number; slideId: string };
 
 type TrainingSidebarModule = {
   title: string;
@@ -54,10 +55,12 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
 
   const [isWorkspaceOpen, setIsWorkspaceOpen] = React.useState(location.pathname.includes('/workspace'));
   const [isTrainingOpen, setIsTrainingOpen] = React.useState(location.pathname.includes('/training'));
-  const [trainingModules, setTrainingModules] = React.useState<TrainingSidebarModule[]>([]);
-  const [activeTrainingModuleIndex, setActiveTrainingModuleIndex] = React.useState<number>(0);
   const [openTrainingModuleIndexes, setOpenTrainingModuleIndexes] = React.useState<number[]>([]);
-  const [activeTrainingSlideIndex, setActiveTrainingSlideIndex] = React.useState(0);
+  const {
+    trainingModules,
+    activeTrainingModuleIndex,
+    activeTrainingSlideIndex
+  } = useRepTrainingNav();
 
   // Ensure workspace is open if we navigate there externally
   useEffect(() => {
@@ -70,49 +73,10 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
   }, [location.pathname]);
 
   useEffect(() => {
-    const readTrainingSidebarData = () => {
-      try {
-        const raw = localStorage.getItem('repTrainingSidebarModules');
-        const parsed = raw ? JSON.parse(raw) : [];
-        setTrainingModules(
-          Array.isArray(parsed)
-            ? parsed.map((m: any, idx: number) => ({
-                title: String(m?.title || `Module ${idx + 1}`),
-                sections: Array.isArray(m?.sections) ? m.sections.map((s: any) => String(s)) : [],
-                slides: Array.isArray(m?.slides)
-                  ? m.slides.map((s: any, si: number): TrainingSidebarSlide => {
-                      if (typeof s === 'string') return { title: s, globalIndex: -1 };
-                      return {
-                        title: String(s?.title ?? `Slide ${si + 1}`),
-                        globalIndex: typeof s?.globalIndex === 'number' ? s.globalIndex : -1
-                      };
-                    })
-                  : []
-              }))
-            : []
-        );
-      } catch {
-        setTrainingModules([]);
-      }
-      const idx = parseInt(localStorage.getItem('repTrainingSidebarActiveModuleIndex') || '0', 10);
-      setActiveTrainingModuleIndex(Number.isFinite(idx) ? idx : 0);
-      const sIdx = parseInt(localStorage.getItem('repTrainingSidebarActiveSlideIndex') || '0', 10);
-      setActiveTrainingSlideIndex(Number.isFinite(sIdx) ? sIdx : 0);
-      setOpenTrainingModuleIndexes((prev) => {
-        if (Number.isFinite(idx)) {
-          return prev.includes(idx) ? prev : [...prev, idx];
-        }
-        return prev;
-      });
-    };
-    readTrainingSidebarData();
-    window.addEventListener('rep-training-modules-updated', readTrainingSidebarData as EventListener);
-    window.addEventListener('storage', readTrainingSidebarData);
-    return () => {
-      window.removeEventListener('rep-training-modules-updated', readTrainingSidebarData as EventListener);
-      window.removeEventListener('storage', readTrainingSidebarData);
-    };
-  }, []);
+    const idx = activeTrainingModuleIndex;
+    if (!Number.isFinite(idx)) return;
+    setOpenTrainingModuleIndexes((prev) => (prev.includes(idx) ? prev : [...prev, idx]));
+  }, [activeTrainingModuleIndex]);
 
   const navItems = [
     {
@@ -326,7 +290,10 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                                         if (slide.globalIndex >= 0) {
                                           window.dispatchEvent(
                                             new CustomEvent('rep-training-goto-slide', {
-                                              detail: { index: slide.globalIndex }
+                                              detail: {
+                                                index: slide.globalIndex,
+                                                ...(slide.slideId ? { slideId: slide.slideId } : {})
+                                              }
                                             })
                                           );
                                         }

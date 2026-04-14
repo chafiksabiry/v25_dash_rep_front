@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { RepTrainingNavProvider } from './contexts/RepTrainingNavContext';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { Dashboard } from './pages/Dashboard';
@@ -182,6 +183,7 @@ function AppContent() {
 
   return (
     <Router basename={basename}>
+      <RepTrainingNavProvider>
       <div className="flex h-screen bg-premium-gradient overflow-hidden">
         <Sidebar 
           phases={userProfile?.onboardingProgress?.phases} 
@@ -255,6 +257,7 @@ function AppContent() {
           </main>
         </div>
       </div>
+      </RepTrainingNavProvider>
     </Router>
   );
 }

@@ -10,6 +10,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
+import { useRepTrainingNav } from '../contexts/RepTrainingNavContext';
 
 type JourneyRow = Record<string, unknown> & { __gigTitle?: string; __gigId?: string };
 type ModuleRow = { _id?: string; id?: string; title?: string; sections?: unknown[] };
@@ -120,20 +121,30 @@ function dedupeAndSort(rows: JourneyRow[]): JourneyRow[] {
   return Array.from(m.values()).sort((a, b) => journeyTitle(a).localeCompare(journeyTitle(b), 'en'));
 }
 
-function getOrCreateTrainingSessionId(): string {
-  try {
-    let s = sessionStorage.getItem('harx_rep_training_session');
-    if (!s) {
-      s =
-        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-          ? crypto.randomUUID()
-          : `ts-${Date.now()}`;
-      sessionStorage.setItem('harx_rep_training_session', s);
-    }
-    return s;
-  } catch {
-    return `ts-${Date.now()}`;
+/** Matching API may return Mongo extended JSON `{ $oid }` instead of a plain string. */
+function normalizeMongoId(raw: unknown): string {
+  if (raw == null) return '';
+  if (typeof raw === 'string') return raw.trim();
+  if (typeof raw === 'object' && raw !== null && '$oid' in raw) {
+    return String((raw as { $oid: string }).$oid || '').trim();
   }
+  if (typeof raw === 'object' && raw !== null && '_id' in raw) {
+    return normalizeMongoId((raw as { _id: unknown })._id);
+  }
+  return String(raw).trim();
+}
+
+/** Id Mongo d’une slide (tracking) ; vide si absent (l’API utilisera slideIndex). */
+function slideStableId(slide: unknown): string {
+  if (!slide || typeof slide !== 'object') return '';
+  const r = slide as Record<string, unknown>;
+  const a = normalizeMongoId(r._id);
+  if (a) return a;
+  const b = normalizeMongoId(r.slideId);
+  if (b) return b;
+  const id = r.id;
+  if (typeof id === 'string' && /^[a-f\d]{24}$/i.test(id.trim())) return id.trim();
+  return '';
 }
 
 function slideProgressPayload(journey: JourneyRow, slideIndex: number) {
@@ -148,20 +159,8 @@ function slideProgressPayload(journey: JourneyRow, slideIndex: number) {
       : 0;
   const moduleId = String(modules[mIdx]?._id || modules[mIdx]?.id || `module-${mIdx + 1}`);
   const pct = Math.min(100, Math.round(((clamped + 1) / n) * 100));
-  return { moduleId, pct, slideIndex: clamped, slideCount: n };
-}
-
-/** Matching API may return Mongo extended JSON `{ $oid }` instead of a plain string. */
-function normalizeMongoId(raw: unknown): string {
-  if (raw == null) return '';
-  if (typeof raw === 'string') return raw.trim();
-  if (typeof raw === 'object' && raw !== null && '$oid' in raw) {
-    return String((raw as { $oid: string }).$oid || '').trim();
-  }
-  if (typeof raw === 'object' && raw !== null && '_id' in raw) {
-    return normalizeMongoId((raw as { _id: unknown })._id);
-  }
-  return String(raw).trim();
+  const slideId = slideStableId(slides[clamped]);
+  return { moduleId, pct, slideIndex: clamped, slideCount: n, slideId };
 }
 
 async function fetchEnrolledGigsForAgent(
@@ -205,6 +204,7 @@ async function fetchEnrolledGigsForAgent(
 
 export function Training() {
   const repId = getAgentId();
+  const { setTrainingNav, clearTrainingNav } = useRepTrainingNav();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [journeys, setJourneys] = useState<JourneyRow[]>([]);
@@ -411,30 +411,37 @@ export function Training() {
   );
 
   useEffect(() => {
-    const modules = selectedJourney
-      ? extractModules(selectedJourney).map((m, i) => {
-          const sections = Array.isArray(m.sections)
-            ? m.sections
-                .map((s, si) => {
-                  if (typeof s === 'string') return s;
-                  if (typeof s === 'object' && s !== null && 'title' in (s as Record<string, unknown>)) {
-                    return String((s as { title?: unknown }).title || `Section ${si + 1}`);
-                  }
-                  return `Section ${si + 1}`;
-                })
-                .filter(Boolean)
-            : [];
-          return {
-            title: String(m.title || `Module ${i + 1}`),
-            sections,
-            slides: [] as { title: string; globalIndex: number }[]
-          };
-        })
-      : [];
-    if (selectedJourney && modules.length > 0) {
-      const slideTitles = extractSlides(selectedJourney).map((s, idx) =>
-        String(s.title || `Slide ${idx + 1}`)
-      );
+    return () => {
+      clearTrainingNav();
+    };
+  }, [clearTrainingNav]);
+
+  useEffect(() => {
+    if (!selectedJourney) {
+      clearTrainingNav();
+      return;
+    }
+    const slides = extractSlides(selectedJourney);
+    const modules = extractModules(selectedJourney).map((m, i) => {
+      const sections = Array.isArray(m.sections)
+        ? m.sections
+            .map((s, si) => {
+              if (typeof s === 'string') return s;
+              if (typeof s === 'object' && s !== null && 'title' in (s as Record<string, unknown>)) {
+                return String((s as { title?: unknown }).title || `Section ${si + 1}`);
+              }
+              return `Section ${si + 1}`;
+            })
+            .filter(Boolean)
+        : [];
+      return {
+        title: String(m.title || `Module ${i + 1}`),
+        sections,
+        slides: [] as { title: string; globalIndex: number; slideId: string }[]
+      };
+    });
+    if (modules.length > 0 && slides.length > 0) {
+      const slideTitles = slides.map((s, idx) => String(s.title || `Slide ${idx + 1}`));
       const totalSlides = slideTitles.length;
       const totalModules = modules.length;
       const base = totalModules > 0 ? Math.floor(totalSlides / totalModules) : 0;
@@ -444,14 +451,17 @@ export function Training() {
         const take = base + (remainder > 0 ? 1 : 0);
         if (remainder > 0) remainder -= 1;
         const chunk = slideTitles.slice(cursor, cursor + take);
-        modules[i].slides = chunk.map((title, j) => ({
-          title,
-          globalIndex: cursor + j
-        }));
+        modules[i].slides = chunk.map((title, j) => {
+          const gi = cursor + j;
+          return {
+            title,
+            globalIndex: gi,
+            slideId: slideStableId(slides[gi])
+          };
+        });
         cursor += take;
       }
     }
-    const slides = selectedJourney ? extractSlides(selectedJourney) : [];
     const activeModuleIndex =
       modules.length > 0 && slides.length > 0
         ? Math.min(
@@ -459,19 +469,27 @@ export function Training() {
             Math.max(0, Math.floor((activeSlide / Math.max(slides.length - 1, 1)) * modules.length))
           )
         : 0;
-    localStorage.setItem('repTrainingSidebarModules', JSON.stringify(modules));
-    localStorage.setItem('repTrainingSidebarActiveModuleIndex', String(activeModuleIndex));
-    localStorage.setItem('repTrainingSidebarActiveSlideIndex', String(activeSlide));
-    window.dispatchEvent(new CustomEvent('rep-training-modules-updated'));
-  }, [selectedJourney, activeSlide]);
+    setTrainingNav({
+      trainingModules: modules,
+      activeTrainingModuleIndex: activeModuleIndex,
+      activeTrainingSlideIndex: activeSlide
+    });
+  }, [selectedJourney, activeSlide, setTrainingNav]);
 
   useEffect(() => {
     const onGotoSlide = (ev: Event) => {
-      const e = ev as CustomEvent<{ index?: number }>;
-      const idx = e.detail?.index;
-      if (typeof idx !== 'number' || idx < 0 || !selectedJourney) return;
-      const n = extractSlides(selectedJourney).length;
+      const e = ev as CustomEvent<{ index?: number; slideId?: string }>;
+      if (!selectedJourney) return;
+      const slides = extractSlides(selectedJourney);
+      const n = slides.length;
       if (n === 0) return;
+      let idx = e.detail?.index;
+      const sid = e.detail?.slideId;
+      if (typeof sid === 'string' && sid.trim()) {
+        const found = slides.findIndex((s) => slideStableId(s) === sid.trim());
+        if (found >= 0) idx = found;
+      }
+      if (typeof idx !== 'number' || idx < 0) return;
       setActiveSlide(Math.min(Math.max(0, idx), n - 1));
     };
     window.addEventListener('rep-training-goto-slide', onGotoSlide as EventListener);
@@ -549,20 +567,25 @@ export function Training() {
   );
 
   const postTrainingTrackingEvent = useCallback(
-    async (journeyId: string, moduleId: string, slideIndex: number, slideCount: number) => {
+    async (
+      journeyId: string,
+      moduleId: string,
+      payload: { slideIndex: number; slideCount: number; slideId: string }
+    ) => {
       if (!repId) return;
       const base = trainingApiBase();
       if (!base) return;
       try {
-        await axios.post(`${base}/training_journeys/tracking-events`, {
+        const body: Record<string, unknown> = {
           repId,
           journeyId,
           moduleId,
-          slideIndex,
-          event: 'slide_view',
-          sessionId: getOrCreateTrainingSessionId(),
-          meta: { slideCount }
-        });
+          slideIndex: payload.slideIndex,
+          event: 'slide_complete',
+          completed: true
+        };
+        if (payload.slideId) body.slideId = payload.slideId;
+        await axios.post(`${base}/training_journeys/tracking-events`, body);
       } catch (e) {
         console.warn('[Training] tracking-events save failed', e);
       }
@@ -583,7 +606,11 @@ export function Training() {
         payload.pct >= 100 ? 'completed' : 'in_progress';
       void (async () => {
         await pushProgress(jid, payload.moduleId, payload.pct, status);
-        await postTrainingTrackingEvent(jid, payload.moduleId, payload.slideIndex, payload.slideCount);
+        await postTrainingTrackingEvent(jid, payload.moduleId, {
+          slideIndex: payload.slideIndex,
+          slideCount: payload.slideCount,
+          slideId: payload.slideId
+        });
         await fetchSlideProgressSummary();
       })();
     }, 400);
@@ -664,14 +691,6 @@ export function Training() {
           </p>
           <p className="mt-2 text-2xl font-black text-gray-900 tabular-nums">
             {slideProgressSummary.overallPercent} %
-          </p>
-          <p className="mt-2 text-sm font-medium text-gray-700 leading-relaxed">
-            {slideProgressSummary.formulaHuman}
-          </p>
-          <p className="mt-1 text-xs text-gray-500">
-            Somme des ratios : {slideProgressSummary.sumOfRatios.toFixed(4)} (ex. 3/15 + 2/7) — puis division
-            par {slideProgressSummary.trainingCount} formation
-            {slideProgressSummary.trainingCount > 1 ? 's' : ''} pour obtenir la moyenne.
           </p>
           <ul className="mt-4 space-y-2 border-t border-harx-100 pt-4 text-sm text-gray-700">
             {slideProgressSummary.journeys.map((j) => (
