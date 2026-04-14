@@ -518,17 +518,22 @@ export function Training() {
 
   const fetchSlideProgressSummary = useCallback(async () => {
     if (!repId) return;
+    if (gigFilter === '__all__') {
+      setSlideProgressSummary(null);
+      return;
+    }
     const base = trainingApiBase();
     if (!base) return;
     try {
       const r = await axios.get<{ success?: boolean; data?: RepSlideProgressSummary }>(
-        `${base}/training_journeys/rep/${encodeURIComponent(repId)}/slide-progress-summary`
+        `${base}/training_journeys/rep/${encodeURIComponent(repId)}/slide-progress-summary`,
+        { params: { gigId: gigFilter } }
       );
       setSlideProgressSummary(r.data?.data ?? null);
     } catch {
       setSlideProgressSummary(null);
     }
-  }, [repId]);
+  }, [repId, gigFilter]);
 
   useEffect(() => {
     void fetchSlideProgressSummary();
@@ -684,26 +689,22 @@ export function Training() {
         </div>
       </div>
 
-      {!selectedJourney && slideProgressSummary && slideProgressSummary.trainingCount > 0 && (
-        <div className="rounded-2xl border border-harx-200 bg-gradient-to-br from-harx-50/90 to-white p-5 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-widest text-harx-600">
-            Progression globale (toutes les formations)
-          </p>
-          <p className="mt-2 text-2xl font-black text-gray-900 tabular-nums">
-            {slideProgressSummary.overallPercent} %
-          </p>
-          <ul className="mt-4 space-y-2 border-t border-harx-100 pt-4 text-sm text-gray-700">
-            {slideProgressSummary.journeys.map((j) => (
-              <li key={j.journeyId} className="flex flex-wrap items-baseline justify-between gap-2">
-                <span className="min-w-0 font-semibold text-gray-900 truncate">{j.journeyTitle}</span>
-                <span className="shrink-0 tabular-nums text-gray-600">
-                  {j.slidesTotal > 0 ? `${j.slidesSeen} / ${j.slidesTotal} slides` : '—'}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {!selectedJourney &&
+        gigFilter !== '__all__' &&
+        slideProgressSummary &&
+        slideProgressSummary.trainingCount > 0 && (
+          <div className="rounded-2xl border border-harx-200 bg-gradient-to-br from-harx-50/90 to-white p-5 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-widest text-harx-600">
+              Progression (formations du gig)
+            </p>
+            {selectedGigTitle ? (
+              <p className="mt-1 text-xs font-semibold text-gray-600 truncate">{selectedGigTitle}</p>
+            ) : null}
+            <p className="mt-2 text-2xl font-black text-gray-900 tabular-nums">
+              {slideProgressSummary.overallPercent} %
+            </p>
+          </div>
+        )}
 
       {listLoading && (
         <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-gray-600">
