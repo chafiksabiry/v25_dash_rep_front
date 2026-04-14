@@ -36,8 +36,9 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
         if (!gigId || gigId === '' || !selectedDate) return;
         try {
             setLoading(true);
-            const dateStr = format(selectedDate, 'yyyy-MM-dd');
-            const fetchedSlots = await slotApi.getSlots(gigId, dateStr);
+            // Important: fetch all gig slots, because backend can store recurring slots
+            // with day names ("Monday") and not only concrete dates ("yyyy-MM-dd").
+            const fetchedSlots = await slotApi.getSlots(gigId);
             setSlots(Array.isArray(fetchedSlots) ? fetchedSlots : []);
         } catch (error: any) {
             console.error('Error loading slots:', error);
@@ -152,7 +153,18 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
 
     try {
         dateStr = format(selectedDate, 'yyyy-MM-dd');
-        daySlots = Array.isArray(slots) ? slots.filter(s => s && s.date === dateStr) : [];
+        const selectedDayName = format(selectedDate, 'EEEE').toLowerCase();
+        daySlots = Array.isArray(slots)
+            ? slots.filter((s) => {
+                if (!s?.date) return false;
+                const raw = String(s.date).trim();
+                if (!raw) return false;
+                // Concrete date slot: yyyy-MM-dd
+                if (raw === dateStr) return true;
+                // Recurring weekly slot: Monday/Tuesday...
+                return raw.toLowerCase() === selectedDayName;
+            })
+            : [];
         isPastDate = dateStr < format(new Date(), 'yyyy-MM-dd');
     } catch (error) {
         console.error('Error formatting date:', error);
