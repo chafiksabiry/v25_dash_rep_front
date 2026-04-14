@@ -857,12 +857,6 @@ export function Training() {
                         style={{ width: `${slidesTotal > 0 ? slidePercent : 0}%` }}
                       />
                     </div>
-                    <p className="mt-1 text-[11px] text-gray-500 tabular-nums">
-                      {moduleFinished}/{moduleTotal || modules.length || 0} modules completed
-                      {slidesTotal > 0
-                        ? ` • ${slidesSeen}/${slidesTotal} slides • ${slidePercent}%`
-                        : ''}
-                    </p>
                   </div>
                 </div>
                 <div className="shrink-0 flex gap-2">
