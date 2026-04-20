@@ -113,6 +113,8 @@ export const fetchProfileFromAPI = async () => {
     // Handle different response structures
     const profileData = response.data.data || response.data;
 
+    console.log('✅ [Profile API] Agent profile data (populated):', profileData);
+
     if (!profileData) {
       throw new Error('No profile data found in response');
     }
