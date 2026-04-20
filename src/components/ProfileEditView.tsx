@@ -2207,27 +2207,29 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   renderIndustryDropdown={renderIndustryDropdown}
                   renderActivityDropdown={renderActivityDropdown}
                   tempCompany={tempCompany}
-                  setTempCompany={setTempCompany} handleProfileChange={function (field: string, value: any): void {
-                    throw new Error('Function not implemented.');
-                  }} validationErrors={undefined} renderError={function (field: string): React.ReactNode {
-                    throw new Error('Function not implemented.');
-                  }} imagePreview={null} isPhotoMarkedForDeletion={false} fileInputRef={undefined} handleImageChange={function (e: React.ChangeEvent<HTMLInputElement>): void {
-                    throw new Error('Function not implemented.');
-                  }} handleRemoveImage={function (): void {
-                    throw new Error('Function not implemented.');
-                  }} setImageToShow={function (img: string | null): void {
-                    throw new Error('Function not implemented.');
-                  }} setShowImageModal={function (show: boolean): void {
-                    throw new Error('Function not implemented.');
-                  }} countrySearchTerm={''} setCountrySearchTerm={function (s: string): void {
-                    throw new Error('Function not implemented.');
-                  }} isCountryDropdownOpen={false} setIsCountryDropdownOpen={function (open: boolean): void {
-                    throw new Error('Function not implemented.');
-                  }} filteredCountries={[]} setSelectedCountry={function (country: any): void {
-                    throw new Error('Function not implemented.');
-                  }} selectedCountryIndex={0} setSelectedCountryIndex={function (idx: number): void {
-                    throw new Error('Function not implemented.');
-                  }} checkingCountryMismatch={false} showLoadingSpinner={false} countryMismatch={false} />
+                  setTempCompany={setTempCompany}
+                  handleProfileChange={handleProfileChange}
+                  validationErrors={validationErrors}
+                  renderError={(field) => renderError(validationErrors[field], field)}
+                  imagePreview={imagePreview}
+                  isPhotoMarkedForDeletion={isPhotoMarkedForDeletion}
+                  fileInputRef={fileInputRef}
+                  handleImageChange={handleImageChange}
+                  handleRemoveImage={handleRemoveImage}
+                  setImageToShow={setImageToShow}
+                  setShowImageModal={setShowImageModal}
+                  countrySearchTerm={countrySearchTerm}
+                  setCountrySearchTerm={setCountrySearchTerm}
+                  isCountryDropdownOpen={isCountryDropdownOpen}
+                  setIsCountryDropdownOpen={setIsCountryDropdownOpen}
+                  filteredCountries={filteredCountries}
+                  setSelectedCountry={setSelectedCountry}
+                  selectedCountryIndex={selectedCountryIndex}
+                  setSelectedCountryIndex={setSelectedCountryIndex}
+                  checkingCountryMismatch={checkingCountryMismatch}
+                  showLoadingSpinner={showLoadingSpinner}
+                  countryMismatch={countryMismatch?.hasMismatch ?? false}
+                />
               )}
 
               {activeTab === 'skills' && (
