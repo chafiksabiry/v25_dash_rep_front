@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Edit } from 'lucide-react';
 import { getProfilePlan, checkCountryMismatch, updateProfileData } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 
