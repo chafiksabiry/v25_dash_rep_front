@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Pencil } from 'lucide-react';
-import { getProfilePlan, checkCountryMismatch, updateProfileData } from '../utils/profileUtils';
+import React, { useEffect, useRef, useState } from 'react';
+import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Pencil, Camera } from 'lucide-react';
+import { getProfilePlan, checkCountryMismatch, updateProfileData, fetchProfileFromAPI } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 import { fetchAllSkills, fetchSkillById, Skill, SkillsByCategory, SkillType } from '../services/api/skills';
 
@@ -86,6 +86,7 @@ export const ProfileView: React.FC<{
   } | null>(null);
   const [checkingCountryMismatch, setCheckingCountryMismatch] = useState(false);
   const [showLoadingSpinner, setShowLoadingSpinner] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isEditingPublicInfo, setIsEditingPublicInfo] = useState(false);
   const [isSavingPublicInfo, setIsSavingPublicInfo] = useState(false);
   const [publicInfoDraft, setPublicInfoDraft] = useState({
@@ -94,6 +95,7 @@ export const ProfileView: React.FC<{
     phone: '',
     growthPlan: ''
   });
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Load countries and all timezones on component mount
   useEffect(() => {
@@ -500,6 +502,47 @@ export const ProfileView: React.FC<{
     );
   };
 
+  const handlePhotoSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !profile?._id) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.alert('Authentication token missing.');
+      return;
+    }
+
+    try {
+      setIsUploadingPhoto(true);
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${profile._id}/photo`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Photo upload failed with status ${response.status}`);
+      }
+
+      // Refresh full profile so UI stays consistent with backend response shape
+      const refreshed = await fetchProfileFromAPI();
+      onProfileUpdate?.(refreshed);
+    } catch (error) {
+      console.error('Error uploading profile photo:', error);
+      window.alert('Failed to upload photo.');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (photoInputRef.current) {
+        photoInputRef.current.value = '';
+      }
+    }
+  };
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'profile': return <ProfileTab profile={profile} onSaveAbout={handleSaveAbout} onSaveVideo={handleSaveVideo} />;
@@ -609,6 +652,13 @@ export const ProfileView: React.FC<{
           <div className="flex flex-col md:flex-row gap-10 items-start">
             {/* Photo management */}
             <div className="relative group shrink-0">
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoSelect}
+                className="hidden"
+              />
               <div 
                 className="w-40 h-40 rounded-[32px] shadow-xl border-4 border-white bg-slate-200/50 overflow-hidden relative cursor-pointer ring-4 ring-harx-50 transition-transform group-hover:scale-[1.02]"
                 onClick={() => profile.personalInfo?.photo?.url && setShowImageModal(true)}
@@ -628,6 +678,15 @@ export const ProfileView: React.FC<{
                   <div className="text-white text-xs font-black uppercase tracking-widest bg-white/20 px-4 py-2 rounded-full border border-white/30 truncate">View Photo</div>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => !isUploadingPhoto && photoInputRef.current?.click()}
+                disabled={isUploadingPhoto}
+                className="absolute -top-2 -right-2 p-2 rounded-xl bg-gradient-harx text-white shadow-lg hover:opacity-90 disabled:opacity-60"
+                title="Change photo"
+              >
+                {isUploadingPhoto ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+              </button>
             </div>
 
             {/* Properties Grid */}
@@ -690,12 +749,26 @@ export const ProfileView: React.FC<{
                   <div className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-200 transition-colors">
                     <MapPin className="w-3.5 h-3.5 text-harx-400" />
                     {isEditingPublicInfo ? (
-                      <input
-                        type="text"
-                        value={publicInfoDraft.country}
-                        onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, country: e.target.value }))}
-                        className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
-                      />
+                      <>
+                        <input
+                          type="text"
+                          list="country-suggestions"
+                          value={publicInfoDraft.country}
+                          onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, country: e.target.value }))}
+                          placeholder="Search country..."
+                          className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
+                        />
+                        <datalist id="country-suggestions">
+                          {countries
+                            .slice()
+                            .sort((a, b) => String(a.countryName || '').localeCompare(String(b.countryName || '')))
+                            .map((country) => (
+                              <option key={country._id || country.countryCode || country.zoneName} value={country.countryName}>
+                                {country.countryCode ? `${country.countryName} (${country.countryCode})` : country.countryName}
+                              </option>
+                            ))}
+                        </datalist>
+                      </>
                     ) : (
                       <span className="text-sm font-bold text-slate-900">{getCountryDisplayName()}</span>
                     )}
