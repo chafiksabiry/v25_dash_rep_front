@@ -114,11 +114,11 @@ function AppContent() {
 
 function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen, isCollapsed, setIsCollapsed }: any) {
   const location = useLocation();
-  const isProfilePage = location.pathname.includes('/profile');
+  const isProfileEdit = location.pathname.includes('/profile') && location.search.includes('edit=true');
 
   return (
     <div className="flex h-screen bg-premium-gradient overflow-hidden">
-      {!isProfilePage && (
+      {!isProfileEdit && (
         <Sidebar 
           phases={userProfile?.onboardingProgress?.phases} 
           isSidebarOpen={isSidebarOpen}
@@ -128,13 +128,13 @@ function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen, isCollap
         />
       )}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {!isProfilePage && (
+        {!isProfileEdit && (
           <TopBar 
             isSidebarOpen={isSidebarOpen}
             setIsSidebarOpen={setIsSidebarOpen}
           />
         )}
-        <main className={`flex-1 overflow-y-auto ${isProfilePage ? 'p-0' : 'p-4'}`}>
+        <main className={`flex-1 overflow-y-auto ${isProfileEdit ? 'p-0' : 'p-4'}`}>
           <Routes>
             <Route path="/" element={
               <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
