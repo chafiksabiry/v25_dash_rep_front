@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pencil, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { fetchSkillsByType, Skill } from '../../../services/api/skills';
 
 interface SkillsTabProps {
@@ -51,6 +51,8 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
     professional: false,
     soft: false
   });
+  const [assessmentAddOpenCategory, setAssessmentAddOpenCategory] = useState<string | null>(null);
+  const [assessmentSelectedSkill, setAssessmentSelectedSkill] = useState<Record<string, string>>({});
   const technicalDropdownRef = useRef<HTMLDivElement | null>(null);
   const professionalDropdownRef = useRef<HTMLDivElement | null>(null);
   const softDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -264,7 +266,50 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
             }
           ].filter(category => category.skills.length > 0).map((category) => (
             <div key={category.name} className="space-y-4">
-              <h3 className="text-md font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200/30 pb-2">{category.name}</h3>
+              <div className="flex items-center justify-between border-b border-slate-200/30 pb-2">
+                <h3 className="text-md font-bold text-slate-400 uppercase tracking-widest">{category.name}</h3>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAssessmentAddOpenCategory((prev) => (prev === category.name ? null : category.name))
+                  }
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add
+                </button>
+              </div>
+
+              {assessmentAddOpenCategory === category.name && (
+                <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
+                  <select
+                    value={assessmentSelectedSkill[category.name] || ''}
+                    onChange={(e) =>
+                      setAssessmentSelectedSkill((prev) => ({ ...prev, [category.name]: e.target.value }))
+                    }
+                    className="flex-1 px-3 py-2.5 text-sm font-semibold rounded-xl border border-harx-100/80 bg-white text-harx-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-200"
+                  >
+                    <option value="">Select skill...</option>
+                    {category.skills.map((skillName: string) => (
+                      <option key={`${category.name}-${skillName}`} value={skillName}>
+                        {skillName}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const selected = assessmentSelectedSkill[category.name];
+                      if (!selected) return;
+                      takeContactCenterSkillAssessment(selected, category.name);
+                    }}
+                    className="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-harx text-white hover:opacity-90 transition-all"
+                  >
+                    Start
+                  </button>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 gap-4">
                 {category.skills.map((skillName: string) => {
                   const skillData = findSkillData(skillName);
@@ -286,17 +331,6 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                         )}
                       </div>
                       
-                      <button
-                        type="button"
-                        onClick={onEditItemClick}
-                        className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-harx-50 text-harx-700 border border-harx-100 hover:bg-harx-100 transition-all"
-                      >
-                        <span className="inline-flex items-center gap-1">
-                          <Pencil className="w-3.5 h-3.5" />
-                          Edit
-                        </span>
-                      </button>
-
                       <button
                         type="button"
                         onClick={() => takeContactCenterSkillAssessment(skillName, category.name)}
