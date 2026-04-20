@@ -48,9 +48,6 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
           }
         };
         
-        console.log('✅ TopBar component: Profile data loaded successfully');
-        console.log('📸 Profile photo URL:', userInfo.photo);
-        
         setProfileData(adaptedProfileData);
       } else {
         console.log('⚠️ TopBar component: No profile data available');
