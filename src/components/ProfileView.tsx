@@ -171,10 +171,27 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       if (toFetch.length === 0) return;
 
       try {
+        const tryResolveSkillAcrossTypes = async (id: string, preferredType: SkillType): Promise<string | null> => {
+          const orderedTypes: SkillType[] = [
+            preferredType,
+            ...(['technical', 'professional', 'soft'] as SkillType[]).filter(t => t !== preferredType)
+          ];
+
+          for (const type of orderedTypes) {
+            try {
+              const skill = await fetchSkillById(id, type);
+              if (skill?.name) return skill.name;
+            } catch {
+              // continue trying other types
+            }
+          }
+          return null;
+        };
+
         const fetched = await Promise.all(
           toFetch.map(async ({ id, type }) => {
-            const skill = await fetchSkillById(id, type);
-            return { id, name: skill?.name || null };
+            const resolvedName = await tryResolveSkillAcrossTypes(id, type);
+            return { id, name: resolvedName };
           })
         );
 
@@ -182,6 +199,11 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
           if (curr.name) acc[curr.id] = curr.name;
           return acc;
         }, {} as Record<string, string>);
+
+        const unresolved = fetched.filter((f) => !f.name).map((f) => f.id);
+        if (unresolved.length > 0) {
+          console.warn('[ProfileView] Unresolved skill IDs after cross-type lookup:', unresolved);
+        }
 
         if (Object.keys(additions).length > 0) {
           setSkillNameById((prev) => ({ ...prev, ...additions }));
@@ -303,7 +325,8 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
 
       const skillId = normalizeId(item?._id) || normalizeId(item?.id) || normalizeId(item?.skill);
       const resolvedById = skillId ? skillNameById[skillId] : null;
-      return { name: resolvedById || (typeof item?.skill === 'string' ? item.skill : null) || 'Unknown' };
+      const detailsFallback = typeof item?.details === 'string' && item.details.trim() ? item.details.trim() : null;
+      return { name: resolvedById || detailsFallback || (typeof item?.skill === 'string' ? item.skill : null) || 'Unknown' };
     });
   };
 
@@ -318,6 +341,11 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       technical: profile.skills.technical,
       professional: profile.skills.professional,
       soft: profile.skills.soft
+    });
+    console.log('[ProfileView] Agent skills (raw JSON)', {
+      technical: JSON.stringify(profile.skills.technical || []),
+      professional: JSON.stringify(profile.skills.professional || []),
+      soft: JSON.stringify(profile.skills.soft || [])
     });
     console.log('[ProfileView] Agent skills (resolved)', {
       technical,

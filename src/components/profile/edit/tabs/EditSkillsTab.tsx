@@ -19,6 +19,15 @@ export const EditSkillsTab: React.FC<EditSkillsTabProps> = ({
   handleSkillsChange,
   renderSkillDropdown
 }) => {
+  const normalizeId = (raw: any): string | null => {
+    if (!raw) return null;
+    if (typeof raw === 'string') return raw;
+    if (typeof raw === 'object' && typeof raw.$oid === 'string') return raw.$oid;
+    if (typeof raw === 'object' && typeof raw._id === 'string') return raw._id;
+    if (typeof raw === 'object' && typeof raw.id === 'string') return raw.id;
+    return null;
+  };
+
   const resolveFallbackName = (skillRef: any): string => {
     if (!skillRef) return 'Unknown Skill';
     if (typeof skillRef === 'string') return skillRef;
@@ -30,6 +39,7 @@ export const EditSkillsTab: React.FC<EditSkillsTabProps> = ({
       if (typeof skillRef.skill.label === 'string' && skillRef.skill.label.trim()) return skillRef.skill.label;
       if (typeof skillRef.skill.title === 'string' && skillRef.skill.title.trim()) return skillRef.skill.title;
     }
+    if (typeof skillRef?.details === 'string' && skillRef.details.trim()) return skillRef.details;
     return 'Unknown Skill';
   };
 
@@ -93,7 +103,10 @@ export const EditSkillsTab: React.FC<EditSkillsTabProps> = ({
               {currentSkills.length > 0 ? (
                 currentSkills.map((skillRef: any, idx: number) => {
                   const skillDataForType = skillsData[cat.type];
-                  const skillId = typeof skillRef === 'string' ? skillRef : skillRef.skill;
+                  const skillId =
+                    normalizeId(typeof skillRef === 'string' ? skillRef : skillRef?.skill) ||
+                    normalizeId(skillRef?._id) ||
+                    normalizeId(skillRef?.id);
                   const skillObj = Object.values(skillDataForType).flat().find((s: Skill) => s._id === skillId);
                   const fallbackName = resolveFallbackName(skillRef);
                   
