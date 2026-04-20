@@ -86,6 +86,14 @@ export const ProfileView: React.FC<{
   } | null>(null);
   const [checkingCountryMismatch, setCheckingCountryMismatch] = useState(false);
   const [showLoadingSpinner, setShowLoadingSpinner] = useState(false);
+  const [isEditingPublicInfo, setIsEditingPublicInfo] = useState(false);
+  const [isSavingPublicInfo, setIsSavingPublicInfo] = useState(false);
+  const [publicInfoDraft, setPublicInfoDraft] = useState({
+    country: '',
+    email: '',
+    phone: '',
+    growthPlan: ''
+  });
 
   // Load countries and all timezones on component mount
   useEffect(() => {
@@ -399,77 +407,74 @@ export const ProfileView: React.FC<{
     }
   };
 
-  const handleInlineEditPublicProperties = async () => {
-    const nextCountry = window.prompt('Current Country', String((profile as any)?.personalInfo?.country?.countryName || (profile as any)?.personalInfo?.country || ''));
-    if (nextCountry === null) return;
-    const nextEmail = window.prompt('Direct Contact (Email)', String(profile.personalInfo?.email || ''));
-    if (nextEmail === null) return;
-    const nextPhone = window.prompt('Phone Line', String(profile.personalInfo?.phone || ''));
-    if (nextPhone === null) return;
-    const nextGrowthPlan = window.prompt('Growth Plan', String(planData?.plan?.name || 'Standard Representative'));
-    if (nextGrowthPlan === null) return;
+  const openPublicInfoEditor = () => {
+    setPublicInfoDraft({
+      country: String(countryData?.countryName || (profile as any)?.personalInfo?.country?.countryName || (profile as any)?.personalInfo?.country || ''),
+      email: String(profile.personalInfo?.email || ''),
+      phone: String(profile.personalInfo?.phone || ''),
+      growthPlan: String((profile as any)?.professionalSummary?.growthPlanLabel || planData?.plan?.name || 'Standard Representative')
+    });
+    setIsEditingPublicInfo(true);
+  };
 
+  const savePublicInfoInline = async () => {
+    if (!profile?._id) return;
+    setIsSavingPublicInfo(true);
     const payload = {
       personalInfo: {
         ...profile.personalInfo,
-        country: nextCountry,
-        email: nextEmail,
-        phone: nextPhone,
+        country: publicInfoDraft.country,
+        email: publicInfoDraft.email,
+        phone: publicInfoDraft.phone,
       },
       professionalSummary: {
         ...profile.professionalSummary,
-        // Keep a user-editable label in profile summary while staying in same UI
-        growthPlanLabel: nextGrowthPlan,
+        growthPlanLabel: publicInfoDraft.growthPlan,
       }
     };
-
     await handleInlineUpdate(payload, (prev) => ({
       ...prev,
       personalInfo: {
         ...(prev.personalInfo || {}),
-        country: nextCountry,
-        email: nextEmail,
-        phone: nextPhone,
+        country: publicInfoDraft.country,
+        email: publicInfoDraft.email,
+        phone: publicInfoDraft.phone,
       },
       professionalSummary: {
         ...(prev.professionalSummary || {}),
-        growthPlanLabel: nextGrowthPlan,
+        growthPlanLabel: publicInfoDraft.growthPlan,
       }
     }));
+    setIsSavingPublicInfo(false);
+    setIsEditingPublicInfo(false);
   };
 
-  const handleInlineEditAbout = async () => {
-    const current = String(profile.professionalSummary?.profileDescription || '');
-    const next = window.prompt('About', current);
-    if (next === null) return;
+  const handleSaveAbout = async (value: string) => {
     await handleInlineUpdate(
       {
         professionalSummary: {
           ...profile.professionalSummary,
-          profileDescription: next,
+          profileDescription: value,
         }
       },
       (prev) => ({
         ...prev,
         professionalSummary: {
           ...(prev.professionalSummary || {}),
-          profileDescription: next,
+          profileDescription: value,
         }
       })
     );
   };
 
-  const handleInlineEditVideo = async () => {
-    const current = String(profile.personalInfo?.presentationVideo?.url || '');
-    const next = window.prompt('Introduction Video URL', current);
-    if (next === null) return;
+  const handleSaveVideo = async (value: string) => {
     await handleInlineUpdate(
       {
         personalInfo: {
           ...profile.personalInfo,
           presentationVideo: {
             ...(profile.personalInfo?.presentationVideo || {}),
-            url: next,
+            url: value,
           }
         }
       },
@@ -479,7 +484,7 @@ export const ProfileView: React.FC<{
           ...(prev.personalInfo || {}),
           presentationVideo: {
             ...(prev.personalInfo?.presentationVideo || {}),
-            url: next,
+            url: value,
           }
         }
       })
@@ -488,7 +493,7 @@ export const ProfileView: React.FC<{
 
   const renderActiveTab = () => {
     switch (activeTab) {
-      case 'profile': return <ProfileTab profile={profile} onEditAbout={handleInlineEditAbout} onEditVideo={handleInlineEditVideo} />;
+      case 'profile': return <ProfileTab profile={profile} onSaveAbout={handleSaveAbout} onSaveVideo={handleSaveVideo} />;
       case 'skills': return (
         <SkillsTab 
           profile={profile} 
@@ -538,7 +543,7 @@ export const ProfileView: React.FC<{
           onAddItemClick={(section, value) => onAddSpecializationItem?.(section, value)}
         />
       );
-      default: return <ProfileTab profile={profile} onEditAbout={handleInlineEditAbout} onEditVideo={handleInlineEditVideo} />;
+      default: return <ProfileTab profile={profile} onSaveAbout={handleSaveAbout} onSaveVideo={handleSaveVideo} />;
     }
   };
 
@@ -639,14 +644,34 @@ export const ProfileView: React.FC<{
             </div>
 
               <div className="flex items-center justify-end mb-3">
-                <button
-                  type="button"
-                  onClick={handleInlineEditPublicProperties}
-                  className="inline-flex items-center justify-center p-2 rounded-lg bg-gradient-harx text-white hover:opacity-90 transition-all"
-                  title="Edit Public Properties"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
+                {!isEditingPublicInfo ? (
+                  <button
+                    type="button"
+                    onClick={openPublicInfoEditor}
+                    className="inline-flex items-center justify-center p-2 rounded-lg bg-gradient-harx text-white hover:opacity-90 transition-all"
+                    title="Edit Public Properties"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingPublicInfo(false)}
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={savePublicInfoInline}
+                      disabled={isSavingPublicInfo}
+                      className="px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-60"
+                    >
+                      {isSavingPublicInfo ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
@@ -655,7 +680,16 @@ export const ProfileView: React.FC<{
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Country</label>
                   <div className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-200 transition-colors">
                     <MapPin className="w-3.5 h-3.5 text-harx-400" />
-                    <span className="text-sm font-bold text-slate-900">{countryData?.countryName || 'Not specified'}</span>
+                    {isEditingPublicInfo ? (
+                      <input
+                        type="text"
+                        value={publicInfoDraft.country}
+                        onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, country: e.target.value }))}
+                        className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
+                      />
+                    ) : (
+                      <span className="text-sm font-bold text-slate-900">{countryData?.countryName || (profile as any)?.personalInfo?.country || 'Not specified'}</span>
+                    )}
                     {countryMismatch?.hasMismatch && (
                       <div className="ml-auto w-2 h-2 bg-amber-500 rounded-full animate-pulse" title="Location mismatch" />
                     )}
@@ -665,19 +699,37 @@ export const ProfileView: React.FC<{
                 {/* Email */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Direct Contact</label>
-                  <a href={`mailto:${profile.personalInfo?.email}`} className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-500 hover:text-harx-600 transition-all">
+                  <div className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-500 hover:text-harx-600 transition-all">
                     <Mail className="w-3.5 h-3.5 text-slate-400 group-hover:text-harx-500" />
-                    <span className="text-sm font-bold text-slate-900 truncate max-w-[120px]">{profile.personalInfo?.email || 'N/A'}</span>
-                  </a>
+                    {isEditingPublicInfo ? (
+                      <input
+                        type="email"
+                        value={publicInfoDraft.email}
+                        onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, email: e.target.value }))}
+                        className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
+                      />
+                    ) : (
+                      <span className="text-sm font-bold text-slate-900 truncate max-w-[120px]">{profile.personalInfo?.email || 'N/A'}</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Phone */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Line</label>
-                  <a href={`tel:${profile.personalInfo?.phone}`} className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-500 hover:text-harx-600 transition-all">
+                  <div className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-500 hover:text-harx-600 transition-all">
                     <Phone className="w-3.5 h-3.5 text-slate-400 group-hover:text-harx-500" />
-                    <span className="text-sm font-bold text-slate-900">{profile.personalInfo?.phone || 'N/A'}</span>
-                  </a>
+                    {isEditingPublicInfo ? (
+                      <input
+                        type="text"
+                        value={publicInfoDraft.phone}
+                        onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, phone: e.target.value }))}
+                        className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
+                      />
+                    ) : (
+                      <span className="text-sm font-bold text-slate-900">{profile.personalInfo?.phone || 'N/A'}</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -701,9 +753,18 @@ export const ProfileView: React.FC<{
                   </div>
                   <div className="relative z-10">
                     <div className="text-[10px] font-black text-harx-alt-400 uppercase tracking-widest">Growth Plan</div>
-                    <div className="text-lg font-black text-harx-alt-900 tracking-tight leading-none mt-0.5">
-                      {(profile as any)?.professionalSummary?.growthPlanLabel || planData?.plan?.name || "Standard Representative"}
-                    </div>
+                    {isEditingPublicInfo ? (
+                      <input
+                        type="text"
+                        value={publicInfoDraft.growthPlan}
+                        onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, growthPlan: e.target.value }))}
+                        className="w-full text-lg font-black text-harx-alt-900 tracking-tight leading-none mt-0.5 bg-transparent outline-none"
+                      />
+                    ) : (
+                      <div className="text-lg font-black text-harx-alt-900 tracking-tight leading-none mt-0.5">
+                        {(profile as any)?.professionalSummary?.growthPlanLabel || planData?.plan?.name || "Standard Representative"}
+                      </div>
+                    )}
                   </div>
                </div>
             </div>

@@ -1,14 +1,23 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Clock, Calendar, Pencil } from 'lucide-react';
 
 interface ProfileTabProps {
   profile: any;
-  onEditItemClick?: () => void;
-  onEditAbout?: () => void;
-  onEditVideo?: () => void;
+  onSaveAbout?: (value: string) => Promise<void> | void;
+  onSaveVideo?: (value: string) => Promise<void> | void;
 }
 
-export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onEditAbout, onEditVideo }) => {
+export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, onSaveVideo }) => {
+  const [isEditingAbout, setIsEditingAbout] = useState(false);
+  const [isEditingVideo, setIsEditingVideo] = useState(false);
+  const [aboutDraft, setAboutDraft] = useState('');
+  const [videoDraft, setVideoDraft] = useState('');
+
+  useEffect(() => {
+    setAboutDraft(String(profile?.professionalSummary?.profileDescription || ''));
+    setVideoDraft(String(profile?.personalInfo?.presentationVideo?.url || ''));
+  }, [profile?.professionalSummary?.profileDescription, profile?.personalInfo?.presentationVideo?.url]);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* About Section */}
@@ -17,7 +26,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onEditAbout, on
           <h2 className="text-xl font-black text-harx-900 tracking-tight">About</h2>
           <button
             type="button"
-            onClick={onEditAbout}
+            onClick={() => setIsEditingAbout(true)}
             className="inline-flex items-center justify-center p-2 rounded-lg bg-gradient-harx text-white hover:opacity-90 transition-all"
             title="Edit About"
           >
@@ -27,7 +36,38 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onEditAbout, on
         
         {/* Profile Description */}
         <div className="mb-6">
-          {profile.professionalSummary?.profileDescription ? (
+          {isEditingAbout ? (
+            <div className="space-y-3">
+              <textarea
+                value={aboutDraft}
+                onChange={(e) => setAboutDraft(e.target.value)}
+                rows={5}
+                className="w-full px-3 py-2.5 text-sm rounded-xl border border-harx-100 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-harx-200"
+              />
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAboutDraft(String(profile?.professionalSummary?.profileDescription || ''));
+                    setIsEditingAbout(false);
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await onSaveAbout?.(aboutDraft);
+                    setIsEditingAbout(false);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-bold uppercase tracking-wider hover:opacity-90"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          ) : profile.professionalSummary?.profileDescription ? (
             <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{profile.professionalSummary.profileDescription}</p>
           ) : (
             <p className="text-slate-500 italic">No professional summary provided</p>
@@ -40,13 +80,47 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onEditAbout, on
             <h3 className="text-lg font-bold text-harx-900">Introduction Video</h3>
             <button
               type="button"
-              onClick={onEditVideo}
+              onClick={() => setIsEditingVideo(true)}
               className="inline-flex items-center justify-center p-2 rounded-lg bg-gradient-harx text-white hover:opacity-90 transition-all"
               title="Edit Video"
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
           </div>
+
+          {isEditingVideo && (
+            <div className="mb-4 space-y-3">
+              <input
+                type="text"
+                value={videoDraft}
+                onChange={(e) => setVideoDraft(e.target.value)}
+                placeholder="Paste video URL..."
+                className="w-full px-3 py-2.5 text-sm rounded-xl border border-harx-100 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-harx-200"
+              />
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVideoDraft(String(profile?.personalInfo?.presentationVideo?.url || ''));
+                    setIsEditingVideo(false);
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await onSaveVideo?.(videoDraft);
+                    setIsEditingVideo(false);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-bold uppercase tracking-wider hover:opacity-90"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          )}
           
           {profile.personalInfo?.presentationVideo?.url ? (
             <div className="space-y-4">
