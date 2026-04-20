@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, Plus, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 
 interface SkillsTabProps {
   profile: any;
@@ -64,24 +64,14 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
         <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-black text-harx-900">Technical</h2>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onEditItemClick}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add
-              </button>
-              <button
-                type="button"
-                onClick={onEditItemClick}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                Edit
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onEditItemClick}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add
+            </button>
           </div>
           <div className="flex flex-wrap gap-2">
             {formatSkillsForDisplay(profile.skills?.technical).map((skill: any, idx: number) =>
@@ -94,24 +84,14 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
         <div className="bg-harx-alt-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-alt-100/70">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-black text-harx-alt-900">Professional</h2>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onEditItemClick}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add
-              </button>
-              <button
-                type="button"
-                onClick={onEditItemClick}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                Edit
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onEditItemClick}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add
+            </button>
           </div>
           <div className="flex flex-wrap gap-2">
             {formatSkillsForDisplay(profile.skills?.professional).map((skill: any, idx: number) =>
@@ -124,24 +104,14 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
         <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-black text-harx-900">Soft Skills</h2>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onEditItemClick}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add
-              </button>
-              <button
-                type="button"
-                onClick={onEditItemClick}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                Edit
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onEditItemClick}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add
+            </button>
           </div>
           <div className="flex flex-wrap gap-2">
             {formatSkillsForDisplay(profile.skills?.soft).map((skill: any, idx: number) =>
