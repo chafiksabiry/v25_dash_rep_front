@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { fetchSkillsByType, Skill } from '../../../services/api/skills';
+import { repApiClient } from '../../../utils/client';
 
 interface SkillsTabProps {
   profile: any;
@@ -51,6 +52,8 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
     professional: false,
     soft: false
   });
+  const [activityNameById, setActivityNameById] = useState<Record<string, string>>({});
+  const [industryNameById, setIndustryNameById] = useState<Record<string, string>>({});
   const technicalDropdownRef = useRef<HTMLDivElement | null>(null);
   const professionalDropdownRef = useRef<HTMLDivElement | null>(null);
   const softDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -73,6 +76,34 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
       }
     };
     loadSkills();
+  }, []);
+
+  useEffect(() => {
+    const loadSpecializationDictionaries = async () => {
+      try {
+        const [activitiesRes, industriesRes] = await Promise.all([
+          repApiClient.get('/api/activities'),
+          repApiClient.get('/api/industries')
+        ]);
+        const activities = activitiesRes?.data?.data || [];
+        const industries = industriesRes?.data?.data || [];
+
+        const activityMap = activities.reduce((acc: Record<string, string>, item: any) => {
+          if (item?._id && item?.name) acc[String(item._id)] = String(item.name);
+          return acc;
+        }, {});
+        const industryMap = industries.reduce((acc: Record<string, string>, item: any) => {
+          if (item?._id && item?.name) acc[String(item._id)] = String(item.name);
+          return acc;
+        }, {});
+
+        setActivityNameById(activityMap);
+        setIndustryNameById(industryMap);
+      } catch (error) {
+        console.error('Error loading activity/industry names in SkillsTab:', error);
+      }
+    };
+    loadSpecializationDictionaries();
   }, []);
 
   useEffect(() => {
@@ -257,13 +288,23 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
             {
               name: "Activities",
               skills: (profile.professionalSummary?.activities || [])
-                .map((a: any) => typeof a === 'string' ? a : a?.name || '')
+                .map((a: any) => {
+                  if (typeof a === 'string') return activityNameById[a] || a;
+                  if (a?.name) return a.name;
+                  if (a?._id) return activityNameById[String(a._id)] || '';
+                  return '';
+                })
                 .filter((name: string) => !!name)
             },
             {
               name: "Industries",
               skills: (profile.professionalSummary?.industries || [])
-                .map((i: any) => typeof i === 'string' ? i : i?.name || '')
+                .map((i: any) => {
+                  if (typeof i === 'string') return industryNameById[i] || i;
+                  if (i?.name) return i.name;
+                  if (i?._id) return industryNameById[String(i._id)] || '';
+                  return '';
+                })
                 .filter((name: string) => !!name)
             }
           ].filter(category => category.skills.length > 0).map((category) => (
