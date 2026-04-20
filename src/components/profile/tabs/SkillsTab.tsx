@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pencil, X } from 'lucide-react';
 import { fetchSkillsByType, Skill } from '../../../services/api/skills';
 
@@ -51,6 +51,9 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
     professional: false,
     soft: false
   });
+  const technicalDropdownRef = useRef<HTMLDivElement | null>(null);
+  const professionalDropdownRef = useRef<HTMLDivElement | null>(null);
+  const softDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const loadSkills = async () => {
@@ -70,6 +73,27 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
       }
     };
     loadSkills();
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const clickedInsideAnyDropdown =
+        technicalDropdownRef.current?.contains(target) ||
+        professionalDropdownRef.current?.contains(target) ||
+        softDropdownRef.current?.contains(target);
+
+      if (!clickedInsideAnyDropdown) {
+        setDropdownOpenByType({
+          technical: false,
+          professional: false,
+          soft: false
+        });
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
   const normalizeId = (raw: any): string | null => {
@@ -188,7 +212,9 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               renderSkillChip('technical', skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30 italic')
             )}
           </div>
-          {renderAddDropdown('technical')}
+          <div ref={technicalDropdownRef}>
+            {renderAddDropdown('technical')}
+          </div>
         </div>
 
         {/* Professional Skills */}
@@ -201,7 +227,9 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               renderSkillChip('professional', skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30')
             )}
           </div>
-          {renderAddDropdown('professional')}
+          <div ref={professionalDropdownRef}>
+            {renderAddDropdown('professional')}
+          </div>
         </div>
 
         {/* Soft Skills */}
@@ -214,7 +242,9 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               renderSkillChip('soft', skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30')
             )}
           </div>
-          {renderAddDropdown('soft')}
+          <div ref={softDropdownRef}>
+            {renderAddDropdown('soft')}
+          </div>
         </div>
       </div>
 
