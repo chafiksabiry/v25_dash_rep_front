@@ -284,9 +284,12 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                 <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
                   <select
                     value={assessmentSelectedSkill[category.name] || ''}
-                    onChange={(e) =>
-                      setAssessmentSelectedSkill((prev) => ({ ...prev, [category.name]: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      const selected = e.target.value;
+                      setAssessmentSelectedSkill((prev) => ({ ...prev, [category.name]: selected }));
+                      if (!selected) return;
+                      takeContactCenterSkillAssessment(selected, category.name);
+                    }}
                     className="flex-1 px-3 py-2.5 text-sm font-semibold rounded-xl border border-harx-100/80 bg-white text-harx-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-200"
                   >
                     <option value="">Select skill...</option>
@@ -296,17 +299,6 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                       </option>
                     ))}
                   </select>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const selected = assessmentSelectedSkill[category.name];
-                      if (!selected) return;
-                      takeContactCenterSkillAssessment(selected, category.name);
-                    }}
-                    className="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-harx text-white hover:opacity-90 transition-all"
-                  >
-                    Start
-                  </button>
                 </div>
               )}
 
