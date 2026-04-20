@@ -88,9 +88,22 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
 
         await forcePlay();
 
+        // Fallback for browsers that don't fire loaded* events reliably.
+        const readinessCheckInterval = window.setInterval(() => {
+          if (videoEl.readyState >= 2 && videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+            setIsLivePreviewReady(true);
+            window.clearInterval(readinessCheckInterval);
+          }
+        }, 150);
+
+        // Stop polling after a short timeout to avoid leaks.
+        window.setTimeout(() => {
+          window.clearInterval(readinessCheckInterval);
+        }, 4000);
+
         // Browser fallback: sometimes stream is attached but first paint stays black.
         window.setTimeout(async () => {
-          if (isLivePreviewReady) return;
+          if (videoEl.readyState >= 2 && videoEl.videoWidth > 0) return;
           try {
             videoEl.srcObject = null;
             videoEl.srcObject = stream;
@@ -100,6 +113,12 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
           }
         }, 700);
       }
+
+      const [videoTrack] = stream.getVideoTracks();
+      if (videoTrack) {
+        videoTrack.onunmute = () => setIsLivePreviewReady(true);
+      }
+
       setIsRecorderReady(true);
       setRecordedVideoBlob(null);
       if (recordedVideoUrl) {
