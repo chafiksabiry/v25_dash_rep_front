@@ -604,28 +604,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       }
     };
 
-    const handleProfileChange = (field: string, value: any) => {
-      if (['name', 'email', 'phone', 'country'].includes(field)) {
-        setProfile((prev: any) => ({
-          ...prev,
-          personalInfo: {
-            ...prev.personalInfo,
-            [field]: value
-          }
-        }));
-        setModifiedSections(prev => ({ ...prev, personalInfo: true }));
-      } else if (field === 'currentRole') {
-        setProfile((prev: any) => ({
-          ...prev,
-          professionalSummary: {
-            ...prev.professionalSummary,
-            currentRole: value
-          }
-        }));
-        setModifiedSections(prev => ({ ...prev, professionalSummary: true }));
-      }
-    };
-
     loadActivities();
   }, []);
 
@@ -2107,21 +2085,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     checkMismatch();
   }, [selectedCountry, countries]);
 
-  const [activeTab, setActiveTab] = useState('profile');
 
-  const handleProfileChange = (field: string, value: any) => {
-    setProfile((prev: Profile) => ({
-      ...prev,
-      personalInfo: {
-        ...prev.personalInfo,
-        [field]: value
-      }
-    }));
-    setModifiedSections(prev => ({
-      ...prev,
-      personalInfo: true
-    }));
-  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -2397,20 +2361,23 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       )}
 
       {toast.show && (
-        <div className={`fixed bottom-8 right-8 px-8 py-4 rounded-2xl shadow-2xl transition-all transform duration-500 z-[110] flex items-center gap-4 border ${toast.type === 'success'
-            ? 'bg-emerald-500 text-white border-emerald-400'
+        <div className={`fixed bottom-8 right-8 px-8 py-4 rounded-2xl shadow-2xl transition-all transform duration-500 z-[110] flex items-center gap-4 border animate-in slide-in-from-right-4 ${
+          toast.type === 'success' 
+            ? 'bg-emerald-500 text-white border-emerald-400' 
             : 'bg-rose-500 text-white border-rose-400'
-          }`}>
-        </svg>
-      ) : (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-      </svg>
-            )}
-      <span className="font-medium">{toast.message}</span>
-    </div>
-        </div >
+        }`}>
+          {toast.type === 'success' ? (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          )}
+          <span className="font-medium">{toast.message}</span>
+        </div>
       )}
-    </div >
+    </div>
   );
-}; 
+};
