@@ -260,15 +260,24 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
             ...CONTACT_CENTER_SKILLS,
             {
               name: "Activities",
-              skills: (profile.professionalSummary?.activities || []).map((a: any) => typeof a === 'string' ? a : a.name)
+              skills: (profile.professionalSummary?.activities || [])
+                .map((a: any) => typeof a === 'string' ? a : a?.name || '')
+                .filter((name: string) => !!name)
             },
             {
               name: "Industries",
-              skills: (profile.professionalSummary?.industries || []).map((i: any) => typeof i === 'string' ? i : i.name)
+              skills: (profile.professionalSummary?.industries || [])
+                .map((i: any) => typeof i === 'string' ? i : i?.name || '')
+                .filter((name: string) => !!name)
             }
           ].filter(category => category.skills.length > 0).map((category) => (
             <div key={category.name} className="space-y-4">
               {(() => {
+                const isBaseContactCategory =
+                  category.name === 'Communication' ||
+                  category.name === 'Problem Solving' ||
+                  category.name === 'Customer Service';
+
                 const allContactCenterEntries = (profile.skills?.contactCenter || []) as any[];
                 const categorySkillSet = new Set(category.skills.map((s: string) => s.toLowerCase()));
                 const summaryActivities = (profile.professionalSummary?.activities || []).map((a: any) =>
@@ -302,9 +311,15 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                   (skillName: string) => !selectedInCategory.has(skillName.toLowerCase())
                 );
 
-                const displayCategorySkills = selectedEntriesInCategory
+                let displayCategorySkills = selectedEntriesInCategory
                   .map((entry: any) => String(entry?.skill || '').trim())
                   .filter((name: string) => !!name);
+
+                // For base contact-center categories, keep default catalog visible if no explicit selection yet.
+                if (isBaseContactCategory && displayCategorySkills.length === 0) {
+                  displayCategorySkills = category.skills;
+                  displayCategorySkills.forEach((name: string) => selectedInCategory.add(name.toLowerCase()));
+                }
 
                 return (
                   <>
