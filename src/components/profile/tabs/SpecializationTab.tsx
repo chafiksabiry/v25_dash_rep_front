@@ -31,13 +31,13 @@ export const SpecializationTab: React.FC<SpecializationTabProps> = ({ profile, o
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Industries Section */}
-      <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
+      <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">Primary Industries</h2>
+          <h2 className="text-xl font-black text-harx-900 tracking-tight">Primary Industries</h2>
           <button
             type="button"
             onClick={onEditItemClick}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
           >
             <Pencil className="w-3.5 h-3.5" />
             Edit
@@ -61,13 +61,13 @@ export const SpecializationTab: React.FC<SpecializationTabProps> = ({ profile, o
       </div>
 
       {/* Activities Section */}
-      <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
+      <div className="bg-harx-alt-50/25 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-alt-100/70">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">Professional Activities</h2>
+          <h2 className="text-xl font-black text-harx-alt-900 tracking-tight">Professional Activities</h2>
           <button
             type="button"
             onClick={onEditItemClick}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
           >
             <Pencil className="w-3.5 h-3.5" />
             Edit
@@ -92,13 +92,13 @@ export const SpecializationTab: React.FC<SpecializationTabProps> = ({ profile, o
 
       {/* Notable Companies */}
       {profile.professionalSummary?.notableCompanies?.length > 0 && (
-        <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
+        <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">Notable Companies Worked For</h2>
+            <h2 className="text-xl font-black text-harx-900 tracking-tight">Notable Companies Worked For</h2>
             <button
               type="button"
               onClick={onEditItemClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
             >
               <Pencil className="w-3.5 h-3.5" />
               Edit

@@ -61,13 +61,13 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
       {/* Skill Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Technical Skills */}
-        <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
+        <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-black text-slate-900">Technical</h2>
+            <h2 className="text-lg font-black text-harx-900">Technical</h2>
             <button
               type="button"
               onClick={onEditItemClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
             >
               <Pencil className="w-3.5 h-3.5" />
               Edit
@@ -81,13 +81,13 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
         </div>
 
         {/* Professional Skills */}
-        <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
+        <div className="bg-harx-alt-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-alt-100/70">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-black text-slate-900">Professional</h2>
+            <h2 className="text-lg font-black text-harx-alt-900">Professional</h2>
             <button
               type="button"
               onClick={onEditItemClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
             >
               <Pencil className="w-3.5 h-3.5" />
               Edit
@@ -101,13 +101,13 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
         </div>
 
         {/* Soft Skills */}
-        <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
+        <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-black text-slate-900">Soft Skills</h2>
+            <h2 className="text-lg font-black text-harx-900">Soft Skills</h2>
             <button
               type="button"
               onClick={onEditItemClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
             >
               <Pencil className="w-3.5 h-3.5" />
               Edit
@@ -122,8 +122,8 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
       </div>
 
       {/* Contact Center Skills Assessments */}
-      <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
-        <h2 className="text-xl font-black text-slate-900 tracking-tight mb-6">Contact Center Assessments</h2>
+      <div className="bg-harx-alt-50/25 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-alt-100/70">
+        <h2 className="text-xl font-black text-harx-900 tracking-tight mb-6">Contact Center Assessments</h2>
         <div className="space-y-6">
           {[
             ...CONTACT_CENTER_SKILLS,
@@ -142,7 +142,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                 {category.skills.map((skillName: string) => {
                   const skillData = findSkillData(skillName);
                   return (
-                    <div key={skillName} className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-slate-200/40 rounded-2xl border border-slate-200/30 hover:border-harx-200 transition-colors group">
+                    <div key={skillName} className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-white/80 rounded-2xl border border-harx-100/60 hover:border-harx-300 transition-colors group">
                       <div className="space-y-1 mb-4 md:mb-0">
                         <h4 className="font-bold text-slate-900">{skillName}</h4>
                         {skillData?.assessmentResults ? (
@@ -162,7 +162,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                       <button
                         type="button"
                         onClick={onEditItemClick}
-                        className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-all"
+                        className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-harx-50 text-harx-700 border border-harx-100 hover:bg-harx-100 transition-all"
                       >
                         <span className="inline-flex items-center gap-1">
                           <Pencil className="w-3.5 h-3.5" />
@@ -176,8 +176,8 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                         className={`
                           px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all
                           ${skillData?.assessmentResults 
-                            ? 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100' 
-                            : 'bg-slate-900 text-white hover:bg-slate-800 shadow-xl shadow-slate-900/10'}
+                            ? 'bg-harx-alt-50 text-harx-alt-700 border border-harx-alt-100 hover:bg-harx-alt-100' 
+                            : 'bg-gradient-harx text-white hover:opacity-90 shadow-xl shadow-harx-500/20'}
                         `}
                       >
                         {skillData?.assessmentResults ? 'Retake' : 'Take Assessment'}

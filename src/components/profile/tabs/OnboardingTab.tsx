@@ -29,8 +29,8 @@ export const OnboardingTab: React.FC<OnboardingTabProps> = ({
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Verification & Alerts Section */}
       {(countryMismatch?.hasMismatch || checkingCountryMismatch || timezoneMismatch) && (
-        <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
-          <h2 className="text-xl font-black text-slate-900 tracking-tight mb-5">Verification Notices</h2>
+        <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
+          <h2 className="text-xl font-black text-harx-900 tracking-tight mb-5">Verification Notices</h2>
           
           <div className="space-y-4">
             {/* Country Mismatch */}
@@ -71,8 +71,8 @@ export const OnboardingTab: React.FC<OnboardingTabProps> = ({
       )}
 
       {/* Detailed Onboarding Progress */}
-      <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
-        <h2 className="text-xl font-black text-slate-900 tracking-tight mb-6">Onboarding Progress</h2>
+      <div className="bg-harx-alt-50/25 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-alt-100/70">
+        <h2 className="text-xl font-black text-harx-alt-900 tracking-tight mb-6">Onboarding Progress</h2>
         <div className="space-y-4">
           {onboardingPhases.map((phaseNum) => {
             const phaseKey = `phase${phaseNum}`;
@@ -123,7 +123,7 @@ export const OnboardingTab: React.FC<OnboardingTabProps> = ({
                 <button
                   type="button"
                   onClick={() => onEditItemClick('profile')}
-                  className="p-2 bg-slate-50 text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
+                  className="p-2 bg-harx-50 text-harx-700 border border-harx-100 rounded-xl hover:bg-harx-100 transition-colors"
                   title="Edit onboarding related info"
                 >
                   <Pencil className="w-4 h-4" />
@@ -135,16 +135,16 @@ export const OnboardingTab: React.FC<OnboardingTabProps> = ({
       </div>
 
       {/* Working Hours & Availability */}
-      <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
+      <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 bg-slate-900 rounded-xl text-white">
+          <div className="p-2.5 bg-gradient-harx rounded-xl text-white">
             <Clock className="w-5 h-5" />
           </div>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">Availability & Schedule</h2>
+          <h2 className="text-xl font-black text-harx-900 tracking-tight">Availability & Schedule</h2>
           <button
             type="button"
             onClick={() => onEditItemClick('availability')}
-            className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+            className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
           >
             <Pencil className="w-3.5 h-3.5" />
             Edit

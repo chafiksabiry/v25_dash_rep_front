@@ -18,13 +18,13 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
 }) => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
+      <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">Language Proficiency</h2>
+          <h2 className="text-xl font-black text-harx-900 tracking-tight">Language Proficiency</h2>
           <button
             type="button"
             onClick={onEditItemClick}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
           >
             <Pencil className="w-3.5 h-3.5" />
             Edit
@@ -38,7 +38,7 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
               const languageCode = typeof lang.language === 'object' && lang.language ? lang.language.code : '';
 
               return (
-                <div key={index} className="bg-slate-200/40 p-6 rounded-3xl border border-slate-200/30 hover:border-harx-200 transition-all group">
+                <div key={index} className="bg-white/80 p-6 rounded-3xl border border-harx-100/60 hover:border-harx-300 transition-all group">
                   <div className="flex justify-between items-start mb-6">
                     <div>
                       <h3 className="text-lg font-black text-slate-900 group-hover:text-harx-600 transition-colors">
@@ -81,7 +81,7 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
                     <button
                       type="button"
                       onClick={() => onDeleteItemClick(index)}
-                      className="py-3 px-4 bg-slate-50 text-slate-700 border border-slate-200/50 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm hover:bg-slate-100"
+                      className="py-3 px-4 bg-harx-50 text-harx-700 border border-harx-100/70 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm hover:bg-harx-100"
                       title="Delete language"
                     >
                       <span className="inline-flex items-center gap-1">
@@ -91,7 +91,7 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
                     </button>
                     <button
                       onClick={() => takeLanguageAssessment(languageName, languageCode)}
-                      className="flex-1 py-3 bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-900 border border-slate-200/50 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm active:scale-95"
+                      className="flex-1 py-3 bg-gradient-harx text-white border border-harx-400/40 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm active:scale-95 hover:opacity-90"
                     >
                       {lang.assessmentResults ? 'Retake Assessment' : 'Start Assessment'}
                     </button>

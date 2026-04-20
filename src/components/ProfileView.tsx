@@ -487,7 +487,7 @@ export const ProfileView: React.FC<{
 
       {/* Header / Identity Section (Twilio Style) - Only visible on 'Profile' tab */}
       {activeTab === 'profile' && (
-        <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-8 lg:p-10 shadow-sm border border-slate-200/50 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-8 lg:p-10 shadow-sm border border-harx-100/70 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="flex flex-col md:flex-row gap-10 items-start">
             {/* Photo management */}
             <div className="relative group shrink-0">
@@ -533,7 +533,7 @@ export const ProfileView: React.FC<{
                 )}
                 <button
                   onClick={() => onEditClick()}
-                  className="px-6 py-2.5 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 border border-slate-700"
+                  className="px-6 py-2.5 rounded-2xl bg-gradient-harx text-white hover:opacity-90 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-harx-500/20 active:scale-95"
                 >
                   <Edit size={16} />
                   Edit Profile
