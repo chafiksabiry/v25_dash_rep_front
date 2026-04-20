@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Calendar, Pencil, X } from 'lucide-react';
+import { Briefcase, Calendar, Pencil, Plus, X } from 'lucide-react';
 
 interface ExperienceTabProps {
   profile: any;
@@ -40,14 +40,24 @@ export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onEditIte
       <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-black text-harx-900 tracking-tight">Work History</h2>
-          <button
-            type="button"
-            onClick={onEditItemClick}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            Edit
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onEditItemClick}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={onEditItemClick}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </button>
+          </div>
         </div>
         {profile.experience?.length > 0 ? (
           <div className="space-y-12 relative before:absolute before:inset-0 before:ml-4 before:-z-10 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-harx-200 before:to-transparent">

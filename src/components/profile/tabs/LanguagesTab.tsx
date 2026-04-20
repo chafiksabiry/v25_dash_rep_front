@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Globe, Pencil, X } from 'lucide-react';
+import { Star, Globe, Pencil, Plus, X } from 'lucide-react';
 
 interface LanguagesTabProps {
   profile: any;
@@ -21,14 +21,24 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
       <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-black text-harx-900 tracking-tight">Language Proficiency</h2>
-          <button
-            type="button"
-            onClick={onEditItemClick}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            Edit
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onEditItemClick}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={onEditItemClick}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </button>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {profile.personalInfo?.languages?.length > 0 ? (
