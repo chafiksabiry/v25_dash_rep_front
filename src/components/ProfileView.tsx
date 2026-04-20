@@ -232,7 +232,10 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
     };
 
     return skillsData.map(item => {
-      if (typeof item === 'string') return { name: item };
+      if (typeof item === 'string') {
+        const resolvedFromMap = skillNameById[item];
+        return { name: resolvedFromMap || item };
+      }
       if (item?.skill && typeof item.skill === 'object') {
         const embeddedName = readNameFromObject(item.skill);
         if (embeddedName) return { name: embeddedName };
@@ -246,6 +249,25 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       return { name: resolvedById || (typeof item?.skill === 'string' ? item.skill : null) || 'Unknown' };
     });
   };
+
+  useEffect(() => {
+    if (!profile?.skills) return;
+
+    const technical = formatSkillsForDisplay(profile.skills.technical).map(s => s.name);
+    const professional = formatSkillsForDisplay(profile.skills.professional).map(s => s.name);
+    const soft = formatSkillsForDisplay(profile.skills.soft).map(s => s.name);
+
+    console.log('[ProfileView] Agent skills (raw)', {
+      technical: profile.skills.technical,
+      professional: profile.skills.professional,
+      soft: profile.skills.soft
+    });
+    console.log('[ProfileView] Agent skills (resolved)', {
+      technical,
+      professional,
+      soft
+    });
+  }, [profile?.skills, skillNameById]);
 
   const takeLanguageAssessment = (language: string, iso639_1Code?: string) => {
     const isStandalone = import.meta.env.VITE_RUN_MODE === 'standalone';
