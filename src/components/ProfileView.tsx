@@ -219,12 +219,31 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
 
   const formatSkillsForDisplay = (skillsData: any) => {
     if (!Array.isArray(skillsData)) return [];
+    const readNameFromObject = (obj: any): string | null =>
+      obj?.name || obj?.label || obj?.title || null;
+
+    const normalizeId = (raw: any): string | null => {
+      if (!raw) return null;
+      if (typeof raw === 'string') return raw;
+      if (typeof raw === 'object' && typeof raw.$oid === 'string') return raw.$oid;
+      if (typeof raw === 'object' && typeof raw._id === 'string') return raw._id;
+      if (typeof raw === 'object' && typeof raw.id === 'string') return raw.id;
+      return null;
+    };
+
     return skillsData.map(item => {
       if (typeof item === 'string') return { name: item };
-      if (item.skill && typeof item.skill === 'object') return { name: item.skill.name };
-      const skillId = item?._id || item?.skill;
-      const resolvedById = typeof skillId === 'string' ? skillNameById[skillId] : null;
-      return { name: item?.name || resolvedById || (typeof item?.skill === 'string' ? item.skill : null) || 'Unknown' };
+      if (item?.skill && typeof item.skill === 'object') {
+        const embeddedName = readNameFromObject(item.skill);
+        if (embeddedName) return { name: embeddedName };
+      }
+
+      const directName = readNameFromObject(item);
+      if (directName) return { name: directName };
+
+      const skillId = normalizeId(item?._id) || normalizeId(item?.id) || normalizeId(item?.skill);
+      const resolvedById = skillId ? skillNameById[skillId] : null;
+      return { name: resolvedById || (typeof item?.skill === 'string' ? item.skill : null) || 'Unknown' };
     });
   };
 

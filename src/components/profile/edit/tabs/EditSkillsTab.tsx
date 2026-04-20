@@ -19,6 +19,20 @@ export const EditSkillsTab: React.FC<EditSkillsTabProps> = ({
   handleSkillsChange,
   renderSkillDropdown
 }) => {
+  const resolveFallbackName = (skillRef: any): string => {
+    if (!skillRef) return 'Unknown Skill';
+    if (typeof skillRef === 'string') return skillRef;
+    if (typeof skillRef?.name === 'string' && skillRef.name.trim()) return skillRef.name;
+    if (typeof skillRef?.label === 'string' && skillRef.label.trim()) return skillRef.label;
+    if (typeof skillRef?.title === 'string' && skillRef.title.trim()) return skillRef.title;
+    if (skillRef?.skill && typeof skillRef.skill === 'object') {
+      if (typeof skillRef.skill.name === 'string' && skillRef.skill.name.trim()) return skillRef.skill.name;
+      if (typeof skillRef.skill.label === 'string' && skillRef.skill.label.trim()) return skillRef.skill.label;
+      if (typeof skillRef.skill.title === 'string' && skillRef.skill.title.trim()) return skillRef.skill.title;
+    }
+    return 'Unknown Skill';
+  };
+
   const skillCategories = [
     { 
       type: 'technical' as const, 
@@ -81,10 +95,11 @@ export const EditSkillsTab: React.FC<EditSkillsTabProps> = ({
                   const skillDataForType = skillsData[cat.type];
                   const skillId = typeof skillRef === 'string' ? skillRef : skillRef.skill;
                   const skillObj = Object.values(skillDataForType).flat().find((s: Skill) => s._id === skillId);
+                  const fallbackName = resolveFallbackName(skillRef);
                   
                   return (
                     <div key={idx} className={`flex items-center gap-2 ${cat.bg} ${cat.text} px-4 py-2 rounded-xl border ${cat.border} group transition-all ${cat.hover} hover:text-white`}>
-                      <span className="text-xs font-black uppercase tracking-tighter italic">{skillObj?.name || 'Unknown Skill'}</span>
+                      <span className="text-xs font-black uppercase tracking-tighter italic">{skillObj?.name || fallbackName}</span>
                       <button 
                         onClick={() => {
                           const updated = currentSkills.filter((_, i) => i !== idx);
