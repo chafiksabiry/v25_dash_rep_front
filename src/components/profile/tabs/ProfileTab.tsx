@@ -111,7 +111,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
                 className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-harx-100 bg-white text-harx-700 text-sm font-black uppercase tracking-wider hover:bg-harx-50 disabled:opacity-60"
               >
                 {isUploadingVideo ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
-                {isUploadingVideo ? 'Uploading...' : 'Re-record / Upload new video'}
+                {isUploadingVideo ? 'Recording...' : 'Re-record video'}
               </button>
               <div className="flex items-center justify-end gap-2">
                 <button

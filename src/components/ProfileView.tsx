@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Pencil, Camera, ChevronDown } from 'lucide-react';
-import { getProfilePlan, checkCountryMismatch, updateProfileData, fetchProfileFromAPI } from '../utils/profileUtils';
+import { getProfilePlan, checkCountryMismatch, updateProfileData, fetchProfileFromAPI, getRepresentativePlans, updateProfilePlan } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 import { fetchAllSkills, fetchSkillById, Skill, SkillsByCategory, SkillType } from '../services/api/skills';
 
@@ -70,6 +70,7 @@ export const ProfileView: React.FC<{
   const [activeTab, setActiveTab] = useState('profile');
   const [isPublishing, setIsPublishing] = useState(false);
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
+  const [availablePlans, setAvailablePlans] = useState<Plan[]>([]);
   const [planError, setPlanError] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [countryData, setCountryData] = useState<Timezone | null>(null);
@@ -95,7 +96,7 @@ export const ProfileView: React.FC<{
     country: '',
     email: '',
     phone: '',
-    growthPlan: ''
+    growthPlanId: ''
   });
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -135,6 +136,18 @@ export const ProfileView: React.FC<{
     };
     fetchPlanData();
   }, [profile?._id]);
+
+  useEffect(() => {
+    const fetchAvailablePlans = async () => {
+      try {
+        const plans = await getRepresentativePlans();
+        setAvailablePlans(plans);
+      } catch (error) {
+        console.error('Error fetching representative plans:', error);
+      }
+    };
+    fetchAvailablePlans();
+  }, []);
 
   useEffect(() => {
     const loadSkillDictionary = async () => {
@@ -395,10 +408,6 @@ export const ProfileView: React.FC<{
     }
   };
 
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'N/A';
-    try { return new Date(dateString).toLocaleDateString(); } catch (e) { return dateString; }
-  };
 
   const getCountryDisplayName = () => {
     if (countryData?.countryName) return countryData.countryName;
@@ -425,7 +434,7 @@ export const ProfileView: React.FC<{
       country: getCountryDisplayName(),
       email: String(profile.personalInfo?.email || ''),
       phone: String(profile.personalInfo?.phone || ''),
-      growthPlan: String((profile as any)?.professionalSummary?.growthPlanLabel || planData?.plan?.name || 'Standard Representative')
+      growthPlanId: String(planData?.plan?._id || '')
     });
     setIsEditingPublicInfo(true);
   };
@@ -439,27 +448,35 @@ export const ProfileView: React.FC<{
         country: publicInfoDraft.country,
         email: publicInfoDraft.email,
         phone: publicInfoDraft.phone,
-      },
-      professionalSummary: {
-        ...profile.professionalSummary,
-        growthPlanLabel: publicInfoDraft.growthPlan,
       }
     };
-    await handleInlineUpdate(payload, (prev) => ({
-      ...prev,
-      personalInfo: {
-        ...(prev.personalInfo || {}),
-        country: publicInfoDraft.country,
-        email: publicInfoDraft.email,
-        phone: publicInfoDraft.phone,
-      },
-      professionalSummary: {
-        ...(prev.professionalSummary || {}),
-        growthPlanLabel: publicInfoDraft.growthPlan,
+    try {
+      await handleInlineUpdate(payload, (prev) => ({
+        ...prev,
+        personalInfo: {
+          ...(prev.personalInfo || {}),
+          country: publicInfoDraft.country,
+          email: publicInfoDraft.email,
+          phone: publicInfoDraft.phone,
+        }
+      }));
+
+      if (publicInfoDraft.growthPlanId && publicInfoDraft.growthPlanId !== String(planData?.plan?._id || '')) {
+        await updateProfilePlan(profile._id, publicInfoDraft.growthPlanId);
+        const updatedPlan = await getProfilePlan(profile._id);
+        setPlanData({
+          _id: String(updatedPlan._id),
+          userId: String(updatedPlan.userId),
+          plan: updatedPlan.plan
+        });
       }
-    }));
-    setIsSavingPublicInfo(false);
-    setIsEditingPublicInfo(false);
+
+      const refreshed = await fetchProfileFromAPI();
+      onProfileUpdate?.(refreshed);
+      setIsEditingPublicInfo(false);
+    } finally {
+      setIsSavingPublicInfo(false);
+    }
   };
 
   const handleSaveAbout = async (value: string) => {
@@ -878,15 +895,21 @@ export const ProfileView: React.FC<{
                   <div className="relative z-10">
                     <div className="text-[10px] font-black text-harx-alt-400 uppercase tracking-widest">Growth Plan</div>
                     {isEditingPublicInfo ? (
-                      <input
-                        type="text"
-                        value={publicInfoDraft.growthPlan}
-                        onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, growthPlan: e.target.value }))}
-                        className="w-full text-lg font-black text-harx-alt-900 tracking-tight leading-none mt-0.5 bg-transparent outline-none"
-                      />
+                      <select
+                        value={publicInfoDraft.growthPlanId}
+                        onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, growthPlanId: e.target.value }))}
+                        className="w-full text-sm font-black text-harx-alt-900 tracking-tight leading-none mt-1 bg-transparent outline-none"
+                      >
+                        <option value="">Select a plan</option>
+                        {availablePlans.map((plan) => (
+                          <option key={plan._id} value={plan._id}>
+                            {plan.name} (${plan.price})
+                          </option>
+                        ))}
+                      </select>
                     ) : (
                       <div className="text-lg font-black text-harx-alt-900 tracking-tight leading-none mt-0.5">
-                        {(profile as any)?.professionalSummary?.growthPlanLabel || planData?.plan?.name || "Standard Representative"}
+                        {planData?.plan?.name || "Standard Representative"}
                       </div>
                     )}
                   </div>

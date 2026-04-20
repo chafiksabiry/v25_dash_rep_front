@@ -232,6 +232,8 @@ export const profileApi = {
   updateExperience: (id: string, experience: any) => repApiClient.put(`/api/profiles/${id}/experience`, { experience }),
   updateSkills: (id: string, skills: any) => repApiClient.put(`/api/profiles/${id}/skills`, { skills }),
   getPlan: (profileId: string) => repApiClient.get(`/api/profiles/${profileId}/plan`),
+  updatePlan: (profileId: string, planId: string) => repApiClient.put(`/api/profiles/${profileId}/plan`, { planId }),
+  getRepresentativePlans: () => repApiClient.get('/api/profiles/plans/representative'),
 };
 
 // Export the API client for direct use

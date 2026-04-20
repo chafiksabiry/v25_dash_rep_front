@@ -279,6 +279,27 @@ export const getProfilePlan = async (profileId: string): Promise<PlanResponse> =
   }
 };
 
+export const getRepresentativePlans = async (): Promise<Plan[]> => {
+  try {
+    const response = await profileApi.getRepresentativePlans();
+    return response.data || [];
+  } catch (error) {
+    console.error('❌ Error fetching representative plans:', error);
+    throw error;
+  }
+};
+
+export const updateProfilePlan = async (profileId: string, planId: string) => {
+  try {
+    const response = await profileApi.updatePlan(profileId, planId);
+    await fetchProfileFromAPI();
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error updating profile plan:', error);
+    throw error;
+  }
+};
+
 // Function to fetch user's IP history
 export const fetchUserIpHistory = async (userId: string): Promise<IpHistoryResponse> => {
   try {
