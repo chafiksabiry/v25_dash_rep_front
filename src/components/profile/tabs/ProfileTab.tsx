@@ -50,6 +50,51 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
     setIsLivePreviewReady(false);
   };
 
+  const attachStreamToPreview = async (stream: MediaStream) => {
+    const bind = async (videoEl: HTMLVideoElement) => {
+      videoEl.muted = true;
+      videoEl.autoplay = true;
+      videoEl.playsInline = true;
+      videoEl.srcObject = stream;
+      setIsLivePreviewReady(false);
+
+      const markReady = () => setIsLivePreviewReady(true);
+      videoEl.onloadedmetadata = markReady;
+      videoEl.onloadeddata = markReady;
+      videoEl.oncanplay = markReady;
+      videoEl.onplaying = markReady;
+
+      try {
+        await videoEl.play();
+      } catch (playError) {
+        console.error('Live preview playback failed:', playError);
+      }
+
+      const readinessCheckInterval = window.setInterval(() => {
+        if (videoEl.readyState >= 2 && videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+          setIsLivePreviewReady(true);
+          window.clearInterval(readinessCheckInterval);
+        }
+      }, 150);
+
+      window.setTimeout(() => {
+        window.clearInterval(readinessCheckInterval);
+      }, 4000);
+    };
+
+    // The preview video is rendered only when isRecorderReady is true.
+    // Retry briefly until the ref becomes available.
+    const maxAttempts = 20;
+    for (let i = 0; i < maxAttempts; i += 1) {
+      const videoEl = liveVideoRef.current;
+      if (videoEl) {
+        await bind(videoEl);
+        return;
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 50));
+    }
+  };
+
   const startRecorder = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -61,65 +106,13 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
         audio: true,
       });
       mediaStreamRef.current = stream;
-      if (liveVideoRef.current) {
-        const videoEl = liveVideoRef.current;
-        videoEl.muted = true;
-        videoEl.autoplay = true;
-        videoEl.playsInline = true;
-        videoEl.srcObject = stream;
-        setIsLivePreviewReady(false);
-
-        const markReady = () => {
-          setIsLivePreviewReady(true);
-        };
-
-        videoEl.onloadedmetadata = markReady;
-        videoEl.onloadeddata = markReady;
-        videoEl.oncanplay = markReady;
-        videoEl.onplaying = markReady;
-
-        const forcePlay = async () => {
-          try {
-            await videoEl.play();
-          } catch (playError) {
-            console.error('Live preview playback failed:', playError);
-          }
-        };
-
-        await forcePlay();
-
-        // Fallback for browsers that don't fire loaded* events reliably.
-        const readinessCheckInterval = window.setInterval(() => {
-          if (videoEl.readyState >= 2 && videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
-            setIsLivePreviewReady(true);
-            window.clearInterval(readinessCheckInterval);
-          }
-        }, 150);
-
-        // Stop polling after a short timeout to avoid leaks.
-        window.setTimeout(() => {
-          window.clearInterval(readinessCheckInterval);
-        }, 4000);
-
-        // Browser fallback: sometimes stream is attached but first paint stays black.
-        window.setTimeout(async () => {
-          if (videoEl.readyState >= 2 && videoEl.videoWidth > 0) return;
-          try {
-            videoEl.srcObject = null;
-            videoEl.srcObject = stream;
-            await forcePlay();
-          } catch (error) {
-            console.error('Live preview fallback failed:', error);
-          }
-        }, 700);
-      }
-
       const [videoTrack] = stream.getVideoTracks();
       if (videoTrack) {
         videoTrack.onunmute = () => setIsLivePreviewReady(true);
       }
 
       setIsRecorderReady(true);
+      await attachStreamToPreview(stream);
       setRecordedVideoBlob(null);
       if (recordedVideoUrl) {
         URL.revokeObjectURL(recordedVideoUrl);
