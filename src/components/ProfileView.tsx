@@ -909,7 +909,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
             </div>
 
             {/* Flexibility Options */}
-            )}
+
           </div>
         </div>
       </div>
