@@ -238,6 +238,51 @@ export function Profile() {
     }
   };
 
+  const handleAddSkill = async (type: 'technical' | 'professional' | 'soft', skillId: string) => {
+    if (!profile?._id || !skillId) return;
+
+    const nextSkills = {
+      technical: [...(profile.skills.technical || [])],
+      professional: [...(profile.skills.professional || [])],
+      soft: [...(profile.skills.soft || [])]
+    };
+
+    const alreadyExists = nextSkills[type].some((entry: any) => getSkillRefId(entry) === skillId);
+    if (!alreadyExists) {
+      nextSkills[type].push({
+        skill: skillId,
+        level: 0,
+        details: ''
+      });
+    }
+
+    const payload = {
+      technical: nextSkills.technical.map((entry: any) => ({
+        skill: getSkillRefId(entry),
+        level: typeof entry.level === 'number' ? entry.level : 0,
+        details: entry.details || ''
+      })).filter((entry: any) => !!entry.skill),
+      professional: nextSkills.professional.map((entry: any) => ({
+        skill: getSkillRefId(entry),
+        level: typeof entry.level === 'number' ? entry.level : 0,
+        details: entry.details || ''
+      })).filter((entry: any) => !!entry.skill),
+      soft: nextSkills.soft.map((entry: any) => ({
+        skill: getSkillRefId(entry),
+        level: typeof entry.level === 'number' ? entry.level : 0,
+        details: entry.details || ''
+      })).filter((entry: any) => !!entry.skill),
+    };
+
+    try {
+      await updateSkills(profile._id, payload);
+      const refreshed = await getProfileData();
+      setProfile(refreshed);
+    } catch (error) {
+      console.error('Error adding skill:', error);
+    }
+  };
+
   const handleDeleteLanguage = async (index: number) => {
     if (!profile?._id) return;
     const currentLanguages = profile.personalInfo?.languages || [];
@@ -393,6 +438,7 @@ export function Profile() {
               setIsEditing(true);
             }}
             onDeleteSkill={handleDeleteSkill}
+            onAddSkill={handleAddSkill}
             onDeleteLanguage={handleDeleteLanguage}
             onDeleteExperience={handleDeleteExperience}
             onDeleteSpecializationItem={handleDeleteSpecializationItem}

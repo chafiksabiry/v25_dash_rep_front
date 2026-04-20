@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pencil, Plus, X } from 'lucide-react';
+import { fetchSkillsByType, Skill } from '../../../services/api/skills';
 
 interface SkillsTabProps {
   profile: any;
@@ -8,6 +9,7 @@ interface SkillsTabProps {
   takeContactCenterSkillAssessment: (skillName: string, categoryName?: string) => void;
   onEditItemClick: () => void;
   onDeleteSkill: (type: 'technical' | 'professional' | 'soft', index: number) => void;
+  onAddSkill: (type: 'technical' | 'professional' | 'soft', skillId: string) => void;
 }
 
 const CONTACT_CENTER_SKILLS = [
@@ -31,8 +33,106 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
   findSkillData,
   takeContactCenterSkillAssessment,
   onEditItemClick,
-  onDeleteSkill
+  onDeleteSkill,
+  onAddSkill
 }) => {
+  const [availableSkills, setAvailableSkills] = useState<Record<'technical' | 'professional' | 'soft', Skill[]>>({
+    technical: [],
+    professional: [],
+    soft: []
+  });
+  const [activeAddType, setActiveAddType] = useState<'technical' | 'professional' | 'soft' | null>(null);
+  const [searchTermByType, setSearchTermByType] = useState<Record<'technical' | 'professional' | 'soft', string>>({
+    technical: '',
+    professional: '',
+    soft: ''
+  });
+
+  useEffect(() => {
+    const loadSkills = async () => {
+      try {
+        const [technical, professional, soft] = await Promise.all([
+          fetchSkillsByType('technical'),
+          fetchSkillsByType('professional'),
+          fetchSkillsByType('soft')
+        ]);
+        setAvailableSkills({
+          technical: Object.values(technical || {}).flat(),
+          professional: Object.values(professional || {}).flat(),
+          soft: Object.values(soft || {}).flat()
+        });
+      } catch (error) {
+        console.error('Error loading skills list in SkillsTab:', error);
+      }
+    };
+    loadSkills();
+  }, []);
+
+  const normalizeId = (raw: any): string | null => {
+    if (!raw) return null;
+    if (typeof raw === 'string') return raw;
+    if (typeof raw === 'object' && typeof raw.$oid === 'string') return raw.$oid;
+    if (typeof raw === 'object' && typeof raw._id === 'string') return raw._id;
+    if (typeof raw === 'object' && typeof raw.id === 'string') return raw.id;
+    return null;
+  };
+
+  const getCurrentSkillIds = (type: 'technical' | 'professional' | 'soft') =>
+    new Set(
+      (profile?.skills?.[type] || [])
+        .map((item: any) => normalizeId(item?.skill) || normalizeId(item?._id))
+        .filter((id: string | null): id is string => !!id)
+    );
+
+  const getFilteredSkills = (type: 'technical' | 'professional' | 'soft') => {
+    const selectedIds = getCurrentSkillIds(type);
+    const search = (searchTermByType[type] || '').trim().toLowerCase();
+    return availableSkills[type].filter((skill) => {
+      if (selectedIds.has(skill._id)) return false;
+      if (!search) return true;
+      return (
+        skill.name.toLowerCase().includes(search) ||
+        (skill.description || '').toLowerCase().includes(search)
+      );
+    });
+  };
+
+  const renderAddDropdown = (type: 'technical' | 'professional' | 'soft') => {
+    if (activeAddType !== type) return null;
+    const options = getFilteredSkills(type);
+    return (
+      <div className="mt-3 w-full max-w-md bg-white border border-harx-100/80 rounded-xl shadow-sm overflow-hidden">
+        <input
+          type="text"
+          value={searchTermByType[type]}
+          onChange={(e) => setSearchTermByType((prev) => ({ ...prev, [type]: e.target.value }))}
+          placeholder={`Search ${type} skills...`}
+          className="w-full px-3 py-2 text-sm border-b border-harx-100/70 outline-none"
+        />
+        <div className="max-h-56 overflow-auto">
+          {options.length > 0 ? (
+            options.map((skill) => (
+              <button
+                key={skill._id}
+                type="button"
+                onClick={() => {
+                  onAddSkill(type, skill._id);
+                  setSearchTermByType((prev) => ({ ...prev, [type]: '' }));
+                }}
+                className="w-full text-left px-3 py-2 hover:bg-harx-50 transition-colors border-b border-slate-100 last:border-b-0"
+              >
+                <div className="text-sm font-bold text-slate-800">{skill.name}</div>
+                <div className="text-xs text-slate-500 truncate">{skill.description}</div>
+              </button>
+            ))
+          ) : (
+            <div className="px-3 py-3 text-xs text-slate-500">No skills available.</div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderSkillChip = (
     type: 'technical' | 'professional' | 'soft',
     skill: any,
@@ -66,7 +166,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
             <h2 className="text-lg font-black text-harx-900">Technical</h2>
             <button
               type="button"
-              onClick={onEditItemClick}
+              onClick={() => setActiveAddType(activeAddType === 'technical' ? null : 'technical')}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -78,6 +178,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               renderSkillChip('technical', skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30 italic')
             )}
           </div>
+          {renderAddDropdown('technical')}
         </div>
 
         {/* Professional Skills */}
@@ -86,7 +187,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
             <h2 className="text-lg font-black text-harx-alt-900">Professional</h2>
             <button
               type="button"
-              onClick={onEditItemClick}
+              onClick={() => setActiveAddType(activeAddType === 'professional' ? null : 'professional')}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -98,6 +199,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               renderSkillChip('professional', skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30')
             )}
           </div>
+          {renderAddDropdown('professional')}
         </div>
 
         {/* Soft Skills */}
@@ -106,7 +208,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
             <h2 className="text-lg font-black text-harx-900">Soft Skills</h2>
             <button
               type="button"
-              onClick={onEditItemClick}
+              onClick={() => setActiveAddType(activeAddType === 'soft' ? null : 'soft')}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -118,6 +220,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               renderSkillChip('soft', skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30')
             )}
           </div>
+          {renderAddDropdown('soft')}
         </div>
       </div>
 
