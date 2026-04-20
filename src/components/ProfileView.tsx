@@ -87,6 +87,7 @@ export const ProfileView: React.FC<{
   const [checkingCountryMismatch, setCheckingCountryMismatch] = useState(false);
   const [showLoadingSpinner, setShowLoadingSpinner] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [isEditingPublicInfo, setIsEditingPublicInfo] = useState(false);
   const [isSavingPublicInfo, setIsSavingPublicInfo] = useState(false);
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
@@ -479,28 +480,39 @@ export const ProfileView: React.FC<{
     );
   };
 
-  const handleSaveVideo = async (value: string) => {
-    await handleInlineUpdate(
-      {
-        personalInfo: {
-          ...profile.personalInfo,
-          presentationVideo: {
-            ...(profile.personalInfo?.presentationVideo || {}),
-            url: value,
-          }
+  const handleReplaceVideo = async (file: File) => {
+    if (!file || !profile?._id) return;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.alert('Authentication token missing.');
+      return;
+    }
+
+    try {
+      setIsUploadingVideo(true);
+      const formData = new FormData();
+      formData.append('video', file);
+
+      const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${profile._id}/video`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      },
-      (prev) => ({
-        ...prev,
-        personalInfo: {
-          ...(prev.personalInfo || {}),
-          presentationVideo: {
-            ...(prev.personalInfo?.presentationVideo || {}),
-            url: value,
-          }
-        }
-      })
-    );
+      });
+
+      if (!response.ok) {
+        throw new Error(`Video upload failed with status ${response.status}`);
+      }
+
+      const refreshed = await fetchProfileFromAPI();
+      onProfileUpdate?.(refreshed);
+    } catch (error) {
+      console.error('Error uploading presentation video:', error);
+      window.alert('Failed to upload video.');
+    } finally {
+      setIsUploadingVideo(false);
+    }
   };
 
   const handlePhotoSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -546,7 +558,7 @@ export const ProfileView: React.FC<{
 
   const renderActiveTab = () => {
     switch (activeTab) {
-      case 'profile': return <ProfileTab profile={profile} onSaveAbout={handleSaveAbout} onSaveVideo={handleSaveVideo} />;
+      case 'profile': return <ProfileTab profile={profile} onSaveAbout={handleSaveAbout} onReplaceVideo={handleReplaceVideo} isUploadingVideo={isUploadingVideo} />;
       case 'skills': return (
         <SkillsTab 
           profile={profile} 
@@ -596,7 +608,7 @@ export const ProfileView: React.FC<{
           onAddItemClick={(section, value) => onAddSpecializationItem?.(section, value)}
         />
       );
-      default: return <ProfileTab profile={profile} onSaveAbout={handleSaveAbout} onSaveVideo={handleSaveVideo} />;
+      default: return <ProfileTab profile={profile} onSaveAbout={handleSaveAbout} onReplaceVideo={handleReplaceVideo} isUploadingVideo={isUploadingVideo} />;
     }
   };
 

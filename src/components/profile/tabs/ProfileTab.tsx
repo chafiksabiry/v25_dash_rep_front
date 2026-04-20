@@ -1,22 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { Clock, Calendar, Pencil } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Clock, Calendar, Pencil, RefreshCw, Video } from 'lucide-react';
 
 interface ProfileTabProps {
   profile: any;
   onSaveAbout?: (value: string) => Promise<void> | void;
-  onSaveVideo?: (value: string) => Promise<void> | void;
+  onReplaceVideo?: (file: File) => Promise<void> | void;
+  isUploadingVideo?: boolean;
 }
 
-export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, onSaveVideo }) => {
+export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, onReplaceVideo, isUploadingVideo = false }) => {
   const [isEditingAbout, setIsEditingAbout] = useState(false);
   const [isEditingVideo, setIsEditingVideo] = useState(false);
   const [aboutDraft, setAboutDraft] = useState('');
-  const [videoDraft, setVideoDraft] = useState('');
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setAboutDraft(String(profile?.professionalSummary?.profileDescription || ''));
-    setVideoDraft(String(profile?.personalInfo?.presentationVideo?.url || ''));
-  }, [profile?.professionalSummary?.profileDescription, profile?.personalInfo?.presentationVideo?.url]);
+  }, [profile?.professionalSummary?.profileDescription]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -91,32 +91,37 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
           {isEditingVideo && (
             <div className="mb-4 space-y-3">
               <input
-                type="text"
-                value={videoDraft}
-                onChange={(e) => setVideoDraft(e.target.value)}
-                placeholder="Paste video URL..."
-                className="w-full px-3 py-2.5 text-sm rounded-xl border border-harx-100 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-harx-200"
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                capture="user"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  await onReplaceVideo?.(file);
+                  e.currentTarget.value = '';
+                  setIsEditingVideo(false);
+                }}
               />
+              <button
+                type="button"
+                onClick={() => videoInputRef.current?.click()}
+                disabled={isUploadingVideo}
+                className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-harx-100 bg-white text-harx-700 text-sm font-black uppercase tracking-wider hover:bg-harx-50 disabled:opacity-60"
+              >
+                {isUploadingVideo ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
+                {isUploadingVideo ? 'Uploading...' : 'Re-record / Upload new video'}
+              </button>
               <div className="flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => {
-                    setVideoDraft(String(profile?.personalInfo?.presentationVideo?.url || ''));
                     setIsEditingVideo(false);
                   }}
                   className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-slate-50"
                 >
                   Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await onSaveVideo?.(videoDraft);
-                    setIsEditingVideo(false);
-                  }}
-                  className="px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-bold uppercase tracking-wider hover:opacity-90"
-                >
-                  Save
                 </button>
               </div>
             </div>
