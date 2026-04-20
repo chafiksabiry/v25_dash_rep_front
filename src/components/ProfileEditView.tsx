@@ -15,6 +15,7 @@ import { fetchAllLanguages, Language } from '../services/api/languages';
 // Import Modular Components
 import { EditNavbar } from './profile/edit/EditNavbar';
 import { EditProfileTab } from './profile/edit/tabs/EditProfileTab';
+import { EditSpecializationTab } from './profile/edit/tabs/EditSpecializationTab';
 import { EditSkillsTab } from './profile/edit/tabs/EditSkillsTab';
 import { EditExperienceTab } from './profile/edit/tabs/EditExperienceTab';
 import { EditLanguagesTab } from './profile/edit/tabs/EditLanguagesTab';
@@ -2183,7 +2184,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   profile={profile}
                   setProfile={setProfile}
                   setModifiedSections={setModifiedSections}
-                  industriesData={industriesData}
                   activitiesData={activitiesData}
                   showVideoRecorder={showVideoRecorder}
                   recordedVideo={recordedVideo}
@@ -2204,10 +2204,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   uploadingVideo={uploadingVideo}
                   uploadProgress={uploadProgress}
                   stream={stream}
-                  renderIndustryDropdown={renderIndustryDropdown}
-                  renderActivityDropdown={renderActivityDropdown}
-                  tempCompany={tempCompany}
-                  setTempCompany={setTempCompany}
                   handleProfileChange={handleProfileChange}
                   validationErrors={validationErrors}
                   renderError={(field) => renderError(validationErrors[field], field)}
@@ -2229,6 +2225,20 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   checkingCountryMismatch={checkingCountryMismatch}
                   showLoadingSpinner={showLoadingSpinner}
                   countryMismatch={countryMismatch?.hasMismatch ?? false}
+                />
+              )}
+
+              {activeTab === 'specialization' && (
+                <EditSpecializationTab
+                  profile={profile}
+                  setProfile={setProfile}
+                  setModifiedSections={setModifiedSections}
+                  industriesData={industriesData}
+                  activitiesData={activitiesData}
+                  renderIndustryDropdown={renderIndustryDropdown}
+                  renderActivityDropdown={renderActivityDropdown}
+                  tempCompany={tempCompany}
+                  setTempCompany={setTempCompany}
                 />
               )}
 

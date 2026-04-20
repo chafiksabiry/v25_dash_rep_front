@@ -12,6 +12,7 @@ import { SkillsTab } from './profile/tabs/SkillsTab';
 import { ExperienceTab } from './profile/tabs/ExperienceTab';
 import { LanguagesTab } from './profile/tabs/LanguagesTab';
 import { OnboardingTab } from './profile/tabs/OnboardingTab';
+import { SpecializationTab } from './profile/tabs/SpecializationTab';
 
 // Shared Interface Redefinitions (if needed by tabs)
 export interface AssessmentResults {
@@ -264,6 +265,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
           repWizardApi={repWizardApi}
         />
       );
+      case 'specialization': return <SpecializationTab profile={profile} />;
       default: return <ProfileTab profile={profile} />;
     }
   };
@@ -288,6 +290,10 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
     onboarding: {
       title: "Evolution Progress",
       subtitle: "Track your journey through the representation onboarding phases."
+    },
+    specialization: {
+      title: "Industry Verticals",
+      subtitle: "Review your specific sector focus and professional domain expertise."
     }
   };
 

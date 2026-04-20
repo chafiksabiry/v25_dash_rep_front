@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, ShieldCheck, Briefcase, Globe, Clock, Save, RefreshCw } from 'lucide-react';
+import { User, ShieldCheck, Briefcase, Globe, Clock, Save, RefreshCw, Target } from 'lucide-react';
 
 interface EditNavbarProps {
   activeTab: string;
@@ -20,6 +20,7 @@ export const EditNavbar: React.FC<EditNavbarProps> = ({
 }) => {
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
+    { id: 'specialization', label: 'Specialization', icon: Target },
     { id: 'skills', label: 'Skills', icon: ShieldCheck },
     { id: 'experience', label: 'Experience', icon: Briefcase },
     { id: 'languages', label: 'Languages', icon: Globe },
