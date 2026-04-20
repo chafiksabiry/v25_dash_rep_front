@@ -274,12 +274,31 @@ export function Profile() {
       })).filter((entry: any) => !!entry.skill),
     };
 
+    // Optimistic UI update for instant feedback
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        skills: {
+          ...(prev.skills || {}),
+          technical: nextSkills.technical,
+          professional: nextSkills.professional,
+          soft: nextSkills.soft
+        }
+      };
+    });
+
     try {
       await updateSkills(profile._id, payload);
-      const refreshed = await getProfileData();
-      setProfile(refreshed);
     } catch (error) {
       console.error('Error adding skill:', error);
+      // Rollback if API fails
+      try {
+        const refreshed = await getProfileData();
+        setProfile(refreshed);
+      } catch (refreshError) {
+        console.error('Error refreshing profile after failed skill add:', refreshError);
+      }
     }
   };
 
