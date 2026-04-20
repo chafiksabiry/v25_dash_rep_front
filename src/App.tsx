@@ -69,7 +69,7 @@ function AppContent() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
 
-  const isProfileEdit = location.pathname.includes('/profile') && location.search.includes('edit=true');
+  const isProfilePage = location.pathname.includes('/profile');
 
   useEffect(() => {
     console.log('🚀 App component mounted - initializing application');
@@ -99,7 +99,7 @@ function AppContent() {
   return (
     <RepTrainingNavProvider>
       <div className="flex h-screen bg-premium-gradient overflow-hidden">
-        {!isProfileEdit && (
+        {!isProfilePage && (
           <Sidebar 
             phases={userProfile?.onboardingProgress?.phases} 
             isSidebarOpen={isSidebarOpen}
@@ -109,13 +109,13 @@ function AppContent() {
           />
         )}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {!isProfileEdit && (
+          {!isProfilePage && (
             <TopBar 
               isSidebarOpen={isSidebarOpen}
               setIsSidebarOpen={setIsSidebarOpen}
             />
           )}
-          <main className={`flex-1 overflow-y-auto ${isProfileEdit ? 'p-0' : 'p-4'}`}>
+          <main className={`flex-1 overflow-y-auto ${isProfilePage ? 'p-0' : 'p-4'}`}>
             <Routes>
               <Route path="/" element={
                 <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>

@@ -16,23 +16,31 @@ export const ProfileNavbar: React.FC<ProfileNavbarProps> = ({ activeTab, onTabCh
   ];
 
   return (
-    <div className="sticky top-0 z-30 mb-6 py-2 bg-gray-50/80 backdrop-blur-md">
-      <nav className="flex items-center gap-1 p-1.5 bg-white shadow-lg shadow-gray-200/50 rounded-2xl border border-gray-100 overflow-x-auto no-scrollbar">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className={`
-              flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 whitespace-nowrap
-              ${activeTab === tab.id
-                ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20'
-                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}
-            `}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-          </button>
-        ))}
+    <div className="border-b border-gray-100 mb-8 overflow-x-auto scrollbar-hide">
+      <nav className="flex items-center">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={`
+                relative flex items-center gap-2 px-6 py-4 text-sm font-bold transition-all whitespace-nowrap
+                ${isActive 
+                  ? 'text-harx-600' 
+                  : 'text-gray-400 hover:text-gray-600'}
+              `}
+            >
+              <tab.icon className={`w-4 h-4 ${isActive ? 'text-harx-600' : 'text-gray-400'}`} />
+              <span className="tracking-tight">{tab.label}</span>
+              
+              {/* Active Underline - Twilio Style */}
+              {isActive && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-harx-600 animate-in fade-in slide-in-from-bottom-1" />
+              )}
+            </button>
+          );
+        })}
       </nav>
     </div>
   );
