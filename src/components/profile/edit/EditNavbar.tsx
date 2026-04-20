@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, ShieldCheck, Briefcase, Globe, Clock } from 'lucide-react';
+import { User, ShieldCheck, Briefcase, Globe, Clock, Save, RefreshCw } from 'lucide-react';
 
 interface EditNavbarProps {
   activeTab: string;
