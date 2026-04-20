@@ -400,6 +400,8 @@ export const ProfileView: React.FC<{
           onEditItemClick={() => onEditClick('skills')}
           onDeleteSkill={(type, index) => onDeleteSkill?.(type, index)}
           onAddSkill={(type, skillId) => onAddSkill?.(type, skillId)}
+          onAddSpecializationItem={(section, value) => onAddSpecializationItem?.(section, value)}
+          onDeleteSpecializationItem={(section, index) => onDeleteSpecializationItem?.(section, index)}
         />
       );
       case 'experience': return (

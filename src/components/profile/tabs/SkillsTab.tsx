@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { fetchSkillsByType, Skill } from '../../../services/api/skills';
 import { repApiClient } from '../../../utils/client';
 
@@ -11,6 +11,8 @@ interface SkillsTabProps {
   onEditItemClick: () => void;
   onDeleteSkill: (type: 'technical' | 'professional' | 'soft', index: number) => void;
   onAddSkill: (type: 'technical' | 'professional' | 'soft', skillId: string) => void;
+  onAddSpecializationItem?: (section: 'industries' | 'activities', value: string) => void;
+  onDeleteSpecializationItem?: (section: 'industries' | 'activities' | 'notableCompanies', index: number) => void;
 }
 
 const CONTACT_CENTER_SKILLS = [
@@ -35,7 +37,9 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
   takeContactCenterSkillAssessment,
   onEditItemClick,
   onDeleteSkill,
-  onAddSkill
+  onAddSkill,
+  onAddSpecializationItem,
+  onDeleteSpecializationItem
 }) => {
   const [availableSkills, setAvailableSkills] = useState<Record<'technical' | 'professional' | 'soft', Skill[]>>({
     technical: [],
@@ -54,6 +58,10 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
   });
   const [activityNameById, setActivityNameById] = useState<Record<string, string>>({});
   const [industryNameById, setIndustryNameById] = useState<Record<string, string>>({});
+  const [allActivities, setAllActivities] = useState<Array<{ _id: string; name: string }>>([]);
+  const [allIndustries, setAllIndustries] = useState<Array<{ _id: string; name: string }>>([]);
+  const [ccAddOpenCategory, setCcAddOpenCategory] = useState<string | null>(null);
+  const [ccSelectedOption, setCcSelectedOption] = useState<Record<string, string>>({});
   const technicalDropdownRef = useRef<HTMLDivElement | null>(null);
   const professionalDropdownRef = useRef<HTMLDivElement | null>(null);
   const softDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -99,6 +107,8 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
 
         setActivityNameById(activityMap);
         setIndustryNameById(industryMap);
+        setAllActivities(activities);
+        setAllIndustries(industries);
       } catch (error) {
         console.error('Error loading activity/industry names in SkillsTab:', error);
       }
@@ -316,6 +326,9 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                   category.name === 'Communication' ||
                   category.name === 'Problem Solving' ||
                   category.name === 'Customer Service';
+                const isActivitiesCategory = category.name === 'Activities';
+                const isIndustriesCategory = category.name === 'Industries';
+                const isSpecializationCategory = isActivitiesCategory || isIndustriesCategory;
 
                 const allContactCenterEntries = (profile.skills?.contactCenter || []) as any[];
                 const categorySkillSet = new Set(category.skills.map((s: string) => s.toLowerCase()));
@@ -350,6 +363,36 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                   .map((entry: any) => String(entry?.skill || '').trim())
                   .filter((name: string) => !!name);
 
+                const specializationSource = isActivitiesCategory
+                  ? (profile.professionalSummary?.activities || [])
+                  : isIndustriesCategory
+                    ? (profile.professionalSummary?.industries || [])
+                    : [];
+
+                const specializationItems = specializationSource.map((item: any, idx: number) => {
+                  const itemId = normalizeId(item);
+                  const itemName =
+                    typeof item === 'string'
+                      ? (isActivitiesCategory ? activityNameById[item] || item : industryNameById[item] || item)
+                      : item?.name ||
+                        (itemId
+                          ? (isActivitiesCategory ? activityNameById[itemId] : industryNameById[itemId]) || ''
+                          : '');
+                  return {
+                    idx,
+                    name: String(itemName || '').trim()
+                  };
+                }).filter((entry: any) => !!entry.name);
+
+                const addableSpecializationOptions = (isActivitiesCategory ? allActivities : allIndustries).filter((entry) => {
+                  const selectedIds = new Set(
+                    specializationSource
+                      .map((item: any) => normalizeId(item))
+                      .filter((id: string | null): id is string => !!id)
+                  );
+                  return !selectedIds.has(String(entry._id));
+                });
+
                 // If no assessment entries exist yet, show the category source list
                 // (base catalog for contact-center categories, populated profile lists for activities/industries).
                 if (displayCategorySkills.length === 0) {
@@ -361,13 +404,47 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                   <>
               <div className="flex items-center justify-between border-b border-slate-200/30 pb-2">
                 <h3 className="text-md font-bold text-slate-400 uppercase tracking-widest">{category.name}</h3>
+                {isSpecializationCategory && (
+                  <button
+                    type="button"
+                    onClick={() => setCcAddOpenCategory((prev) => (prev === category.name ? null : category.name))}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add
+                  </button>
+                )}
               </div>
+              {isSpecializationCategory && ccAddOpenCategory === category.name && (
+                <div className="mt-2">
+                  <select
+                    value={ccSelectedOption[category.name] || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setCcSelectedOption((prev) => ({ ...prev, [category.name]: value }));
+                      if (!value) return;
+                      if (isActivitiesCategory) onAddSpecializationItem?.('activities', value);
+                      if (isIndustriesCategory) onAddSpecializationItem?.('industries', value);
+                      setCcSelectedOption((prev) => ({ ...prev, [category.name]: '' }));
+                    }}
+                    className="w-full px-3 py-2.5 text-sm font-semibold rounded-xl border border-harx-100/80 bg-white text-harx-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-200"
+                  >
+                    <option value="">Select and add...</option>
+                    {addableSpecializationOptions.map((option) => (
+                      <option key={option._id} value={option._id}>
+                        {option.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-4">
-                {displayCategorySkills.length > 0 ? displayCategorySkills.map((skillName: string) => {
+                {(isSpecializationCategory ? specializationItems.length > 0 : displayCategorySkills.length > 0) ? (isSpecializationCategory ? specializationItems : displayCategorySkills.map((name: string, idx: number) => ({ name, idx }))).map((entry: any, index: number) => {
+                  const skillName = entry.name as string;
                   const skillData = findSkillData(skillName);
                   return (
-                    <div key={skillName} className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-white/80 rounded-2xl border border-harx-100/60 hover:border-harx-300 transition-colors group">
+                    <div key={`${skillName}-${index}`} className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-white/80 rounded-2xl border border-harx-100/60 hover:border-harx-300 transition-colors group">
                       <div className="space-y-1 mb-4 md:mb-0">
                         <h4 className="font-bold text-slate-900">{skillName}</h4>
                         {skillData?.assessmentResults ? (
@@ -384,18 +461,33 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                         )}
                       </div>
                       
-                      <button
-                        type="button"
-                        onClick={() => takeContactCenterSkillAssessment(skillName, category.name)}
-                        className={`
-                          px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all
-                          ${skillData?.assessmentResults 
-                            ? 'bg-harx-alt-50 text-harx-alt-700 border border-harx-alt-100 hover:bg-harx-alt-100' 
-                            : 'bg-gradient-harx text-white hover:opacity-90 shadow-xl shadow-harx-500/20'}
-                        `}
-                      >
-                        {skillData?.assessmentResults ? 'Retake' : 'Take Assessment'}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {isSpecializationCategory && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isActivitiesCategory) onDeleteSpecializationItem?.('activities', entry.idx);
+                              if (isIndustriesCategory) onDeleteSpecializationItem?.('industries', entry.idx);
+                            }}
+                            className="p-1.5 rounded-lg bg-harx-50 border border-harx-100 text-harx-700 hover:bg-harx-100 transition-colors"
+                            title="Delete item"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => takeContactCenterSkillAssessment(skillName, category.name)}
+                          className={`
+                            px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all
+                            ${skillData?.assessmentResults 
+                              ? 'bg-harx-alt-50 text-harx-alt-700 border border-harx-alt-100 hover:bg-harx-alt-100' 
+                              : 'bg-gradient-harx text-white hover:opacity-90 shadow-xl shadow-harx-500/20'}
+                          `}
+                        >
+                          {skillData?.assessmentResults ? 'Retake' : 'Take Assessment'}
+                        </button>
+                      </div>
                     </div>
                   );
                 }) : (
