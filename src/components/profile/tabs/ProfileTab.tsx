@@ -99,6 +99,14 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
     }
   };
 
+  const resetRecordedDraft = () => {
+    setRecordedVideoBlob(null);
+    if (recordedVideoUrl) {
+      URL.revokeObjectURL(recordedVideoUrl);
+      setRecordedVideoUrl('');
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* About Section */}
@@ -185,7 +193,20 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
 
               {isRecorderReady && (
                 <div className="space-y-3">
-                  <video ref={liveVideoRef} muted className="w-full aspect-video bg-black rounded-2xl object-cover" />
+                  <div className="relative">
+                    <video
+                      ref={liveVideoRef}
+                      muted
+                      autoPlay
+                      playsInline
+                      className="w-full aspect-video bg-black rounded-2xl object-cover"
+                    />
+                    {isRecordingNow && (
+                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-rose-500 text-white text-[10px] font-black uppercase tracking-wider shadow">
+                        Recording...
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center justify-end gap-2">
                     {!isRecordingNow ? (
                       <button
@@ -215,6 +236,17 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
                     <button
                       type="button"
                       onClick={async () => {
+                        resetRecordedDraft();
+                        await startRecorder();
+                      }}
+                      disabled={isUploadingVideo}
+                      className="px-3 py-1.5 rounded-lg border border-harx-100 text-harx-700 text-xs font-bold uppercase tracking-wider hover:bg-harx-50 disabled:opacity-60"
+                    >
+                      Re-record
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
                         if (!recordedVideoBlob) return;
                         const file = new File([recordedVideoBlob], 'presentation-video.webm', { type: 'video/webm' });
                         await onReplaceVideo?.(file);
@@ -237,11 +269,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
                     setIsEditingVideo(false);
                     setIsRecorderReady(false);
                     setIsRecordingNow(false);
-                    setRecordedVideoBlob(null);
-                    if (recordedVideoUrl) {
-                      URL.revokeObjectURL(recordedVideoUrl);
-                      setRecordedVideoUrl('');
-                    }
+                    resetRecordedDraft();
                   }}
                   className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-slate-50"
                 >
