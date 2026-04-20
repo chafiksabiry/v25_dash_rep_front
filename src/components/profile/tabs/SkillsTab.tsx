@@ -269,14 +269,29 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
           ].filter(category => category.skills.length > 0).map((category) => (
             <div key={category.name} className="space-y-4">
               {(() => {
+                const allContactCenterEntries = (profile.skills?.contactCenter || []) as any[];
+                const categorySkillSet = new Set(category.skills.map((s: string) => s.toLowerCase()));
+
+                const selectedEntriesInCategory = allContactCenterEntries.filter((entry: any) => {
+                  const entrySkill = String(entry?.skill || '');
+                  const entryCategory = String(entry?.category || '');
+                  const sameCategory = entryCategory.toLowerCase() === category.name.toLowerCase();
+                  const belongsToPool = categorySkillSet.has(entrySkill.toLowerCase());
+                  return sameCategory || belongsToPool;
+                });
+
                 const selectedInCategory = new Set(
-                  (profile.skills?.contactCenter || [])
-                    .filter((entry: any) => String(entry?.category || '').toLowerCase() === category.name.toLowerCase())
-                    .map((entry: any) => String(entry?.skill || '').toLowerCase())
+                  selectedEntriesInCategory.map((entry: any) => String(entry?.skill || '').toLowerCase())
                 );
+
                 const addableCategorySkills = category.skills.filter(
                   (skillName: string) => !selectedInCategory.has(skillName.toLowerCase())
                 );
+
+                const displayCategorySkills = selectedEntriesInCategory
+                  .map((entry: any) => String(entry?.skill || '').trim())
+                  .filter((name: string) => !!name);
+
                 return (
                   <>
               <div className="flex items-center justify-between border-b border-slate-200/30 pb-2">
@@ -316,7 +331,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               )}
 
               <div className="grid grid-cols-1 gap-4">
-                {category.skills.map((skillName: string) => {
+                {displayCategorySkills.length > 0 ? displayCategorySkills.map((skillName: string) => {
                   const skillData = findSkillData(skillName);
                   return (
                     <div key={skillName} className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-white/80 rounded-2xl border border-harx-100/60 hover:border-harx-300 transition-colors group">
@@ -350,7 +365,11 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                       </button>
                     </div>
                   );
-                })}
+                }) : (
+                  <div className="px-4 py-3 rounded-xl bg-white/70 border border-harx-100/60 text-xs font-semibold text-slate-500">
+                    No skills selected in this category yet.
+                  </div>
+                )}
               </div>
                   </>
                 );
