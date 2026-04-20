@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Clock, Calendar, Pencil, RefreshCw, Video } from 'lucide-react';
+import { Calendar, Clock, Info, Loader2, Pencil, RefreshCw, RotateCcw, Video } from 'lucide-react';
 
 const MAX_RECORDING_MS = 10 * 60 * 1000;
 
@@ -286,164 +286,202 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
           </div>
 
           {isEditingVideo && (
-            <div className="mb-4 space-y-3">
-              {wantsToRerecord && !recordedVideoUrl && (
-                <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2 leading-relaxed">
-                  <span className="font-bold text-slate-700">Durée maximum : 10 minutes.</span>{' '}
-                  L&apos;enregistrement s&apos;arrête automatiquement à cette limite ; un compteur s&apos;affiche pendant la capture.
-                </p>
-              )}
-              {!!profile.personalInfo?.presentationVideo?.url && !wantsToRerecord && !isRecorderReady && !recordedVideoBlob && !recordedVideoUrl && (
-                <div className="space-y-3">
-                  <video
-                    controls
-                    className="w-full aspect-video bg-harx-900/90 rounded-2xl object-cover shadow-lg"
+            <div className="mb-4 overflow-hidden rounded-2xl border border-harx-100/80 bg-gradient-to-br from-white via-white to-harx-50/35 shadow-md ring-1 ring-slate-900/5">
+              <div className="flex items-center gap-3 border-b border-harx-100/60 bg-white/90 px-4 py-3.5 backdrop-blur-sm">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-harx text-white shadow-md shadow-harx-900/10">
+                  <Video className="h-5 w-5" strokeWidth={2.25} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-black tracking-tight text-harx-900">Video capture</p>
+                  <p className="truncate text-[11px] font-medium text-slate-500">Preview, record, then save to your profile</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 p-4 sm:p-5">
+                {wantsToRerecord && !recordedVideoUrl && (
+                  <div className="flex gap-3 rounded-xl border border-amber-200/70 bg-gradient-to-r from-amber-50/90 to-white px-3.5 py-3 text-xs leading-relaxed text-slate-700 shadow-sm">
+                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" strokeWidth={2.5} />
+                    <p>
+                      <span className="font-bold text-harx-900">Durée maximum : 10 minutes.</span>{' '}
+                      L&apos;enregistrement s&apos;arrête automatiquement à cette limite ; un compteur s&apos;affiche pendant la capture.
+                    </p>
+                  </div>
+                )}
+
+                {!!profile.personalInfo?.presentationVideo?.url && !wantsToRerecord && !isRecorderReady && !recordedVideoBlob && !recordedVideoUrl && (
+                  <div className="space-y-4">
+                    <div className="relative overflow-hidden rounded-2xl bg-slate-950 shadow-lg ring-1 ring-slate-900/15">
+                      <video controls className="aspect-video w-full object-cover">
+                        <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setWantsToRerecord(true)}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-harx-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wider text-harx-800 shadow-sm transition-all hover:border-harx-300 hover:bg-harx-50/80"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5 text-harx-500" />
+                        Re-record
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {wantsToRerecord && !isRecorderReady && !recordedVideoBlob && (
+                  <button
+                    type="button"
+                    onClick={startRecorder}
+                    disabled={isUploadingVideo}
+                    className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-harx px-4 py-4 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-harx-900/15 transition-all hover:shadow-xl hover:shadow-harx-900/20 disabled:cursor-not-allowed disabled:opacity-55"
                   >
-                    <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
-                  <div className="flex items-center justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setWantsToRerecord(true)}
-                      className="px-3 py-1.5 rounded-lg border border-harx-100 text-harx-700 text-xs font-bold uppercase tracking-wider hover:bg-harx-50"
-                    >
-                      Re-record
-                    </button>
-                  </div>
-                </div>
-              )}
+                    <span className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.22),_transparent_55%)] opacity-90" aria-hidden />
+                    <span className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 transition-colors group-hover:bg-white/25">
+                      <Video className="h-5 w-5" strokeWidth={2.25} />
+                    </span>
+                    <span className="relative">Start recording</span>
+                  </button>
+                )}
 
-              {wantsToRerecord && !isRecorderReady && !recordedVideoBlob && (
-                <button
-                  type="button"
-                  onClick={startRecorder}
-                  disabled={isUploadingVideo}
-                  className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-harx-100 bg-white text-harx-700 text-sm font-black uppercase tracking-wider hover:bg-harx-50 disabled:opacity-60"
-                >
-                  <Video className="w-4 h-4" />
-                  Start recording
-                </button>
-              )}
-
-              {isRecorderReady && (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <video
-                      ref={liveVideoRef}
-                      muted
-                      autoPlay
-                      playsInline
-                      className="w-full aspect-video bg-black rounded-2xl object-cover"
-                    />
-                    {isRecordingNow && (
-                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-rose-500 text-white text-[10px] font-black uppercase tracking-wider shadow">
-                        Recording...
+                {isRecorderReady && (
+                  <div className="space-y-4">
+                    <div className="relative overflow-hidden rounded-2xl bg-slate-950 shadow-xl ring-1 ring-slate-900/20">
+                      <video
+                        ref={liveVideoRef}
+                        muted
+                        autoPlay
+                        playsInline
+                        className="aspect-video w-full object-cover"
+                      />
+                      {isRecordingNow && (
+                        <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-rose-600/95 px-2.5 py-1.5 text-white shadow-lg backdrop-blur-sm">
+                          <span className="relative flex h-2 w-2">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                          </span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em]">Rec</span>
+                        </div>
+                      )}
+                      {isRecordingNow && (
+                        <div className="absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1.5 font-mono text-[11px] font-bold tabular-nums tracking-wide text-white shadow-lg ring-1 ring-white/10 backdrop-blur-md">
+                          {formatMmSs(recordingElapsedMs)} <span className="text-white/50">/</span> {formatMmSs(MAX_RECORDING_MS)}
+                        </div>
+                      )}
+                      {!isLivePreviewReady && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl bg-slate-950/55 backdrop-blur-[2px]">
+                          <Loader2 className="h-7 w-7 animate-spin text-white" strokeWidth={2.25} />
+                          <span className="text-xs font-bold uppercase tracking-wider text-white/95">Loading camera preview…</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-[11px] leading-snug text-slate-500 sm:max-w-[55%]">
+                        Check framing and audio, then start. Use <span className="font-semibold text-slate-600">Stop</span> when you are done.
+                      </p>
+                      <div className="flex flex-wrap justify-end gap-2 sm:shrink-0">
+                        {!isRecordingNow ? (
+                          <button
+                            type="button"
+                            onClick={beginRecording}
+                            className="inline-flex min-h-[2.75rem] min-w-[8.5rem] items-center justify-center rounded-xl bg-gradient-harx px-5 text-xs font-black uppercase tracking-wider text-white shadow-md transition-all hover:opacity-92 active:scale-[0.98]"
+                          >
+                            Record
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={stopRecording}
+                            className="inline-flex min-h-[2.75rem] min-w-[8.5rem] items-center justify-center rounded-xl bg-rose-600 px-5 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-rose-900/10 ring-1 ring-rose-400/30 transition-all hover:bg-rose-500 active:scale-[0.98]"
+                          >
+                            Stop
+                          </button>
+                        )}
                       </div>
-                    )}
-                    {isRecordingNow && (
-                      <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/55 text-white text-[10px] font-black tracking-wider shadow">
-                        {formatMmSs(recordingElapsedMs)} / {formatMmSs(MAX_RECORDING_MS)}
-                      </div>
-                    )}
-                    {!isLivePreviewReady && (
-                      <div className="absolute inset-0 flex items-center justify-center text-white/90 text-xs font-bold tracking-wider uppercase bg-black/35 rounded-2xl">
-                        Loading camera preview...
-                      </div>
-                    )}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-end gap-2">
-                    {!isRecordingNow ? (
+                )}
+
+                {recordedVideoUrl && (
+                  <div className="space-y-4">
+                    <div className="relative overflow-hidden rounded-2xl bg-slate-950 shadow-lg ring-1 ring-emerald-300/40">
+                      <div className="absolute left-3 top-3 z-10 rounded-full border border-emerald-400/40 bg-emerald-950/80 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-100 backdrop-blur-sm">
+                        Preview
+                      </div>
+                      <video controls src={recordedVideoUrl} className="aspect-video w-full object-cover" />
+                    </div>
+                    <div className="flex flex-wrap justify-end gap-2">
                       <button
                         type="button"
-                        onClick={beginRecording}
-                        className="px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-bold uppercase tracking-wider hover:opacity-90"
+                        onClick={async () => {
+                          resetRecordedDraft();
+                          await startRecorder();
+                        }}
+                        disabled={isUploadingVideo}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-700 shadow-sm transition-all hover:bg-slate-50 disabled:opacity-60"
                       >
-                        Record
+                        Re-record
                       </button>
-                    ) : (
                       <button
                         type="button"
-                        onClick={stopRecording}
-                        className="px-3 py-1.5 rounded-lg bg-rose-500 text-white text-xs font-bold uppercase tracking-wider hover:opacity-90"
+                        onClick={async () => {
+                          if (!recordedVideoBlob) return;
+                          const file = new File([recordedVideoBlob], 'presentation-video.webm', { type: 'video/webm' });
+                          await onReplaceVideo?.(file);
+                          setWantsToRerecord(false);
+                          setIsEditingVideo(false);
+                        }}
+                        disabled={isUploadingVideo}
+                        className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl bg-gradient-harx px-5 text-xs font-black uppercase tracking-wider text-white shadow-md transition-all hover:opacity-92 disabled:opacity-60"
                       >
-                        Stop
+                        {isUploadingVideo ? (
+                          <span className="inline-flex items-center gap-2">
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                            Saving…
+                          </span>
+                        ) : (
+                          'Use this video'
+                        )}
                       </button>
-                    )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {recordedVideoUrl && (
-                <div className="space-y-3">
-                  <video controls src={recordedVideoUrl} className="w-full aspect-video bg-black rounded-2xl object-cover" />
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        resetRecordedDraft();
-                        await startRecorder();
-                      }}
-                      disabled={isUploadingVideo}
-                      className="px-3 py-1.5 rounded-lg border border-harx-100 text-harx-700 text-xs font-bold uppercase tracking-wider hover:bg-harx-50 disabled:opacity-60"
-                    >
-                      Re-record
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (!recordedVideoBlob) return;
-                        const file = new File([recordedVideoBlob], 'presentation-video.webm', { type: 'video/webm' });
-                        await onReplaceVideo?.(file);
-                        setWantsToRerecord(false);
-                        setIsEditingVideo(false);
-                      }}
-                      disabled={isUploadingVideo}
-                      className="px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-60"
-                    >
-                      {isUploadingVideo ? <span className="inline-flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving...</span> : 'Use this video'}
-                    </button>
-                  </div>
+                <div className="flex justify-end border-t border-harx-100/70 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isRecordingNow && mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                        recordedChunksRef.current = [];
+                        mediaRecorderRef.current.stop();
+                      }
+                      clearRecordingTimers();
+                      stopCameraStream();
+                      setIsEditingVideo(false);
+                      setWantsToRerecord(false);
+                      setIsRecorderReady(false);
+                      setIsRecordingNow(false);
+                      resetRecordedDraft();
+                    }}
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
                 </div>
-              )}
-
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isRecordingNow && mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-                      recordedChunksRef.current = [];
-                      mediaRecorderRef.current.stop();
-                    }
-                    clearRecordingTimers();
-                    stopCameraStream();
-                    setIsEditingVideo(false);
-                    setWantsToRerecord(false);
-                    setIsRecorderReady(false);
-                    setIsRecordingNow(false);
-                    resetRecordedDraft();
-                  }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
               </div>
             </div>
           )}
           
           {!isEditingVideo && profile.personalInfo?.presentationVideo?.url ? (
             <div className="space-y-4">
-              <div className="w-full">
-                <video 
-                  controls 
-                  className="w-full aspect-video bg-harx-900/90 rounded-2xl object-cover shadow-lg"
-                >
+              <div className="relative overflow-hidden rounded-2xl bg-slate-950 shadow-lg ring-1 ring-slate-900/15">
+                <video controls className="aspect-video w-full object-cover">
                   <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
               </div>
-              
-              <div className="bg-slate-200/40 rounded-2xl p-4 border border-slate-200/30 flex gap-6">
+
+              <div className="flex flex-wrap gap-6 rounded-2xl border border-slate-200/60 bg-slate-50/50 p-4 backdrop-blur-sm">
                 {profile.personalInfo.presentationVideo.duration && (
                   <div className="flex items-center gap-2 text-sm text-slate-600">
                     <Clock className="w-4 h-4 text-harx-400" />
@@ -459,9 +497,13 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
               </div>
             </div>
           ) : !isEditingVideo ? (
-            <div className="p-4 bg-amber-50/50 border border-amber-200/50 rounded-2xl text-amber-800 text-sm flex items-center gap-3">
-              <span className="text-xl">🎥</span>
-              <span>A video introduction helps you stand out. Please add one to your profile.</span>
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50/80 to-white p-4 text-sm text-amber-900 shadow-sm">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-lg" aria-hidden>
+                🎥
+              </span>
+              <p className="pt-1 leading-relaxed">
+                A video introduction helps you stand out. Please add one to your profile.
+              </p>
             </div>
           ) : null}
         </div>
