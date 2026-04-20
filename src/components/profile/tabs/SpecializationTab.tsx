@@ -1,13 +1,76 @@
-import React from 'react';
-import { Pencil, Plus, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { X } from 'lucide-react';
+import { repApiClient } from '../../../utils/client';
 
 interface SpecializationTabProps {
   profile: any;
   onEditItemClick: () => void;
   onDeleteItemClick: (section: 'industries' | 'activities' | 'notableCompanies', index: number) => void;
+  onAddItemClick: (section: 'industries' | 'activities', value: string) => void;
 }
 
-export const SpecializationTab: React.FC<SpecializationTabProps> = ({ profile, onEditItemClick, onDeleteItemClick }) => {
+export const SpecializationTab: React.FC<SpecializationTabProps> = ({ profile, onEditItemClick, onDeleteItemClick, onAddItemClick }) => {
+  const [allIndustries, setAllIndustries] = useState<Array<{ _id: string; name: string }>>([]);
+  const [allActivities, setAllActivities] = useState<Array<{ _id: string; name: string }>>([]);
+  const [industrySearch, setIndustrySearch] = useState('');
+  const [activitySearch, setActivitySearch] = useState('');
+  const [industryOpen, setIndustryOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const industryRef = useRef<HTMLDivElement | null>(null);
+  const activityRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [industryRes, activityRes] = await Promise.all([
+          repApiClient.get('/api/industries'),
+          repApiClient.get('/api/activities')
+        ]);
+        setAllIndustries(industryRes?.data?.data || []);
+        setAllActivities(activityRes?.data?.data || []);
+      } catch (error) {
+        console.error('Error loading industries/activities options:', error);
+      }
+    };
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (industryRef.current && !industryRef.current.contains(target)) setIndustryOpen(false);
+      if (activityRef.current && !activityRef.current.contains(target)) setActivityOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedIndustryIds = useMemo(() => new Set(
+    (profile.professionalSummary?.industries || []).map((ind: any) => String(typeof ind === 'string' ? ind : ind?._id || ''))
+  ), [profile.professionalSummary?.industries]);
+
+  const selectedActivityIds = useMemo(() => new Set(
+    (profile.professionalSummary?.activities || []).map((act: any) => String(typeof act === 'string' ? act : act?._id || ''))
+  ), [profile.professionalSummary?.activities]);
+
+  const filteredIndustries = useMemo(() => {
+    const search = industrySearch.trim().toLowerCase();
+    return allIndustries.filter((ind) => {
+      if (selectedIndustryIds.has(String(ind._id))) return false;
+      if (!search) return true;
+      return (ind.name || '').toLowerCase().includes(search);
+    });
+  }, [allIndustries, selectedIndustryIds, industrySearch]);
+
+  const filteredActivities = useMemo(() => {
+    const search = activitySearch.trim().toLowerCase();
+    return allActivities.filter((act) => {
+      if (selectedActivityIds.has(String(act._id))) return false;
+      if (!search) return true;
+      return (act.name || '').toLowerCase().includes(search);
+    });
+  }, [allActivities, selectedActivityIds, activitySearch]);
+
   const renderEditableBadge = (
     label: string,
     className: string,
@@ -34,24 +97,6 @@ export const SpecializationTab: React.FC<SpecializationTabProps> = ({ profile, o
       <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-black text-harx-900 tracking-tight">Primary Industries</h2>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onEditItemClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add
-            </button>
-            <button
-              type="button"
-              onClick={onEditItemClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit
-            </button>
-          </div>
         </div>
         <div className="flex flex-wrap gap-3">
           {profile.professionalSummary?.industries?.length > 0 ? (
@@ -68,30 +113,47 @@ export const SpecializationTab: React.FC<SpecializationTabProps> = ({ profile, o
             <p className="text-slate-500 italic">No industries specified</p>
           )}
         </div>
+        <div ref={industryRef} className="mt-4">
+          <input
+            type="text"
+            value={industrySearch}
+            onChange={(e) => {
+              setIndustrySearch(e.target.value);
+              setIndustryOpen(true);
+            }}
+            onFocus={() => setIndustryOpen(true)}
+            placeholder="Search and add industry..."
+            className={`w-full px-3 py-2.5 text-sm font-semibold border border-harx-100/80 bg-harx-50/40 text-harx-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-200 ${industryOpen ? 'rounded-t-xl rounded-b-none' : 'rounded-xl'}`}
+          />
+          {industryOpen && (
+            <div className="border border-t-0 border-harx-100/80 rounded-b-xl bg-white overflow-hidden">
+              <div className="max-h-[126px] overflow-y-auto">
+                {filteredIndustries.length > 0 ? filteredIndustries.map((industry) => (
+                  <button
+                    key={industry._id}
+                    type="button"
+                    onClick={() => {
+                      onAddItemClick('industries', industry._id);
+                      setIndustrySearch('');
+                      setIndustryOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2.5 border-b border-harx-50 last:border-b-0 hover:bg-harx-50/60 transition-colors"
+                  >
+                    <div className="text-sm font-bold text-harx-900">{industry.name}</div>
+                  </button>
+                )) : (
+                  <div className="px-3 py-3 text-xs text-slate-500">No more industries available.</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Activities Section */}
       <div className="bg-harx-alt-50/25 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-alt-100/70">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-black text-harx-alt-900 tracking-tight">Professional Activities</h2>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onEditItemClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add
-            </button>
-            <button
-              type="button"
-              onClick={onEditItemClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit
-            </button>
-          </div>
         </div>
         <div className="flex flex-wrap gap-3">
           {profile.professionalSummary?.activities?.length > 0 ? (
@@ -106,6 +168,41 @@ export const SpecializationTab: React.FC<SpecializationTabProps> = ({ profile, o
             )
           ) : (
             <p className="text-slate-500 italic">No activities specified</p>
+          )}
+        </div>
+        <div ref={activityRef} className="mt-4">
+          <input
+            type="text"
+            value={activitySearch}
+            onChange={(e) => {
+              setActivitySearch(e.target.value);
+              setActivityOpen(true);
+            }}
+            onFocus={() => setActivityOpen(true)}
+            placeholder="Search and add activity..."
+            className={`w-full px-3 py-2.5 text-sm font-semibold border border-harx-alt-100/80 bg-harx-alt-50/40 text-harx-alt-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-alt-200 ${activityOpen ? 'rounded-t-xl rounded-b-none' : 'rounded-xl'}`}
+          />
+          {activityOpen && (
+            <div className="border border-t-0 border-harx-alt-100/80 rounded-b-xl bg-white overflow-hidden">
+              <div className="max-h-[126px] overflow-y-auto">
+                {filteredActivities.length > 0 ? filteredActivities.map((activity) => (
+                  <button
+                    key={activity._id}
+                    type="button"
+                    onClick={() => {
+                      onAddItemClick('activities', activity._id);
+                      setActivitySearch('');
+                      setActivityOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2.5 border-b border-harx-alt-50 last:border-b-0 hover:bg-harx-alt-50/60 transition-colors"
+                  >
+                    <div className="text-sm font-bold text-harx-alt-900">{activity.name}</div>
+                  </button>
+                )) : (
+                  <div className="px-3 py-3 text-xs text-slate-500">No more activities available.</div>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>

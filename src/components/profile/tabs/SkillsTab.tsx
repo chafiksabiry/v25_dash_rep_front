@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { fetchSkillsByType, Skill } from '../../../services/api/skills';
 
 interface SkillsTabProps {
@@ -10,7 +10,6 @@ interface SkillsTabProps {
   onEditItemClick: () => void;
   onDeleteSkill: (type: 'technical' | 'professional' | 'soft', index: number) => void;
   onAddSkill: (type: 'technical' | 'professional' | 'soft', skillId: string) => void;
-  onAddContactCenterSkill: (skillName: string, categoryName: string) => void;
 }
 
 const CONTACT_CENTER_SKILLS = [
@@ -35,8 +34,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
   takeContactCenterSkillAssessment,
   onEditItemClick,
   onDeleteSkill,
-  onAddSkill,
-  onAddContactCenterSkill
+  onAddSkill
 }) => {
   const [availableSkills, setAvailableSkills] = useState<Record<'technical' | 'professional' | 'soft', Skill[]>>({
     technical: [],
@@ -53,8 +51,6 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
     professional: false,
     soft: false
   });
-  const [assessmentAddOpenCategory, setAssessmentAddOpenCategory] = useState<string | null>(null);
-  const [assessmentSelectedSkill, setAssessmentSelectedSkill] = useState<Record<string, string>>({});
   const technicalDropdownRef = useRef<HTMLDivElement | null>(null);
   const professionalDropdownRef = useRef<HTMLDivElement | null>(null);
   const softDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -307,10 +303,6 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                   summaryIndustries.forEach((name: string) => selectedInCategory.add(name));
                 }
 
-                const addableCategorySkills = category.skills.filter(
-                  (skillName: string) => !selectedInCategory.has(skillName.toLowerCase())
-                );
-
                 let displayCategorySkills = selectedEntriesInCategory
                   .map((entry: any) => String(entry?.skill || '').trim())
                   .filter((name: string) => !!name);
@@ -325,39 +317,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                   <>
               <div className="flex items-center justify-between border-b border-slate-200/30 pb-2">
                 <h3 className="text-md font-bold text-slate-400 uppercase tracking-widest">{category.name}</h3>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setAssessmentAddOpenCategory((prev) => (prev === category.name ? null : category.name))
-                  }
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add
-                </button>
               </div>
-
-              {assessmentAddOpenCategory === category.name && (
-                <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
-                  <select
-                    value={assessmentSelectedSkill[category.name] || ''}
-                    onChange={(e) => {
-                      const selected = e.target.value;
-                      setAssessmentSelectedSkill((prev) => ({ ...prev, [category.name]: selected }));
-                      if (!selected) return;
-                      onAddContactCenterSkill(selected, category.name);
-                    }}
-                    className="flex-1 px-3 py-2.5 text-sm font-semibold rounded-xl border border-harx-100/80 bg-white text-harx-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-200"
-                  >
-                    <option value="">{addableCategorySkills.length > 0 ? 'Select skill...' : 'No available skills'}</option>
-                    {addableCategorySkills.map((skillName: string) => (
-                      <option key={`${category.name}-${skillName}`} value={skillName}>
-                        {skillName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
 
               <div className="grid grid-cols-1 gap-4">
                 {displayCategorySkills.length > 0 ? displayCategorySkills.map((skillName: string) => {

@@ -283,41 +283,6 @@ export function Profile() {
     }
   };
 
-  const handleAddContactCenterSkill = async (skillName: string, categoryName: string) => {
-    if (!profile?._id || !skillName || !categoryName) return;
-
-    const currentContactCenter = profile.skills?.contactCenter || [];
-    const exists = currentContactCenter.some(
-      (entry: any) =>
-        String(entry?.skill || '').toLowerCase() === skillName.toLowerCase() &&
-        String(entry?.category || '').toLowerCase() === categoryName.toLowerCase()
-    );
-
-    if (exists) return;
-
-    const updatedContactCenter = [
-      ...currentContactCenter,
-      {
-        skill: skillName,
-        category: categoryName,
-        proficiency: 'Not assessed'
-      }
-    ];
-
-    try {
-      await updateProfileData(profile._id, {
-        skills: {
-          ...profile.skills,
-          contactCenter: updatedContactCenter
-        }
-      });
-      const refreshed = await getProfileData();
-      setProfile(refreshed);
-    } catch (error) {
-      console.error('Error adding contact center skill:', error);
-    }
-  };
-
   const handleDeleteLanguage = async (index: number) => {
     if (!profile?._id) return;
     const currentLanguages = profile.personalInfo?.languages || [];
@@ -390,6 +355,34 @@ export function Profile() {
       setProfile(refreshed);
     } catch (error) {
       console.error('Error deleting specialization item:', error);
+    }
+  };
+
+  const handleAddSpecializationItem = async (
+    section: 'industries' | 'activities',
+    value: string
+  ) => {
+    if (!profile?._id || !value) return;
+    const currentSummary = profile.professionalSummary || {};
+    const source = currentSummary[section] || [];
+
+    const normalizeValue = (entry: any) => (typeof entry === 'object' ? entry?._id : entry);
+    const sourceIds = source.map(normalizeValue).filter((v: any) => !!v);
+    if (sourceIds.includes(value)) return;
+
+    const payload = {
+      professionalSummary: {
+        ...currentSummary,
+        [section]: [...sourceIds, value]
+      }
+    };
+
+    try {
+      await updateProfileData(profile._id, payload);
+      const refreshed = await getProfileData();
+      setProfile(refreshed);
+    } catch (error) {
+      console.error('Error adding specialization item:', error);
     }
   };
 
@@ -474,10 +467,10 @@ export function Profile() {
             }}
             onDeleteSkill={handleDeleteSkill}
             onAddSkill={handleAddSkill}
-            onAddContactCenterSkill={handleAddContactCenterSkill}
             onDeleteLanguage={handleDeleteLanguage}
             onDeleteExperience={handleDeleteExperience}
             onDeleteSpecializationItem={handleDeleteSpecializationItem}
+            onAddSpecializationItem={handleAddSpecializationItem}
             onProfileUpdate={handleProfileUpdate}
           />
         )}
