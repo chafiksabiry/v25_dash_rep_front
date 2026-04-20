@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Pencil, Camera } from 'lucide-react';
+import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Pencil, Camera, ChevronDown } from 'lucide-react';
 import { getProfilePlan, checkCountryMismatch, updateProfileData, fetchProfileFromAPI } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 import { fetchAllSkills, fetchSkillById, Skill, SkillsByCategory, SkillType } from '../services/api/skills';
@@ -89,6 +89,7 @@ export const ProfileView: React.FC<{
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isEditingPublicInfo, setIsEditingPublicInfo] = useState(false);
   const [isSavingPublicInfo, setIsSavingPublicInfo] = useState(false);
+  const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [publicInfoDraft, setPublicInfoDraft] = useState({
     country: '',
     email: '',
@@ -627,6 +628,14 @@ export const ProfileView: React.FC<{
   };
 
   const currentHeader = headerContentMap[activeTab] || headerContentMap.profile;
+  const filteredCountries = countries
+    .filter((country) =>
+      String(country.countryName || '')
+        .toLowerCase()
+        .includes(String(publicInfoDraft.country || '').toLowerCase())
+    )
+    .sort((a, b) => String(a.countryName || '').localeCompare(String(b.countryName || '')))
+    .slice(0, 120);
 
   return (
     <div className="min-h-full bg-[#f8fafc]">
@@ -749,26 +758,47 @@ export const ProfileView: React.FC<{
                   <div className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-200 transition-colors">
                     <MapPin className="w-3.5 h-3.5 text-harx-400" />
                     {isEditingPublicInfo ? (
-                      <>
+                      <div className="relative w-full">
                         <input
                           type="text"
-                          list="country-suggestions"
                           value={publicInfoDraft.country}
-                          onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, country: e.target.value }))}
+                          onChange={(e) => {
+                            setPublicInfoDraft((prev) => ({ ...prev, country: e.target.value }));
+                            setIsCountryDropdownOpen(true);
+                          }}
+                          onFocus={() => setIsCountryDropdownOpen(true)}
+                          onBlur={() => {
+                            setTimeout(() => setIsCountryDropdownOpen(false), 160);
+                          }}
                           placeholder="Search country..."
                           className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
                         />
-                        <datalist id="country-suggestions">
-                          {countries
-                            .slice()
-                            .sort((a, b) => String(a.countryName || '').localeCompare(String(b.countryName || '')))
-                            .map((country) => (
-                              <option key={country._id || country.countryCode || country.zoneName} value={country.countryName}>
-                                {country.countryCode ? `${country.countryName} (${country.countryCode})` : country.countryName}
-                              </option>
-                            ))}
-                        </datalist>
-                      </>
+                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        {isCountryDropdownOpen && (
+                          <div className="absolute z-50 mt-2 w-full bg-white border border-harx-100 rounded-xl shadow-xl overflow-hidden">
+                            <div className="max-h-56 overflow-y-auto">
+                              {filteredCountries.length > 0 ? (
+                                filteredCountries.map((country) => (
+                                  <button
+                                    key={country._id || country.countryCode || country.zoneName}
+                                    type="button"
+                                    onClick={() => {
+                                      setPublicInfoDraft((prev) => ({ ...prev, country: String(country.countryName || '') }));
+                                      setIsCountryDropdownOpen(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2.5 hover:bg-harx-50 border-b border-harx-50 last:border-b-0 transition-colors"
+                                  >
+                                    <div className="text-xs font-bold text-slate-800">{country.countryName}</div>
+                                    <div className="text-[10px] text-slate-500">{country.countryCode || ''}</div>
+                                  </button>
+                                ))
+                              ) : (
+                                <div className="px-3 py-2.5 text-xs text-slate-500">No countries found.</div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-sm font-bold text-slate-900">{getCountryDisplayName()}</span>
                     )}
