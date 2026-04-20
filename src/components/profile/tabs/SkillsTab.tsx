@@ -142,7 +142,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               setDropdownOpenByType((prev) => ({ ...prev, [type]: false }));
             }, 180);
           }}
-          placeholder={`Search ${type} skill...`}
+          placeholder={`Search and add ${type} skill...`}
           className={`w-full px-3 py-2.5 text-sm font-semibold border border-harx-100/80 bg-harx-50/40 text-harx-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-200 ${
             dropdownOpenByType[type] ? 'rounded-t-xl rounded-b-none' : 'rounded-xl'
           }`}
