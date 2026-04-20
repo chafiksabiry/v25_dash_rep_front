@@ -1,16 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactCrop, { Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { 
-  MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase, 
+import {
+  MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase,
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
   Edit, Check, X, Save, RefreshCw, Plus, Trash2, Camera, Upload, Video,
-  Play, Pause, Square, RotateCcw
+  Play, Pause, Square, RotateCcw, User, Globe, ShieldCheck, ChevronLeft
 } from 'lucide-react';
 import { updateProfileData, updateBasicInfo, updateExperience, updateSkills, checkCountryMismatch } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 import { fetchAllSkills, SkillsByCategory, Skill } from '../services/api/skills';
 import { fetchAllLanguages, Language } from '../services/api/languages';
+
+// Import Modular Components
+import { EditSidebar } from './profile/edit/EditSidebar';
+import { EditNavbar } from './profile/edit/EditNavbar';
+import { EditProfileTab } from './profile/edit/tabs/EditProfileTab';
+import { EditSkillsTab } from './profile/edit/tabs/EditSkillsTab';
+import { EditExperienceTab } from './profile/edit/tabs/EditExperienceTab';
+import { EditLanguagesTab } from './profile/edit/tabs/EditLanguagesTab';
+import { EditAvailabilityTab } from './profile/edit/tabs/EditAvailabilityTab';
 
 // Add CSS styles for error highlighting
 const styles = `
@@ -37,7 +46,7 @@ if (typeof document !== 'undefined' && !document.getElementById('profile-editor-
 
 // Convert proficiency level to star rating (A1-C2 = 1-6 stars)
 const getProficiencyStars = (proficiency: string): number => {
-  switch(proficiency) {
+  switch (proficiency) {
     case 'A1':
     case 'Basic':
       return 1;
@@ -139,7 +148,7 @@ interface PhotoUploadResponse {
 }
 
 // Define interfaces for Industry and Activity
-interface Industry {
+export interface Industry {
   _id: string;
   name: string;
   description: string;
@@ -148,7 +157,7 @@ interface Industry {
   updatedAt: string;
 }
 
-interface Activity {
+export interface Activity {
   _id: string;
   name: string;
   description: string;
@@ -176,11 +185,11 @@ const uploadPhoto = async (agentId: string, photoFile: Blob): Promise<PhotoUploa
         'Authorization': `Bearer ${token}`
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const updatedProfile = await response.json();
     return updatedProfile;
   } catch (error) {
@@ -193,26 +202,26 @@ const uploadPhoto = async (agentId: string, photoFile: Blob): Promise<PhotoUploa
 const base64ToBlob = async (base64String: string): Promise<Blob> => {
   // Remove data URL prefix if present
   const base64WithoutPrefix = base64String.split(',')[1] || base64String;
-  
+
   // Decode base64
   const byteString = atob(base64WithoutPrefix);
-  
+
   // Create an array buffer from the decoded string
   const ab = new ArrayBuffer(byteString.length);
   const ia = new Uint8Array(ab);
-  
+
   for (let i = 0; i < byteString.length; i++) {
     ia[i] = byteString.charCodeAt(i);
   }
-  
+
   // Create blob from array buffer
   return new Blob([ab], { type: 'image/jpeg' });
 };
 
 // Function to upload presentation video with progress
 const uploadPresentationVideo = async (
-  agentId: string, 
-  videoBlob: Blob, 
+  agentId: string,
+  videoBlob: Blob,
   onProgress?: (progress: number) => void
 ): Promise<any> => {
   const token = localStorage.getItem('token');
@@ -222,8 +231,8 @@ const uploadPresentationVideo = async (
 
   const formData = new FormData();
   // Convert blob to file for proper upload
-  const videoFile = new File([videoBlob], 'presentation-video.webm', { 
-    type: 'video/webm' 
+  const videoFile = new File([videoBlob], 'presentation-video.webm', {
+    type: 'video/webm'
   });
   formData.append('video', videoFile);
 
@@ -299,13 +308,14 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       availability: mergedAvailability
     };
   });
+  const [activeTab, setActiveTab] = useState('profile');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [tempProfileDescription, setTempProfileDescription] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Track which sections have been modified
   const [modifiedSections, setModifiedSections] = useState({
     personalInfo: false,
@@ -316,14 +326,14 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     availability: false,
     profileImage: false
   });
-  
+
   // Additional state for editing
   const [tempLanguage, setTempLanguage] = useState({ language: '', proficiency: 'B1' });
-  
+
   // States for languages data
   const [availableLanguages, setAvailableLanguages] = useState<Language[]>([]);
   const [loadingLanguages, setLoadingLanguages] = useState(false);
-  
+
   // States for language dropdown
   const [languageSearchTerm, setLanguageSearchTerm] = useState('');
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
@@ -374,13 +384,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [allTimezones, setAllTimezones] = useState<Timezone[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [loadingTimezones, setLoadingTimezones] = useState(false);
-  
+
   // States for searchable country dropdown
   const [countrySearchTerm, setCountrySearchTerm] = useState('');
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [filteredCountries, setFilteredCountries] = useState<Timezone[]>([]);
   const [selectedCountryIndex, setSelectedCountryIndex] = useState(-1);
-  
+
   // States for searchable timezone dropdown
   const [timezoneSearchTerm, setTimezoneSearchTerm] = useState('');
   const [isTimezoneDropdownOpen, setIsTimezoneDropdownOpen] = useState(false);
@@ -398,10 +408,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     soft: {}
   });
   const [loadingSkills, setLoadingSkills] = useState(false);
-  
+
   // States for skill selection dropdown
-  const [skillDropdownOpen, setSkillDropdownOpen] = useState<{[key: string]: boolean}>({});
-  const [skillSearchTerm, setSkillSearchTerm] = useState<{[key: string]: string}>({});
+  const [skillDropdownOpen, setSkillDropdownOpen] = useState<{ [key: string]: boolean }>({});
+  const [skillSearchTerm, setSkillSearchTerm] = useState<{ [key: string]: string }>({});
 
   // States for industries data
   const [industriesData, setIndustriesData] = useState<Industry[]>([]);
@@ -453,7 +463,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     if (initialProfile) {
       setProfile(initialProfile);
       setTempProfileDescription(initialProfile.professionalSummary?.profileDescription || '');
-      
+
       // Set initial country search term if country is already selected
       if (initialProfile.personalInfo?.country) {
         if (typeof initialProfile.personalInfo.country === 'object') {
@@ -461,7 +471,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           setSelectedCountry(initialProfile.personalInfo.country.countryCode || '');
         }
       }
-      
+
       // Set initial timezone search term if timezone is already selected
       if (initialProfile.availability?.timeZone) {
         if (typeof initialProfile.availability.timeZone === 'object' && initialProfile.availability.timeZone !== null) {
@@ -594,6 +604,28 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       }
     };
 
+    const handleProfileChange = (field: string, value: any) => {
+      if (['name', 'email', 'phone', 'country'].includes(field)) {
+        setProfile((prev: any) => ({
+          ...prev,
+          personalInfo: {
+            ...prev.personalInfo,
+            [field]: value
+          }
+        }));
+        setModifiedSections(prev => ({ ...prev, personalInfo: true }));
+      } else if (field === 'currentRole') {
+        setProfile((prev: any) => ({
+          ...prev,
+          professionalSummary: {
+            ...prev.professionalSummary,
+            currentRole: value
+          }
+        }));
+        setModifiedSections(prev => ({ ...prev, professionalSummary: true }));
+      }
+    };
+
     loadActivities();
   }, []);
 
@@ -625,14 +657,14 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         const timezonesData = await repWizardApi.getTimezonesByCountry(selectedCountry);
         setTimezones(timezonesData);
         console.log('✅ Timezones loaded:', timezonesData.length);
-        
+
         // Auto-suggest main timezone only if no timezone is currently set
         const currentTimezone = profile.availability.timeZone;
         if ((!currentTimezone || currentTimezone === '' || currentTimezone === null) && timezonesData.length > 0) {
           // Find the main timezone (usually the first one or one with highest priority)
           const mainTimezone = timezonesData[0]; // Take the first timezone as main
           console.log('🎯 Auto-suggesting main timezone:', mainTimezone.zoneName);
-          
+
           setProfile((prev: Profile) => ({
             ...prev,
             availability: {
@@ -673,7 +705,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   useEffect(() => {
     // Combine suggested timezones and all other timezones
     const allAvailableTimezones = [...timezones, ...allTimezones.filter(tz => !timezones.some(suggestedTz => suggestedTz._id === tz._id))];
-    
+
     if (!timezoneSearchTerm) {
       setFilteredTimezones(allAvailableTimezones);
     } else {
@@ -725,22 +757,22 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     if (!profile.availability.timeZone) {
       return null;
     }
-    
-    const currentTimezoneId = typeof profile.availability.timeZone === 'object' 
-      ? profile.availability.timeZone._id 
+
+    const currentTimezoneId = typeof profile.availability.timeZone === 'object'
+      ? profile.availability.timeZone._id
       : profile.availability.timeZone;
-    
+
     const selectedCountryData = countries.find(c => c.countryCode === selectedCountry);
     const selectedTimezoneData = allTimezones.find(tz => tz._id === currentTimezoneId);
-    
+
     if (!selectedCountryData || !selectedTimezoneData || !currentTimezoneId) {
       return null;
     }
-    
+
     // Check if timezone belongs to selected country
     const timezoneCountry = selectedTimezoneData.countryCode;
     const selectedCountryCode = selectedCountryData.countryCode;
-    
+
     if (timezoneCountry !== selectedCountryCode) {
       const timezoneCountryData = countries.find(c => c.countryCode === timezoneCountry);
       return {
@@ -749,7 +781,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         timezoneName: selectedTimezoneData.zoneName
       };
     }
-    
+
     return null;
   };
 
@@ -843,7 +875,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
     const { isValid, errors } = validateProfile();
     setValidationErrors(errors);
-    
+
     if (!isValid) {
       console.log('❌ Validation failed:', errors);
       showToast('Please fix validation errors before saving', 'error');
@@ -880,10 +912,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         try {
           setUploadingPhoto(true);
           console.log('📸 Uploading new profile photo...');
-          
+
           const photoBlob = await base64ToBlob(imagePreview);
           const photoResult = await uploadPhoto(profile._id, photoBlob);
-          
+
           console.log('✅ Photo uploaded successfully');
         } catch (error) {
           console.error('❌ Error uploading photo:', error);
@@ -906,13 +938,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             setUploadingVideo(true);
             setUploadProgress(0);
             console.log('🎥 Replacing video with new recording...');
-            
+
             const videoResult = await uploadPresentationVideo(
-              profile._id, 
+              profile._id,
               recordedVideoBlob,
               (progress) => setUploadProgress(progress)
             );
-            
+
             console.log('✅ Video replaced successfully', videoResult);
             setVideoUploaded(true);
             setIsExistingVideoMarkedForDeletion(false); // Reset deletion flag
@@ -930,9 +962,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         else if (isExistingVideoMarkedForDeletion && !recordedVideoBlob) {
           try {
             console.log('🗑️ Deleting existing video...');
-            
+
             await deleteVideoFromServer();
-            
+
             console.log('✅ Video deleted successfully');
             setIsExistingVideoMarkedForDeletion(false); // Reset deletion flag
             showToast('Video deleted successfully!', 'success');
@@ -948,13 +980,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             setUploadingVideo(true);
             setUploadProgress(0);
             console.log('🎥 Uploading new presentation video...');
-            
+
             const videoResult = await uploadPresentationVideo(
-              profile._id, 
+              profile._id,
               recordedVideoBlob,
               (progress) => setUploadProgress(progress)
             );
-            
+
             console.log('✅ Video uploaded successfully', videoResult);
             setVideoUploaded(true);
             showToast('Video uploaded successfully!', 'success');
@@ -978,7 +1010,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       if (modifiedSections.personalInfo) {
         // Create a copy of personalInfo without video data for the basic-info endpoint
         const { presentationVideo, ...personalInfoWithoutVideo } = profile.personalInfo;
-        
+
         console.log('📝 Saving personal info...', {
           endpoint: `/api/profiles/${profile._id}/basic-info`,
           data: personalInfoWithoutVideo
@@ -998,7 +1030,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       // Save skills if modified
       if (modifiedSections.skills) {
         console.log('📝 Saving skills...');
-        
+
         // Helper function to get full skill object by ID
         const getFullSkillObject = (skillId: string, skillType: 'technical' | 'professional' | 'soft') => {
           const skillsForType = skillsData[skillType];
@@ -1069,7 +1101,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
             }
           }))
         };
-        
+
         console.log('Skills data to be sent:', {
           endpoint: `/api/profiles/${profile._id}/skills`,
           data: formattedSkills
@@ -1090,7 +1122,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       if (modifiedSections.languages) {
         // Create a copy of personalInfo without video data for the basic-info endpoint
         const { presentationVideo, ...personalInfoWithoutVideo } = profile.personalInfo;
-        
+
         console.log('📝 Saving languages...', {
           endpoint: `/api/profiles/${profile._id}/basic-info`,
           data: {
@@ -1115,7 +1147,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       // After all updates are done, refresh the profile data
       const updatedProfile = await refreshProfileData();
-      
+
       // Reset modified sections
       setModifiedSections({
         personalInfo: false,
@@ -1129,7 +1161,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       // Reset photo deletion state after successful save
       setIsPhotoMarkedForDeletion(false);
-      
+
       // Reset video states after successful save
       setUploadProgress(0);
       setUploadingVideo(false);
@@ -1139,11 +1171,11 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       console.log('✅ All changes saved successfully');
       showToast('Profile saved successfully', 'success');
-      
+
       // Update localStorage and dispatch event for TopBar update
       localStorage.setItem('profileData', JSON.stringify(updatedProfile));
       window.dispatchEvent(new Event(PROFILE_UPDATE_EVENT));
-      
+
       onSave(updatedProfile);
     } catch (error) {
       console.error('❌ Error saving profile:', error);
@@ -1165,18 +1197,18 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       ...profile.personalInfo,
       [field]: value
     };
-    
+
     setProfile((prev: Profile) => ({
       ...prev,
       personalInfo: updatedPersonalInfo
     }));
-    
+
     // Mark personal info section as modified
     setModifiedSections(prev => ({
       ...prev,
       personalInfo: true
     }));
-    
+
     // Clear validation error for this field if value is valid
     if (value && value.trim()) {
       setValidationErrors((prev: Record<string, string>) => ({
@@ -1185,7 +1217,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       }));
     }
   };
-  
+
   // Add language to profile
   const addLanguage = (selectedLanguage: Language) => {
     // Check if language is already added
@@ -1203,12 +1235,12 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       language: selectedLanguage._id,
       proficiency: tempLanguage.proficiency
     };
-    
+
     const updatedLanguages = [
       ...(profile.personalInfo?.languages || []),
       newLanguageEntry
     ];
-    
+
     // Update local state
     setProfile((prev: Profile) => ({
       ...prev,
@@ -1217,31 +1249,31 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         languages: updatedLanguages
       }
     }));
-    
+
     // Mark languages section as modified
     setModifiedSections(prev => ({
       ...prev,
       languages: true
     }));
-    
+
     // Clear any language-related validation errors
     setValidationErrors((prev: Record<string, string>) => ({
       ...prev,
       languages: ''
     }));
-    
+
     // Reset form
     setTempLanguage({ language: '', proficiency: 'B1' });
     setLanguageSearchTerm('');
     setIsLanguageDropdownOpen(false);
-    
+
     showToast('Language added successfully', 'success');
   };
-  
+
   // Remove language from profile
   const removeLanguage = (index: number) => {
     const updatedLanguages = profile.personalInfo.languages.filter((_: any, i: number) => i !== index);
-    
+
     // Update local state
     setProfile((prev: Profile) => ({
       ...prev,
@@ -1250,13 +1282,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         languages: updatedLanguages
       }
     }));
-    
+
     // Mark languages section as modified
     setModifiedSections(prev => ({
       ...prev,
       languages: true
     }));
-    
+
     // Set validation error if removing last language
     if (updatedLanguages.length === 0) {
       setValidationErrors((prev: Record<string, string>) => ({
@@ -1265,13 +1297,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       }));
     }
   };
-  
+
   // Update language proficiency
   const updateLanguageProficiency = (index: number, newProficiency: string) => {
-    const updatedLanguages = profile.personalInfo.languages.map((lang: any, i: number) => 
+    const updatedLanguages = profile.personalInfo.languages.map((lang: any, i: number) =>
       i === index ? { ...lang, proficiency: newProficiency } : lang
     );
-    
+
     // Update local state
     setProfile((prev: Profile) => ({
       ...prev,
@@ -1280,7 +1312,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         languages: updatedLanguages
       }
     }));
-    
+
     // Mark languages section as modified
     setModifiedSections(prev => ({
       ...prev,
@@ -1291,19 +1323,19 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
 
   // New skill handlers for skill selector
-  const handleSkillsChange = (type: 'technical' | 'professional' | 'soft', skills: Array<{skill: string}>) => {
-      setProfile((prev: Profile) => ({
-        ...prev,
-        skills: {
-          ...prev.skills,
+  const handleSkillsChange = (type: 'technical' | 'professional' | 'soft', skills: Array<{ skill: string }>) => {
+    setProfile((prev: Profile) => ({
+      ...prev,
+      skills: {
+        ...prev.skills,
         [type]: skills
-        }
-      }));
-      
-      setModifiedSections(prev => ({
-        ...prev,
-        skills: true
-      }));
+      }
+    }));
+
+    setModifiedSections(prev => ({
+      ...prev,
+      skills: true
+    }));
   };
 
   // Get current skills for each type in the expected format
@@ -1370,22 +1402,22 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const calculateScaledDimensions = (originalWidth: number, originalHeight: number) => {
     const maxWidth = Math.min(window.innerWidth * 0.8, 800); // 80% of viewport width or 800px max
     const maxHeight = Math.min(window.innerHeight * 0.6, 600); // 60% of viewport height or 600px max
-    
+
     let newWidth = originalWidth;
     let newHeight = originalHeight;
-    
+
     // Scale down if width exceeds maxWidth
     if (newWidth > maxWidth) {
       newHeight = (maxWidth * newHeight) / newWidth;
       newWidth = maxWidth;
     }
-    
+
     // Scale down further if height still exceeds maxHeight
     if (newHeight > maxHeight) {
       newWidth = (maxHeight * newWidth) / newHeight;
       newHeight = maxHeight;
     }
-    
+
     return {
       width: Math.floor(newWidth),
       height: Math.floor(newHeight)
@@ -1429,13 +1461,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       setImagePreview(croppedImageUrl);
       setShowCropModal(false);
       setTempImage(null);
-      
+
       // Ensure we mark the profile image as modified
       setModifiedSections(prev => ({
         ...prev,
         profileImage: true
       }));
-      
+
       console.log('✨ New photo cropped and ready for upload');
     }
   };
@@ -1475,14 +1507,14 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       fileInputRef.current.value = '';
     }
     console.log('🧹 Cleared local image preview and file input');
-    
+
     // Mark profile image as modified
     setModifiedSections(prev => ({
       ...prev,
       profileImage: true
     }));
     console.log('📝 Marked profile image as modified');
-    
+
     showToast('Photo will be removed when you save changes', 'success');
     console.log('✨ Photo marked for deletion');
   };
@@ -1520,15 +1552,15 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   // Video recording functions
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
           width: { ideal: 640 },
           height: { ideal: 480 },
           facingMode: 'user'
         },
-        audio: true 
+        audio: true
       });
-      
+
       setStream(mediaStream);
       setCameraPermission('granted');
       setShowVideoRecorder(true);
@@ -1569,13 +1601,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       const videoUrl = URL.createObjectURL(blob);
       setRecordedVideo(videoUrl);
       setRecordedVideoBlob(blob); // Store the blob for upload
-      
+
       // Mark video as modified
       setModifiedSections(prev => ({
         ...prev,
         personalInfo: true
       }));
-      
+
       // Show success message
       showToast('Video recorded successfully!', 'success');
     };
@@ -1592,24 +1624,24 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     recordingTimerRef.current = setInterval(() => {
       setRecordingTime(prev => {
         const newTime = prev + 1;
-        
+
         // Show warning at 540 seconds (1 minute left)
         if (newTime === 540) {
           setShowTimeWarning(true);
         }
-        
+
         // Stop at exactly 600 seconds - 10 minute limit reached
         if (newTime === 600) {
           stopRecordingAndHideCamera();
           showToast('✅ Recording complete! 10-minute limit reached.', 'success');
           return 600;
         }
-        
+
         // Prevent going over 600 seconds
         if (newTime > 600) {
           return 600;
         }
-        
+
         return newTime;
       });
     }, 1000);
@@ -1619,19 +1651,19 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     if (mediaRecorder && isRecording) {
       mediaRecorder.stop();
       setIsRecording(false);
-      
+
       if (recordingTimerRef.current) {
         clearInterval(recordingTimerRef.current);
         recordingTimerRef.current = null;
       }
     }
-    
+
     // Reset warning state
     setShowTimeWarning(false);
-    
+
     // Hide camera interface immediately to avoid visual flash
     setShowVideoRecorder(false);
-    
+
     // Stop camera stream after a small delay to ensure recording is processed
     setTimeout(() => {
       if (stream) {
@@ -1660,13 +1692,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     setHasShownCompletionToast(false); // Reset completion toast state when deleting video
     setUploadProgress(0); // Reset upload progress
     setVideoUploaded(false); // Reset upload status
-    
+
     // Mark as modified to update backend
     setModifiedSections(prev => ({
       ...prev,
       personalInfo: true
     }));
-    
+
     showToast('Video deleted successfully', 'success');
   };
 
@@ -1710,7 +1742,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     if (stream && videoRef.current && showVideoRecorder) {
       const videoElement = videoRef.current;
       videoElement.srcObject = stream;
-      
+
       const handleLoadedMetadata = () => {
         videoElement.play().catch((error) => {
           console.error('Error playing video:', error);
@@ -1720,15 +1752,15 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       const handleError = (error: any) => {
         console.error('Video element error:', error);
       };
-      
+
       videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
       videoElement.addEventListener('error', handleError);
-      
+
       // Force load if metadata is already available
       if (videoElement.readyState >= 1) {
         handleLoadedMetadata();
       }
-      
+
       return () => {
         videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
         videoElement.removeEventListener('error', handleError);
@@ -1760,13 +1792,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     // Filter skills based on search term and exclude already selected skills
     const currentSkills = getCurrentSkills(skillType);
     const selectedSkillIds = new Set(currentSkills.map((s: any) => s.skill));
-    
+
     const filteredSkills: { [category: string]: Skill[] } = {};
     Object.entries(skillsForType).forEach(([category, skills]) => {
-      const filtered = skills.filter(skill => 
+      const filtered = skills.filter(skill =>
         !selectedSkillIds.has(skill._id) &&
-        (skill.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-         skill.description.toLowerCase().includes(searchTerm.toLowerCase()))
+        (skill.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          skill.description.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       if (filtered.length > 0) {
         filteredSkills[category] = filtered;
@@ -1777,10 +1809,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       const newSkill = {
         skill: skill._id
       };
-      
+
       const updatedSkills = [...currentSkills, newSkill];
       handleSkillsChange(skillType, updatedSkills);
-      
+
       // Reset form
       setSkillSearchTerm(prev => ({ ...prev, [skillType]: '' }));
       setSkillDropdownOpen(prev => ({ ...prev, [skillType]: false }));
@@ -1804,7 +1836,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               placeholder={placeholder}
               className="w-full p-2 border rounded-md"
             />
-            
+
             {/* Search Icon */}
             <div className="absolute right-2 top-2.5 text-gray-400">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1851,12 +1883,12 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const renderIndustryDropdown = () => {
     // Extract IDs from industries (handle both string IDs and object format)
     const selectedIndustryIds = new Set(
-      (profile.professionalSummary?.industries || []).map((industry: any) => 
+      (profile.professionalSummary?.industries || []).map((industry: any) =>
         typeof industry === 'string' ? industry : industry._id
       )
     );
-    
-    const filteredIndustries = industriesData.filter(industry => 
+
+    const filteredIndustries = industriesData.filter(industry =>
       industry.isActive &&
       !selectedIndustryIds.has(industry._id) &&
       industry.name.toLowerCase().includes(industrySearchTerm.toLowerCase())
@@ -1878,7 +1910,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         ...prev,
         professionalSummary: true
       }));
-      
+
       // Reset form
       setIndustrySearchTerm('');
       setIndustryDropdownOpen(false);
@@ -1902,7 +1934,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               placeholder="Search and select industry"
               className="w-full p-2 border rounded-md"
             />
-            
+
             {/* Search Icon */}
             <div className="absolute right-2 top-2.5 text-gray-400">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1942,12 +1974,12 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const renderActivityDropdown = () => {
     // Extract IDs from activities (handle both string IDs and object format)
     const selectedActivityIds = new Set(
-      (profile.professionalSummary?.activities || []).map((activity: any) => 
+      (profile.professionalSummary?.activities || []).map((activity: any) =>
         typeof activity === 'string' ? activity : activity._id
       )
     );
-    
-    const filteredActivities = activitiesData.filter(activity => 
+
+    const filteredActivities = activitiesData.filter(activity =>
       activity.isActive &&
       !selectedActivityIds.has(activity._id) &&
       activity.name.toLowerCase().includes(activitySearchTerm.toLowerCase())
@@ -1969,7 +2001,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         ...prev,
         professionalSummary: true
       }));
-      
+
       // Reset form
       setActivitySearchTerm('');
       setActivityDropdownOpen(false);
@@ -1993,7 +2025,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
               placeholder="Search and select activity"
               className="w-full p-2 border rounded-md"
             />
-            
+
             {/* Search Icon */}
             <div className="absolute right-2 top-2.5 text-gray-400">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2040,22 +2072,22 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       try {
         setCheckingCountryMismatch(true);
-        
+
         // Only show spinner if check takes longer than 800ms
         const spinnerTimer = setTimeout(() => {
           setShowLoadingSpinner(true);
         }, 800);
-        
+
         console.log('🔍 Checking country mismatch for selected country:', selectedCountry);
-        
+
         const mismatchResult = await checkCountryMismatch(
-          selectedCountry, 
+          selectedCountry,
           countries
         );
-        
+
         // Clear the spinner timer since we got a result
         clearTimeout(spinnerTimer);
-        
+
         if (mismatchResult) {
           setCountryMismatch(mismatchResult);
           if (mismatchResult.hasMismatch) {
@@ -2075,1942 +2107,310 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     checkMismatch();
   }, [selectedCountry, countries]);
 
+  const [activeTab, setActiveTab] = useState('profile');
+
+  const handleProfileChange = (field: string, value: any) => {
+    setProfile((prev: Profile) => ({
+      ...prev,
+      personalInfo: {
+        ...prev.personalInfo,
+        [field]: value
+      }
+    }));
+    setModifiedSections(prev => ({
+      ...prev,
+      personalInfo: true
+    }));
+  };
+
   return (
-    <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 p-6">
-      {/* Page Header with Save/Cancel Buttons */}
-      <div className="md:col-span-12 flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={() => onSave(initialProfile)}
-            className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 flex items-center gap-2 text-sm font-medium transition-colors"
-          >
-            <X className="w-4 h-4" />
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={loading || uploadingPhoto || uploadingVideo}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading || uploadingPhoto || uploadingVideo ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                {uploadingVideo ? 'Uploading Video...' : uploadingPhoto ? 'Uploading Photo...' : 'Saving...'}
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Save All Changes
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Left Column */}
-      <div className="md:col-span-4 space-y-6">
-        {/* Profile Header with editable fields */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="text-center">
-            <div className="mb-6 relative">
-              <div 
-                className="w-32 h-32 rounded-full mx-auto shadow-lg border-4 border-white bg-gray-300 overflow-hidden relative group cursor-pointer"
-                title={isPhotoMarkedForDeletion ? "Click to add new photo" : "Click to view or edit photo"}
-                onClick={() => {
-                  if (!isPhotoMarkedForDeletion) {
-                    const imageUrl = imagePreview || profile.personalInfo?.photo?.url;
-                    if (imageUrl) {
-                      setImageToShow(imageUrl);
-                      setShowImageModal(true);
-                    } else {
-                      fileInputRef.current?.click();
-                    }
-                  } else {
-                    fileInputRef.current?.click();
-                  }
-                }}
-              >
-                {!isPhotoMarkedForDeletion && (imagePreview || profile.personalInfo?.photo?.url) ? (
-                  <img 
-                    src={imagePreview || profile.personalInfo?.photo?.url} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white hover:bg-gray-400 transition-colors">
-                    {profile.personalInfo?.name?.charAt(0) || '?'}
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="text-white text-sm">
-                    {isPhotoMarkedForDeletion ? 'Click to add new photo' : 'Click to view or edit'}
-                  </div>
-                </div>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
-            </div>
-            
-            {/* Name Field */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input
-                type="text"
-                value={profile.personalInfo?.name || ''}
-                onChange={(e) => handleProfileChange('name', e.target.value)}
-                className="w-full p-2 border rounded-md"
-                placeholder="Your name"
-              />
-              {renderError(validationErrors.name, 'name')}
-            </div>
-            
-            {/* Job Role Field */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Role</label>
-              <input
-                type="text"
-                value={profile.professionalSummary?.currentRole || ''}
-                onChange={(e) => {
-                  setProfile((prev: Profile) => ({
-                    ...prev,
-                    professionalSummary: {
-                      ...prev.professionalSummary,
-                      currentRole: e.target.value
-                    }
-                  }));
-                  setModifiedSections(prev => ({
-                    ...prev,
-                    professionalSummary: true
-                  }));
-                }}
-                className="w-full p-2 border rounded-md"
-                placeholder="Your current role"
-              />
-            </div>
-            
-            {/* Country Field - Searchable Dropdown */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                <MapPin className="w-4 h-4 mr-1" />
-                Country
-              </label>
-              <div className="relative">
-              <input
-                type="text"
-                  value={countrySearchTerm || (profile.personalInfo?.country?.countryName || '')}
-                  onChange={(e) => {
-                    setCountrySearchTerm(e.target.value);
-                    setIsCountryDropdownOpen(true);
-                    setSelectedCountryIndex(-1); // Reset selection when typing
-                    
-                    // If user clears the field, reset the country selection
-                    if (e.target.value === '') {
-                      setSelectedCountry('');
-                      handleProfileChange('country', '');
-                    }
-                  }}
-                  onFocus={() => {
-                    setIsCountryDropdownOpen(true);
-                    setSelectedCountryIndex(-1); // Reset keyboard selection
-                  }}
-                  onBlur={() => {
-                    // Delay closing to allow for selection
-                    setTimeout(() => {
-                      setIsCountryDropdownOpen(false);
-                      
-                      // Check if what the user typed matches any country exactly
-                      if (countrySearchTerm && !selectedCountry) {
-                        const exactMatch = countries.find(c => 
-                          c.countryName.toLowerCase() === countrySearchTerm.toLowerCase()
-                        );
-                        if (exactMatch) {
-                          setSelectedCountry(exactMatch.countryCode);
-                          handleProfileChange('country', exactMatch._id);
-                        }
-                      }
-                    }, 200);
-                  }}
-                  onKeyDown={(e) => {
-                    if (!isCountryDropdownOpen) return;
-                    
-                    switch (e.key) {
-                      case 'ArrowDown':
-                        e.preventDefault();
-                        setSelectedCountryIndex(prev => 
-                          prev < filteredCountries.length - 1 ? prev + 1 : 0
-                        );
-                        break;
-                      case 'ArrowUp':
-                        e.preventDefault();
-                        setSelectedCountryIndex(prev => 
-                          prev > 0 ? prev - 1 : filteredCountries.length - 1
-                        );
-                        break;
-                      case 'Enter':
-                        e.preventDefault();
-                        if (selectedCountryIndex >= 0 && filteredCountries[selectedCountryIndex]) {
-                          const selectedCountry = filteredCountries[selectedCountryIndex];
-                          setSelectedCountry(selectedCountry.countryCode);
-                          setCountrySearchTerm(selectedCountry.countryName);
-                          setIsCountryDropdownOpen(false);
-                          handleProfileChange('country', selectedCountry._id);
-                        }
-                        break;
-                      case 'Escape':
-                        setIsCountryDropdownOpen(false);
-                        break;
-                    }
-                  }}
-                  placeholder="Search for your country... (use ↑↓ arrows to navigate)"
-                className="w-full p-2 border rounded-md"
-                />
-                
-                {/* Search Icon */}
-                <div className="absolute right-2 top-2.5 text-gray-400">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-
-                {/* Dropdown List */}
-                {isCountryDropdownOpen && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                                         {filteredCountries.length > 0 ? (
-                       filteredCountries.map((country, index) => (
-                         <button
-                           key={country.countryCode}
-                           type="button"
-                           onClick={() => {
-                             setSelectedCountry(country.countryCode);
-                             setCountrySearchTerm(country.countryName);
-                             setIsCountryDropdownOpen(false);
-                             handleProfileChange('country', country._id);
-                           }}
-                           className={`w-full text-left px-3 py-2 flex items-center justify-between ${
-                             index === selectedCountryIndex 
-                               ? 'bg-blue-100 text-blue-700' 
-                               : 'hover:bg-blue-50 hover:text-blue-600'
-                           }`}
-                         >
-                           <span>{country.countryName}</span>
-                           <span className="text-sm text-gray-500">{country.countryCode}</span>
-                         </button>
-                       ))
-                     ) : (
-                      <div className="px-3 py-2 text-gray-500 text-center">
-                        No countries found matching "{countrySearchTerm}"
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              {renderError(validationErrors.country, 'country')}
-              
-              {/* Country mismatch warning */}
-              {countryMismatch?.hasMismatch && (
-                <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-md">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-orange-800">
-                        <strong>Location Notice:</strong> You've selected <strong>{countryMismatch.selectedCountry}</strong>, but your first login was from <strong>{countryMismatch.firstLoginCountry}</strong>. Please verify your location is correct.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {checkingCountryMismatch && showLoadingSpinner && (
-                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <svg className="animate-spin h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-blue-800">Validating profile information...</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Contact Fields */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                  <Mail className="w-4 h-4 mr-1" />
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={profile.personalInfo?.email || ''}
-                  onChange={(e) => handleProfileChange('email', e.target.value)}
-                  className="w-full p-2 border rounded-md"
-                  placeholder="Your email address"
-                />
-                {renderError(validationErrors.email, 'email')}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                  <Phone className="w-4 h-4 mr-1" />
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  value={profile.personalInfo?.phone || ''}
-                  onChange={(e) => handleProfileChange('phone', e.target.value)}
-                  className="w-full p-2 border rounded-md"
-                  placeholder="Your phone number"
-                />
-                {renderError(validationErrors.phone, 'phone')}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Column */}
-      <div className="md:col-span-8 space-y-6">
-        {/* About Section */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">About</h2>
-          
-          {/* Profile Description */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-            <textarea
-              value={profile.professionalSummary?.profileDescription || ''}
-              onChange={(e) => {
-                setProfile((prev: Profile) => ({
-                  ...prev,
-                  professionalSummary: {
-                    ...prev.professionalSummary,
-                    profileDescription: e.target.value
-                  }
-                }));
-                setModifiedSections(prev => ({
-                  ...prev,
-                  professionalSummary: true
-                }));
-              }}
-              className="w-full p-2 border rounded-md min-h-[120px]"
-              placeholder="Tell us about yourself, your background, and your expertise..."
-            />
-          </div>
-
-                    {/* Introduction Video Section */}
-          <div className="border-t pt-6">
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xl font-semibold text-gray-800">Introduction Video</h3>
-                {!showVideoRecorder && !recordedVideo && profile.personalInfo?.presentationVideo?.url && !existingVideoDeleted && (
-                  <span className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full font-medium">
-                    ✓ Video Added
-                  </span>
-                )}
-              </div>
-              <p className="text-gray-600 mb-3">Record a 10-minute video to introduce yourself and showcase your personality</p>
-              <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg w-fit">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                <span className="font-medium">Maximum duration: 10 minutes (recording will stop automatically)</span>
-              </div>
-            </div>
-
-            
-
-              {/* Existing Video Display */}
-            {profile.personalInfo?.presentationVideo?.url && !showVideoRecorder && !recordedVideo && !existingVideoDeleted && (
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="flex items-center justify-between w-full">
-                    <h4 className="text-md font-medium text-gray-800">Your Introduction Video</h4>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={startCamera}
-                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm transition-colors"
-                      >
-                        <Video className="w-4 h-4" />
-                        Re-record Video
-                      </button>
-                      <button
-                        onClick={() => setShowDeleteConfirmation(true)}
-                        className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2 text-sm transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete Video
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {/* Existing Video Player */}
-                  <video
-                    controls
-                    className="w-full aspect-video bg-black rounded-lg object-cover"
-                  >
-                    <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
-                    <source src={profile.personalInfo.presentationVideo.url} type="video/webm" />
-                    Your browser does not support the video tag.
-                  </video>
-                  
-                  {/* Video Information */}
-                  <div className="text-sm text-gray-600 text-center space-y-1">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="font-medium text-green-700">
-                        Video uploaded successfully
-                        {profile.personalInfo.presentationVideo.duration && 
-                          ` (${Math.floor(profile.personalInfo.presentationVideo.duration)}s)`
-                        }
-                      </span>
-                    </div>
-                    {profile.personalInfo.presentationVideo.recordedAt && (
-                      <div className="flex items-center justify-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>
-                          Recorded: {new Date(profile.personalInfo.presentationVideo.recordedAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Camera Permission Denied Message */}
-            {cameraPermission === 'denied' && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <X className="h-5 w-5 text-red-400" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-red-800">
-                      Camera access is required to record a video introduction. Please enable camera permissions in your browser settings and try again.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Video Recorder Interface */}
-            {showVideoRecorder && (
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <div className="flex flex-col items-center space-y-4">
-                                     {/* Camera Preview */}
-                   <div className="relative">
-                     <video
-                       ref={videoRef}
-                       autoPlay
-                       muted
-                       playsInline
-                       webkit-playsinline="true"
-                       className="w-full aspect-video bg-black rounded-lg object-cover"
-                     />
-                                         {isRecording && (
-                       <div className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                         <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                         REC
-                       </div>
-                     )}
-                     
-                     {/* Timer */}
-                     <div className={`absolute top-2 right-2 px-2 py-1 rounded text-sm font-mono transition-colors ${
-                       recordingTime >= 595 
-                         ? 'bg-red-600 text-white animate-pulse' 
-                         : recordingTime >= 540 
-                         ? 'bg-orange-600 text-white' 
-                         : 'bg-black bg-opacity-75 text-white'
-                     }`}>
-                       {formatTime(recordingTime)} / 10:00
-                     </div>
-                  </div>
-
-                  {/* Recording Controls */}
-                  <div className="flex items-center justify-center">
-                    {!isRecording ? (
-                      <button
-                        onClick={startRecording}
-                        disabled={!stream}
-                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Play className="w-4 h-4" />
-                        Start Recording
-                      </button>
-                    ) : (
-                      <button
-                        onClick={stopRecording}
-                        className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 transition-colors"
-                      >
-                        <Square className="w-4 h-4" />
-                        Stop Recording
-                      </button>
-                    )}
-                  </div>
-
-                                     {/* Recording Progress Bar */}
-                   {recordingTime > 0 && (
-                     <div className="w-full">
-                       <div className="bg-gray-200 rounded-full h-2">
-                         <div 
-                           className={`h-2 rounded-full transition-all duration-1000 ${
-                             recordingTime >= 595 
-                               ? 'bg-red-600 animate-pulse' 
-                               : recordingTime >= 540 
-                               ? 'bg-orange-500' 
-                               : 'bg-blue-600'
-                           }`}
-                           style={{ width: `${(recordingTime / 600) * 100}%` }}
-                         ></div>
-                       </div>
-                       
-                       {/* Time Warning Message */}
-                       {showTimeWarning && (
-                         <div className={`mt-2 text-center font-medium ${
-                           recordingTime >= 595 
-                             ? 'text-red-600 animate-pulse' 
-                             : 'text-orange-600'
-                         }`}>
-                           {recordingTime >= 595 
-                             ? '⚠️ Recording will stop in 5 seconds!' 
-                             : '⚠️ Approaching 10-minute limit!'
-                           }
-                         </div>
-                       )}
-                     </div>
-                   )}
-                </div>
-              </div>
-            )}
-
-            {/* Recorded Video Preview */}
-            {recordedVideo && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex flex-col space-y-4">
-                  <div className="flex items-center justify-between w-full">
-                    <h4 className="text-md font-medium text-gray-800">New Video Recording</h4>
-                    <button
-                       onClick={async () => {
-                         deleteVideo();
-                         await startCamera();
-                       }}
-                       className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 text-sm transition-colors"
-                     >
-                       <RotateCcw className="w-4 h-4" />
-                       Retake
-                     </button>
-                  </div>
-                  
-                  <video
-                    ref={previewVideoRef}
-                    src={recordedVideo}
-                    controls
-                    className="w-full aspect-video bg-black rounded-lg object-cover"
-                  />
-                  
-                                     <div className="text-sm text-gray-600 text-center">
-                     <div className="flex items-center justify-center gap-2 mb-2">
-                       <div className={`w-2 h-2 rounded-full ${videoUploaded ? 'bg-blue-500' : 'bg-green-500'}`}></div>
-                       <span className={`font-medium ${videoUploaded ? 'text-blue-700' : 'text-green-700'}`}>
-                         {videoUploaded 
-                           ? `Video uploaded successfully (${formatTime(recordingTime)})` 
-                           : `Video recorded successfully (${formatTime(recordingTime)})`
-                         }
-                         {recordingTime >= 600 && " - Max duration reached"}
-                       </span>
-                     </div>
-                     
-                     {/* Upload Progress */}
-                     {uploadingVideo && (
-                       <div className="mb-2">
-                         <div className="w-full bg-gray-200 rounded-full h-2">
-                           <div 
-                             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                             style={{ width: `${uploadProgress}%` }}
-                           ></div>
-                         </div>
-                         <p className="text-blue-600 font-medium mt-1">Uploading video... {uploadProgress}%</p>
-                       </div>
-                     )}
-                     
-                     {!uploadingVideo && !videoUploaded && (
-                       <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                         <div className="flex items-center justify-center gap-2">
-                           <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                           <p className="text-blue-700 font-medium text-sm">
-                             📋 Your video will be saved when you save your profile changes
-                           </p>
-                         </div>
-                       </div>
-                     )}
-                     
-                     {uploadingVideo && (
-                       <p className="text-blue-600 font-medium">Uploading your video...</p>
-                     )}
-                     
-                     {videoUploaded && (
-                       <p className="text-green-600 font-medium">Your video has been saved successfully.</p>
-                     )}
-                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* No Video State */}
-            {!showVideoRecorder && !recordedVideo && (!profile.personalInfo?.presentationVideo?.url || existingVideoDeleted) && cameraPermission !== 'denied' && (
-              <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-                <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">No video recorded yet</h3>
-                <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
-                  Record a 10-minute video to introduce yourself and help others get to know you better
-                </p>
-                <button
-                  onClick={startCamera}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto transition-colors"
-                >
-                  <Video className="w-5 h-5" />
-                  Record Video
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Years of Experience Section */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Years of Experience</h2>
-          <div className="mb-4">
-            <input
-              type="text"
-              value={profile.professionalSummary?.yearsOfExperience || ''}
-              onChange={(e) => {
-                setProfile((prev: Profile) => ({
-                  ...prev,
-                  professionalSummary: {
-                    ...prev.professionalSummary,
-                    yearsOfExperience: e.target.value
-                  }
-                }));
-                setModifiedSections(prev => ({
-                  ...prev,
-                  professionalSummary: true
-                }));
-              }}
-              className="w-full p-2 border rounded-md"
-              placeholder="e.g., 5"
-            />
-          </div>
-        </div>
-          
-        {/* Industries Section */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Industries</h2>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {profile.professionalSummary?.industries?.map((industryItem: any, index: number) => {
-              // Handle both string IDs and object format
-              const industryId = typeof industryItem === 'string' ? industryItem : industryItem._id;
-              const industryName = typeof industryItem === 'string' 
-                ? (industriesData.find(ind => ind._id === industryItem)?.name || industryItem)
-                : (industryItem.name || industryId);
-              
-              return (
-                <div key={index} className="flex items-center bg-blue-50 px-3 py-1 rounded-full">
-                  <span className="text-blue-800 text-sm">
-                    {industryName}
-                  </span>
-                  <button
-                    onClick={() => {
-                      const updatedIndustries = [...(profile.professionalSummary?.industries || [])];
-                      updatedIndustries.splice(index, 1);
-                      setProfile((prev: Profile) => ({
-                        ...prev,
-                        professionalSummary: {
-                          ...prev.professionalSummary,
-                          industries: updatedIndustries
-                        }
-                      }));
-                      setModifiedSections(prev => ({
-                        ...prev,
-                        professionalSummary: true
-                      }));
-                    }}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-          {renderIndustryDropdown()}
-        </div>
-
-        {/* Activities Section */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Activities</h2>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {profile.professionalSummary?.activities?.map((activityItem: any, index: number) => {
-              // Handle both string IDs and object format
-              const activityId = typeof activityItem === 'string' ? activityItem : activityItem._id;
-              const activityName = typeof activityItem === 'string' 
-                ? (activitiesData.find(act => act._id === activityItem)?.name || activityItem)
-                : (activityItem.name || activityId);
-              
-              return (
-                <div key={index} className="flex items-center bg-green-50 px-3 py-1 rounded-full">
-                  <span className="text-green-800 text-sm">
-                    {activityName}
-                  </span>
-                  <button
-                    onClick={() => {
-                      const updatedActivities = [...(profile.professionalSummary?.activities || [])];
-                      updatedActivities.splice(index, 1);
-                      setProfile((prev: Profile) => ({
-                        ...prev,
-                        professionalSummary: {
-                          ...prev.professionalSummary,
-                          activities: updatedActivities
-                        }
-                      }));
-                      setModifiedSections(prev => ({
-                        ...prev,
-                        professionalSummary: true
-                      }));
-                    }}
-                    className="ml-2 text-green-600 hover:text-green-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-          {renderActivityDropdown()}
-        </div>
-
-        {/* Notable Companies Section */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Notable Companies</h2>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {profile.professionalSummary?.notableCompanies?.map((company: string, index: number) => (
-              <div key={index} className="flex items-center bg-purple-50 px-3 py-1 rounded-full">
-                <span className="text-purple-800 text-sm">{company}</span>
-                <button
-                  onClick={() => {
-                    const updatedCompanies = [...(profile.professionalSummary?.notableCompanies || [])];
-                    updatedCompanies.splice(index, 1);
-                    setProfile((prev: Profile) => ({
-                      ...prev,
-                      professionalSummary: {
-                        ...prev.professionalSummary,
-                        notableCompanies: updatedCompanies
-                      }
-                    }));
-                    setModifiedSections(prev => ({
-                      ...prev,
-                      professionalSummary: true
-                    }));
-                  }}
-                  className="ml-2 text-purple-600 hover:text-purple-800"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={tempCompany}
-              onChange={(e) => setTempCompany(e.target.value)}
-              className="w-full p-2 border rounded-md"
-              placeholder="Add notable company"
-            />
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Top Header Section */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-40 transition-all">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-4">
             <button
-              onClick={() => {
-                if (tempCompany.trim()) {
-                  const updatedCompanies = [
-                    ...(profile.professionalSummary?.notableCompanies || []),
-                    tempCompany.trim()
-                  ];
-                  setProfile((prev: Profile) => ({
-                    ...prev,
-                    professionalSummary: {
-                      ...prev.professionalSummary,
-                      notableCompanies: updatedCompanies
-                    }
-                  }));
-                  setModifiedSections(prev => ({
-                    ...prev,
-                    professionalSummary: true
-                  }));
-                  setTempCompany('');
-                }
-              }}
-              className="px-4 py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg"
+              onClick={() => onSave(initialProfile)}
+              className="p-3 hover:bg-gray-50 rounded-2xl text-gray-400 hover:text-gray-900 transition-all"
             >
-              Add
+              <ChevronLeft className="w-6 h-6" />
             </button>
-          </div>
-        </div>
-
-        {/* Skills Section */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Skills</h2>
-          
-          {/* Technical Skills */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-3 text-blue-700">Technical Skills</h3>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {getCurrentSkills('technical').map((skillRef: any, idx: number) => {
-                const skillData = Object.values(skillsData.technical).flat().find((s: Skill) => s._id === skillRef.skill);
-                return (
-                  <div key={idx} className="flex items-center bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-                    <span className="text-blue-800 text-sm font-medium">{skillData?.name || 'Unknown'}</span>
-                  <button
-                      onClick={() => {
-                        const updatedSkills = getCurrentSkills('technical').filter((_: any, i: number) => i !== idx);
-                        handleSkillsChange('technical', updatedSkills);
-                      }}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                );
-              })}
-            </div>
-            {renderSkillDropdown('technical', 'Add Technical Skill', 'blue')}
-          </div>
-          
-          {/* Professional Skills */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-3 text-green-700">Professional Skills</h3>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {getCurrentSkills('professional').map((skillRef: any, idx: number) => {
-                const skillData = Object.values(skillsData.professional).flat().find((s: Skill) => s._id === skillRef.skill);
-                return (
-                  <div key={idx} className="flex items-center bg-green-50 px-3 py-1 rounded-full border border-green-200">
-                    <span className="text-green-800 text-sm font-medium">{skillData?.name || 'Unknown'}</span>
-                  <button
-                      onClick={() => {
-                        const updatedSkills = getCurrentSkills('professional').filter((_: any, i: number) => i !== idx);
-                        handleSkillsChange('professional', updatedSkills);
-                      }}
-                    className="ml-2 text-green-600 hover:text-green-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                );
-              })}
-            </div>
-            {renderSkillDropdown('professional', 'Add Professional Skill', 'green')}
-          </div>
-          
-          {/* Soft Skills */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-3 text-purple-700">Soft Skills</h3>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {getCurrentSkills('soft').map((skillRef: any, idx: number) => {
-                const skillData = Object.values(skillsData.soft).flat().find((s: Skill) => s._id === skillRef.skill);
-                return (
-                  <div key={idx} className="flex items-center bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
-                    <span className="text-purple-800 text-sm font-medium">{skillData?.name || 'Unknown'}</span>
-                  <button
-                      onClick={() => {
-                        const updatedSkills = getCurrentSkills('soft').filter((_: any, i: number) => i !== idx);
-                        handleSkillsChange('soft', updatedSkills);
-                      }}
-                    className="ml-2 text-purple-600 hover:text-purple-800"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                );
-              })}
-            </div>
-            {renderSkillDropdown('soft', 'Add Soft Skill', 'purple')}
-          </div>
-        </div>
-        
-        {/* Experience Section */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Experience</h2>
-            <button
-              onClick={() => setShowNewExperienceForm(!showNewExperienceForm)}
-              className="px-3 py-1 bg-blue-600 text-white rounded-lg flex items-center gap-1 text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Add Experience
-            </button>
-          </div>
-          
-          {/* Add new experience form - Moved inside the card */}
-          {showNewExperienceForm && (
-            <div className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-medium mb-3">
-                {editingExperienceId !== null ? 'Edit Experience' : 'Add New Experience'}
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title/Position</label>
-                  <input
-                    type="text"
-                    value={newExperience.title}
-                    onChange={(e) => setNewExperience(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full p-2 border rounded-md"
-                    placeholder="e.g., Customer Service Representative"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
-                  <input
-                    type="text"
-                    value={newExperience.company}
-                    onChange={(e) => setNewExperience(prev => ({ ...prev, company: e.target.value }))}
-                    className="w-full p-2 border rounded-md"
-                    placeholder="e.g., ABC Corporation"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    value={newExperience.startDate}
-                    onChange={(e) => setNewExperience(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="flex-1 p-2 border rounded-md"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="date"
-                      value={newExperience.endDate}
-                      onChange={(e) => setNewExperience(prev => ({ ...prev, endDate: e.target.value }))}
-                      className="flex-1 p-2 border rounded-md"
-                      disabled={newExperience.isPresent}
-                    />
-                    <label className="flex items-center gap-1 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={newExperience.isPresent}
-                        onChange={(e) => setNewExperience(prev => ({ 
-                          ...prev, 
-                          isPresent: e.target.checked,
-                          endDate: e.target.checked ? '' : prev.endDate 
-                        }))}
-                      />
-                      Present
-                    </label>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Responsibilities</label>
-                {newExperience.responsibilities.map((responsibility, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={responsibility}
-                      onChange={(e) => {
-                        const updatedResponsibilities = [...newExperience.responsibilities];
-                        updatedResponsibilities[index] = e.target.value;
-                        setNewExperience(prev => ({ ...prev, responsibilities: updatedResponsibilities }));
-                      }}
-                      className="flex-1 p-2 border rounded-md"
-                      placeholder={`Responsibility ${index + 1}`}
-                    />
-                    <button
-                      onClick={() => {
-                        if (newExperience.responsibilities.length > 1) {
-                          const updatedResponsibilities = [...newExperience.responsibilities];
-                          updatedResponsibilities.splice(index, 1);
-                          setNewExperience(prev => ({ ...prev, responsibilities: updatedResponsibilities }));
-                        }
-                      }}
-                      className="p-2 text-red-500 hover:text-red-700"
-                      disabled={newExperience.responsibilities.length <= 1}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  onClick={() => setNewExperience(prev => ({
-                    ...prev,
-                    responsibilities: [...prev.responsibilities, '']
-                  }))}
-                  className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 mt-1"
-                >
-                  <Plus className="w-3 h-3" />
-                  Add Responsibility
-                </button>
-              </div>
-              
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => {
-                    setShowNewExperienceForm(false);
-                    setEditingExperienceId(null);
-                    setNewExperience({
-                      title: '',
-                      company: '',
-                      startDate: '',
-                      endDate: '',
-                      responsibilities: [''],
-                      isPresent: false
-                    });
-                  }}
-                  className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    if (editingExperienceId !== null) {
-                      saveEditedExperience();
-                    } else {
-                      // Create formatted experience object
-                      const newExp = {
-                        title: newExperience.title,
-                        company: newExperience.company,
-                        startDate: newExperience.startDate,
-                        endDate: newExperience.isPresent ? 'present' : newExperience.endDate,
-                        responsibilities: newExperience.responsibilities.filter(r => r.trim())
-                      };
-                      
-                      // Add to profile and update state
-                      const updatedExperience = [...(profile.experience || []), newExp];
-                      setProfile((prev: Profile) => ({
-                        ...prev,
-                        experience: updatedExperience
-                      }));
-                      
-                      // Mark experience section as modified
-                      setModifiedSections(prev => ({
-                        ...prev,
-                        experience: true
-                      }));
-                      
-                      // Reset form
-                      setShowNewExperienceForm(false);
-                      setNewExperience({
-                        title: '',
-                        company: '',
-                        startDate: '',
-                        endDate: '',
-                        responsibilities: [''],
-                        isPresent: false
-                      });
-                    }
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  disabled={!newExperience.title || !newExperience.company || !newExperience.startDate || loading}
-                >
-                  {loading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin inline mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    editingExperienceId !== null ? 'Save Changes' : 'Save Experience'
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-          
-          {/* Experience List */}
-          <div className="space-y-4">
-            {profile.experience?.map((exp: any, index: number) => (
-              <div key={index} className="border-l-2 border-blue-500 pl-4 py-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-medium text-gray-800">{exp.title}</h3>
-                    <p className="text-gray-600">{exp.company}</p>
-                    <p className="text-sm text-gray-500">
-                      {exp.startDate ? formatDate(exp.startDate) : 'N/A'} - {
-                        exp.endDate === 'present' ? 'Present' : 
-                        exp.endDate ? formatDate(exp.endDate) : 'N/A'
-                      }
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => startEditingExperience(index)}
-                      className="p-1 text-blue-500 hover:text-blue-700"
-                      title="Edit experience"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        const updatedExperience = [...profile.experience];
-                        updatedExperience.splice(index, 1);
-                        setProfile((prev: Profile) => ({
-                          ...prev,
-                          experience: updatedExperience
-                        }));
-                        
-                        // Mark experience section as modified
-                        setModifiedSections(prev => ({
-                          ...prev,
-                          experience: true
-                        }));
-                      }}
-                      className="p-1 text-red-500 hover:text-red-700"
-                      title="Delete experience"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                
-                {exp.responsibilities?.length > 0 && (
-                  <div className="mt-2">
-                    <h4 className="text-sm font-medium text-gray-700">Responsibilities:</h4>
-                    <ul className="list-disc pl-5 space-y-1 mt-1">
-                      {exp.responsibilities.map((responsibility: string, idx: number) => (
-                        <li key={idx} className="text-sm text-gray-600">{responsibility}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ))}
-            
-            {(!profile.experience || profile.experience.length === 0) && (
-              <p className="text-gray-500 italic text-center py-4">No experience entries yet</p>
-            )}
-          </div>
-        </div>
-
-        {/* Languages Section */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Languages</h2>
-          
-          {/* Current Languages */}
-          <div className="space-y-2 mb-4">
-            {profile.personalInfo?.languages?.map((lang: any, index: number) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                <div>
-                  <span className="font-medium">
-                    {getLanguageDisplayName(lang)}
-                    {getLanguageCode(lang) && <span className="text-gray-500 ml-1">({getLanguageCode(lang)})</span>}
-                  </span>
-                  <span className="ml-2 text-sm text-blue-600">({lang.proficiency})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={lang.proficiency}
-                    onChange={(e) => {
-                      updateLanguageProficiency(index, e.target.value);
-                      setModifiedSections(prev => ({
-                        ...prev,
-                        languages: true
-                      }));
-                    }}
-                    className="text-sm p-1 border rounded"
-                  >
-                    {proficiencyLevels.map(level => (
-                      <option key={level.value} value={level.value}>
-                        {level.label}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  <button
-                    onClick={() => {
-                      removeLanguage(index);
-                      setModifiedSections(prev => ({
-                        ...prev,
-                        languages: true
-                      }));
-                    }}
-                    className="p-1 text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          {/* Add Language Form */}
-          <div className="mt-4">
-            <div className="flex gap-2 mb-2">
-              {/* Language Dropdown with Search */}
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={languageSearchTerm}
-                  onChange={(e) => {
-                    setLanguageSearchTerm(e.target.value);
-                    setIsLanguageDropdownOpen(true);
-                    setSelectedLanguageIndex(-1);
-                  }}
-                  onFocus={() => {
-                    setIsLanguageDropdownOpen(true);
-                    setSelectedLanguageIndex(-1);
-                  }}
-                  onBlur={() => {
-                    setTimeout(() => setIsLanguageDropdownOpen(false), 200);
-                  }}
-                  onKeyDown={(e) => {
-                    if (!isLanguageDropdownOpen) return;
-                    
-                    switch (e.key) {
-                      case 'ArrowDown':
-                        e.preventDefault();
-                        setSelectedLanguageIndex(prev => 
-                          prev < filteredLanguages.length - 1 ? prev + 1 : 0
-                        );
-                        break;
-                      case 'ArrowUp':
-                        e.preventDefault();
-                        setSelectedLanguageIndex(prev => 
-                          prev > 0 ? prev - 1 : filteredLanguages.length - 1
-                        );
-                        break;
-                      case 'Enter':
-                        e.preventDefault();
-                        if (selectedLanguageIndex >= 0 && filteredLanguages[selectedLanguageIndex]) {
-                          addLanguage(filteredLanguages[selectedLanguageIndex]);
-                        }
-                        break;
-                      case 'Escape':
-                        setIsLanguageDropdownOpen(false);
-                        break;
-                    }
-                  }}
-                  placeholder="Search for a language... (use ↑↓ arrows to navigate)"
-                  className="w-full p-2 border rounded-md"
-                  disabled={loadingLanguages}
-                />
-                
-                {/* Search Icon */}
-                <div className="absolute right-2 top-2.5 text-gray-400">
-                  {loadingLanguages ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  )}
-                </div>
-
-                {/* Language Dropdown List */}
-                {isLanguageDropdownOpen && !loadingLanguages && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                    {filteredLanguages.length > 0 ? (
-                      filteredLanguages.map((language, index) => (
-                        <button
-                          key={language._id}
-                          type="button"
-                          onClick={() => addLanguage(language)}
-                          className={`w-full text-left px-3 py-2 flex items-center justify-between ${
-                            index === selectedLanguageIndex 
-                              ? 'bg-blue-100 text-blue-700' 
-                              : 'hover:bg-blue-50 hover:text-blue-600'
-                          }`}
-                        >
-                          <div>
-                            <span className="font-medium">{language.name}</span>
-                            <div className="text-sm text-gray-500">{language.nativeName}</div>
-                          </div>
-                          <span className="text-sm text-gray-500 font-mono">{language.code}</span>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-3 py-2 text-gray-500 text-center">
-                        {languageSearchTerm ? `No languages found matching "${languageSearchTerm}"` : 'No languages available'}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              
-              {/* Proficiency Level Selector */}
-              <select
-                value={tempLanguage.proficiency}
-                onChange={(e) => setTempLanguage((prev: any) => ({ ...prev, proficiency: e.target.value }))}
-                className="w-24 p-2 border rounded-md"
-                disabled={loadingLanguages}
-              >
-                {proficiencyLevels.map(level => (
-                  <option key={level.value} value={level.value}>
-                    {level.value}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            {renderError(validationErrors.languages, 'languages')}
-          </div>
-        </div>
-
-        {/* Availability Section */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Clock className="w-6 h-6 text-blue-600" />
-              <h2 className="text-xl font-semibold">Working Hours & Availability</h2>
-            </div>
-          </div>
-
-          {/* Default Working Hours */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
-            <div className="mb-8">
-              <h3 className="text-lg font-medium text-gray-800 mb-3">Add New Schedule</h3>
-              <div className="flex items-center gap-4 max-w-md">
-                <input
-                  type="time"
-                  defaultValue="09:00"
-                  id="defaultStartTime"
-                  className="w-32 p-2 border rounded"
-                />
-                <span className="text-gray-500">to</span>
-                <input
-                  type="time"
-                  defaultValue="17:00"
-                  id="defaultEndTime"
-                  className="w-32 p-2 border rounded"
-                />
-                <button
-                  onClick={() => {
-                    const startInput = document.getElementById('defaultStartTime') as HTMLInputElement;
-                    const endInput = document.getElementById('defaultEndTime') as HTMLInputElement;
-                    const defaultStart = startInput?.value || '09:00';
-                    const defaultEnd = endInput?.value || '17:00';
-                    
-                    // Get currently unscheduled days
-                    const scheduledDays = new Set(profile.availability.schedule.map(s => s.day));
-                    const unscheduledDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-                      .filter(day => !scheduledDays.has(day));
-                    
-                    // Add schedule for unscheduled weekdays
-                    const newScheduleItems = unscheduledDays.map(day => ({
-                      day,
-                      hours: { start: defaultStart, end: defaultEnd }
-                    }));
-                    
-                    const newSchedule = [...profile.availability.schedule, ...newScheduleItems];
-                    updateSchedule(newSchedule);
-                  }}
-                  className="px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded hover:bg-blue-100"
-                >
-                  Apply to Weekdays
-                </button>
-              </div>
-            </div>
-
-            {/* Working Days Schedule */}
             <div>
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Working Days</h3>
-              <div className="space-y-4">
-                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day: string) => {
-                  const daySchedule = profile.availability.schedule.find((s: ScheduleDay) => s.day === day);
-                  return (
-                    <div
-                      key={day}
-                      className={`p-4 rounded-lg border ${
-                        daySchedule 
-                          ? 'border-blue-200 bg-blue-50 shadow-sm' 
-                          : 'border-gray-200 bg-white hover:border-blue-200'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-800">{day}</span>
-                        <div className="flex items-center gap-8">
-                          {daySchedule && (
-                            <div className="flex items-center gap-6">
-                              <div className="flex-1 min-w-[140px]">
-                                <label className="block text-xs text-gray-500 mb-1">Start</label>
-                                <input
-                                  type="time"
-                                  value={daySchedule.hours.start}
-                                  onChange={(e) => {
-                                    const newSchedule = profile.availability.schedule.map(s => 
-                                      s.day === day 
-                                        ? { ...s, hours: { ...s.hours, start: e.target.value } }
-                                        : s
-                                    );
-                                    updateSchedule(newSchedule);
-                                  }}
-                                  className="w-full p-2 border rounded bg-white text-sm"
-                                />
-                              </div>
-                              <div className="flex-1 min-w-[140px]">
-                                <label className="block text-xs text-gray-500 mb-1">End</label>
-                                <input
-                                  type="time"
-                                  value={daySchedule.hours.end}
-                                  onChange={(e) => {
-                                    const newSchedule = profile.availability.schedule.map(s => 
-                                      s.day === day 
-                                        ? { ...s, hours: { ...s.hours, end: e.target.value } }
-                                        : s
-                                    );
-                                    updateSchedule(newSchedule);
-                                  }}
-                                  className="w-full p-2 border rounded bg-white text-sm"
-                                />
-                              </div>
-                            </div>
-                          )}
-                          <button
-                            onClick={() => {
-                              const startInput = document.getElementById('defaultStartTime') as HTMLInputElement;
-                              const endInput = document.getElementById('defaultEndTime') as HTMLInputElement;
-                              const defaultStart = startInput?.value || '09:00';
-                              const defaultEnd = endInput?.value || '17:00';
-                              
-                              const currentSchedule = profile.availability.schedule;
-                              let newSchedule;
-                              
-                              if (daySchedule) {
-                                newSchedule = currentSchedule.filter(s => s.day !== day);
-                              } else {
-                                newSchedule = [
-                                  ...currentSchedule,
-                                  {
-                                    day,
-                                    hours: {
-                                      start: defaultStart,
-                                      end: defaultEnd
-                                    }
-                                  }
-                                ];
-                              }
-                              updateSchedule(newSchedule);
-                            }}
-                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                              daySchedule 
-                                ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            {daySchedule ? 'Remove' : 'Add'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight">Edit Representative Profile</h1>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5 italic">Harx Talent Network v2.5</p>
             </div>
           </div>
 
-          {/* Time Zone */}
-          <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-800 mb-2">Time Zone</h3>
-            <div className="relative">
-              <input
-                type="text"
-                value={timezoneSearchTerm}
-                onChange={(e) => {
-                  setTimezoneSearchTerm(e.target.value);
-                  setIsTimezoneDropdownOpen(true);
-                  setSelectedTimezoneIndex(-1); // Reset selection when typing
-                  
-                  // If user clears the field, reset the timezone selection
-                  if (e.target.value === '') {
-                    setProfile((prev: Profile) => ({
-                      ...prev,
-                      availability: {
-                        ...prev.availability,
-                        timeZone: ''
-                      }
-                    }));
-                    setModifiedSections(prev => ({
-                      ...prev,
-                      availability: true
-                    }));
-                  }
-                }}
-                onFocus={() => {
-                  setIsTimezoneDropdownOpen(true);
-                  setSelectedTimezoneIndex(-1); // Reset keyboard selection
-                }}
-                onBlur={() => {
-                  // Delay closing to allow for selection
-                  setTimeout(() => {
-                    setIsTimezoneDropdownOpen(false);
-                    
-                    // Check if what the user typed matches any timezone exactly
-                    if (timezoneSearchTerm && (!profile.availability.timeZone || profile.availability.timeZone === '' || profile.availability.timeZone === null)) {
-                      const exactMatch = filteredTimezones.find(tz => 
-                        repWizardApi.formatTimezone(tz).toLowerCase() === timezoneSearchTerm.toLowerCase()
-                      );
-                      if (exactMatch) {
-                        setProfile((prev: Profile) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            timeZone: exactMatch._id
-                          }
-                        }));
-                        setModifiedSections(prev => ({
-                          ...prev,
-                          availability: true
-                        }));
-                      }
-                    }
-                  }, 200);
-                }}
-                onKeyDown={(e) => {
-                  if (!isTimezoneDropdownOpen) return;
-                  
-                  switch (e.key) {
-                    case 'ArrowDown':
-                      e.preventDefault();
-                      setSelectedTimezoneIndex(prev => 
-                        prev < filteredTimezones.length - 1 ? prev + 1 : 0
-                      );
-                      break;
-                    case 'ArrowUp':
-                      e.preventDefault();
-                      setSelectedTimezoneIndex(prev => 
-                        prev > 0 ? prev - 1 : filteredTimezones.length - 1
-                      );
-                      break;
-                    case 'Enter':
-                      e.preventDefault();
-                      if (selectedTimezoneIndex >= 0 && filteredTimezones[selectedTimezoneIndex]) {
-                        const selectedTimezone = filteredTimezones[selectedTimezoneIndex];
-                        setProfile((prev: Profile) => ({
-                          ...prev,
-                          availability: {
-                            ...prev.availability,
-                            timeZone: selectedTimezone._id
-                          }
-                        }));
-                        setModifiedSections(prev => ({
-                          ...prev,
-                          availability: true
-                        }));
-                        setTimezoneSearchTerm(repWizardApi.formatTimezone(selectedTimezone));
-                        setIsTimezoneDropdownOpen(false);
-                      }
-                      break;
-                    case 'Escape':
-                      setIsTimezoneDropdownOpen(false);
-                      break;
-                  }
-                }}
-                placeholder="Search for your time zone... (use ↑↓ arrows to navigate)"
-                className="w-full p-2 border rounded-md"
-              />
-              
-              {/* Search Icon */}
-              <div className="absolute right-2 top-2.5 text-gray-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-
-              {/* Dropdown List */}
-              {isTimezoneDropdownOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                  {/* Show suggested timezones first if country is selected */}
-                  {selectedCountry && timezones.length > 0 && filteredTimezones.some(tz => timezones.some(suggestedTz => suggestedTz._id === tz._id)) && (
-                    <>
-                      <div className="px-3 py-2 text-sm font-medium bg-blue-100 text-blue-700 border-b">
-                        Suggested for {countries.find(c => c.countryCode === selectedCountry)?.countryName || selectedCountry}
-                      </div>
-                      {filteredTimezones
-                        .filter(tz => timezones.some(suggestedTz => suggestedTz._id === tz._id))
-                        .map((timezone, index) => {
-                          const globalIndex = filteredTimezones.indexOf(timezone);
-                          return (
-                            <button
-                              key={timezone._id}
-                              type="button"
-                              onClick={() => {
-                                setProfile((prev: Profile) => ({
-                                  ...prev,
-                                  availability: {
-                                    ...prev.availability,
-                                    timeZone: timezone._id
-                                  }
-                                }));
-                                setModifiedSections(prev => ({
-                                  ...prev,
-                                  availability: true
-                                }));
-                                setTimezoneSearchTerm(repWizardApi.formatTimezone(timezone));
-                                setIsTimezoneDropdownOpen(false);
-                              }}
-                              className={`w-full text-left px-3 py-2 flex items-center justify-between ${
-                                globalIndex === selectedTimezoneIndex 
-                                  ? 'bg-blue-100 text-blue-700' 
-                                  : 'hover:bg-blue-50 hover:text-blue-600'
-                              }`}
-                            >
-                              <span>{repWizardApi.formatTimezone(timezone)}</span>
-                            </button>
-                          );
-                        })}
-                    </>
-                  )}
-                  
-                  {/* Show all other matching timezones */}
-                  {filteredTimezones.filter(tz => !timezones.some(suggestedTz => suggestedTz._id === tz._id)).length > 0 && (
-                    <>
-                      <div className="px-3 py-2 text-sm font-medium bg-gray-100 text-gray-700 border-b">
-                        All Time Zones
-                      </div>
-                      {filteredTimezones
-                        .filter(tz => !timezones.some(suggestedTz => suggestedTz._id === tz._id))
-                        .map((timezone) => {
-                          const globalIndex = filteredTimezones.indexOf(timezone);
-                          return (
-                            <button
-                              key={timezone._id}
-                              type="button"
-                              onClick={() => {
-                                setProfile((prev: Profile) => ({
-                                  ...prev,
-                                  availability: {
-                                    ...prev.availability,
-                                    timeZone: timezone._id
-                                  }
-                                }));
-                                setModifiedSections(prev => ({
-                                  ...prev,
-                                  availability: true
-                                }));
-                                setTimezoneSearchTerm(repWizardApi.formatTimezone(timezone));
-                                setIsTimezoneDropdownOpen(false);
-                              }}
-                              className={`w-full text-left px-3 py-2 flex items-center justify-between ${
-                                globalIndex === selectedTimezoneIndex 
-                                  ? 'bg-blue-100 text-blue-700' 
-                                  : 'hover:bg-blue-50 hover:text-blue-600'
-                              }`}
-                            >
-                              <span>{repWizardApi.formatTimezone(timezone)}</span>
-                            </button>
-                          );
-                        })}
-                    </>
-                  )}
-
-                  {filteredTimezones.length === 0 && (
-                    <div className="px-3 py-2 text-gray-500 text-center">
-                      No timezones found matching "{timezoneSearchTerm}"
-                    </div>
-                  )}
-                </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => onSave(initialProfile)}
+              className="px-6 py-3 rounded-2xl bg-gray-50 text-gray-500 hover:bg-gray-100 font-black uppercase tracking-widest text-[11px] transition-all flex items-center gap-2"
+            >
+              <X className="w-4 h-4" />
+              Discard Changes
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={loading || uploadingPhoto || uploadingVideo}
+              className="px-8 py-3 rounded-2xl bg-slate-900 text-white hover:shadow-2xl hover:shadow-slate-200 font-black uppercase tracking-widest text-[11px] transition-all flex items-center gap-2 disabled:opacity-50 group"
+            >
+              {loading || uploadingPhoto || uploadingVideo ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  {uploadingVideo ? 'Syncing Video...' : uploadingPhoto ? 'Syncing Photo...' : 'Finalizing...'}
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  Apply All Changes
+                </>
               )}
-            </div>
-            
-            {/* Timezone mismatch warning */}
-            {(() => {
-              const mismatchInfo = getTimezoneMismatchInfo();
-              if (mismatchInfo) {
-                return (
-                  <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <p className="text-sm text-amber-800">
-                          Your timezone is set to <strong>{mismatchInfo.timezoneCountry}</strong>, but your country is <strong>{mismatchInfo.selectedCountry}</strong>. This is fine if you work across time zones.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            })()}
-            
-            {selectedCountry && timezones.length === 0 && !loadingTimezones && (
-              <p className="text-sm text-gray-500 mt-1">No timezones available for this country</p>
-            )}
-          </div>
-
-          {/* Schedule Flexibility */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-800 mb-2">Schedule Flexibility</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {[
-                'Remote Work Available',
-                'Flexible Hours',
-                'Weekend Rotation',
-                'Night Shift Available',
-                'Split Shifts',
-                'Part-Time Options',
-                'Compressed Work Week',
-                'Shift Swapping Allowed'
-              ].map((option) => {
-                const isSelected = profile.availability.flexibility.includes(option);
-                return (
-                  <button
-                    key={option}
-                    onClick={() => {
-                      const currentFlexibility = profile.availability.flexibility;
-                      const updatedFlexibility = isSelected
-                        ? currentFlexibility.filter((f: string) => f !== option)
-                        : [...currentFlexibility, option];
-                      
-                      updateFlexibility(updatedFlexibility);
-                    }}
-                    className={`px-4 py-2 rounded text-sm w-full ${
-                      isSelected
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {option}
-                  </button>
-                );
-              })}
-            </div>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Crop Modal */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column: Sidebar Identity */}
+          <div className="lg:col-span-4 sticky top-28">
+            <EditSidebar
+              profile={profile}
+              handleProfileChange={handleProfileChange}
+              validationErrors={validationErrors}
+              renderError={renderError}
+              imagePreview={imagePreview}
+              isPhotoMarkedForDeletion={isPhotoMarkedForDeletion}
+              fileInputRef={fileInputRef}
+              handleImageChange={handleImageChange}
+              handleRemoveImage={handleRemoveImage}
+              setImageToShow={setImageToShow}
+              setShowImageModal={setShowImageModal}
+              countrySearchTerm={countrySearchTerm}
+              setCountrySearchTerm={setCountrySearchTerm}
+              isCountryDropdownOpen={isCountryDropdownOpen}
+              setIsCountryDropdownOpen={setIsCountryDropdownOpen}
+              filteredCountries={filteredCountries}
+              setSelectedCountry={setSelectedCountry}
+              selectedCountryIndex={selectedCountryIndex}
+              setSelectedCountryIndex={setSelectedCountryIndex}
+              checkingCountryMismatch={checkingCountryMismatch}
+              showLoadingSpinner={showLoadingSpinner}
+              countryMismatch={countryMismatch}
+            />
+          </div>
+
+          {/* Right Column: Navbar & Tabs */}
+          <div className="lg:col-span-8 overflow-hidden">
+            <EditNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+
+            <main className="min-h-[600px]">
+              {activeTab === 'profile' && (
+                <EditProfileTab
+                  profile={profile}
+                  setProfile={setProfile}
+                  setModifiedSections={setModifiedSections}
+                  industriesData={industriesData}
+                  activitiesData={activitiesData}
+                  showVideoRecorder={showVideoRecorder}
+                  recordedVideo={recordedVideo}
+                  existingVideoDeleted={existingVideoDeleted}
+                  cameraPermission={cameraPermission}
+                  videoRef={videoRef}
+                  previewVideoRef={previewVideoRef}
+                  isRecording={isRecording}
+                  recordingTime={recordingTime}
+                  formatTime={formatTime}
+                  startCamera={startCamera}
+                  startRecording={startRecording}
+                  stopRecording={stopRecording}
+                  deleteVideo={deleteVideo}
+                  setShowDeleteConfirmation={setShowDeleteConfirmation}
+                  showTimeWarning={showTimeWarning}
+                  videoUploaded={videoUploaded}
+                  uploadingVideo={uploadingVideo}
+                  uploadProgress={uploadProgress}
+                  stream={stream}
+                  renderIndustryDropdown={renderIndustryDropdown}
+                  renderActivityDropdown={renderActivityDropdown}
+                  tempCompany={tempCompany}
+                  setTempCompany={setTempCompany}
+                />
+              )}
+
+              {activeTab === 'skills' && (
+                <EditSkillsTab
+                  skillsData={skillsData}
+                  getCurrentSkills={getCurrentSkills}
+                  handleSkillsChange={handleSkillsChange}
+                  renderSkillDropdown={renderSkillDropdown}
+                />
+              )}
+
+              {activeTab === 'experience' && (
+                <EditExperienceTab
+                  profile={profile}
+                  setProfile={setProfile}
+                  setModifiedSections={setModifiedSections}
+                  formatDate={formatDate}
+                  loading={loading}
+                  showNewExperienceForm={showNewExperienceForm}
+                  setShowNewExperienceForm={setShowNewExperienceForm}
+                  newExperience={newExperience}
+                  setNewExperience={setNewExperience}
+                  editingExperienceId={editingExperienceId}
+                  setEditingExperienceId={setEditingExperienceId}
+                  startEditingExperience={startEditingExperience}
+                  saveEditedExperience={saveEditedExperience}
+                />
+              )}
+
+              {activeTab === 'languages' && (
+                <EditLanguagesTab
+                  profile={profile}
+                  setProfile={setProfile}
+                  setModifiedSections={setModifiedSections}
+                  availableLanguages={availableLanguages}
+                  loadingLanguages={loadingLanguages}
+                  getLanguageDisplayName={getLanguageDisplayName}
+                  getLanguageCode={getLanguageCode}
+                  updateLanguageProficiency={updateLanguageProficiency}
+                  removeLanguage={removeLanguage}
+                  addLanguage={addLanguage}
+                  languageSearchTerm={languageSearchTerm}
+                  setLanguageSearchTerm={setLanguageSearchTerm}
+                  isLanguageDropdownOpen={isLanguageDropdownOpen}
+                  setIsLanguageDropdownOpen={setIsLanguageDropdownOpen}
+                  filteredLanguages={filteredLanguages}
+                  selectedLanguageIndex={selectedLanguageIndex}
+                  setSelectedLanguageIndex={setSelectedLanguageIndex}
+                  tempLanguage={tempLanguage}
+                  setTempLanguage={setTempLanguage}
+                  proficiencyLevels={proficiencyLevels}
+                  renderError={renderError}
+                  validationErrors={validationErrors}
+                />
+              )}
+
+              {activeTab === 'availability' && (
+                <EditAvailabilityTab
+                  profile={profile}
+                  setProfile={setProfile}
+                  setModifiedSections={setModifiedSections}
+                  updateSchedule={updateSchedule}
+                  updateFlexibility={updateFlexibility}
+                  timezoneSearchTerm={timezoneSearchTerm}
+                  setTimezoneSearchTerm={setTimezoneSearchTerm}
+                  isTimezoneDropdownOpen={isTimezoneDropdownOpen}
+                  setIsTimezoneDropdownOpen={setIsTimezoneDropdownOpen}
+                  filteredTimezones={filteredTimezones}
+                  selectedTimezoneIndex={selectedTimezoneIndex}
+                  setSelectedTimezoneIndex={setSelectedTimezoneIndex}
+                  selectedCountry={selectedCountry}
+                  timezones={timezones}
+                  countries={countries}
+                  loadingTimezones={loadingTimezones}
+                  repWizardApi={repWizardApi}
+                  getTimezoneMismatchInfo={getTimezoneMismatchInfo}
+                />
+              )}
+            </main>
+          </div>
+        </div>
+      </div>
+
+      {/* Global Modals (Crop, Toast, Delete Conf) */}
       {showCropModal && tempImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6" style={{ width: `${imageDimensions.width + 48}px` }}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Crop Profile Picture</h3>
-              <button
-                onClick={() => {
-                  setShowCropModal(false);
-                  setTempImage(null);
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-[40px] p-10 max-w-2xl w-full shadow-2xl">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900 tracking-tight">Focus & Frame</h3>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 italic">Circle crop for professional identification</p>
+              </div>
+              <button onClick={() => { setShowCropModal(false); setTempImage(null); }} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors">
+                <X className="w-6 h-6 text-gray-400" />
               </button>
             </div>
-            
-            <div className="flex items-center justify-center">
-              <ReactCrop
-                crop={crop}
-                onChange={c => setCrop(c)}
-                aspect={1}
-                circularCrop
-              >
+
+            <div className="flex items-center justify-center bg-gray-50 rounded-[32px] p-8 border border-gray-100 overflow-hidden">
+              <ReactCrop crop={crop} onChange={c => setCrop(c)} aspect={1} circularCrop>
                 <img
                   ref={imageRef}
                   src={tempImage}
                   alt="Crop preview"
-                  style={{
-                    width: `${imageDimensions.width}px`,
-                    height: `${imageDimensions.height}px`,
-                    objectFit: 'contain'
+                  style={{ maxHeight: '50vh' }}
+                  onLoad={(e) => {
+                    const { width, height } = e.currentTarget;
+                    setImageDimensions({ width, height });
                   }}
                 />
               </ReactCrop>
             </div>
 
-            <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
-              <button
-                onClick={() => {
-                  setShowCropModal(false);
-                  setTempImage(null);
-                }}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCropComplete}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Apply Crop
-              </button>
+            <div className="flex justify-end gap-3 mt-10">
+              <button onClick={() => { setShowCropModal(false); setTempImage(null); }} className="px-8 py-3 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-600">Cancel</button>
+              <button onClick={handleCropComplete} className="px-10 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Set Profile Photo</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Updated Image Modal */}
       {showImageModal && imageToShow && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-          onClick={() => {
-            setShowImageModal(false);
-            setImageToShow(null);
-          }}
-        >
-          <div 
-            className="relative w-[30%] min-w-[300px] bg-white rounded-lg overflow-hidden flex flex-col"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-xl font-semibold text-gray-900">My Profile Image</h3>
-            </div>
-
-            {/* Close button */}
-            <button
-              className="absolute top-4 right-4 p-2 bg-white rounded-full text-gray-600 hover:text-gray-900 shadow-lg z-10"
-              onClick={() => {
-                setShowImageModal(false);
-                setImageToShow(null);
-              }}
-            >
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => setShowImageModal(false)}>
+          <div className="relative group max-w-lg w-full" onClick={e => e.stopPropagation()}>
+            <img src={imageToShow} alt="Identity Preview" className="w-full h-auto rounded-[40px] shadow-2xl border-4 border-white/10" />
+            <button onClick={() => setShowImageModal(false)} className="absolute -top-12 right-0 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl transition-all">
               <X className="w-6 h-6" />
             </button>
-
-            {/* Main image */}
-            <div className="p-4">
-              <img
-                src={imageToShow}
-                alt={profile.personalInfo?.name || 'Profile'}
-                className="w-full h-auto object-contain rounded-lg"
-                style={{ maxHeight: '70vh' }}
-              />
-            </div>
-
-            {/* Action buttons */}
-            <div className="border-t border-gray-200 bg-gray-50 p-4">
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => {
-                    fileInputRef.current?.click();
-                    setShowImageModal(false);
-                    setImageToShow(null);
-                  }}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Camera className="w-4 h-4" />
-                  Change Photo
-                </button>
-                {(imagePreview || profile.personalInfo?.photo?.url) && !isPhotoMarkedForDeletion && (
-                  <button
-                    onClick={() => {
-                      handleRemoveImage();
-                      setShowImageModal(false);
-                      setImageToShow(null);
-                    }}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Remove
-                  </button>
-                )}
-                {isPhotoMarkedForDeletion && (
-                  <button
-                    onClick={() => {
-                      setIsPhotoMarkedForDeletion(false);
-                      setImagePreview(profile.personalInfo?.photo?.url || null);
-                      setModifiedSections(prev => ({
-                        ...prev,
-                        profileImage: false
-                      }));
-                      showToast('Photo deletion cancelled', 'success');
-                    }}
-                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Restore Photo
-                  </button>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
       {showDeleteConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
-                <Trash2 className="w-6 h-6 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Delete Video</h3>
-                <p className="text-gray-600 text-sm">This action cannot be undone</p>
-              </div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-[40px] p-10 max-w-md w-full shadow-2xl border border-gray-100">
+            <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mb-8 shadow-inner shadow-rose-100">
+              <Trash2 className="w-10 h-10" />
             </div>
-            
-            <p className="text-gray-700 mb-6">
-              Are you sure you want to delete your current video introduction?
+            <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-2">Remove Introduction?</h3>
+            <p className="text-sm font-bold text-gray-400 leading-relaxed italic mb-8">
+              This will permanently delete your recorded session. You can record a new one at any time.
             </p>
-            
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowDeleteConfirmation(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
+
+            <div className="flex flex-col gap-2">
               <button
                 onClick={() => {
                   setExistingVideoDeleted(true);
                   setIsExistingVideoMarkedForDeletion(true);
                   setShowDeleteConfirmation(false);
-                  setModifiedSections(prev => ({
-                    ...prev,
-                    personalInfo: true
-                  }));
-                  showToast('Video deleted', 'success');
+                  setModifiedSections(prev => ({ ...prev, personalInfo: true }));
                 }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="w-full py-4 bg-rose-500 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-rose-600 transition-all active:scale-95 shadow-xl shadow-rose-100"
               >
-                Delete
+                Yes, Remove Video
               </button>
+              <button onClick={() => setShowDeleteConfirmation(false)} className="w-full py-4 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-600">Keep it</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Toast notifications */}
       {toast.show && (
-        <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg transition-all transform duration-500 ${
-          toast.type === 'success' 
-            ? 'bg-green-500 text-white' 
-            : 'bg-red-500 text-white'
-        }`}>
-          <div className="flex items-center space-x-2">
-            {toast.type === 'success' ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+        <div className={`fixed bottom-8 right-8 px-8 py-4 rounded-2xl shadow-2xl transition-all transform duration-500 z-[110] flex items-center gap-4 border ${toast.type === 'success'
+            ? 'bg-emerald-500 text-white border-emerald-400'
+            : 'bg-rose-500 text-white border-rose-400'
+          }`}>
+        </svg>
+      ) : (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      </svg>
             )}
-            <span className="font-medium">{toast.message}</span>
-          </div>
-        </div>
-      )}
+      <span className="font-medium">{toast.message}</span>
     </div>
+        </div >
+      )}
+    </div >
   );
 }; 
