@@ -67,13 +67,18 @@ function AppContent() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const location = useLocation();
-
-  const isProfilePage = location.pathname.includes('/profile');
 
   useEffect(() => {
     console.log('🚀 App component mounted - initializing application');
-    // ... logic remains same ...
+
+    // Log routing information for debugging in micro-frontend environments
+    console.log('📍 ROUTE INFO:', {
+      url: window.location.href,
+      pathname: window.location.pathname,
+      isQiankun: !!qiankunWindow.__POWERED_BY_QIANKUN__,
+      basename: !!qiankunWindow.__POWERED_BY_QIANKUN__ ? '/repdashboard' : '/'
+    });
+
     const initializeProfileData = async () => {
       try {
         const profileData = await fetchProfileFromAPI();
@@ -94,86 +99,99 @@ function AppContent() {
     );
   }
 
-  const isStandaloneMode = import.meta.env.VITE_RUN_MODE === 'standalone';
-
   return (
     <RepTrainingNavProvider>
-      <div className="flex h-screen bg-premium-gradient overflow-hidden">
+      <RoutingWrapper 
+        userProfile={userProfile}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+      />
+    </RepTrainingNavProvider>
+  );
+}
+
+function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen, isCollapsed, setIsCollapsed }: any) {
+  const location = useLocation();
+  const isProfilePage = location.pathname.includes('/profile');
+
+  return (
+    <div className="flex h-screen bg-premium-gradient overflow-hidden">
+      {!isProfilePage && (
+        <Sidebar 
+          phases={userProfile?.onboardingProgress?.phases} 
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+        />
+      )}
+      <div className="flex-1 flex flex-col overflow-hidden">
         {!isProfilePage && (
-          <Sidebar 
-            phases={userProfile?.onboardingProgress?.phases} 
+          <TopBar 
             isSidebarOpen={isSidebarOpen}
             setIsSidebarOpen={setIsSidebarOpen}
-            isCollapsed={isCollapsed}
-            setIsCollapsed={setIsCollapsed}
           />
         )}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {!isProfilePage && (
-            <TopBar 
-              isSidebarOpen={isSidebarOpen}
-              setIsSidebarOpen={setIsSidebarOpen}
-            />
-          )}
-          <main className={`flex-1 overflow-y-auto ${isProfilePage ? 'p-0' : 'p-4'}`}>
-            <Routes>
-              <Route path="/" element={
-                <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <Dashboard />
-                </PhaseProtectedRoute>
-              } />
-              <Route path="/dashboard" element={
-                <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <Dashboard />
-                </PhaseProtectedRoute>
-              } />
-              <Route path="/gigs-marketplace" element={
-                <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
-                  <GigsMarketplace />
-                </PhaseProtectedRoute>
-              } />
-              <Route path="/gig/:gigId" element={
-                <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
-                  <GigDetails />
-                </PhaseProtectedRoute>
-              } />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/payouts" element={<Payouts />} />
-              <Route path="/learning" element={<Learning />} />
-              <Route path="/training" element={
-                <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
-                  <Training />
-                </PhaseProtectedRoute>
-              } />
-              <Route path="/operations" element={<Operations />} />
-              <Route path="/workspace" element={
-                <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
-                  <Workspace />
-                </PhaseProtectedRoute>
-              } />
-              <Route path="/community" element={<Community />} />
-              <Route path="/import-leads" element={
-                <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <ImportLeads />
-                </PhaseProtectedRoute>
-              } />
-              <Route path="/session-planning" element={<SessionPlanning />} />
-              <Route path="/call-report" element={
-                <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <CallReportCard />
-                </PhaseProtectedRoute>
-              } />
-              <Route path="/wallet" element={
-                <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                  <WalletPage />
-                </PhaseProtectedRoute>
-              } />
-              <Route path="*" element={<Navigate to="/profile" replace />} />
-            </Routes>
-          </main>
-        </div>
+        <main className={`flex-1 overflow-y-auto ${isProfilePage ? 'p-0' : 'p-4'}`}>
+          <Routes>
+            <Route path="/" element={
+              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                <Dashboard />
+              </PhaseProtectedRoute>
+            } />
+            <Route path="/dashboard" element={
+              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                <Dashboard />
+              </PhaseProtectedRoute>
+            } />
+            <Route path="/gigs-marketplace" element={
+              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
+                <GigsMarketplace />
+              </PhaseProtectedRoute>
+            } />
+            <Route path="/gig/:gigId" element={
+              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
+                <GigDetails />
+              </PhaseProtectedRoute>
+            } />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/payouts" element={<Payouts />} />
+            <Route path="/learning" element={<Learning />} />
+            <Route path="/training" element={
+              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
+                <Training />
+              </PhaseProtectedRoute>
+            } />
+            <Route path="/operations" element={<Operations />} />
+            <Route path="/workspace" element={
+              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
+                <Workspace />
+              </PhaseProtectedRoute>
+            } />
+            <Route path="/community" element={<Community />} />
+            <Route path="/import-leads" element={
+              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                <ImportLeads />
+              </PhaseProtectedRoute>
+            } />
+            <Route path="/session-planning" element={<SessionPlanning />} />
+            <Route path="/call-report" element={
+              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                <CallReportCard />
+              </PhaseProtectedRoute>
+            } />
+            <Route path="/wallet" element={
+              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
+                <WalletPage />
+              </PhaseProtectedRoute>
+            } />
+            <Route path="*" element={<Navigate to="/profile" replace />} />
+          </Routes>
+        </main>
       </div>
-    </RepTrainingNavProvider>
+    </div>
   );
 }
 

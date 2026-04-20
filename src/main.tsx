@@ -25,9 +25,7 @@ function render(props: { container?: HTMLElement }) {
     }
     root.render(
       //<React.StrictMode>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <App />
      // </React.StrictMode>
     );
   } else {
