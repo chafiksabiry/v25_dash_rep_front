@@ -96,6 +96,7 @@ export const ProfileView: React.FC<{
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [publicInfoDraft, setPublicInfoDraft] = useState({
     country: '',
+    countryId: '',
     email: '',
     phone: '',
     growthPlanId: ''
@@ -433,8 +434,16 @@ export const ProfileView: React.FC<{
 
   const openPublicInfoEditor = () => {
     const currentPlanId = String(planData?.plan?._id || '');
+    const currentCountryId =
+      typeof profile.personalInfo?.country === 'object'
+        ? String(profile.personalInfo?.country?._id || '')
+        : (typeof profile.personalInfo?.country === 'string' && profile.personalInfo.country.length === 24
+            ? profile.personalInfo.country
+            : '');
+
     setPublicInfoDraft({
       country: getCountryDisplayName(),
+      countryId: currentCountryId,
       email: String(profile.personalInfo?.email || ''),
       phone: String(profile.personalInfo?.phone || ''),
       growthPlanId: currentPlanId
@@ -446,10 +455,23 @@ export const ProfileView: React.FC<{
   const savePublicInfoInline = async () => {
     if (!profile?._id) return;
     setIsSavingPublicInfo(true);
+
+    const selectedCountry =
+      countries.find((country) => country._id === publicInfoDraft.countryId)
+      || countries.find((country) => String(country.countryName || '').toLowerCase() === String(publicInfoDraft.country || '').toLowerCase());
+
+    const countryIdToPersist =
+      selectedCountry?._id
+      || (typeof profile.personalInfo?.country === 'object'
+        ? profile.personalInfo?.country?._id
+        : (typeof profile.personalInfo?.country === 'string' && profile.personalInfo.country.length === 24
+          ? profile.personalInfo.country
+          : ''));
+
     const payload = {
       personalInfo: {
         ...profile.personalInfo,
-        country: publicInfoDraft.country,
+        country: countryIdToPersist,
         email: publicInfoDraft.email,
         phone: publicInfoDraft.phone,
       }
@@ -459,7 +481,7 @@ export const ProfileView: React.FC<{
         ...prev,
         personalInfo: {
           ...(prev.personalInfo || {}),
-          country: publicInfoDraft.country,
+          country: selectedCountry || prev.personalInfo?.country,
           email: publicInfoDraft.email,
           phone: publicInfoDraft.phone,
         }
@@ -796,7 +818,7 @@ export const ProfileView: React.FC<{
                           type="text"
                           value={publicInfoDraft.country}
                           onChange={(e) => {
-                            setPublicInfoDraft((prev) => ({ ...prev, country: e.target.value }));
+                            setPublicInfoDraft((prev) => ({ ...prev, country: e.target.value, countryId: '' }));
                             setIsCountryDropdownOpen(true);
                           }}
                           onFocus={() => setIsCountryDropdownOpen(true)}
@@ -816,7 +838,11 @@ export const ProfileView: React.FC<{
                                     key={country._id || country.countryCode || country.zoneName}
                                     type="button"
                                     onClick={() => {
-                                      setPublicInfoDraft((prev) => ({ ...prev, country: String(country.countryName || '') }));
+                                      setPublicInfoDraft((prev) => ({
+                                        ...prev,
+                                        country: String(country.countryName || ''),
+                                        countryId: String(country._id || '')
+                                      }));
                                       setIsCountryDropdownOpen(false);
                                     }}
                                     className="w-full text-left px-3 py-2.5 hover:bg-harx-50 border-b border-harx-50 last:border-b-0 transition-colors"

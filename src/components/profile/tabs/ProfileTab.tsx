@@ -251,7 +251,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
             </div>
           )}
           
-          {profile.personalInfo?.presentationVideo?.url ? (
+          {!isEditingVideo && profile.personalInfo?.presentationVideo?.url ? (
             <div className="space-y-4">
               <div className="w-full">
                 <video 
@@ -278,12 +278,12 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
                 )}
               </div>
             </div>
-          ) : (
+          ) : !isEditingVideo ? (
             <div className="p-4 bg-amber-50/50 border border-amber-200/50 rounded-2xl text-amber-800 text-sm flex items-center gap-3">
               <span className="text-xl">🎥</span>
               <span>A video introduction helps you stand out. Please add one to your profile.</span>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
