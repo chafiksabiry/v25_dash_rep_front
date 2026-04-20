@@ -41,7 +41,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
     professional: [],
     soft: []
   });
-  const [searchTermByType, setSearchTermByType] = useState<Record<'technical' | 'professional' | 'soft', string>>({
+  const [selectedOptionByType, setSelectedOptionByType] = useState<Record<'technical' | 'professional' | 'soft', string>>({
     technical: '',
     professional: '',
     soft: ''
@@ -85,48 +85,37 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
 
   const getFilteredSkills = (type: 'technical' | 'professional' | 'soft') => {
     const selectedIds = getCurrentSkillIds(type);
-    const search = (searchTermByType[type] || '').trim().toLowerCase();
     return availableSkills[type].filter((skill) => {
       if (selectedIds.has(skill._id)) return false;
-      if (!search) return true;
-      return (
-        skill.name.toLowerCase().includes(search) ||
-        (skill.description || '').toLowerCase().includes(search)
-      );
+      return true;
     });
   };
 
   const renderAddDropdown = (type: 'technical' | 'professional' | 'soft') => {
     const options = getFilteredSkills(type);
     return (
-      <div className="mt-3 w-full bg-white border border-harx-100/80 rounded-xl shadow-sm overflow-hidden">
-        <input
-          type="text"
-          value={searchTermByType[type]}
-          onChange={(e) => setSearchTermByType((prev) => ({ ...prev, [type]: e.target.value }))}
-          placeholder={`Search ${type} skills...`}
-          className="w-full px-3 py-2.5 text-sm border-b border-harx-100/70 outline-none"
-        />
-        <div className="max-h-56 overflow-auto">
-          {options.length > 0 ? (
-            options.map((skill) => (
-              <button
-                key={skill._id}
-                type="button"
-                onClick={() => {
-                  onAddSkill(type, skill._id);
-                  setSearchTermByType((prev) => ({ ...prev, [type]: '' }));
-                }}
-                className="w-full text-left px-3 py-2 hover:bg-harx-50 transition-colors border-b border-slate-100 last:border-b-0"
-              >
-                <div className="text-sm font-bold text-slate-800">{skill.name}</div>
-                <div className="text-xs text-slate-500 truncate">{skill.description}</div>
-              </button>
-            ))
-          ) : (
-            <div className="px-3 py-3 text-xs text-slate-500">No skills available.</div>
-          )}
-        </div>
+      <div className="mt-3 w-full">
+        <select
+          value={selectedOptionByType[type]}
+          onChange={(e) => {
+            const skillId = e.target.value;
+            setSelectedOptionByType((prev) => ({ ...prev, [type]: skillId }));
+            if (!skillId) return;
+            onAddSkill(type, skillId);
+            setSelectedOptionByType((prev) => ({ ...prev, [type]: '' }));
+          }}
+          className="w-full px-3 py-2.5 text-sm font-semibold rounded-xl border border-harx-100/80 bg-white text-harx-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-200"
+        >
+          <option value="">Select {type} skill...</option>
+          {options.map((skill) => (
+            <option key={skill._id} value={skill._id}>
+              {skill.name}
+            </option>
+          ))}
+        </select>
+        {options.length === 0 && (
+          <p className="mt-2 text-xs text-slate-500">No more skills available for this section.</p>
+        )}
       </div>
     );
   };
