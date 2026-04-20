@@ -281,120 +281,122 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
         <ProfileNavbar activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
 
-      {/* Header / Identity Section (Twilio Style) */}
-      <div className="bg-white rounded-3xl p-8 lg:p-10 shadow-sm border border-gray-100">
-        <div className="flex flex-col md:flex-row gap-10 items-start">
-          {/* Photo management */}
-          <div className="relative group shrink-0">
-            <div 
-              className="w-40 h-40 rounded-[32px] shadow-xl border-4 border-white bg-gray-50 overflow-hidden relative cursor-pointer ring-4 ring-harx-50"
-              onClick={() => profile.personalInfo?.photo?.url && setShowImageModal(true)}
-            >
-              {profile.personalInfo?.photo?.url ? (
-                <img 
-                  src={profile.personalInfo.photo.url} 
-                  alt="Profile" 
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-5xl font-black text-gray-200 bg-gray-50 uppercase tracking-tighter">
-                  {profile.personalInfo?.name?.charAt(0) || '?'}
-                </div>
-              )}
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px]">
-                <div className="text-white text-xs font-black uppercase tracking-widest bg-white/20 px-4 py-2 rounded-full border border-white/30 truncate">View Photo</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Properties Grid */}
-          <div className="flex-1 w-full relative">
-            {/* Action Buttons Top Right */}
-            <div className="flex flex-wrap gap-3 mb-8 pb-6 border-b border-gray-50 justify-between items-center">
-              <div>
-                <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-1">{profile.personalInfo?.name}</h2>
-                <p className="text-sm font-bold text-harx-500 uppercase tracking-widest italic">{profile.professionalSummary?.currentRole || 'Representative'}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                {profile.status !== 'completed' && (
-                  <button
-                    onClick={handlePublish}
-                    disabled={isPublishing}
-                    className="px-6 py-2.5 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-200 active:scale-95 disabled:opacity-50"
-                  >
-                    {isPublishing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check size={16} />}
-                    {isPublishing ? 'Publishing...' : 'Publish'}
-                  </button>
+      {/* Header / Identity Section (Twilio Style) - Only visible on 'Profile' tab */}
+      {activeTab === 'profile' && (
+        <div className="bg-white rounded-3xl p-8 lg:p-10 shadow-sm border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex flex-col md:flex-row gap-10 items-start">
+            {/* Photo management */}
+            <div className="relative group shrink-0">
+              <div 
+                className="w-40 h-40 rounded-[32px] shadow-xl border-4 border-white bg-gray-50 overflow-hidden relative cursor-pointer ring-4 ring-harx-50"
+                onClick={() => profile.personalInfo?.photo?.url && setShowImageModal(true)}
+              >
+                {profile.personalInfo?.photo?.url ? (
+                  <img 
+                    src={profile.personalInfo.photo.url} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-5xl font-black text-gray-200 bg-gray-50 uppercase tracking-tighter">
+                    {profile.personalInfo?.name?.charAt(0) || '?'}
+                  </div>
                 )}
-                <button
-                  onClick={onEditClick}
-                  className="px-6 py-2.5 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95"
-                >
-                  <Edit size={16} />
-                  Edit Profile
-                </button>
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px]">
+                  <div className="text-white text-xs font-black uppercase tracking-widest bg-white/20 px-4 py-2 rounded-full border border-white/30 truncate">View Photo</div>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-              {/* Location */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Current Country</label>
-                <div className="flex items-center gap-2 py-2 px-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-harx-200 transition-colors">
-                  <MapPin className="w-3.5 h-3.5 text-harx-400" />
-                  <span className="text-sm font-bold text-gray-900">{countryData?.countryName || 'Not specified'}</span>
-                  {countryMismatch?.hasMismatch && (
-                    <div className="ml-auto w-2 h-2 bg-amber-500 rounded-full animate-pulse" title="Location mismatch" />
+            {/* Properties Grid */}
+            <div className="flex-1 w-full relative">
+              {/* Action Buttons Top Right */}
+              <div className="flex flex-wrap gap-3 mb-8 pb-6 border-b border-gray-50 justify-between items-center">
+                <div>
+                  <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-1">{profile.personalInfo?.name}</h2>
+                  <p className="text-sm font-bold text-harx-500 uppercase tracking-widest italic">{profile.professionalSummary?.currentRole || 'Representative'}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  {profile.status !== 'completed' && (
+                    <button
+                      onClick={handlePublish}
+                      disabled={isPublishing}
+                      className="px-6 py-2.5 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-200 active:scale-95 disabled:opacity-50"
+                    >
+                      {isPublishing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check size={16} />}
+                      {isPublishing ? 'Publishing...' : 'Publish'}
+                    </button>
                   )}
+                  <button
+                    onClick={onEditClick}
+                    className="px-6 py-2.5 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95"
+                  >
+                    <Edit size={16} />
+                    Edit Profile
+                  </button>
                 </div>
               </div>
 
-              {/* Email */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Direct Contact</label>
-                <a href={`mailto:${profile.personalInfo?.email}`} className="flex items-center gap-2 py-2 px-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-harx-500 hover:text-harx-600 transition-all">
-                  <Mail className="w-3.5 h-3.5 text-gray-400 group-hover:text-harx-500" />
-                  <span className="text-sm font-bold truncate max-w-[120px]">{profile.personalInfo?.email || 'N/A'}</span>
-                </a>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+                {/* Location */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Current Country</label>
+                  <div className="flex items-center gap-2 py-2 px-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-harx-200 transition-colors">
+                    <MapPin className="w-3.5 h-3.5 text-harx-400" />
+                    <span className="text-sm font-bold text-gray-900">{countryData?.countryName || 'Not specified'}</span>
+                    {countryMismatch?.hasMismatch && (
+                      <div className="ml-auto w-2 h-2 bg-amber-500 rounded-full animate-pulse" title="Location mismatch" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Direct Contact</label>
+                  <a href={`mailto:${profile.personalInfo?.email}`} className="flex items-center gap-2 py-2 px-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-harx-500 hover:text-harx-600 transition-all">
+                    <Mail className="w-3.5 h-3.5 text-gray-400 group-hover:text-harx-500" />
+                    <span className="text-sm font-bold truncate max-w-[120px]">{profile.personalInfo?.email || 'N/A'}</span>
+                  </a>
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Phone Line</label>
+                  <a href={`tel:${profile.personalInfo?.phone}`} className="flex items-center gap-2 py-2 px-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-harx-500 hover:text-harx-600 transition-all">
+                    <Phone className="w-3.5 h-3.5 text-gray-400 group-hover:text-harx-500" />
+                    <span className="text-sm font-bold">{profile.personalInfo?.phone || 'N/A'}</span>
+                  </a>
+                </div>
               </div>
 
-              {/* Phone */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Phone Line</label>
-                <a href={`tel:${profile.personalInfo?.phone}`} className="flex items-center gap-2 py-2 px-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-harx-500 hover:text-harx-600 transition-all">
-                  <Phone className="w-3.5 h-3.5 text-gray-400 group-hover:text-harx-500" />
-                  <span className="text-sm font-bold">{profile.personalInfo?.phone || 'N/A'}</span>
-                </a>
-              </div>
-            </div>
-
-            {/* Quick Stats Grid (Score & Plan) */}
-            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-indigo-50 to-blue-50/50 rounded-2xl border border-indigo-100 shadow-sm">
-                  <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-indigo-600">
-                    <Target size={24} className="animate-pulse" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">REPS Score (Overall)</div>
-                    <div className="text-2xl font-black text-indigo-900 tracking-tighter leading-none mt-0.5">{calculateOverallScore()} / 100</div>
-                  </div>
-               </div>
-
-               <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-emerald-50 to-teal-50/50 rounded-2xl border border-emerald-100 shadow-sm">
-                  <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-600">
-                    <Briefcase size={24} />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Growth Plan</div>
-                    <div className="text-lg font-black text-emerald-900 tracking-tight leading-none mt-0.5">
-                      {planData?.plan?.name || "Standard Representative"}
+              {/* Quick Stats Grid (Score & Plan) */}
+              <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-indigo-50 to-blue-50/50 rounded-2xl border border-indigo-100 shadow-sm">
+                    <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-indigo-600">
+                      <Target size={24} className="animate-pulse" />
                     </div>
-                  </div>
-               </div>
+                    <div>
+                      <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">REPS Score (Overall)</div>
+                      <div className="text-2xl font-black text-indigo-900 tracking-tighter leading-none mt-0.5">{calculateOverallScore()} / 100</div>
+                    </div>
+                 </div>
+
+                 <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-emerald-50 to-teal-50/50 rounded-2xl border border-emerald-100 shadow-sm">
+                    <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-600">
+                      <Briefcase size={24} />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Growth Plan</div>
+                      <div className="text-lg font-black text-emerald-900 tracking-tight leading-none mt-0.5">
+                        {planData?.plan?.name || "Standard Representative"}
+                      </div>
+                    </div>
+                 </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="w-full">
         <div className="flex-1 min-h-[600px]">
