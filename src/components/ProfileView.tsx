@@ -91,6 +91,8 @@ export const ProfileView: React.FC<{
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [isEditingPublicInfo, setIsEditingPublicInfo] = useState(false);
   const [isSavingPublicInfo, setIsSavingPublicInfo] = useState(false);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [tempSelectedPlanId, setTempSelectedPlanId] = useState('');
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [publicInfoDraft, setPublicInfoDraft] = useState({
     country: '',
@@ -430,12 +432,14 @@ export const ProfileView: React.FC<{
   };
 
   const openPublicInfoEditor = () => {
+    const currentPlanId = String(planData?.plan?._id || '');
     setPublicInfoDraft({
       country: getCountryDisplayName(),
       email: String(profile.personalInfo?.email || ''),
       phone: String(profile.personalInfo?.phone || ''),
-      growthPlanId: String(planData?.plan?._id || '')
+      growthPlanId: currentPlanId
     });
+    setTempSelectedPlanId(currentPlanId);
     setIsEditingPublicInfo(true);
   };
 
@@ -895,18 +899,13 @@ export const ProfileView: React.FC<{
                   <div className="relative z-10">
                     <div className="text-[10px] font-black text-harx-alt-400 uppercase tracking-widest">Growth Plan</div>
                     {isEditingPublicInfo ? (
-                      <select
-                        value={publicInfoDraft.growthPlanId}
-                        onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, growthPlanId: e.target.value }))}
-                        className="w-full text-sm font-black text-harx-alt-900 tracking-tight leading-none mt-1 bg-transparent outline-none"
+                      <button
+                        type="button"
+                        onClick={() => setIsPlanModalOpen(true)}
+                        className="w-full text-left text-sm font-black text-harx-alt-900 tracking-tight leading-none mt-1 bg-transparent outline-none hover:text-harx-alt-700 transition-colors"
                       >
-                        <option value="">Select a plan</option>
-                        {availablePlans.map((plan) => (
-                          <option key={plan._id} value={plan._id}>
-                            {plan.name} (${plan.price})
-                          </option>
-                        ))}
-                      </select>
+                        {(availablePlans.find((plan) => plan._id === publicInfoDraft.growthPlanId)?.name) || 'Select a plan'}
+                      </button>
                     ) : (
                       <div className="text-lg font-black text-harx-alt-900 tracking-tight leading-none mt-0.5">
                         {planData?.plan?.name || "Standard Representative"}
@@ -935,6 +934,69 @@ export const ProfileView: React.FC<{
               <X size={24} />
             </button>
             <img src={profile.personalInfo.photo.url} alt="Profile" className="w-full h-auto object-contain" style={{ maxHeight: '80vh' }} />
+          </div>
+        </div>
+      )}
+
+      {/* Plan Selection Modal */}
+      {isPlanModalOpen && (
+        <div
+          className="fixed inset-0 z-[120] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setIsPlanModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-xl rounded-3xl border border-harx-100 bg-white shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-harx-100 flex items-center justify-between">
+              <h3 className="text-lg font-black text-harx-900">Select Representative Plan</h3>
+              <button
+                type="button"
+                onClick={() => setIsPlanModalOpen(false)}
+                className="p-1.5 rounded-lg bg-harx-50 text-harx-700 hover:bg-harx-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 max-h-[55vh] overflow-y-auto space-y-2">
+              {availablePlans.map((plan) => {
+                const isSelected = tempSelectedPlanId === plan._id;
+                return (
+                  <button
+                    key={plan._id}
+                    type="button"
+                    onClick={() => setTempSelectedPlanId(plan._id)}
+                    className={`w-full text-left p-4 rounded-2xl border transition-all ${
+                      isSelected
+                        ? 'border-harx-400 bg-harx-50 shadow-sm'
+                        : 'border-slate-200 hover:border-harx-200 hover:bg-harx-50/40'
+                    }`}
+                  >
+                    <div className="text-sm font-black text-harx-900">{plan.name}</div>
+                    <div className="text-xs text-slate-600">${plan.price} / month</div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="px-5 py-4 border-t border-harx-100 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsPlanModalOpen(false)}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPublicInfoDraft((prev) => ({ ...prev, growthPlanId: tempSelectedPlanId }));
+                  setIsPlanModalOpen(false);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-bold uppercase tracking-wider hover:opacity-90"
+              >
+                Choose Plan
+              </button>
+            </div>
           </div>
         </div>
       )}
