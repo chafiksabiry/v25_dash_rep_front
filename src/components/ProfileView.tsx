@@ -333,6 +333,39 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
   useEffect(() => {
     if (!profile?.skills) return;
 
+    const normalizeId = (raw: any): string | null => {
+      if (!raw) return null;
+      if (typeof raw === 'string') return raw;
+      if (typeof raw === 'object' && typeof raw.$oid === 'string') return raw.$oid;
+      if (typeof raw === 'object' && typeof raw._id === 'string') return raw._id;
+      if (typeof raw === 'object' && typeof raw.id === 'string') return raw.id;
+      return null;
+    };
+
+    const buildPopulateDiagnostics = (items: any[], type: 'technical' | 'professional' | 'soft') =>
+      (items || []).map((entry: any, index: number) => {
+        const skillRef = entry?.skill;
+        const populatedName =
+          (skillRef && typeof skillRef === 'object' && (skillRef.name || skillRef.label || skillRef.title)) ||
+          entry?.name ||
+          null;
+        const normalizedId =
+          normalizeId(skillRef) ||
+          normalizeId(entry?._id) ||
+          normalizeId(entry?.id) ||
+          null;
+        return {
+          type,
+          index,
+          populated: skillRef && typeof skillRef === 'object',
+          normalizedId,
+          populatedName,
+          level: entry?.level,
+          details: entry?.details || null,
+          raw: entry
+        };
+      });
+
     const technical = formatSkillsForDisplay(profile.skills.technical).map(s => s.name);
     const professional = formatSkillsForDisplay(profile.skills.professional).map(s => s.name);
     const soft = formatSkillsForDisplay(profile.skills.soft).map(s => s.name);
@@ -347,6 +380,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       professional: JSON.stringify(profile.skills.professional || []),
       soft: JSON.stringify(profile.skills.soft || [])
     });
+    console.log(
+      '[ProfileView] Agent populated skill diagnostics',
+      {
+        technical: buildPopulateDiagnostics(profile.skills.technical || [], 'technical'),
+        professional: buildPopulateDiagnostics(profile.skills.professional || [], 'professional'),
+        soft: buildPopulateDiagnostics(profile.skills.soft || [], 'soft')
+      }
+    );
     console.log('[ProfileView] Agent skills (resolved)', {
       technical,
       professional,
