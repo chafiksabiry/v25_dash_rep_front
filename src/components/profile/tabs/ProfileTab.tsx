@@ -1,6 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Clock, Calendar, Pencil, RefreshCw, Video } from 'lucide-react';
 
+const MAX_RECORDING_MS = 10 * 60 * 1000;
+
+const formatMmSs = (ms: number) => {
+  const totalSec = Math.floor(Math.max(0, ms) / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+};
+
 interface ProfileTabProps {
   profile: any;
   onSaveAbout?: (value: string) => Promise<void> | void;
@@ -18,17 +27,33 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
   const [recordedVideoBlob, setRecordedVideoBlob] = useState<Blob | null>(null);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string>('');
   const [isLivePreviewReady, setIsLivePreviewReady] = useState(false);
+  const [recordingElapsedMs, setRecordingElapsedMs] = useState(0);
   const liveVideoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
+  const recordingTickRef = useRef<number | null>(null);
+  const recordingMaxTimeoutRef = useRef<number | null>(null);
+  const recordingStartedAtRef = useRef<number>(0);
 
   useEffect(() => {
     setAboutDraft(String(profile?.professionalSummary?.profileDescription || ''));
   }, [profile?.professionalSummary?.profileDescription]);
 
+  const clearRecordingTimers = () => {
+    if (recordingTickRef.current) {
+      window.clearInterval(recordingTickRef.current);
+      recordingTickRef.current = null;
+    }
+    if (recordingMaxTimeoutRef.current) {
+      window.clearTimeout(recordingMaxTimeoutRef.current);
+      recordingMaxTimeoutRef.current = null;
+    }
+  };
+
   useEffect(() => {
     return () => {
+      clearRecordingTimers();
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach((track) => track.stop());
         mediaStreamRef.current = null;
@@ -40,6 +65,8 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
   }, [recordedVideoUrl]);
 
   const stopCameraStream = () => {
+    clearRecordingTimers();
+    setRecordingElapsedMs(0);
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
@@ -126,6 +153,10 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
 
   const beginRecording = () => {
     if (!mediaStreamRef.current) return;
+    clearRecordingTimers();
+    setRecordingElapsedMs(0);
+    recordingStartedAtRef.current = Date.now();
+
     recordedChunksRef.current = [];
     const recorder = new MediaRecorder(mediaStreamRef.current, { mimeType: 'video/webm' });
     mediaRecorderRef.current = recorder;
@@ -137,20 +168,37 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
     };
 
     recorder.onstop = () => {
-      const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+      clearRecordingTimers();
+      const chunks = recordedChunksRef.current;
+      if (!chunks.length) {
+        setIsRecordingNow(false);
+        setRecordingElapsedMs(0);
+        return;
+      }
+      const blob = new Blob(chunks, { type: 'video/webm' });
       setRecordedVideoBlob(blob);
       const url = URL.createObjectURL(blob);
       setRecordedVideoUrl(url);
       stopCameraStream();
       setIsRecorderReady(false);
       setIsRecordingNow(false);
+      setRecordingElapsedMs(0);
     };
 
-    recorder.start();
+    recorder.start(1000);
     setIsRecordingNow(true);
+
+    recordingTickRef.current = window.setInterval(() => {
+      setRecordingElapsedMs(Date.now() - recordingStartedAtRef.current);
+    }, 250);
+
+    recordingMaxTimeoutRef.current = window.setTimeout(() => {
+      stopRecording();
+    }, MAX_RECORDING_MS);
   };
 
   const stopRecording = () => {
+    clearRecordingTimers();
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
@@ -287,6 +335,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
                         Recording...
                       </div>
                     )}
+                    {isRecordingNow && (
+                      <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/55 text-white text-[10px] font-black tracking-wider shadow">
+                        {formatMmSs(recordingElapsedMs)} / {formatMmSs(MAX_RECORDING_MS)}
+                      </div>
+                    )}
                     {!isLivePreviewReady && (
                       <div className="absolute inset-0 flex items-center justify-center text-white/90 text-xs font-bold tracking-wider uppercase bg-black/35 rounded-2xl">
                         Loading camera preview...
@@ -352,6 +405,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
                 <button
                   type="button"
                   onClick={() => {
+                    if (isRecordingNow && mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                      recordedChunksRef.current = [];
+                      mediaRecorderRef.current.stop();
+                    }
+                    clearRecordingTimers();
                     stopCameraStream();
                     setIsEditingVideo(false);
                     setWantsToRerecord(false);
