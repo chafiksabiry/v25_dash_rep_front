@@ -2,10 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactCrop, { Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import {
-  MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase,
-  Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
-  Edit, Check, X, Save, RefreshCw, Plus, Trash2, Camera, Upload, Video,
-  Play, Pause, Square, RotateCcw, User, Globe, ShieldCheck, ChevronLeft
+  X, Save, RefreshCw, Trash2, ChevronLeft
 } from 'lucide-react';
 import { updateProfileData, updateBasicInfo, updateExperience, updateSkills, checkCountryMismatch } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
@@ -44,30 +41,6 @@ if (typeof document !== 'undefined' && !document.getElementById('profile-editor-
   document.head.appendChild(styleSheet);
 }
 
-// Convert proficiency level to star rating (A1-C2 = 1-6 stars)
-const getProficiencyStars = (proficiency: string): number => {
-  switch (proficiency) {
-    case 'A1':
-    case 'Basic':
-      return 1;
-    case 'A2':
-      return 2;
-    case 'B1':
-    case 'Intermediate':
-      return 3;
-    case 'B2':
-      return 4;
-    case 'C1':
-    case 'Advanced':
-      return 5;
-    case 'C2':
-    case 'Native':
-      return 6;
-    default:
-      return 0;
-  }
-};
-
 // Helper function to format dates safely
 const formatDate = (dateString: string | undefined) => {
   if (!dateString) return 'N/A';
@@ -77,22 +50,6 @@ const formatDate = (dateString: string | undefined) => {
     return dateString;
   }
 };
-
-// List of contact center skills for the assessments section
-const CONTACT_CENTER_SKILLS = [
-  {
-    name: "Communication",
-    skills: ["Active Listening", "Clear Speech", "Empathy", "Tone Management"]
-  },
-  {
-    name: "Problem Solving",
-    skills: ["Issue Analysis", "Solution Finding", "Decision Making", "Resource Utilization"]
-  },
-  {
-    name: "Customer Service",
-    skills: ["Service Orientation", "Conflict Resolution", "Product Knowledge", "Quality Assurance"]
-  }
-];
 
 // Language proficiency levels
 const proficiencyLevels = [
@@ -341,9 +298,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
   const [selectedLanguageIndex, setSelectedLanguageIndex] = useState(-1);
 
   const [tempCompany, setTempCompany] = useState('');
-  const [tempFlexibility, setTempFlexibility] = useState('');
-  const [tempExpertise, setTempExpertise] = useState('');
-  const [editingExperience, setEditingExperience] = useState<any>(null);
   const [showNewExperienceForm, setShowNewExperienceForm] = useState(false);
 
 
@@ -1298,8 +1252,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }));
   };
 
-
-
   // New skill handlers for skill selector
   const handleSkillsChange = (type: 'technical' | 'professional' | 'soft', skills: Array<{ skill: string }>) => {
     setProfile((prev: Profile) => ({
@@ -1549,18 +1501,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     }
   };
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-    setShowVideoRecorder(false);
-    setHasShownCompletionToast(false); // Reset completion toast state when stopping camera
-    setUploadProgress(0); // Reset upload progress
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  };
 
   const startRecording = () => {
     if (!stream) return;
@@ -2169,9 +2109,9 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         <div className="w-full">
           {/* Right Column: Navbar & Tabs (Now Full Width) */}
           <div className="overflow-hidden">
-            <EditNavbar 
-              activeTab={activeTab} 
-              onTabChange={setActiveTab} 
+            <EditNavbar
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
               onSave={handleSave}
               loading={loading}
               uploadingPhoto={uploadingPhoto}
@@ -2184,7 +2124,6 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   profile={profile}
                   setProfile={setProfile}
                   setModifiedSections={setModifiedSections}
-                  activitiesData={activitiesData}
                   showVideoRecorder={showVideoRecorder}
                   recordedVideo={recordedVideo}
                   existingVideoDeleted={existingVideoDeleted}
@@ -2402,8 +2341,8 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
       {toast.show && (
         <div className={`fixed bottom-8 right-8 px-8 py-4 rounded-2xl shadow-2xl transition-all transform duration-500 z-[110] flex items-center gap-4 border animate-in slide-in-from-right-4 ${toast.type === 'success'
-            ? 'bg-emerald-500 text-white border-emerald-400'
-            : 'bg-rose-500 text-white border-rose-400'
+          ? 'bg-emerald-500 text-white border-emerald-400'
+          : 'bg-rose-500 text-white border-rose-400'
           }`}>
           {toast.type === 'success' ? (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -3,7 +3,7 @@ import { Star } from 'lucide-react';
 
 interface SkillsTabProps {
   profile: any;
-  formatSkillsForDisplay: (skillsData: any) => any[];
+  formatSkillsForDisplay: (skillsData: any, type?: 'technical' | 'professional' | 'soft') => any[];
   findSkillData: (skillName: string) => any;
   takeContactCenterSkillAssessment: (skillName: string, categoryName?: string) => void;
 }
@@ -37,7 +37,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
         <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
           <h2 className="text-lg font-black text-slate-900 mb-4">Technical</h2>
           <div className="flex flex-wrap gap-2">
-            {formatSkillsForDisplay(profile.skills?.technical).map((skill: any, idx: number) => (
+            {formatSkillsForDisplay(profile.skills?.technical, 'technical').map((skill: any, idx: number) => (
               <span key={idx} className="px-3 py-1 rounded-lg text-xs font-bold bg-slate-200/50 text-slate-700 border border-slate-200/30 italic">
                 {skill.name}
               </span>
@@ -49,7 +49,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
         <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
           <h2 className="text-lg font-black text-slate-900 mb-4">Professional</h2>
           <div className="flex flex-wrap gap-2">
-            {formatSkillsForDisplay(profile.skills?.professional).map((skill: any, idx: number) => (
+            {formatSkillsForDisplay(profile.skills?.professional, 'professional').map((skill: any, idx: number) => (
               <span key={idx} className="px-3 py-1 rounded-lg text-xs font-bold bg-slate-200/50 text-slate-700 border border-slate-200/30">
                 {skill.name}
               </span>
@@ -61,7 +61,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
         <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
           <h2 className="text-lg font-black text-slate-900 mb-4">Soft Skills</h2>
           <div className="flex flex-wrap gap-2">
-            {formatSkillsForDisplay(profile.skills?.soft).map((skill: any, idx: number) => (
+            {formatSkillsForDisplay(profile.skills?.soft, 'soft').map((skill: any, idx: number) => (
               <span key={idx} className="px-3 py-1 rounded-lg text-xs font-bold bg-slate-200/50 text-slate-700 border border-slate-200/30">
                 {skill.name}
               </span>

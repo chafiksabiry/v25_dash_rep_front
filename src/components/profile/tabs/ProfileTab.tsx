@@ -60,8 +60,6 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile }) => {
           )}
         </div>
       </div>
-
-      </div>
     </div>
   );
 };
