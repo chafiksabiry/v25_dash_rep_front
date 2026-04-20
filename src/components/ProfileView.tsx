@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Edit } from 'lucide-react';
 import { getProfilePlan, checkCountryMismatch, updateProfileData } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
-import { fetchAllSkills, Skill, SkillsByCategory } from '../services/api/skills';
+import { fetchAllSkills, fetchSkillById, Skill, SkillsByCategory, SkillType } from '../services/api/skills';
 
 // Components
 import { ProfileNavbar } from './profile/ProfileNavbar';
@@ -137,6 +137,63 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
     loadSkillDictionary();
   }, []);
 
+  useEffect(() => {
+    const hydrateAgentSkillNamesById = async () => {
+      if (!profile?.skills) return;
+
+      const normalizeId = (raw: any): string | null => {
+        if (!raw) return null;
+        if (typeof raw === 'string') return raw;
+        if (typeof raw === 'object' && typeof raw.$oid === 'string') return raw.$oid;
+        if (typeof raw === 'object' && typeof raw._id === 'string') return raw._id;
+        if (typeof raw === 'object' && typeof raw.id === 'string') return raw.id;
+        return null;
+      };
+
+      const collectIds = (arr: any[]): string[] =>
+        (arr || [])
+          .map((item: any) => normalizeId(item?.skill) || normalizeId(item?._id) || normalizeId(item?.id))
+          .filter((id: string | null): id is string => !!id);
+
+      const byType: Record<SkillType, string[]> = {
+        technical: collectIds(profile.skills.technical || []),
+        professional: collectIds(profile.skills.professional || []),
+        soft: collectIds(profile.skills.soft || []),
+      };
+
+      const toFetch: Array<{ id: string; type: SkillType }> = [];
+      (Object.keys(byType) as SkillType[]).forEach((type) => {
+        byType[type].forEach((id) => {
+          if (!skillNameById[id]) toFetch.push({ id, type });
+        });
+      });
+
+      if (toFetch.length === 0) return;
+
+      try {
+        const fetched = await Promise.all(
+          toFetch.map(async ({ id, type }) => {
+            const skill = await fetchSkillById(id, type);
+            return { id, name: skill?.name || null };
+          })
+        );
+
+        const additions = fetched.reduce((acc, curr) => {
+          if (curr.name) acc[curr.id] = curr.name;
+          return acc;
+        }, {} as Record<string, string>);
+
+        if (Object.keys(additions).length > 0) {
+          setSkillNameById((prev) => ({ ...prev, ...additions }));
+        }
+      } catch (error) {
+        console.error('Error hydrating agent skills by id:', error);
+      }
+    };
+
+    hydrateAgentSkillNamesById();
+  }, [profile?.skills, skillNameById]);
+
   // Load specific country and timezone data based on profile
   useEffect(() => {
     const loadSpecificLocationDetails = async () => {
@@ -266,6 +323,11 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       technical,
       professional,
       soft
+    });
+    console.log('[ProfileView] Agent skills (resolved values)', {
+      technicalValues: technical.join(', '),
+      professionalValues: professional.join(', '),
+      softValues: soft.join(', ')
     });
   }, [profile?.skills, skillNameById]);
 
