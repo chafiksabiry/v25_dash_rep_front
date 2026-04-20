@@ -377,12 +377,29 @@ export function Profile() {
       }
     };
 
+    // Optimistic UI update to avoid waiting for full profile refresh
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        professionalSummary: {
+          ...(prev.professionalSummary || {}),
+          [section]: [...source, value]
+        }
+      };
+    });
+
     try {
       await updateProfileData(profile._id, payload);
-      const refreshed = await getProfileData();
-      setProfile(refreshed);
     } catch (error) {
       console.error('Error adding specialization item:', error);
+      // Rollback if API fails
+      try {
+        const refreshed = await getProfileData();
+        setProfile(refreshed);
+      } catch (refreshError) {
+        console.error('Error refreshing profile after failed specialization add:', refreshError);
+      }
     }
   };
 
