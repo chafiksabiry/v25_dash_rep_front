@@ -4,9 +4,11 @@ import { Clock, Calendar, Pencil } from 'lucide-react';
 interface ProfileTabProps {
   profile: any;
   onEditItemClick?: () => void;
+  onEditAbout?: () => void;
+  onEditVideo?: () => void;
 }
 
-export const ProfileTab: React.FC<ProfileTabProps> = ({ profile }) => {
+export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onEditAbout, onEditVideo }) => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* About Section */}
@@ -15,6 +17,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile }) => {
           <h2 className="text-xl font-black text-harx-900 tracking-tight">About</h2>
           <button
             type="button"
+            onClick={onEditAbout}
             className="inline-flex items-center justify-center p-2 rounded-lg bg-gradient-harx text-white hover:opacity-90 transition-all"
             title="Edit About"
           >
@@ -37,6 +40,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile }) => {
             <h3 className="text-lg font-bold text-harx-900">Introduction Video</h3>
             <button
               type="button"
+              onClick={onEditVideo}
               className="inline-flex items-center justify-center p-2 rounded-lg bg-gradient-harx text-white hover:opacity-90 transition-all"
               title="Edit Video"
             >

@@ -388,9 +388,107 @@ export const ProfileView: React.FC<{
     try { return new Date(dateString).toLocaleDateString(); } catch (e) { return dateString; }
   };
 
+  const handleInlineUpdate = async (payload: any, buildNextProfile: (prev: any) => any) => {
+    if (!profile?._id) return;
+    try {
+      await updateProfileData(profile._id, payload);
+      onProfileUpdate?.(buildNextProfile(profile));
+    } catch (error) {
+      console.error('Inline update failed:', error);
+      window.alert('Update failed. Please try again.');
+    }
+  };
+
+  const handleInlineEditPublicProperties = async () => {
+    const nextCountry = window.prompt('Current Country', String((profile as any)?.personalInfo?.country?.countryName || (profile as any)?.personalInfo?.country || ''));
+    if (nextCountry === null) return;
+    const nextEmail = window.prompt('Direct Contact (Email)', String(profile.personalInfo?.email || ''));
+    if (nextEmail === null) return;
+    const nextPhone = window.prompt('Phone Line', String(profile.personalInfo?.phone || ''));
+    if (nextPhone === null) return;
+    const nextGrowthPlan = window.prompt('Growth Plan', String(planData?.plan?.name || 'Standard Representative'));
+    if (nextGrowthPlan === null) return;
+
+    const payload = {
+      personalInfo: {
+        ...profile.personalInfo,
+        country: nextCountry,
+        email: nextEmail,
+        phone: nextPhone,
+      },
+      professionalSummary: {
+        ...profile.professionalSummary,
+        // Keep a user-editable label in profile summary while staying in same UI
+        growthPlanLabel: nextGrowthPlan,
+      }
+    };
+
+    await handleInlineUpdate(payload, (prev) => ({
+      ...prev,
+      personalInfo: {
+        ...(prev.personalInfo || {}),
+        country: nextCountry,
+        email: nextEmail,
+        phone: nextPhone,
+      },
+      professionalSummary: {
+        ...(prev.professionalSummary || {}),
+        growthPlanLabel: nextGrowthPlan,
+      }
+    }));
+  };
+
+  const handleInlineEditAbout = async () => {
+    const current = String(profile.professionalSummary?.profileDescription || '');
+    const next = window.prompt('About', current);
+    if (next === null) return;
+    await handleInlineUpdate(
+      {
+        professionalSummary: {
+          ...profile.professionalSummary,
+          profileDescription: next,
+        }
+      },
+      (prev) => ({
+        ...prev,
+        professionalSummary: {
+          ...(prev.professionalSummary || {}),
+          profileDescription: next,
+        }
+      })
+    );
+  };
+
+  const handleInlineEditVideo = async () => {
+    const current = String(profile.personalInfo?.presentationVideo?.url || '');
+    const next = window.prompt('Introduction Video URL', current);
+    if (next === null) return;
+    await handleInlineUpdate(
+      {
+        personalInfo: {
+          ...profile.personalInfo,
+          presentationVideo: {
+            ...(profile.personalInfo?.presentationVideo || {}),
+            url: next,
+          }
+        }
+      },
+      (prev) => ({
+        ...prev,
+        personalInfo: {
+          ...(prev.personalInfo || {}),
+          presentationVideo: {
+            ...(prev.personalInfo?.presentationVideo || {}),
+            url: next,
+          }
+        }
+      })
+    );
+  };
+
   const renderActiveTab = () => {
     switch (activeTab) {
-      case 'profile': return <ProfileTab profile={profile} />;
+      case 'profile': return <ProfileTab profile={profile} onEditAbout={handleInlineEditAbout} onEditVideo={handleInlineEditVideo} />;
       case 'skills': return (
         <SkillsTab 
           profile={profile} 
@@ -440,7 +538,7 @@ export const ProfileView: React.FC<{
           onAddItemClick={(section, value) => onAddSpecializationItem?.(section, value)}
         />
       );
-      default: return <ProfileTab profile={profile} />;
+      default: return <ProfileTab profile={profile} onEditAbout={handleInlineEditAbout} onEditVideo={handleInlineEditVideo} />;
     }
   };
 
@@ -543,6 +641,7 @@ export const ProfileView: React.FC<{
               <div className="flex items-center justify-end mb-3">
                 <button
                   type="button"
+                  onClick={handleInlineEditPublicProperties}
                   className="inline-flex items-center justify-center p-2 rounded-lg bg-gradient-harx text-white hover:opacity-90 transition-all"
                   title="Edit Public Properties"
                 >
@@ -603,7 +702,7 @@ export const ProfileView: React.FC<{
                   <div className="relative z-10">
                     <div className="text-[10px] font-black text-harx-alt-400 uppercase tracking-widest">Growth Plan</div>
                     <div className="text-lg font-black text-harx-alt-900 tracking-tight leading-none mt-0.5">
-                      {planData?.plan?.name || "Standard Representative"}
+                      {(profile as any)?.professionalSummary?.growthPlanLabel || planData?.plan?.name || "Standard Representative"}
                     </div>
                   </div>
                </div>
