@@ -396,6 +396,15 @@ export const ProfileView: React.FC<{
     try { return new Date(dateString).toLocaleDateString(); } catch (e) { return dateString; }
   };
 
+  const getCountryDisplayName = () => {
+    if (countryData?.countryName) return countryData.countryName;
+    const country = (profile as any)?.personalInfo?.country;
+    if (!country) return 'Not specified';
+    if (typeof country === 'string') return country;
+    if (typeof country === 'object') return country.countryName || country.zoneName || 'Not specified';
+    return 'Not specified';
+  };
+
   const handleInlineUpdate = async (payload: any, buildNextProfile: (prev: any) => any) => {
     if (!profile?._id) return;
     try {
@@ -409,7 +418,7 @@ export const ProfileView: React.FC<{
 
   const openPublicInfoEditor = () => {
     setPublicInfoDraft({
-      country: String(countryData?.countryName || (profile as any)?.personalInfo?.country?.countryName || (profile as any)?.personalInfo?.country || ''),
+      country: getCountryDisplayName(),
       email: String(profile.personalInfo?.email || ''),
       phone: String(profile.personalInfo?.phone || ''),
       growthPlan: String((profile as any)?.professionalSummary?.growthPlanLabel || planData?.plan?.name || 'Standard Representative')
@@ -688,7 +697,7 @@ export const ProfileView: React.FC<{
                         className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
                       />
                     ) : (
-                      <span className="text-sm font-bold text-slate-900">{countryData?.countryName || (profile as any)?.personalInfo?.country || 'Not specified'}</span>
+                      <span className="text-sm font-bold text-slate-900">{getCountryDisplayName()}</span>
                     )}
                     {countryMismatch?.hasMismatch && (
                       <div className="ml-auto w-2 h-2 bg-amber-500 rounded-full animate-pulse" title="Location mismatch" />
