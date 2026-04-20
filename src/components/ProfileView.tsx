@@ -56,7 +56,15 @@ export interface PlanResponse {
   plan: Partial<Plan>;
 }
 
-export const ProfileView: React.FC<{ profile: any, onEditClick: (tab?: string) => void, onDeleteSkill?: (type: 'technical' | 'professional' | 'soft', index: number) => void, onProfileUpdate?: (updatedProfile: any) => void }> = ({ profile, onEditClick, onDeleteSkill, onProfileUpdate }) => {
+export const ProfileView: React.FC<{
+  profile: any,
+  onEditClick: (tab?: string) => void,
+  onDeleteSkill?: (type: 'technical' | 'professional' | 'soft', index: number) => void,
+  onDeleteLanguage?: (index: number) => void,
+  onDeleteExperience?: (index: number) => void,
+  onDeleteSpecializationItem?: (section: 'industries' | 'activities' | 'notableCompanies', index: number) => void,
+  onProfileUpdate?: (updatedProfile: any) => void
+}> = ({ profile, onEditClick, onDeleteSkill, onDeleteLanguage, onDeleteExperience, onDeleteSpecializationItem, onProfileUpdate }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isPublishing, setIsPublishing] = useState(false);
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
@@ -391,13 +399,20 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: (tab?: string) =
           onDeleteSkill={(type, index) => onDeleteSkill?.(type, index)}
         />
       );
-      case 'experience': return <ExperienceTab profile={profile} onEditItemClick={() => onEditClick('experience')} />;
+      case 'experience': return (
+        <ExperienceTab
+          profile={profile}
+          onEditItemClick={() => onEditClick('experience')}
+          onDeleteItemClick={(index) => onDeleteExperience?.(index)}
+        />
+      );
       case 'languages': return (
         <LanguagesTab 
           profile={profile} 
           getProficiencyStars={getProficiencyStars}
           takeLanguageAssessment={takeLanguageAssessment}
           onEditItemClick={() => onEditClick('languages')}
+          onDeleteItemClick={(index) => onDeleteLanguage?.(index)}
         />
       );
       case 'onboarding': return (
@@ -412,7 +427,13 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: (tab?: string) =
           onEditItemClick={(tab?: string) => onEditClick(tab || 'availability')}
         />
       );
-      case 'specialization': return <SpecializationTab profile={profile} onEditItemClick={() => onEditClick('specialization')} />;
+      case 'specialization': return (
+        <SpecializationTab
+          profile={profile}
+          onEditItemClick={() => onEditClick('specialization')}
+          onDeleteItemClick={(section, index) => onDeleteSpecializationItem?.(section, index)}
+        />
+      );
       default: return <ProfileTab profile={profile} onEditItemClick={() => onEditClick('profile')} />;
     }
   };

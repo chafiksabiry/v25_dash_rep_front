@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ProfileView } from '../components/ProfileView';
 import { ProfileEditView } from '../components/ProfileEditView';
-import { getProfileData, updateProfileData, updateSkills } from '../utils/profileUtils';
+import { getProfileData, updateProfileData, updateSkills, updateBasicInfo, updateExperience } from '../utils/profileUtils';
 
 // Import Timezone type from repWizard service
 import { Timezone } from '../services/api/repWizard';
@@ -238,6 +238,81 @@ export function Profile() {
     }
   };
 
+  const handleDeleteLanguage = async (index: number) => {
+    if (!profile?._id) return;
+    const currentLanguages = profile.personalInfo?.languages || [];
+    if (index < 0 || index >= currentLanguages.length) return;
+
+    const normalizeLanguageEntry = (lang: any) => ({
+      language: typeof lang.language === 'object' ? lang.language?._id : lang.language,
+      proficiency: lang.proficiency,
+      assessmentResults: lang.assessmentResults
+    });
+
+    const updatedLanguages = currentLanguages
+      .filter((_: any, i: number) => i !== index)
+      .map(normalizeLanguageEntry)
+      .filter((entry: any) => !!entry.language);
+
+    try {
+      await updateBasicInfo(profile._id, { languages: updatedLanguages });
+      const refreshed = await getProfileData();
+      setProfile(refreshed);
+    } catch (error) {
+      console.error('Error deleting language:', error);
+    }
+  };
+
+  const handleDeleteExperience = async (index: number) => {
+    if (!profile?._id) return;
+    const currentExperience = profile.experience || [];
+    if (index < 0 || index >= currentExperience.length) return;
+
+    const updatedExperience = currentExperience.filter((_: any, i: number) => i !== index);
+    try {
+      await updateExperience(profile._id, updatedExperience);
+      const refreshed = await getProfileData();
+      setProfile(refreshed);
+    } catch (error) {
+      console.error('Error deleting experience:', error);
+    }
+  };
+
+  const handleDeleteSpecializationItem = async (
+    section: 'industries' | 'activities' | 'notableCompanies',
+    index: number
+  ) => {
+    if (!profile?._id) return;
+    const currentSummary = profile.professionalSummary || {};
+    const source = currentSummary[section] || [];
+    if (index < 0 || index >= source.length) return;
+
+    const normalizeValue = (value: any) => {
+      if (section === 'notableCompanies') return value;
+      return typeof value === 'object' ? value?._id : value;
+    };
+
+    const updatedSection = source
+      .filter((_: any, i: number) => i !== index)
+      .map(normalizeValue)
+      .filter((value: any) => !!value);
+
+    const payload = {
+      professionalSummary: {
+        ...currentSummary,
+        [section]: updatedSection
+      }
+    };
+
+    try {
+      await updateProfileData(profile._id, payload);
+      const refreshed = await getProfileData();
+      setProfile(refreshed);
+    } catch (error) {
+      console.error('Error deleting specialization item:', error);
+    }
+  };
+
   if (loading) {
     console.log('⏳ Profile is in loading state, showing loading screen');
     return (
@@ -318,6 +393,9 @@ export function Profile() {
               setIsEditing(true);
             }}
             onDeleteSkill={handleDeleteSkill}
+            onDeleteLanguage={handleDeleteLanguage}
+            onDeleteExperience={handleDeleteExperience}
+            onDeleteSpecializationItem={handleDeleteSpecializationItem}
             onProfileUpdate={handleProfileUpdate}
           />
         )}
