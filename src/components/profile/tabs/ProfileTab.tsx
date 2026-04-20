@@ -14,8 +14,10 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
   const [aboutDraft, setAboutDraft] = useState('');
   const [isRecorderReady, setIsRecorderReady] = useState(false);
   const [isRecordingNow, setIsRecordingNow] = useState(false);
+  const [wantsToRerecord, setWantsToRerecord] = useState(false);
   const [recordedVideoBlob, setRecordedVideoBlob] = useState<Blob | null>(null);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string>('');
+  const [isLivePreviewReady, setIsLivePreviewReady] = useState(false);
   const liveVideoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -45,6 +47,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
     if (liveVideoRef.current) {
       liveVideoRef.current.srcObject = null;
     }
+    setIsLivePreviewReady(false);
   };
 
   const startRecorder = async () => {
@@ -64,20 +67,38 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
         videoEl.autoplay = true;
         videoEl.playsInline = true;
         videoEl.srcObject = stream;
+        setIsLivePreviewReady(false);
 
-        await new Promise<void>((resolve) => {
-          const onLoaded = () => {
-            videoEl.removeEventListener('loadedmetadata', onLoaded);
-            resolve();
-          };
-          videoEl.addEventListener('loadedmetadata', onLoaded);
-        });
+        const markReady = () => {
+          setIsLivePreviewReady(true);
+        };
 
-        try {
-          await videoEl.play();
-        } catch (playError) {
-          console.error('Live preview playback failed:', playError);
-        }
+        videoEl.onloadedmetadata = markReady;
+        videoEl.onloadeddata = markReady;
+        videoEl.oncanplay = markReady;
+        videoEl.onplaying = markReady;
+
+        const forcePlay = async () => {
+          try {
+            await videoEl.play();
+          } catch (playError) {
+            console.error('Live preview playback failed:', playError);
+          }
+        };
+
+        await forcePlay();
+
+        // Browser fallback: sometimes stream is attached but first paint stays black.
+        window.setTimeout(async () => {
+          if (isLivePreviewReady) return;
+          try {
+            videoEl.srcObject = null;
+            videoEl.srcObject = stream;
+            await forcePlay();
+          } catch (error) {
+            console.error('Live preview fallback failed:', error);
+          }
+        }, 700);
       }
       setIsRecorderReady(true);
       setRecordedVideoBlob(null);
@@ -193,7 +214,10 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
             <h3 className="text-lg font-bold text-harx-900">Introduction Video</h3>
             <button
               type="button"
-              onClick={() => setIsEditingVideo(true)}
+              onClick={() => {
+                setIsEditingVideo(true);
+                setWantsToRerecord(!profile.personalInfo?.presentationVideo?.url);
+              }}
               className="inline-flex items-center justify-center p-2 rounded-lg bg-gradient-harx text-white hover:opacity-90 transition-all"
               title="Edit Video"
             >
@@ -203,7 +227,28 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
 
           {isEditingVideo && (
             <div className="mb-4 space-y-3">
-              {!isRecorderReady && !recordedVideoBlob && (
+              {!!profile.personalInfo?.presentationVideo?.url && !wantsToRerecord && !isRecorderReady && !recordedVideoBlob && !recordedVideoUrl && (
+                <div className="space-y-3">
+                  <video
+                    controls
+                    className="w-full aspect-video bg-harx-900/90 rounded-2xl object-cover shadow-lg"
+                  >
+                    <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                  <div className="flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setWantsToRerecord(true)}
+                      className="px-3 py-1.5 rounded-lg border border-harx-100 text-harx-700 text-xs font-bold uppercase tracking-wider hover:bg-harx-50"
+                    >
+                      Re-record
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {wantsToRerecord && !isRecorderReady && !recordedVideoBlob && (
                 <button
                   type="button"
                   onClick={startRecorder}
@@ -228,6 +273,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
                     {isRecordingNow && (
                       <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-rose-500 text-white text-[10px] font-black uppercase tracking-wider shadow">
                         Recording...
+                      </div>
+                    )}
+                    {!isLivePreviewReady && (
+                      <div className="absolute inset-0 flex items-center justify-center text-white/90 text-xs font-bold tracking-wider uppercase bg-black/35 rounded-2xl">
+                        Loading camera preview...
                       </div>
                     )}
                   </div>
@@ -274,6 +324,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
                         if (!recordedVideoBlob) return;
                         const file = new File([recordedVideoBlob], 'presentation-video.webm', { type: 'video/webm' });
                         await onReplaceVideo?.(file);
+                        setWantsToRerecord(false);
                         setIsEditingVideo(false);
                       }}
                       disabled={isUploadingVideo}
@@ -291,6 +342,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
                   onClick={() => {
                     stopCameraStream();
                     setIsEditingVideo(false);
+                    setWantsToRerecord(false);
                     setIsRecorderReady(false);
                     setIsRecordingNow(false);
                     resetRecordedDraft();
