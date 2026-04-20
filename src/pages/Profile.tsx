@@ -141,7 +141,19 @@ export function Profile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(window.location.search.includes('edit=true'));
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (isEditing) {
+      url.searchParams.set('edit', 'true');
+    } else {
+      url.searchParams.delete('edit');
+    }
+    window.history.replaceState({}, '', url.toString());
+    // Dispatch a custom event to notify App.tsx if needed
+    window.dispatchEvent(new Event('profile_edit_toggle'));
+  }, [isEditing]);
 
   useEffect(() => {
     console.log('📋 Profile component mounted - loading profile data');

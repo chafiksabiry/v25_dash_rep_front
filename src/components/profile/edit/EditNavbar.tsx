@@ -16,23 +16,26 @@ export const EditNavbar: React.FC<EditNavbarProps> = ({ activeTab, onTabChange }
   ];
 
   return (
-    <div className="flex items-center gap-1 bg-white p-1.5 rounded-3xl border border-gray-100 shadow-sm mb-8 overflow-x-auto scrollbar-hide">
+    <div className="flex items-center border-b border-gray-100 mb-8 overflow-x-auto scrollbar-hide">
       {tabs.map((tab) => {
-        const Icon = tab.icon;
         const isActive = activeTab === tab.id;
         return (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={`
-              flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap
+              relative flex items-center gap-2 px-6 py-4 text-sm font-bold transition-all whitespace-nowrap
               ${isActive 
-                ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' 
-                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}
+                ? 'text-harx-600' 
+                : 'text-gray-400 hover:text-gray-600'}
             `}
           >
-            <Icon className={`w-4 h-4 ${isActive ? 'text-harx-400' : ''}`} />
-            <span className="uppercase tracking-widest text-[11px]">{tab.label}</span>
+            <span className="tracking-tight">{tab.label}</span>
+            
+            {/* Active Underline - Twilio Style */}
+            {isActive && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-harx-600 animate-in fade-in slide-in-from-bottom-1" />
+            )}
           </button>
         );
       })}

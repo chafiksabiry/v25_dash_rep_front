@@ -13,7 +13,6 @@ import { fetchAllSkills, SkillsByCategory, Skill } from '../services/api/skills'
 import { fetchAllLanguages, Language } from '../services/api/languages';
 
 // Import Modular Components
-import { EditSidebar } from './profile/edit/EditSidebar';
 import { EditNavbar } from './profile/edit/EditNavbar';
 import { EditProfileTab } from './profile/edit/tabs/EditProfileTab';
 import { EditSkillsTab } from './profile/edit/tabs/EditSkillsTab';
@@ -2134,41 +2133,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Sidebar Identity */}
-          <div className="lg:col-span-4 sticky top-28">
-            <EditSidebar
-              profile={profile}
-              handleProfileChange={handleProfileChange}
-              validationErrors={validationErrors}
-              renderError={renderError}
-              imagePreview={imagePreview}
-              isPhotoMarkedForDeletion={isPhotoMarkedForDeletion}
-              fileInputRef={fileInputRef}
-              handleImageChange={handleImageChange}
-              handleRemoveImage={handleRemoveImage}
-              setImageToShow={setImageToShow}
-              setShowImageModal={setShowImageModal}
-              countrySearchTerm={countrySearchTerm}
-              setCountrySearchTerm={setCountrySearchTerm}
-              isCountryDropdownOpen={isCountryDropdownOpen}
-              setIsCountryDropdownOpen={setIsCountryDropdownOpen}
-              filteredCountries={filteredCountries}
-              setSelectedCountry={setSelectedCountry}
-              selectedCountryIndex={selectedCountryIndex}
-              setSelectedCountryIndex={setSelectedCountryIndex}
-              checkingCountryMismatch={checkingCountryMismatch}
-              showLoadingSpinner={showLoadingSpinner}
-              countryMismatch={countryMismatch}
-            />
-          </div>
-
-          {/* Right Column: Navbar & Tabs */}
-          <div className="lg:col-span-8 overflow-hidden">
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        <div className="w-full">
+          {/* Right Column: Navbar & Tabs (Now Full Width) */}
+          <div className="overflow-hidden">
             <EditNavbar activeTab={activeTab} onTabChange={setActiveTab} />
 
-            <main className="min-h-[600px]">
+            <main className="min-h-[600px] mt-8">
               {activeTab === 'profile' && (
                 <EditProfileTab
                   profile={profile}
