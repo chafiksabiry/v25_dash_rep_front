@@ -283,6 +283,41 @@ export function Profile() {
     }
   };
 
+  const handleAddContactCenterSkill = async (skillName: string, categoryName: string) => {
+    if (!profile?._id || !skillName || !categoryName) return;
+
+    const currentContactCenter = profile.skills?.contactCenter || [];
+    const exists = currentContactCenter.some(
+      (entry: any) =>
+        String(entry?.skill || '').toLowerCase() === skillName.toLowerCase() &&
+        String(entry?.category || '').toLowerCase() === categoryName.toLowerCase()
+    );
+
+    if (exists) return;
+
+    const updatedContactCenter = [
+      ...currentContactCenter,
+      {
+        skill: skillName,
+        category: categoryName,
+        proficiency: 'Not assessed'
+      }
+    ];
+
+    try {
+      await updateProfileData(profile._id, {
+        skills: {
+          ...profile.skills,
+          contactCenter: updatedContactCenter
+        }
+      });
+      const refreshed = await getProfileData();
+      setProfile(refreshed);
+    } catch (error) {
+      console.error('Error adding contact center skill:', error);
+    }
+  };
+
   const handleDeleteLanguage = async (index: number) => {
     if (!profile?._id) return;
     const currentLanguages = profile.personalInfo?.languages || [];
@@ -439,6 +474,7 @@ export function Profile() {
             }}
             onDeleteSkill={handleDeleteSkill}
             onAddSkill={handleAddSkill}
+            onAddContactCenterSkill={handleAddContactCenterSkill}
             onDeleteLanguage={handleDeleteLanguage}
             onDeleteExperience={handleDeleteExperience}
             onDeleteSpecializationItem={handleDeleteSpecializationItem}

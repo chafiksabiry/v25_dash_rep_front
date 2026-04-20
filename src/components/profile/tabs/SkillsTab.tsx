@@ -10,6 +10,7 @@ interface SkillsTabProps {
   onEditItemClick: () => void;
   onDeleteSkill: (type: 'technical' | 'professional' | 'soft', index: number) => void;
   onAddSkill: (type: 'technical' | 'professional' | 'soft', skillId: string) => void;
+  onAddContactCenterSkill: (skillName: string, categoryName: string) => void;
 }
 
 const CONTACT_CENTER_SKILLS = [
@@ -34,7 +35,8 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
   takeContactCenterSkillAssessment,
   onEditItemClick,
   onDeleteSkill,
-  onAddSkill
+  onAddSkill,
+  onAddContactCenterSkill
 }) => {
   const [availableSkills, setAvailableSkills] = useState<Record<'technical' | 'professional' | 'soft', Skill[]>>({
     technical: [],
@@ -288,7 +290,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                       const selected = e.target.value;
                       setAssessmentSelectedSkill((prev) => ({ ...prev, [category.name]: selected }));
                       if (!selected) return;
-                      takeContactCenterSkillAssessment(selected, category.name);
+                      onAddContactCenterSkill(selected, category.name);
                     }}
                     className="flex-1 px-3 py-2.5 text-sm font-semibold rounded-xl border border-harx-100/80 bg-white text-harx-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-200"
                   >

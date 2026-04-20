@@ -61,11 +61,12 @@ export const ProfileView: React.FC<{
   onEditClick: (tab?: string) => void,
   onDeleteSkill?: (type: 'technical' | 'professional' | 'soft', index: number) => void,
   onAddSkill?: (type: 'technical' | 'professional' | 'soft', skillId: string) => void,
+  onAddContactCenterSkill?: (skillName: string, categoryName: string) => void,
   onDeleteLanguage?: (index: number) => void,
   onDeleteExperience?: (index: number) => void,
   onDeleteSpecializationItem?: (section: 'industries' | 'activities' | 'notableCompanies', index: number) => void,
   onProfileUpdate?: (updatedProfile: any) => void
-}> = ({ profile, onEditClick, onDeleteSkill, onAddSkill, onDeleteLanguage, onDeleteExperience, onDeleteSpecializationItem, onProfileUpdate }) => {
+}> = ({ profile, onEditClick, onDeleteSkill, onAddSkill, onAddContactCenterSkill, onDeleteLanguage, onDeleteExperience, onDeleteSpecializationItem, onProfileUpdate }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isPublishing, setIsPublishing] = useState(false);
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
@@ -399,6 +400,7 @@ export const ProfileView: React.FC<{
           onEditItemClick={() => onEditClick('skills')}
           onDeleteSkill={(type, index) => onDeleteSkill?.(type, index)}
           onAddSkill={(type, skillId) => onAddSkill?.(type, skillId)}
+          onAddContactCenterSkill={(skillName, categoryName) => onAddContactCenterSkill?.(skillName, categoryName)}
         />
       );
       case 'experience': return (
