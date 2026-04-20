@@ -909,20 +909,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
             </div>
 
             {/* Flexibility Options */}
-            {profile.availability?.flexibility && profile.availability.flexibility.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Schedule Flexibility</h4>
-                <div className="flex flex-wrap gap-2">
-                  {profile.availability.flexibility.map((option: string, index: number) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-sm font-medium"
-                    >
-                      {option}
-                    </span>
-                  ))}
-                </div>
-              </div>
             )}
           </div>
         </div>
@@ -944,8 +930,8 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
                 onClick={() => scrollToSection(item.id)}
                 className={`
                   flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300
-                  ${activeSection === item.id 
-                    ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20' 
+                  ${activeSection === item.id
+                    ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20'
                     : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}
                 `}
               >
@@ -959,332 +945,329 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
         {/* About Section */}
         <div id="overview" className="scroll-mt-24 space-y-6">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">About</h2>
+            <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">About</h2>
 
-          {/* Profile Description */}
-          <div className="mb-6">
-            {profile.professionalSummary?.profileDescription ? (
-              <p className="text-gray-700 whitespace-pre-wrap">{profile.professionalSummary.profileDescription}</p>
-            ) : (
-              <p className="text-gray-500 italic">No profile description available</p>
-            )}
-          </div>
+            {/* Profile Description */}
+            <div className="mb-6">
+              {profile.professionalSummary?.profileDescription ? (
+                <p className="text-gray-700 whitespace-pre-wrap">{profile.professionalSummary.profileDescription}</p>
+              ) : (
+                <p className="text-gray-500 italic">No profile description available</p>
+              )}
+            </div>
 
-          {/* Introduction Video Section */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium text-gray-800 mb-4">Introduction Video</h3>
+            {/* Introduction Video Section */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-medium text-gray-800 mb-4">Introduction Video</h3>
 
-            {profile.personalInfo?.presentationVideo && profile.personalInfo.presentationVideo.url ? (
-              <div className="space-y-4">
-                {/* Video Player - Responsive with proper aspect ratio */}
-                <div className="w-full">
-                  <video
-                    controls
-                    className="w-full aspect-video bg-black rounded-lg object-cover"
-                    onLoadedMetadata={(e) => {
-                      console.log("🎥 EXISTING Video Properties:", {
-                        duration: e.currentTarget.duration,
-                        videoWidth: e.currentTarget.videoWidth,
-                        videoHeight: e.currentTarget.videoHeight,
-                        seekable: e.currentTarget.seekable.length > 0,
-                        src: e.currentTarget.currentSrc
-                      });
-                    }}
-                  >
-                    <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
-                    <source src={profile.personalInfo.presentationVideo.url} type="video/webm" />
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
+              {profile.personalInfo?.presentationVideo && profile.personalInfo.presentationVideo.url ? (
+                <div className="space-y-4">
+                  {/* Video Player - Responsive with proper aspect ratio */}
+                  <div className="w-full">
+                    <video
+                      controls
+                      className="w-full aspect-video bg-black rounded-lg object-cover"
+                      onLoadedMetadata={(e) => {
+                        console.log("🎥 EXISTING Video Properties:", {
+                          duration: e.currentTarget.duration,
+                          videoWidth: e.currentTarget.videoWidth,
+                          videoHeight: e.currentTarget.videoHeight,
+                          seekable: e.currentTarget.seekable.length > 0,
+                          src: e.currentTarget.currentSrc
+                        });
+                      }}
+                    >
+                      <source src={profile.personalInfo.presentationVideo.url} type="video/mp4" />
+                      <source src={profile.personalInfo.presentationVideo.url} type="video/webm" />
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
 
-                {/* Video Information */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-sm text-gray-600 space-y-2">
-                    {profile.personalInfo.presentationVideo.duration && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        <span>Duration: {Math.floor(profile.personalInfo.presentationVideo.duration)}s</span>
-                      </div>
-                    )}
-                    {profile.personalInfo.presentationVideo.recordedAt && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>
-                          Recorded: {new Date(profile.personalInfo.presentationVideo.recordedAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
+                  {/* Video Information */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="text-sm text-gray-600 space-y-2">
+                      {profile.personalInfo.presentationVideo.duration && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4" />
+                          <span>Duration: {Math.floor(profile.personalInfo.presentationVideo.duration)}s</span>
+                        </div>
+                      )}
+                      {profile.personalInfo.presentationVideo.recordedAt && (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          <span>
+                            Recorded: {new Date(profile.personalInfo.presentationVideo.recordedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
+              ) : (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  Presentation video is required. Please record a video introduction to complete your profile.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Years of Experience Section */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Years of Experience</h2>
+            <div className="flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-gray-500" />
+              <span className="text-lg text-gray-800">
+                {profile.professionalSummary?.yearsOfExperience ? (
+                  `${profile.professionalSummary.yearsOfExperience} years`
+                ) : (
+                  <span className="text-gray-500 italic">Not specified</span>
+                )}
+              </span>
+            </div>
+          </div>
+
+          {/* Industries Section */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Industries</h2>
+            {(!profile.professionalSummary?.industries || profile.professionalSummary.industries.length === 0) && (
               <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                Presentation video is required. Please record a video introduction to complete your profile.
+                Industries are required. Please add the industries you work in.
               </div>
+            )}
+            {profile.professionalSummary?.industries?.length > 0 ? (
+              <div className="flex flex-wrap gap-3">
+                {profile.professionalSummary.industries.map((industry: any, idx: number) => (
+                  <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm">
+                    {typeof industry === 'string' ? industry : industry.name || industry._id}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 italic">No industries listed</p>
+            )}
+          </div>
+
+          {/* Activities Section */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Activities</h2>
+            {(!profile.professionalSummary?.activities || profile.professionalSummary.activities.length === 0) && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Activities are required. Please add the activities you can perform.
+              </div>
+            )}
+            {profile.professionalSummary?.activities && profile.professionalSummary.activities.length > 0 ? (
+              <div className="flex flex-wrap gap-3">
+                {profile.professionalSummary.activities.map((activity: any, idx: number) => (
+                  <span key={idx} className="px-3 py-1 bg-green-100 text-green-800 rounded-lg text-sm">
+                    {typeof activity === 'string' ? activity : activity.name || activity._id}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 italic">No activities listed</p>
+            )}
+          </div>
+
+          {/* Notable Companies Section */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Notable Companies</h2>
+            {profile.professionalSummary?.notableCompanies?.length > 0 ? (
+              <div className="flex flex-wrap gap-3">
+                {profile.professionalSummary.notableCompanies.map((company: string, idx: number) => (
+                  <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-lg text-sm">
+                    {company}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 italic">No notable companies listed</p>
             )}
           </div>
         </div>
 
-        {/* Years of Experience Section */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Years of Experience</h2>
-          <div className="flex items-center gap-2">
-            <Briefcase className="w-5 h-5 text-gray-500" />
-            <span className="text-lg text-gray-800">
-              {profile.professionalSummary?.yearsOfExperience ? (
-                `${profile.professionalSummary.yearsOfExperience} years`
-              ) : (
-                <span className="text-gray-500 italic">Not specified</span>
-              )}
-            </span>
-          </div>
-        </div>
-
-        {/* Industries Section */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Industries</h2>
-          {(!profile.professionalSummary?.industries || profile.professionalSummary.industries.length === 0) && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Industries are required. Please add the industries you work in.
-            </div>
-          )}
-          {profile.professionalSummary?.industries?.length > 0 ? (
-            <div className="flex flex-wrap gap-3">
-              {profile.professionalSummary.industries.map((industry: any, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm">
-                  {typeof industry === 'string' ? industry : industry.name || industry._id}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 italic">No industries listed</p>
-          )}
-        </div>
-
-        {/* Activities Section */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Activities</h2>
-          {(!profile.professionalSummary?.activities || profile.professionalSummary.activities.length === 0) && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Activities are required. Please add the activities you can perform.
-            </div>
-          )}
-          {profile.professionalSummary?.activities && profile.professionalSummary.activities.length > 0 ? (
-            <div className="flex flex-wrap gap-3">
-              {profile.professionalSummary.activities.map((activity: any, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-green-100 text-green-800 rounded-lg text-sm">
-                  {typeof activity === 'string' ? activity : activity.name || activity._id}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 italic">No activities listed</p>
-          )}
-        </div>
-
-        {/* Notable Companies Section */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Notable Companies</h2>
-          {profile.professionalSummary?.notableCompanies?.length > 0 ? (
-            <div className="flex flex-wrap gap-3">
-              {profile.professionalSummary.notableCompanies.map((company: string, idx: number) => (
-                <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-lg text-sm">
-                  {company}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 italic">No notable companies listed</p>
-          )}
-        </div>
-      </div>
-
-      {/* Skills Group Section */}
-      <div id="skills" className="scroll-mt-24 space-y-6">
-        {/* Technical Skills Section */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Technical Skills</h2>
-          {(!profile.skills?.technical || profile.skills.technical.length === 0) && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Technical skills are required. Please add your technical expertise.
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2">
-            {formatSkillsForDisplay(profile.skills?.technical).map((skill: any, idx: number) => (
-              <div key={idx} className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
-                <span className="font-medium">{skill.name}</span>
+        {/* Skills Group Section */}
+        <div id="skills" className="scroll-mt-24 space-y-6">
+          {/* Technical Skills Section */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Technical Skills</h2>
+            {(!profile.skills?.technical || profile.skills.technical.length === 0) && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Technical skills are required. Please add your technical expertise.
               </div>
-            ))}
-          </div>
-          {formatSkillsForDisplay(profile.skills?.technical).length === 0 && (
-            <p className="text-gray-500 italic">No technical skills listed</p>
-          )}
-        </div>
-
-        {/* Professional Skills Section */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Professional Skills</h2>
-          {(!profile.skills?.professional || profile.skills.professional.length === 0) && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Professional skills are required. Please add your professional expertise.
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2">
-            {formatSkillsForDisplay(profile.skills?.professional).map((skill: any, idx: number) => (
-              <div key={idx} className="px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
-                <span className="font-medium">{skill.name}</span>
-              </div>
-            ))}
-          </div>
-          {formatSkillsForDisplay(profile.skills?.professional).length === 0 && (
-            <p className="text-gray-500 italic">No professional skills listed</p>
-          )}
-        </div>
-
-        {/* Soft Skills Section */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Soft Skills</h2>
-          {(!profile.skills?.soft || profile.skills.soft.length === 0) && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Soft skills are required. Please add your interpersonal skills.
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2">
-            {formatSkillsForDisplay(profile.skills?.soft).map((skill: any, idx: number) => (
-              <div key={idx} className="px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
-                <span className="font-medium">{skill.name}</span>
-              </div>
-            ))}
-          </div>
-          {formatSkillsForDisplay(profile.skills?.soft).length === 0 && (
-            <p className="text-gray-500 italic">No soft skills listed</p>
-          )}
-        </div>
-
-        {/* Contact Center Skills Section */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Contact Center Skills</h2>
-          {(!profile.skills?.contactCenter || !profile.skills.contactCenter.some((skill: ContactCenterSkill) => skill.assessmentResults)) && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              You should be assessed in at least one contact center skill.
-            </div>
-          )}
-          <div className="space-y-8">
-            {[
-              ...CONTACT_CENTER_SKILLS,
-              {
-                name: "Activities",
-                skills: (profile.professionalSummary?.activities || []).map((a: any) => typeof a === 'string' ? a : a.name)
-              },
-              {
-                name: "Industries",
-                skills: (profile.professionalSummary?.industries || []).map((i: any) => typeof i === 'string' ? i : i.name)
-              }
-            ].filter(category => category.skills.length > 0).map((category) => (
-              <div key={category.name} className="mb-8">
-                <h3 className="text-xl font-medium text-gray-800 mb-4 pb-2 border-b">{category.name}</h3>
-                <div className="space-y-4">
-                  {category.skills.map((skillName: string) => {
-                    const skillData = findSkillData(skillName);
-
-                    return (
-                      <div key={skillName} className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex justify-between items-center mb-3">
-                          <h4 className="font-medium text-gray-800">{skillName}</h4>
-                          {skillData ? (
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                                {skillData.proficiency}
-                              </span>
-                              {skillData.assessmentResults?.score !== undefined && (
-                                <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
-                                  Score: {skillData.assessmentResults.score}/100
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs italic">
-                              Not assessed yet
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex justify-between items-center">
-                          {skillData?.assessmentResults ? (
-                            <div className="mt-3">
-                              {/* Display key metrics if available */}
-                              {skillData.assessmentResults.keyMetrics && (
-                                <div className="grid grid-cols-3 gap-2">
-                                  {skillData.assessmentResults.keyMetrics.professionalism !== undefined && (
-                                    <div className="bg-blue-50 p-2 rounded text-center">
-                                      <div className="text-xs text-gray-600 mb-1">Professionalism</div>
-                                      <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.professionalism}/100</div>
-                                    </div>
-                                  )}
-                                  {skillData.assessmentResults.keyMetrics.effectiveness !== undefined && (
-                                    <div className="bg-green-50 p-2 rounded text-center">
-                                      <div className="text-xs text-gray-600 mb-1">Effectiveness</div>
-                                      <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.effectiveness}/100</div>
-                                    </div>
-                                  )}
-                                  {skillData.assessmentResults.keyMetrics.customerFocus !== undefined && (
-                                    <div className="bg-purple-50 p-2 rounded text-center">
-                                      <div className="text-xs text-gray-600 mb-1">Customer Focus</div>
-                                      <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.customerFocus}/100</div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="mt-2 text-sm text-gray-500 italic">
-                              Complete an assessment to see your KPI metrics
-                            </div>
-                          )}
-
-                          <button
-                            onClick={() => takeContactCenterSkillAssessment(skillName, category.name)}
-                            className="px-3 py-1 bg-harx-500 hover:bg-harx-600 text-white text-sm rounded-lg transition-colors"
-                          >
-                            {skillData?.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+            )}
+            <div className="flex flex-wrap gap-2">
+              {formatSkillsForDisplay(profile.skills?.technical).map((skill: any, idx: number) => (
+                <div key={idx} className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                  <span className="font-medium">{skill.name}</span>
                 </div>
+              ))}
+            </div>
+            {formatSkillsForDisplay(profile.skills?.technical).length === 0 && (
+              <p className="text-gray-500 italic">No technical skills listed</p>
+            )}
+          </div>
+
+          {/* Professional Skills Section */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Professional Skills</h2>
+            {(!profile.skills?.professional || profile.skills.professional.length === 0) && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Professional skills are required. Please add your professional expertise.
               </div>
-            ))}
+            )}
+            <div className="flex flex-wrap gap-2">
+              {formatSkillsForDisplay(profile.skills?.professional).map((skill: any, idx: number) => (
+                <div key={idx} className="px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                  <span className="font-medium">{skill.name}</span>
+                </div>
+              ))}
+            </div>
+            {formatSkillsForDisplay(profile.skills?.professional).length === 0 && (
+              <p className="text-gray-500 italic">No professional skills listed</p>
+            )}
+          </div>
+
+          {/* Soft Skills Section */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Soft Skills</h2>
+            {(!profile.skills?.soft || profile.skills.soft.length === 0) && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Soft skills are required. Please add your interpersonal skills.
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {formatSkillsForDisplay(profile.skills?.soft).map((skill: any, idx: number) => (
+                <div key={idx} className="px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
+                  <span className="font-medium">{skill.name}</span>
+                </div>
+              ))}
+            </div>
+            {formatSkillsForDisplay(profile.skills?.soft).length === 0 && (
+              <p className="text-gray-500 italic">No soft skills listed</p>
+            )}
+          </div>
+
+          {/* Contact Center Skills Section */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Contact Center Skills</h2>
+            {(!profile.skills?.contactCenter || !profile.skills.contactCenter.some((skill: ContactCenterSkill) => skill.assessmentResults)) && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                You should be assessed in at least one contact center skill.
+              </div>
+            )}
+            <div className="space-y-8">
+              {[
+                ...CONTACT_CENTER_SKILLS,
+                {
+                  name: "Activities",
+                  skills: (profile.professionalSummary?.activities || []).map((a: any) => typeof a === 'string' ? a : a.name)
+                },
+                {
+                  name: "Industries",
+                  skills: (profile.professionalSummary?.industries || []).map((i: any) => typeof i === 'string' ? i : i.name)
+                }
+              ].filter(category => category.skills.length > 0).map((category) => (
+                <div key={category.name} className="mb-8">
+                  <h3 className="text-xl font-medium text-gray-800 mb-4 pb-2 border-b">{category.name}</h3>
+                  <div className="space-y-4">
+                    {category.skills.map((skillName: string) => {
+                      const skillData = findSkillData(skillName);
+
+                      return (
+                        <div key={skillName} className="bg-gray-50 rounded-lg p-4">
+                          <div className="flex justify-between items-center mb-3">
+                            <h4 className="font-medium text-gray-800">{skillName}</h4>
+                            {skillData ? (
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                  {skillData.proficiency}
+                                </span>
+                                {skillData.assessmentResults?.score !== undefined && (
+                                  <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+                                    Score: {skillData.assessmentResults.score}/100
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs italic">
+                                Not assessed yet
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex justify-between items-center">
+                            {skillData?.assessmentResults ? (
+                              <div className="mt-3">
+                                {/* Display key metrics if available */}
+                                {skillData.assessmentResults.keyMetrics && (
+                                  <div className="grid grid-cols-3 gap-2">
+                                    {skillData.assessmentResults.keyMetrics.professionalism !== undefined && (
+                                      <div className="bg-blue-50 p-2 rounded text-center">
+                                        <div className="text-xs text-gray-600 mb-1">Professionalism</div>
+                                        <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.professionalism}/100</div>
+                                      </div>
+                                    )}
+                                    {skillData.assessmentResults.keyMetrics.effectiveness !== undefined && (
+                                      <div className="bg-green-50 p-2 rounded text-center">
+                                        <div className="text-xs text-gray-600 mb-1">Effectiveness</div>
+                                        <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.effectiveness}/100</div>
+                                      </div>
+                                    )}
+                                    {skillData.assessmentResults.keyMetrics.customerFocus !== undefined && (
+                                      <div className="bg-purple-50 p-2 rounded text-center">
+                                        <div className="text-xs text-gray-600 mb-1">Customer Focus</div>
+                                        <div className="text-sm font-semibold">{skillData.assessmentResults.keyMetrics.customerFocus}/100</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="mt-2 text-sm text-gray-500 italic">
+                                Complete an assessment to see your KPI metrics
+                              </div>
+                            )}
+
+                            <button
+                              onClick={() => takeContactCenterSkillAssessment(skillName, category.name)}
+                              className="px-3 py-1 bg-harx-500 hover:bg-harx-600 text-white text-sm rounded-lg transition-colors"
+                            >
+                              {skillData?.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-          </div>
-        </div>
-      </div>
-
-      {/* Languages Section - Moved from left column */}
-      <div id="languages" className="scroll-mt-24 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+        {/* Languages Section */}
+        <div id="languages" className="scroll-mt-24 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
           <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Languages</h2>
           {(!profile.personalInfo?.languages || profile.personalInfo.languages.length === 0) ? (
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
@@ -1305,15 +1288,8 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
             <div className="space-y-4">
               {profile.personalInfo.languages.map((lang: any, index: number) => {
                 const stars = getProficiencyStars(lang.proficiency);
-
-                // Get language name and code based on whether it's populated or not
-                const languageName = typeof lang.language === 'object' && lang.language
-                  ? lang.language.name
-                  : (typeof lang.language === 'string' ? 'Unknown Language' : 'Unknown Language');
-
-                const languageCode = typeof lang.language === 'object' && lang.language
-                  ? lang.language.code
-                  : (typeof lang.language === 'string' ? '' : '');
+                const languageName = typeof lang.language === 'object' && lang.language ? lang.language.name : 'Unknown Language';
+                const languageCode = typeof lang.language === 'object' && lang.language ? lang.language.code : '';
 
                 return (
                   <div key={index} className="bg-gray-50 rounded-lg p-4">
@@ -1324,13 +1300,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
                       </h3>
                       <div className="flex items-center">
                         {[...Array(6)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-4 h-4 ${i < stars
-                              ? 'text-yellow-400 fill-current'
-                              : 'text-gray-300'
-                              }`}
-                          />
+                          <Star key={i} className={`w-4 h-4 ${i < stars ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
                         ))}
                       </div>
                     </div>
@@ -1345,8 +1315,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
                         {lang.assessmentResults ? 'Retake Assessment' : 'Take Assessment'}
                       </button>
                     </div>
-
-                    {/* Always show assessment criteria */}
                     <div className="grid grid-cols-3 gap-4 mt-4">
                       {!lang.assessmentResults ? (
                         <div className="col-span-3 text-center">
@@ -1378,8 +1346,8 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
           )}
         </div>
 
-      {/* Experience Section - Always show this section */}
-      <div id="experience" className="scroll-mt-24 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+        {/* Experience Section */}
+        <div id="experience" className="scroll-mt-24 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
           <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Experience</h2>
           {(!profile.experience || profile.experience.length === 0) && (
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
@@ -1392,34 +1360,15 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
           {profile.experience?.length > 0 ? (
             <div className="space-y-6">
               {profile.experience.map((exp: any, index: number) => {
-                // Format dates for display
                 const formatDateToDD_MM_YYYY = (dateString: string) => {
                   if (!dateString) return '';
-                  // Check if it's already formatted with slashes or dashes
-                  if (dateString.includes('/') || dateString.includes('-')) {
-                    // Try to standardize the format
-                    try {
-                      const date = new Date(dateString);
-                      return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
-                    } catch (e) {
-                      return dateString; // Return as is if parsing fails
-                    }
-                  }
-
-                  // Parse ISO date
                   try {
                     const date = new Date(dateString);
                     return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
-                  } catch (e) {
-                    return dateString;
-                  }
+                  } catch (e) { return dateString; }
                 };
-
                 const startDate = formatDateToDD_MM_YYYY(exp.startDate);
-                // Handle endDate specifically - could be 'present' or a Date
-                let endDate = exp.endDate === 'present' ? 'Present' :
-                  exp.endDate ? formatDateToDD_MM_YYYY(exp.endDate) : 'Present';
-
+                let endDate = exp.endDate === 'present' ? 'Present' : exp.endDate ? formatDateToDD_MM_YYYY(exp.endDate) : 'Present';
                 return (
                   <div key={index} className="border-l-2 border-harx-500 pl-4">
                     <div className="flex justify-between items-start mb-2">
@@ -1427,34 +1376,22 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
                         <h3 className="font-medium text-gray-800">{exp.title || exp.role || 'Position'}</h3>
                         <p className="text-gray-600">{exp.company || 'Company'}</p>
                       </div>
-                      <span className="text-sm text-gray-500">
-                        {startDate} - {endDate}
-                      </span>
+                      <span className="text-sm text-gray-500">{startDate} - {endDate}</span>
                     </div>
-                    {exp.description && (
-                      <p className="text-gray-700 mt-2">{exp.description}</p>
-                    )}
-
-                    {/* Responsibilities section */}
+                    {exp.description && <p className="text-gray-700 mt-2">{exp.description}</p>}
                     {exp.responsibilities?.length > 0 && (
                       <div className="mt-3">
                         <h4 className="text-sm font-medium text-gray-700 mb-2">Responsibilities:</h4>
                         <ul className="list-disc pl-5 space-y-1">
-                          {exp.responsibilities.map((responsibility: string, idx: number) => (
-                            <li key={idx} className="text-sm text-gray-600">{responsibility}</li>
-                          ))}
+                          {exp.responsibilities.map((r: string, idx: number) => <li key={idx} className="text-sm text-gray-600">{r}</li>)}
                         </ul>
                       </div>
                     )}
-
-                    {/* Achievements section */}
                     {exp.achievements?.length > 0 && (
                       <div className="mt-3">
                         <h4 className="text-sm font-medium text-gray-700 mb-2">Key Achievements:</h4>
                         <ul className="list-disc pl-5 space-y-1">
-                          {exp.achievements.map((achievement: string, idx: number) => (
-                            <li key={idx} className="text-sm text-gray-600">{achievement}</li>
-                          ))}
+                          {exp.achievements.map((a: string, idx: number) => <li key={idx} className="text-sm text-gray-600">{a}</li>)}
                         </ul>
                       </div>
                     )}
@@ -1478,20 +1415,15 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
             className="relative w-[30%] min-w-[300px] bg-white rounded-lg overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            {/* Modal Header */}
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-xl font-semibold text-gray-900">My Profile Image</h3>
             </div>
-
-            {/* Close button */}
             <button
               className="absolute top-4 right-4 p-2 bg-white rounded-full text-gray-600 hover:text-gray-900 shadow-lg z-10"
               onClick={() => setShowImageModal(false)}
             >
               <X className="w-6 h-6" />
             </button>
-
-            {/* Main image */}
             <div className="p-4">
               <img
                 src={profile.personalInfo.photo.url}
@@ -1505,4 +1437,4 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       )}
     </div>
   );
-}; 
+};
