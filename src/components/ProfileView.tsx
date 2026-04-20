@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Edit } from 'lucide-react';
 import { getProfilePlan, checkCountryMismatch, updateProfileData } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
+import { fetchAllSkills, Skill, SkillsByCategory } from '../services/api/skills';
 
 // Components
 import { ProfileNavbar } from './profile/ProfileNavbar';
@@ -65,6 +66,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
   const [timezoneData, setTimezoneData] = useState<Timezone | null>(null);
   const [allTimezones, setAllTimezones] = useState<Timezone[]>([]);
   const [countries, setCountries] = useState<Timezone[]>([]);
+  const [skillNameById, setSkillNameById] = useState<Record<string, string>>({});
 
   const [countryMismatch, setCountryMismatch] = useState<{
     hasMismatch: boolean;
@@ -111,6 +113,29 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
     };
     fetchPlanData();
   }, [profile?._id]);
+
+  useEffect(() => {
+    const loadSkillDictionary = async () => {
+      try {
+        const skills = await fetchAllSkills();
+        const mapFromCategory = (category: SkillsByCategory) =>
+          Object.values(category || {}).flat().reduce((acc, skill: Skill) => {
+            acc[skill._id] = skill.name;
+            return acc;
+          }, {} as Record<string, string>);
+
+        setSkillNameById({
+          ...mapFromCategory(skills.technical),
+          ...mapFromCategory(skills.professional),
+          ...mapFromCategory(skills.soft),
+        });
+      } catch (error) {
+        console.error('Error loading skills dictionary for profile view:', error);
+      }
+    };
+
+    loadSkillDictionary();
+  }, []);
 
   // Load specific country and timezone data based on profile
   useEffect(() => {
@@ -197,7 +222,9 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
     return skillsData.map(item => {
       if (typeof item === 'string') return { name: item };
       if (item.skill && typeof item.skill === 'object') return { name: item.skill.name };
-      return { name: item.name || item.skill || 'Unknown' };
+      const skillId = item?._id || item?.skill;
+      const resolvedById = typeof skillId === 'string' ? skillNameById[skillId] : null;
+      return { name: item?.name || resolvedById || (typeof item?.skill === 'string' ? item.skill : null) || 'Unknown' };
     });
   };
 
