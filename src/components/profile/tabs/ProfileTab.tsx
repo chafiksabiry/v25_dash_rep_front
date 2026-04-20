@@ -49,11 +49,35 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
 
   const startRecorder = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user',
+        },
+        audio: true,
+      });
       mediaStreamRef.current = stream;
       if (liveVideoRef.current) {
-        liveVideoRef.current.srcObject = stream;
-        await liveVideoRef.current.play();
+        const videoEl = liveVideoRef.current;
+        videoEl.muted = true;
+        videoEl.autoplay = true;
+        videoEl.playsInline = true;
+        videoEl.srcObject = stream;
+
+        await new Promise<void>((resolve) => {
+          const onLoaded = () => {
+            videoEl.removeEventListener('loadedmetadata', onLoaded);
+            resolve();
+          };
+          videoEl.addEventListener('loadedmetadata', onLoaded);
+        });
+
+        try {
+          await videoEl.play();
+        } catch (playError) {
+          console.error('Live preview playback failed:', playError);
+        }
       }
       setIsRecorderReady(true);
       setRecordedVideoBlob(null);
