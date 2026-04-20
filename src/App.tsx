@@ -134,7 +134,7 @@ function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen, isCollap
             setIsSidebarOpen={setIsSidebarOpen}
           />
         )}
-        <main className={`flex-1 overflow-y-auto ${isProfileEdit ? 'p-0' : 'p-4'}`}>
+        <main className={`flex-1 overflow-y-auto ${location.pathname.includes('/profile') ? 'p-0' : 'p-4'}`}>
           <Routes>
             <Route path="/" element={
               <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>

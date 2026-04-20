@@ -268,13 +268,43 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
     }
   };
 
+  const headerContentMap: Record<string, { title: string; subtitle: string }> = {
+    profile: {
+      title: "Representative Identity",
+      subtitle: "Manage your professional persona and core identification properties."
+    },
+    skills: {
+      title: "Expertise & Competencies",
+      subtitle: "Highlight your technical strengths and soft skills for placement opportunities."
+    },
+    experience: {
+      title: "Professional Milestones",
+      subtitle: "Detail your career history and previous representative successes."
+    },
+    languages: {
+      title: "Linguistic Profile",
+      subtitle: "Showcase your language proficiency and communication capabilities."
+    },
+    onboarding: {
+      title: "Evolution Progress",
+      subtitle: "Track your journey through the representation onboarding phases."
+    }
+  };
+
+  const currentHeader = headerContentMap[activeTab] || headerContentMap.profile;
+
   return (
-    <div className="max-w-5xl mx-auto p-6 lg:p-10 space-y-8">
-      {/* Page Title & Phrase */}
-      <div className="mb-2">
-        <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Profile</h1>
-        <p className="text-gray-500 font-medium tracking-tight">View and manage your representative identity, professional properties, and performance metrics.</p>
-      </div>
+    <div className="min-h-full bg-[#f8fafc]">
+      <div className="max-w-5xl mx-auto px-6 py-4 lg:px-10 lg:py-6 space-y-6">
+        {/* Page Title & Phrase - Dynamic */}
+        <div className="mb-2">
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2 animate-in fade-in slide-in-from-left-4 duration-500">
+            {currentHeader.title}
+          </h1>
+          <p className="text-slate-500 font-medium tracking-tight animate-in fade-in slide-in-from-left-6 duration-700">
+            {currentHeader.subtitle}
+          </p>
+        </div>
 
       {/* Navigation Tabs at the Top */}
       <div className="w-full">
@@ -283,12 +313,12 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
 
       {/* Header / Identity Section (Twilio Style) - Only visible on 'Profile' tab */}
       {activeTab === 'profile' && (
-        <div className="bg-white rounded-3xl p-8 lg:p-10 shadow-sm border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-8 lg:p-10 shadow-sm border border-slate-200/50 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="flex flex-col md:flex-row gap-10 items-start">
             {/* Photo management */}
             <div className="relative group shrink-0">
               <div 
-                className="w-40 h-40 rounded-[32px] shadow-xl border-4 border-white bg-gray-50 overflow-hidden relative cursor-pointer ring-4 ring-harx-50"
+                className="w-40 h-40 rounded-[32px] shadow-xl border-4 border-white bg-slate-200/50 overflow-hidden relative cursor-pointer ring-4 ring-harx-50 transition-transform group-hover:scale-[1.02]"
                 onClick={() => profile.personalInfo?.photo?.url && setShowImageModal(true)}
               >
                 {profile.personalInfo?.photo?.url ? (
@@ -311,7 +341,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
             {/* Properties Grid */}
             <div className="flex-1 w-full relative">
               {/* Action Buttons Top Right */}
-              <div className="flex flex-wrap gap-3 mb-8 pb-6 border-b border-gray-50 justify-between items-center">
+              <div className="flex flex-wrap gap-3 mb-8 pb-6 border-b border-slate-200/50 justify-between items-center">
               <div>
                 <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-1">{profile.personalInfo?.name}</h2>
                 <p className="text-sm font-bold text-transparent bg-clip-text bg-gradient-harx uppercase tracking-widest italic">{profile.professionalSummary?.currentRole || 'Representative'}</p>
@@ -340,10 +370,10 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
                 {/* Location */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Current Country</label>
-                  <div className="flex items-center gap-2 py-2 px-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-harx-200 transition-colors">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Country</label>
+                  <div className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-200 transition-colors">
                     <MapPin className="w-3.5 h-3.5 text-harx-400" />
-                    <span className="text-sm font-bold text-gray-900">{countryData?.countryName || 'Not specified'}</span>
+                    <span className="text-sm font-bold text-slate-900">{countryData?.countryName || 'Not specified'}</span>
                     {countryMismatch?.hasMismatch && (
                       <div className="ml-auto w-2 h-2 bg-amber-500 rounded-full animate-pulse" title="Location mismatch" />
                     )}
@@ -352,26 +382,26 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
 
                 {/* Email */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Direct Contact</label>
-                  <a href={`mailto:${profile.personalInfo?.email}`} className="flex items-center gap-2 py-2 px-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-harx-500 hover:text-harx-600 transition-all">
-                    <Mail className="w-3.5 h-3.5 text-gray-400 group-hover:text-harx-500" />
-                    <span className="text-sm font-bold truncate max-w-[120px]">{profile.personalInfo?.email || 'N/A'}</span>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Direct Contact</label>
+                  <a href={`mailto:${profile.personalInfo?.email}`} className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-500 hover:text-harx-600 transition-all">
+                    <Mail className="w-3.5 h-3.5 text-slate-400 group-hover:text-harx-500" />
+                    <span className="text-sm font-bold text-slate-900 truncate max-w-[120px]">{profile.personalInfo?.email || 'N/A'}</span>
                   </a>
                 </div>
 
                 {/* Phone */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Phone Line</label>
-                  <a href={`tel:${profile.personalInfo?.phone}`} className="flex items-center gap-2 py-2 px-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-harx-500 hover:text-harx-600 transition-all">
-                    <Phone className="w-3.5 h-3.5 text-gray-400 group-hover:text-harx-500" />
-                    <span className="text-sm font-bold">{profile.personalInfo?.phone || 'N/A'}</span>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Line</label>
+                  <a href={`tel:${profile.personalInfo?.phone}`} className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-500 hover:text-harx-600 transition-all">
+                    <Phone className="w-3.5 h-3.5 text-slate-400 group-hover:text-harx-500" />
+                    <span className="text-sm font-bold text-slate-900">{profile.personalInfo?.phone || 'N/A'}</span>
                   </a>
                 </div>
               </div>
 
               {/* Quick Stats Grid (Score & Plan) */}
             <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-harx-50 to-white rounded-2xl border border-harx-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+               <div className="flex items-center gap-4 p-4 bg-slate-50/50 rounded-2xl border border-slate-200/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                   <div className="absolute top-0 right-0 w-20 h-20 bg-harx-100/20 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-harx-100/40 transition-colors"></div>
                   <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-harx-500 relative z-10">
                     <Target size={24} className="animate-pulse" />
@@ -382,7 +412,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
                   </div>
                </div>
 
-               <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-harx-alt-50 to-white rounded-2xl border border-harx-alt-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+               <div className="flex items-center gap-4 p-4 bg-slate-50/50 rounded-2xl border border-slate-200/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                   <div className="absolute top-0 right-0 w-20 h-20 bg-harx-alt-100/20 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-harx-alt-100/40 transition-colors"></div>
                   <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-harx-alt-500 relative z-10">
                     <Briefcase size={24} />
@@ -404,13 +434,14 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
         <div className="flex-1 min-h-[600px]">
           {renderActiveTab()}
         </div>
+        </div>
       </div>
 
       {/* Image Modal */}
       {showImageModal && profile.personalInfo?.photo?.url && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm" onClick={() => setShowImageModal(false)}>
-          <div className="relative max-w-2xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-            <button className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 text-white rounded-full transition-colors z-10" onClick={() => setShowImageModal(false)}>
+        <div className="fixed inset-0 bg-slate-900/90 flex items-center justify-center z-[100] p-4 backdrop-blur-md" onClick={() => setShowImageModal(false)}>
+          <div className="relative max-w-2xl w-full bg-slate-100 rounded-3xl overflow-hidden shadow-2xl border border-slate-200/50" onClick={e => e.stopPropagation()}>
+            <button className="absolute top-4 right-4 p-2 bg-slate-900/20 hover:bg-slate-900/40 text-white rounded-full transition-colors z-10" onClick={() => setShowImageModal(false)}>
               <X size={24} />
             </button>
             <img src={profile.personalInfo.photo.url} alt="Profile" className="w-full h-auto object-contain" style={{ maxHeight: '80vh' }} />

@@ -2086,28 +2086,49 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
 
 
 
+  const headerContentMap: Record<string, { title: string; subtitle: string }> = {
+    profile: {
+      title: "Identity Configuration",
+      subtitle: "Update your core identification and professional positioning."
+    },
+    skills: {
+      title: "Competency Management",
+      subtitle: "Adjust and verify your technical and professional skill assessments."
+    },
+    experience: {
+      title: "Career Architecture",
+      subtitle: "Refine your professional history and previous achievements."
+    },
+    languages: {
+      title: "Global Communication",
+      subtitle: "Update your linguistic proficiency and certification details."
+    }
+  };
+
+  const currentHeader = headerContentMap[activeTab] || headerContentMap.profile;
+
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Top Header Section */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-40 transition-all">
+      <div className="bg-slate-100/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-40 transition-all">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => onSave(initialProfile)}
-              className="p-3 hover:bg-gray-50 rounded-2xl text-gray-400 hover:text-gray-900 transition-all"
+              className="p-3 hover:bg-slate-200/50 rounded-2xl text-slate-400 hover:text-slate-900 transition-all"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <div>
-              <h1 className="text-2xl font-black text-gray-900 tracking-tight">Edit Representative Profile</h1>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5 italic">Harx Talent Network v2.5</p>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Edit Representative Profile</h1>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5 italic">Harx Talent Network v2.5</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => onSave(initialProfile)}
-              className="px-6 py-3 rounded-2xl bg-gray-50 text-gray-500 hover:bg-gray-100 font-black uppercase tracking-widest text-[11px] transition-all flex items-center gap-2"
+              className="px-6 py-3 rounded-2xl bg-slate-200/50 text-slate-500 hover:bg-slate-200/80 font-black uppercase tracking-widest text-[11px] transition-all flex items-center gap-2"
             >
               <X className="w-4 h-4" />
               Discard Changes
@@ -2133,13 +2154,17 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 pt-10 pb-4">
-        {/* Page Title & Phrase */}
+      <div className="max-w-5xl mx-auto px-6 pt-6 pb-4">
+        {/* Page Title & Phrase - Dynamic */}
         <div className="mb-6">
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Edit Profile</h1>
-          <p className="text-gray-500 font-medium tracking-tight">Modify your representative information, professional properties, and visibility settings.</p>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2 animate-in fade-in slide-in-from-left-4 duration-500">
+            {currentHeader.title}
+          </h1>
+          <p className="text-slate-500 font-medium tracking-tight animate-in fade-in slide-in-from-left-6 duration-700">
+            {currentHeader.subtitle}
+          </p>
         </div>
-        
+
         <div className="w-full">
           {/* Right Column: Navbar & Tabs (Now Full Width) */}
           <div className="overflow-hidden">
@@ -2175,8 +2200,27 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   renderIndustryDropdown={renderIndustryDropdown}
                   renderActivityDropdown={renderActivityDropdown}
                   tempCompany={tempCompany}
-                  setTempCompany={setTempCompany}
-                />
+                  setTempCompany={setTempCompany} handleProfileChange={function (field: string, value: any): void {
+                    throw new Error('Function not implemented.');
+                  }} validationErrors={undefined} renderError={function (field: string): React.ReactNode {
+                    throw new Error('Function not implemented.');
+                  }} imagePreview={null} isPhotoMarkedForDeletion={false} fileInputRef={undefined} handleImageChange={function (e: React.ChangeEvent<HTMLInputElement>): void {
+                    throw new Error('Function not implemented.');
+                  }} handleRemoveImage={function (): void {
+                    throw new Error('Function not implemented.');
+                  }} setImageToShow={function (img: string | null): void {
+                    throw new Error('Function not implemented.');
+                  }} setShowImageModal={function (show: boolean): void {
+                    throw new Error('Function not implemented.');
+                  }} countrySearchTerm={''} setCountrySearchTerm={function (s: string): void {
+                    throw new Error('Function not implemented.');
+                  }} isCountryDropdownOpen={false} setIsCountryDropdownOpen={function (open: boolean): void {
+                    throw new Error('Function not implemented.');
+                  }} filteredCountries={[]} setSelectedCountry={function (country: any): void {
+                    throw new Error('Function not implemented.');
+                  }} selectedCountryIndex={0} setSelectedCountryIndex={function (idx: number): void {
+                    throw new Error('Function not implemented.');
+                  }} checkingCountryMismatch={false} showLoadingSpinner={false} countryMismatch={false} />
               )}
 
               {activeTab === 'skills' && (
@@ -2338,11 +2382,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       )}
 
       {toast.show && (
-        <div className={`fixed bottom-8 right-8 px-8 py-4 rounded-2xl shadow-2xl transition-all transform duration-500 z-[110] flex items-center gap-4 border animate-in slide-in-from-right-4 ${
-          toast.type === 'success' 
-            ? 'bg-emerald-500 text-white border-emerald-400' 
+        <div className={`fixed bottom-8 right-8 px-8 py-4 rounded-2xl shadow-2xl transition-all transform duration-500 z-[110] flex items-center gap-4 border animate-in slide-in-from-right-4 ${toast.type === 'success'
+            ? 'bg-emerald-500 text-white border-emerald-400'
             : 'bg-rose-500 text-white border-rose-400'
-        }`}>
+          }`}>
           {toast.type === 'success' ? (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
