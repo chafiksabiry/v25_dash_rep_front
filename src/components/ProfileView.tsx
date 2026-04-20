@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Edit } from 'lucide-react';
+import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check } from 'lucide-react';
 import { getProfilePlan, checkCountryMismatch, updateProfileData } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 import { fetchAllSkills, fetchSkillById, Skill, SkillsByCategory, SkillType } from '../services/api/skills';
@@ -390,7 +390,7 @@ export const ProfileView: React.FC<{
 
   const renderActiveTab = () => {
     switch (activeTab) {
-      case 'profile': return <ProfileTab profile={profile} onEditItemClick={() => onEditClick('profile')} />;
+      case 'profile': return <ProfileTab profile={profile} />;
       case 'skills': return (
         <SkillsTab 
           profile={profile} 
@@ -440,7 +440,7 @@ export const ProfileView: React.FC<{
           onAddItemClick={(section, value) => onAddSpecializationItem?.(section, value)}
         />
       );
-      default: return <ProfileTab profile={profile} onEditItemClick={() => onEditClick('profile')} />;
+      default: return <ProfileTab profile={profile} />;
     }
   };
 
@@ -537,13 +537,6 @@ export const ProfileView: React.FC<{
                     {isPublishing ? 'Publishing...' : 'Publish'}
                   </button>
                 )}
-                <button
-                  onClick={() => onEditClick()}
-                  className="px-6 py-2.5 rounded-2xl bg-gradient-harx text-white hover:opacity-90 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-harx-500/20 active:scale-95"
-                >
-                  <Edit size={16} />
-                  Edit Profile
-                </button>
               </div>
             </div>
 

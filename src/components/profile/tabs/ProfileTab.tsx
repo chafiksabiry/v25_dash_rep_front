@@ -1,26 +1,17 @@
 import React from 'react';
-import { Clock, Calendar, Pencil } from 'lucide-react';
+import { Clock, Calendar } from 'lucide-react';
 
 interface ProfileTabProps {
   profile: any;
-  onEditItemClick: () => void;
 }
 
-export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onEditItemClick }) => {
+export const ProfileTab: React.FC<ProfileTabProps> = ({ profile }) => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* About Section */}
       <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-black text-harx-900 tracking-tight">About</h2>
-          <button
-            type="button"
-            onClick={onEditItemClick}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            Edit
-          </button>
         </div>
         
         {/* Profile Description */}
@@ -36,14 +27,6 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onEditItemClick
         <div className="border-t border-slate-200/50 pt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-harx-900">Introduction Video</h3>
-            <button
-              type="button"
-              onClick={onEditItemClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit
-            </button>
           </div>
           
           {profile.personalInfo?.presentationVideo?.url ? (
