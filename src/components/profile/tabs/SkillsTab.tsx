@@ -350,8 +350,9 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                   .map((entry: any) => String(entry?.skill || '').trim())
                   .filter((name: string) => !!name);
 
-                // For base contact-center categories, keep default catalog visible if no explicit selection yet.
-                if (isBaseContactCategory && displayCategorySkills.length === 0) {
+                // If no assessment entries exist yet, show the category source list
+                // (base catalog for contact-center categories, populated profile lists for activities/industries).
+                if (displayCategorySkills.length === 0) {
                   displayCategorySkills = category.skills;
                   displayCategorySkills.forEach((name: string) => selectedInCategory.add(name.toLowerCase()));
                 }
