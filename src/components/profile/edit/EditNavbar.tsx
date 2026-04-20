@@ -32,13 +32,30 @@ export const EditNavbar: React.FC<EditNavbarProps> = ({ activeTab, onTabChange }
           >
             <span className="tracking-tight">{tab.label}</span>
             
-            {/* Active Underline - Twilio Style */}
+            {/* Active Underline - Twilio Style with HARX Gradient */}
             {isActive && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-harx-600 animate-in fade-in slide-in-from-bottom-1" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-harx animate-in fade-in slide-in-from-bottom-1" />
             )}
           </button>
         );
       })}
+      <button
+        onClick={handleSave}
+        disabled={loading || uploadingPhoto || uploadingVideo}
+        className="ml-auto px-8 py-3 rounded-2xl bg-gradient-harx text-white hover:opacity-90 hover:shadow-2xl hover:shadow-harx-500/20 font-black uppercase tracking-widest text-[11px] transition-all flex items-center gap-2 disabled:opacity-50 group shadow-lg"
+      >
+        {loading || uploadingPhoto || uploadingVideo ? (
+          <>
+            <RefreshCw className="w-4 h-4 animate-spin" />
+            {uploadingVideo ? 'Syncing Video...' : uploadingPhoto ? 'Syncing Photo...' : 'Finalizing...'}
+          </>
+        ) : (
+          <>
+            <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            Apply All Changes
+          </>
+        )}
+      </button>
     </div>
   );
 };

@@ -312,30 +312,30 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
             <div className="flex-1 w-full relative">
               {/* Action Buttons Top Right */}
               <div className="flex flex-wrap gap-3 mb-8 pb-6 border-b border-gray-50 justify-between items-center">
-                <div>
-                  <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-1">{profile.personalInfo?.name}</h2>
-                  <p className="text-sm font-bold text-harx-500 uppercase tracking-widest italic">{profile.professionalSummary?.currentRole || 'Representative'}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  {profile.status !== 'completed' && (
-                    <button
-                      onClick={handlePublish}
-                      disabled={isPublishing}
-                      className="px-6 py-2.5 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-200 active:scale-95 disabled:opacity-50"
-                    >
-                      {isPublishing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check size={16} />}
-                      {isPublishing ? 'Publishing...' : 'Publish'}
-                    </button>
-                  )}
-                  <button
-                    onClick={onEditClick}
-                    className="px-6 py-2.5 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95"
-                  >
-                    <Edit size={16} />
-                    Edit Profile
-                  </button>
-                </div>
+              <div>
+                <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-1">{profile.personalInfo?.name}</h2>
+                <p className="text-sm font-bold text-transparent bg-clip-text bg-gradient-harx uppercase tracking-widest italic">{profile.professionalSummary?.currentRole || 'Representative'}</p>
               </div>
+              <div className="flex items-center gap-3">
+                {profile.status !== 'completed' && (
+                  <button
+                    onClick={handlePublish}
+                    disabled={isPublishing}
+                    className="px-6 py-2.5 rounded-2xl bg-gradient-harx text-white hover:opacity-90 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-harx-500/20 active:scale-95 disabled:opacity-50"
+                  >
+                    {isPublishing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check size={16} />}
+                    {isPublishing ? 'Publishing...' : 'Publish'}
+                  </button>
+                )}
+                <button
+                  onClick={onEditClick}
+                  className="px-6 py-2.5 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 border border-slate-700"
+                >
+                  <Edit size={16} />
+                  Edit Profile
+                </button>
+              </div>
+            </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
                 {/* Location */}
@@ -370,32 +370,34 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
               </div>
 
               {/* Quick Stats Grid (Score & Plan) */}
-              <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-indigo-50 to-blue-50/50 rounded-2xl border border-indigo-100 shadow-sm">
-                    <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-indigo-600">
-                      <Target size={24} className="animate-pulse" />
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">REPS Score (Overall)</div>
-                      <div className="text-2xl font-black text-indigo-900 tracking-tighter leading-none mt-0.5">{calculateOverallScore()} / 100</div>
-                    </div>
-                 </div>
+            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-harx-50 to-white rounded-2xl border border-harx-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-harx-100/20 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-harx-100/40 transition-colors"></div>
+                  <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-harx-500 relative z-10">
+                    <Target size={24} className="animate-pulse" />
+                  </div>
+                  <div className="relative z-10">
+                    <div className="text-[10px] font-black text-harx-400 uppercase tracking-widest">REPS Score (Overall)</div>
+                    <div className="text-2xl font-black text-harx-900 tracking-tighter leading-none mt-0.5">{calculateOverallScore()} / 100</div>
+                  </div>
+               </div>
 
-                 <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-emerald-50 to-teal-50/50 rounded-2xl border border-emerald-100 shadow-sm">
-                    <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-600">
-                      <Briefcase size={24} />
+               <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-harx-alt-50 to-white rounded-2xl border border-harx-alt-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-harx-alt-100/20 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-harx-alt-100/40 transition-colors"></div>
+                  <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-harx-alt-500 relative z-10">
+                    <Briefcase size={24} />
+                  </div>
+                  <div className="relative z-10">
+                    <div className="text-[10px] font-black text-harx-alt-400 uppercase tracking-widest">Growth Plan</div>
+                    <div className="text-lg font-black text-harx-alt-900 tracking-tight leading-none mt-0.5">
+                      {planData?.plan?.name || "Standard Representative"}
                     </div>
-                    <div>
-                      <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Growth Plan</div>
-                      <div className="text-lg font-black text-emerald-900 tracking-tight leading-none mt-0.5">
-                        {planData?.plan?.name || "Standard Representative"}
-                      </div>
-                    </div>
-                 </div>
-              </div>
+                  </div>
+               </div>
             </div>
           </div>
         </div>
+      </div>
       )}
 
       <div className="w-full">

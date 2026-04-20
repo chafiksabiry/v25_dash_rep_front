@@ -67,7 +67,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile }) => {
         <div className="flex flex-wrap gap-3">
           {profile.professionalSummary?.industries?.length > 0 ? (
             profile.professionalSummary.industries.map((ind: any, idx: number) => (
-              <span key={idx} className="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-bold border border-blue-100">
+              <span key={idx} className="px-4 py-2 bg-harx-50 text-harx-600 rounded-xl text-sm font-bold border border-harx-100 shadow-sm shadow-harx-500/5 transition-all hover:scale-105">
                 {typeof ind === 'string' ? ind : ind.name || ind._id}
               </span>
             ))
@@ -83,7 +83,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile }) => {
         <div className="flex flex-wrap gap-3">
           {profile.professionalSummary?.activities?.length > 0 ? (
             profile.professionalSummary.activities.map((act: any, idx: number) => (
-              <span key={idx} className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-bold border border-emerald-100">
+              <span key={idx} className="px-4 py-2 bg-harx-alt-50 text-harx-alt-600 rounded-xl text-sm font-bold border border-harx-alt-100 shadow-sm shadow-harx-alt-500/5 transition-all hover:scale-105">
                 {typeof act === 'string' ? act : act.name || act._id}
               </span>
             ))
@@ -99,7 +99,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile }) => {
           <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Notable Companies</h2>
           <div className="flex flex-wrap gap-3">
             {profile.professionalSummary.notableCompanies.map((company: string, idx: number) => (
-              <span key={idx} className="px-4 py-2 bg-purple-50 text-purple-700 rounded-xl text-sm font-bold border border-purple-100">
+              <span key={idx} className="px-4 py-2 bg-slate-50 text-slate-700 rounded-xl text-sm font-bold border border-slate-100 shadow-sm transition-all hover:scale-105">
                 {company}
               </span>
             ))}

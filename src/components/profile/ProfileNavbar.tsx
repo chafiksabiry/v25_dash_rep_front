@@ -34,9 +34,9 @@ export const ProfileNavbar: React.FC<ProfileNavbarProps> = ({ activeTab, onTabCh
               <tab.icon className={`w-4 h-4 ${isActive ? 'text-harx-600' : 'text-gray-400'}`} />
               <span className="tracking-tight">{tab.label}</span>
               
-              {/* Active Underline - Twilio Style */}
+              {/* Active Underline - Twilio Style with HARX Gradient */}
               {isActive && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-harx-600 animate-in fade-in slide-in-from-bottom-1" />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-harx animate-in fade-in slide-in-from-bottom-1" />
               )}
             </button>
           );
