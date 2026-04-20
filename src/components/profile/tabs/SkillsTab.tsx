@@ -101,7 +101,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
     if (activeAddType !== type) return null;
     const options = getFilteredSkills(type);
     return (
-      <div className="absolute right-0 top-full mt-2 w-[320px] bg-white border border-harx-100/80 rounded-xl shadow-lg overflow-hidden z-30">
+      <div className="mt-3 w-full bg-white border border-harx-100/80 rounded-xl shadow-sm overflow-hidden">
         <input
           type="text"
           value={searchTermByType[type]}
@@ -158,13 +158,13 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Skill Categories Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Skill Categories - Vertical Layout */}
+      <div className="space-y-5">
         {/* Technical Skills */}
-        <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70 min-h-[170px] relative overflow-visible">
+        <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-black text-harx-900">Technical</h2>
-            <div className="relative">
+            <div>
               <button
                 type="button"
                 onClick={() => setActiveAddType(activeAddType === 'technical' ? null : 'technical')}
@@ -177,7 +177,6 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                 <Plus className="w-3.5 h-3.5" />
                 Add
               </button>
-              {renderAddDropdown('technical')}
             </div>
           </div>
           <div className="flex flex-wrap gap-2 items-start content-start">
@@ -185,13 +184,14 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               renderSkillChip('technical', skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30 italic')
             )}
           </div>
+          {renderAddDropdown('technical')}
         </div>
 
         {/* Professional Skills */}
-        <div className="bg-harx-alt-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-alt-100/70 min-h-[170px] relative overflow-visible">
+        <div className="bg-harx-alt-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-alt-100/70">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-black text-harx-alt-900">Professional</h2>
-            <div className="relative">
+            <div>
               <button
                 type="button"
                 onClick={() => setActiveAddType(activeAddType === 'professional' ? null : 'professional')}
@@ -204,7 +204,6 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                 <Plus className="w-3.5 h-3.5" />
                 Add
               </button>
-              {renderAddDropdown('professional')}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -212,13 +211,14 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               renderSkillChip('professional', skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30')
             )}
           </div>
+          {renderAddDropdown('professional')}
         </div>
 
         {/* Soft Skills */}
-        <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70 min-h-[170px] relative overflow-visible">
+        <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-black text-harx-900">Soft Skills</h2>
-            <div className="relative">
+            <div>
               <button
                 type="button"
                 onClick={() => setActiveAddType(activeAddType === 'soft' ? null : 'soft')}
@@ -231,7 +231,6 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                 <Plus className="w-3.5 h-3.5" />
                 Add
               </button>
-              {renderAddDropdown('soft')}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -239,6 +238,7 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               renderSkillChip('soft', skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30')
             )}
           </div>
+          {renderAddDropdown('soft')}
         </div>
       </div>
 
