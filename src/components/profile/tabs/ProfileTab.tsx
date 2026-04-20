@@ -12,11 +12,92 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
   const [isEditingAbout, setIsEditingAbout] = useState(false);
   const [isEditingVideo, setIsEditingVideo] = useState(false);
   const [aboutDraft, setAboutDraft] = useState('');
-  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [isRecorderReady, setIsRecorderReady] = useState(false);
+  const [isRecordingNow, setIsRecordingNow] = useState(false);
+  const [recordedVideoBlob, setRecordedVideoBlob] = useState<Blob | null>(null);
+  const [recordedVideoUrl, setRecordedVideoUrl] = useState<string>('');
+  const liveVideoRef = useRef<HTMLVideoElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     setAboutDraft(String(profile?.professionalSummary?.profileDescription || ''));
   }, [profile?.professionalSummary?.profileDescription]);
+
+  useEffect(() => {
+    return () => {
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+      }
+      if (recordedVideoUrl) {
+        URL.revokeObjectURL(recordedVideoUrl);
+      }
+    };
+  }, [recordedVideoUrl]);
+
+  const stopCameraStream = () => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+    if (liveVideoRef.current) {
+      liveVideoRef.current.srcObject = null;
+    }
+  };
+
+  const startRecorder = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      mediaStreamRef.current = stream;
+      if (liveVideoRef.current) {
+        liveVideoRef.current.srcObject = stream;
+        await liveVideoRef.current.play();
+      }
+      setIsRecorderReady(true);
+      setRecordedVideoBlob(null);
+      if (recordedVideoUrl) {
+        URL.revokeObjectURL(recordedVideoUrl);
+        setRecordedVideoUrl('');
+      }
+    } catch (error) {
+      console.error('Camera/microphone access failed:', error);
+      window.alert('Unable to access camera/microphone.');
+    }
+  };
+
+  const beginRecording = () => {
+    if (!mediaStreamRef.current) return;
+    recordedChunksRef.current = [];
+    const recorder = new MediaRecorder(mediaStreamRef.current, { mimeType: 'video/webm' });
+    mediaRecorderRef.current = recorder;
+
+    recorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        recordedChunksRef.current.push(event.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+      setRecordedVideoBlob(blob);
+      const url = URL.createObjectURL(blob);
+      setRecordedVideoUrl(url);
+      stopCameraStream();
+      setIsRecorderReady(false);
+      setIsRecordingNow(false);
+    };
+
+    recorder.start();
+    setIsRecordingNow(true);
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -90,34 +171,77 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
 
           {isEditingVideo && (
             <div className="mb-4 space-y-3">
-              <input
-                ref={videoInputRef}
-                type="file"
-                accept="video/*"
-                capture="user"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  await onReplaceVideo?.(file);
-                  e.currentTarget.value = '';
-                  setIsEditingVideo(false);
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => videoInputRef.current?.click()}
-                disabled={isUploadingVideo}
-                className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-harx-100 bg-white text-harx-700 text-sm font-black uppercase tracking-wider hover:bg-harx-50 disabled:opacity-60"
-              >
-                {isUploadingVideo ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
-                {isUploadingVideo ? 'Recording...' : 'Re-record video'}
-              </button>
+              {!isRecorderReady && !recordedVideoBlob && (
+                <button
+                  type="button"
+                  onClick={startRecorder}
+                  disabled={isUploadingVideo}
+                  className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-harx-100 bg-white text-harx-700 text-sm font-black uppercase tracking-wider hover:bg-harx-50 disabled:opacity-60"
+                >
+                  <Video className="w-4 h-4" />
+                  Start recording
+                </button>
+              )}
+
+              {isRecorderReady && (
+                <div className="space-y-3">
+                  <video ref={liveVideoRef} muted className="w-full aspect-video bg-black rounded-2xl object-cover" />
+                  <div className="flex items-center justify-end gap-2">
+                    {!isRecordingNow ? (
+                      <button
+                        type="button"
+                        onClick={beginRecording}
+                        className="px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-bold uppercase tracking-wider hover:opacity-90"
+                      >
+                        Record
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={stopRecording}
+                        className="px-3 py-1.5 rounded-lg bg-rose-500 text-white text-xs font-bold uppercase tracking-wider hover:opacity-90"
+                      >
+                        Stop
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {recordedVideoUrl && (
+                <div className="space-y-3">
+                  <video controls src={recordedVideoUrl} className="w-full aspect-video bg-black rounded-2xl object-cover" />
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!recordedVideoBlob) return;
+                        const file = new File([recordedVideoBlob], 'presentation-video.webm', { type: 'video/webm' });
+                        await onReplaceVideo?.(file);
+                        setIsEditingVideo(false);
+                      }}
+                      disabled={isUploadingVideo}
+                      className="px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-60"
+                    >
+                      {isUploadingVideo ? <span className="inline-flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving...</span> : 'Use this video'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => {
+                    stopCameraStream();
                     setIsEditingVideo(false);
+                    setIsRecorderReady(false);
+                    setIsRecordingNow(false);
+                    setRecordedVideoBlob(null);
+                    if (recordedVideoUrl) {
+                      URL.revokeObjectURL(recordedVideoUrl);
+                      setRecordedVideoUrl('');
+                    }
                   }}
                   className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-slate-50"
                 >
