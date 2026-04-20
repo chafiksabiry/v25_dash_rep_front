@@ -291,7 +291,8 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                 .map((a: any) => {
                   if (typeof a === 'string') return activityNameById[a] || a;
                   if (a?.name) return a.name;
-                  if (a?._id) return activityNameById[String(a._id)] || '';
+                  const activityId = normalizeId(a);
+                  if (activityId) return activityNameById[String(activityId)] || '';
                   return '';
                 })
                 .filter((name: string) => !!name)
@@ -302,7 +303,8 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                 .map((i: any) => {
                   if (typeof i === 'string') return industryNameById[i] || i;
                   if (i?.name) return i.name;
-                  if (i?._id) return industryNameById[String(i._id)] || '';
+                  const industryId = normalizeId(i);
+                  if (industryId) return industryNameById[String(industryId)] || '';
                   return '';
                 })
                 .filter((name: string) => !!name)
