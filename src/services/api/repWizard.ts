@@ -27,7 +27,6 @@ class RepWizardApiService {
   private async apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
       const url = `${this.baseURL}${endpoint}`;
-      console.log(`🌐 REP Wizard API Call: ${options?.method || 'GET'} ${url}`);
 
       const response = await fetch(url, {
         headers: {
@@ -42,7 +41,6 @@ class RepWizardApiService {
       }
 
       const data = await response.json();
-      console.log(`✅ REP Wizard API Response:`, data);
       return data;
     } catch (error) {
       console.error(`❌ REP Wizard API Error for ${endpoint}:`, error);
