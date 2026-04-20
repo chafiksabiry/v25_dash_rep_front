@@ -1,12 +1,13 @@
 import React from 'react';
-import { Briefcase, Calendar, Pencil } from 'lucide-react';
+import { Briefcase, Calendar, Pencil, X } from 'lucide-react';
 
 interface ExperienceTabProps {
   profile: any;
   onEditItemClick: () => void;
+  onDeleteItemClick: (index: number) => void;
 }
 
-export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onEditItemClick }) => {
+export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onEditItemClick, onDeleteItemClick }) => {
   const formatDateToDD_MM_YYYY = (dateString: string) => {
     if (!dateString) return '';
     try {
@@ -37,7 +38,17 @@ export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onEditIte
 
       {/* Detailed Experience */}
       <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
-        <h2 className="text-xl font-black text-slate-900 tracking-tight mb-6">Work History</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-black text-slate-900 tracking-tight">Work History</h2>
+          <button
+            type="button"
+            onClick={onEditItemClick}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Edit
+          </button>
+        </div>
         {profile.experience?.length > 0 ? (
           <div className="space-y-12 relative before:absolute before:inset-0 before:ml-4 before:-z-10 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-harx-200 before:to-transparent">
             {profile.experience.map((exp: any, index: number) => {
@@ -62,11 +73,11 @@ export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onEditIte
                       </div>
                       <button
                         type="button"
-                        onClick={onEditItemClick}
+                        onClick={() => onDeleteItemClick(index)}
                         className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
-                        title="Edit experience"
+                        title="Delete experience"
                       >
-                        <Pencil className="w-3.5 h-3.5" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>

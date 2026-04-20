@@ -1,23 +1,35 @@
 import React from 'react';
-import { Star, Globe, Pencil } from 'lucide-react';
+import { Star, Globe, Pencil, X } from 'lucide-react';
 
 interface LanguagesTabProps {
   profile: any;
   getProficiencyStars: (proficiency: string) => number;
   takeLanguageAssessment: (language: string, iso639_1Code?: string) => void;
   onEditItemClick: () => void;
+  onDeleteItemClick: (index: number) => void;
 }
 
 export const LanguagesTab: React.FC<LanguagesTabProps> = ({ 
   profile, 
   getProficiencyStars, 
   takeLanguageAssessment,
-  onEditItemClick
+  onEditItemClick,
+  onDeleteItemClick
 }) => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
-        <h2 className="text-xl font-black text-slate-900 tracking-tight mb-6">Language Proficiency</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-black text-slate-900 tracking-tight">Language Proficiency</h2>
+          <button
+            type="button"
+            onClick={onEditItemClick}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Edit
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {profile.personalInfo?.languages?.length > 0 ? (
             profile.personalInfo.languages.map((lang: any, index: number) => {
@@ -68,13 +80,13 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={onEditItemClick}
+                      onClick={() => onDeleteItemClick(index)}
                       className="py-3 px-4 bg-slate-50 text-slate-700 border border-slate-200/50 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm hover:bg-slate-100"
-                      title="Edit language"
+                      title="Delete language"
                     >
                       <span className="inline-flex items-center gap-1">
-                        <Pencil className="w-3.5 h-3.5" />
-                        Edit
+                        <X className="w-3.5 h-3.5" />
+                        Delete
                       </span>
                     </button>
                     <button

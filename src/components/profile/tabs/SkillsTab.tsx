@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, X } from 'lucide-react';
 
 interface SkillsTabProps {
   profile: any;
@@ -7,6 +7,7 @@ interface SkillsTabProps {
   findSkillData: (skillName: string) => any;
   takeContactCenterSkillAssessment: (skillName: string, categoryName?: string) => void;
   onEditItemClick: () => void;
+  onDeleteSkill: (type: 'technical' | 'professional' | 'soft', index: number) => void;
 }
 
 const CONTACT_CENTER_SKILLS = [
@@ -29,9 +30,15 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
   formatSkillsForDisplay, 
   findSkillData,
   takeContactCenterSkillAssessment,
-  onEditItemClick
+  onEditItemClick,
+  onDeleteSkill
 }) => {
-  const renderEditableSkillChip = (skill: any, idx: number, chipClassName: string) => (
+  const renderSkillChip = (
+    type: 'technical' | 'professional' | 'soft',
+    skill: any,
+    idx: number,
+    chipClassName: string
+  ) => (
     <div
       key={`${skill?.name || 'skill'}-${idx}`}
       className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-bold border ${chipClassName}`}
@@ -39,12 +46,12 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
       <span>{skill.name}</span>
       <button
         type="button"
-        onClick={onEditItemClick}
+        onClick={() => onDeleteSkill(type, idx)}
         className="inline-flex items-center justify-center rounded-md p-0.5 hover:bg-slate-300/50 transition-colors"
-        title="Edit this skill"
-        aria-label={`Edit ${skill.name}`}
+        title="Delete this skill"
+        aria-label={`Delete ${skill.name}`}
       >
-        <Pencil className="w-3 h-3" />
+        <X className="w-3 h-3" />
       </button>
     </div>
   );
@@ -55,30 +62,60 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Technical Skills */}
         <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
-          <h2 className="text-lg font-black text-slate-900 mb-4">Technical</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-black text-slate-900">Technical</h2>
+            <button
+              type="button"
+              onClick={onEditItemClick}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {formatSkillsForDisplay(profile.skills?.technical).map((skill: any, idx: number) =>
-              renderEditableSkillChip(skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30 italic')
+              renderSkillChip('technical', skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30 italic')
             )}
           </div>
         </div>
 
         {/* Professional Skills */}
         <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
-          <h2 className="text-lg font-black text-slate-900 mb-4">Professional</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-black text-slate-900">Professional</h2>
+            <button
+              type="button"
+              onClick={onEditItemClick}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {formatSkillsForDisplay(profile.skills?.professional).map((skill: any, idx: number) =>
-              renderEditableSkillChip(skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30')
+              renderSkillChip('professional', skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30')
             )}
           </div>
         </div>
 
         {/* Soft Skills */}
         <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
-          <h2 className="text-lg font-black text-slate-900 mb-4">Soft Skills</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-black text-slate-900">Soft Skills</h2>
+            <button
+              type="button"
+              onClick={onEditItemClick}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {formatSkillsForDisplay(profile.skills?.soft).map((skill: any, idx: number) =>
-              renderEditableSkillChip(skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30')
+              renderSkillChip('soft', skill, idx, 'bg-slate-200/50 text-slate-700 border-slate-200/30')
             )}
           </div>
         </div>

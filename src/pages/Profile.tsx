@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ProfileView } from '../components/ProfileView';
 import { ProfileEditView } from '../components/ProfileEditView';
-import { getProfileData, updateProfileData } from '../utils/profileUtils';
+import { getProfileData, updateProfileData, updateSkills } from '../utils/profileUtils';
 
 // Import Timezone type from repWizard service
 import { Timezone } from '../services/api/repWizard';
@@ -191,6 +191,53 @@ export function Profile() {
     }
   };
 
+  const getSkillRefId = (entry: any): string | undefined => {
+    if (!entry) return undefined;
+    if (typeof entry.skill === 'string') return entry.skill;
+    if (entry.skill?._id) return entry.skill._id;
+    if (entry._id) return entry._id;
+    return undefined;
+  };
+
+  const handleDeleteSkill = async (type: 'technical' | 'professional' | 'soft', index: number) => {
+    if (!profile?._id || !profile?.skills?.[type]) return;
+    const source = profile.skills[type] || [];
+    if (index < 0 || index >= source.length) return;
+
+    const nextSkills = {
+      technical: [...(profile.skills.technical || [])],
+      professional: [...(profile.skills.professional || [])],
+      soft: [...(profile.skills.soft || [])]
+    };
+    nextSkills[type].splice(index, 1);
+
+    const payload = {
+      technical: nextSkills.technical.map((entry: any) => ({
+        skill: getSkillRefId(entry),
+        level: typeof entry.level === 'number' ? entry.level : 0,
+        details: entry.details || ''
+      })).filter((entry: any) => !!entry.skill),
+      professional: nextSkills.professional.map((entry: any) => ({
+        skill: getSkillRefId(entry),
+        level: typeof entry.level === 'number' ? entry.level : 0,
+        details: entry.details || ''
+      })).filter((entry: any) => !!entry.skill),
+      soft: nextSkills.soft.map((entry: any) => ({
+        skill: getSkillRefId(entry),
+        level: typeof entry.level === 'number' ? entry.level : 0,
+        details: entry.details || ''
+      })).filter((entry: any) => !!entry.skill),
+    };
+
+    try {
+      await updateSkills(profile._id, payload);
+      const refreshed = await getProfileData();
+      setProfile(refreshed);
+    } catch (error) {
+      console.error('Error deleting skill:', error);
+    }
+  };
+
   if (loading) {
     console.log('⏳ Profile is in loading state, showing loading screen');
     return (
@@ -270,6 +317,7 @@ export function Profile() {
               setEditInitialTab(tab || 'profile');
               setIsEditing(true);
             }}
+            onDeleteSkill={handleDeleteSkill}
             onProfileUpdate={handleProfileUpdate}
           />
         )}

@@ -56,7 +56,7 @@ export interface PlanResponse {
   plan: Partial<Plan>;
 }
 
-export const ProfileView: React.FC<{ profile: any, onEditClick: (tab?: string) => void, onProfileUpdate?: (updatedProfile: any) => void }> = ({ profile, onEditClick, onProfileUpdate }) => {
+export const ProfileView: React.FC<{ profile: any, onEditClick: (tab?: string) => void, onDeleteSkill?: (type: 'technical' | 'professional' | 'soft', index: number) => void, onProfileUpdate?: (updatedProfile: any) => void }> = ({ profile, onEditClick, onDeleteSkill, onProfileUpdate }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isPublishing, setIsPublishing] = useState(false);
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
@@ -388,6 +388,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: (tab?: string) =
           findSkillData={findSkillData}
           takeContactCenterSkillAssessment={takeContactCenterSkillAssessment}
           onEditItemClick={() => onEditClick('skills')}
+          onDeleteSkill={(type, index) => onDeleteSkill?.(type, index)}
         />
       );
       case 'experience': return <ExperienceTab profile={profile} onEditItemClick={() => onEditClick('experience')} />;
