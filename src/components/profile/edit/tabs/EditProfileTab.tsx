@@ -470,6 +470,7 @@ export const EditProfileTab: React.FC<EditProfileTabProps> = ({
           </div>
         )}
       </div>
+      </div>
     </div>
   );
 };

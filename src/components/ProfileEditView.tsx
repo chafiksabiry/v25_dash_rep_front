@@ -2124,6 +2124,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
                   profile={profile}
                   setProfile={setProfile}
                   setModifiedSections={setModifiedSections}
+                  activitiesData={activitiesData}
                   showVideoRecorder={showVideoRecorder}
                   recordedVideo={recordedVideo}
                   existingVideoDeleted={existingVideoDeleted}

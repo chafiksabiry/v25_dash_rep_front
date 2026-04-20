@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Edit } from 'lucide-react';
 import { getProfilePlan, checkCountryMismatch, updateProfileData } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
-import { fetchAllSkills, SkillsByCategory } from '../services/api/skills';
 
 // Components
 import { ProfileNavbar } from './profile/ProfileNavbar';
@@ -66,11 +65,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
   const [timezoneData, setTimezoneData] = useState<Timezone | null>(null);
   const [allTimezones, setAllTimezones] = useState<Timezone[]>([]);
   const [countries, setCountries] = useState<Timezone[]>([]);
-  const [skillsData, setSkillsData] = useState<{
-    technical: SkillsByCategory;
-    professional: SkillsByCategory;
-    soft: SkillsByCategory;
-  }>({ technical: {}, professional: {}, soft: {} });
 
   const [countryMismatch, setCountryMismatch] = useState<{
     hasMismatch: boolean;
@@ -96,19 +90,6 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       }
     };
     loadLocationData();
-  }, []);
-
-  // Load skills data for ID resolution
-  useEffect(() => {
-    const loadSkills = async () => {
-      try {
-        const skills = await fetchAllSkills();
-        setSkillsData(skills);
-      } catch (error) {
-        console.error('Error loading skills metadata:', error);
-      }
-    };
-    loadSkills();
   }, []);
 
   // Fetch plan data
@@ -211,39 +192,12 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
     return profile.skills?.contactCenter?.find((s: any) => s.skill === skillName) || null;
   };
 
-  const formatSkillsForDisplay = (skillsDataArr: any, type?: 'technical' | 'professional' | 'soft') => {
-    if (!Array.isArray(skillsDataArr)) return [];
-    
-    return skillsDataArr.map(item => {
-      if (!item) return { name: 'Unknown' };
-
-      // 1. Resolve Skill ID string
-      let skillId = '';
-      if (typeof item === 'string') {
-        skillId = item;
-      } else if (typeof item === 'object') {
-        // Check various possible ID fields
-        skillId = (typeof item.skill === 'string' ? item.skill : item.skill?._id) || item._id || item.id || '';
-      }
-
-      // 2. Try to find name in already provided object (if hydrated/populated)
-      if (typeof item.skill === 'object' && item.skill?.name) return { name: item.skill.name };
-      if (item.name && typeof item.name === 'string') return { name: item.name };
-
-      // 3. Resolve using dictionary if type is provided and dictionary is loaded
-      if (type && skillsData[type] && skillId) {
-        // Flatten categories to search through all skills
-        const allSkillsForType = Object.values(skillsData[type]).flat();
-        const found = allSkillsForType.find(s => s._id === skillId || s.id === skillId);
-        
-        if (found) {
-          return { name: found.name };
-        }
-      }
-
-      // 4. Fallback with deep debug info if resolution fails
-      const debugInfo = JSON.stringify(item).substring(0, 40);
-      return { name: skillId ? `Unresolved (${skillId.substring(0, 4)})` : `Unknown [${debugInfo}]` };
+  const formatSkillsForDisplay = (skillsData: any) => {
+    if (!Array.isArray(skillsData)) return [];
+    return skillsData.map(item => {
+      if (typeof item === 'string') return { name: item };
+      if (item.skill && typeof item.skill === 'object') return { name: item.skill.name };
+      return { name: item.name || item.skill || 'Unknown' };
     });
   };
 
