@@ -268,6 +268,17 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
             }
           ].filter(category => category.skills.length > 0).map((category) => (
             <div key={category.name} className="space-y-4">
+              {(() => {
+                const selectedInCategory = new Set(
+                  (profile.skills?.contactCenter || [])
+                    .filter((entry: any) => String(entry?.category || '').toLowerCase() === category.name.toLowerCase())
+                    .map((entry: any) => String(entry?.skill || '').toLowerCase())
+                );
+                const addableCategorySkills = category.skills.filter(
+                  (skillName: string) => !selectedInCategory.has(skillName.toLowerCase())
+                );
+                return (
+                  <>
               <div className="flex items-center justify-between border-b border-slate-200/30 pb-2">
                 <h3 className="text-md font-bold text-slate-400 uppercase tracking-widest">{category.name}</h3>
                 <button
@@ -294,8 +305,8 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                     }}
                     className="flex-1 px-3 py-2.5 text-sm font-semibold rounded-xl border border-harx-100/80 bg-white text-harx-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-200"
                   >
-                    <option value="">Select skill...</option>
-                    {category.skills.map((skillName: string) => (
+                    <option value="">{addableCategorySkills.length > 0 ? 'Select skill...' : 'No available skills'}</option>
+                    {addableCategorySkills.map((skillName: string) => (
                       <option key={`${category.name}-${skillName}`} value={skillName}>
                         {skillName}
                       </option>
@@ -341,6 +352,9 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                   );
                 })}
               </div>
+                  </>
+                );
+              })()}
             </div>
           ))}
         </div>
