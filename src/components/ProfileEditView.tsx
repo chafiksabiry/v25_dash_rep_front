@@ -440,6 +440,26 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
     setActiveTab(initialTab || 'profile');
   }, [initialTab]);
 
+  // Open add dropdowns immediately when landing on edit list tabs.
+  useEffect(() => {
+    if (activeTab === 'skills') {
+      setSkillDropdownOpen({
+        technical: true,
+        professional: true,
+        soft: true
+      });
+    }
+
+    if (activeTab === 'specialization') {
+      setIndustryDropdownOpen(true);
+      setActivityDropdownOpen(true);
+    }
+
+    if (activeTab === 'languages') {
+      setIsLanguageDropdownOpen(true);
+    }
+  }, [activeTab]);
+
   // Load countries and all timezones on component mount
   useEffect(() => {
     const loadCountries = async () => {
