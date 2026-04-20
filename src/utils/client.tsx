@@ -7,13 +7,6 @@ const REP_API_URL = import.meta.env.VITE_REP_API_URL;
 const CALLS_API_URL = import.meta.env.VITE_CALLS_API_URL || import.meta.env.VITE_API_URL_CALL;
 const DASHBOARD_COMPANY_API_URL = import.meta.env.VITE_DASHBOARD_COMPANY_API_URL;
 
-console.log("🚀 Final API URLs Configuration:", {
-  API_URL,
-  REP_API_URL,
-  CALLS_API_URL,
-  DASHBOARD_COMPANY_API_URL
-});
-
 // Create axios instances with default config
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -53,21 +46,15 @@ const addAuthInterceptor = (axiosInstance: any) => {
       let token;
       // Determine userId based on run mode
       if (runMode === 'standalone') {
-        console.log("🔑 Running in standalone mode");
         // Use static userId from environment variable in standalone mode
         token = import.meta.env.VITE_STANDALONE_TOKEN;
 
-        console.log("🔑 Using static token from env:", token);
       } else {
-        console.log("🔑 Running in in-app mode");
         // Use token from localStorage or sessionStorage
         token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        console.log("🔑 token found (Local or Session):", token);
       }
-      console.log("🔑 Token from client.js addAuthInterceptor:", token);
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log("✅ Authorization header set:", config.headers.Authorization);
       } else {
         console.warn("⚠️ No token found - request will be made without authentication");
       }
@@ -79,10 +66,8 @@ const addAuthInterceptor = (axiosInstance: any) => {
       if (agentId) {
         config.headers['x-user-id'] = agentId;
         config.headers['x-agent-id'] = agentId;
-        console.log("🆔 Identification headers set:", agentId);
       }
 
-      console.log("🌐 Making request to:", config.baseURL + config.url);
       return config;
     },
     (error: any) => {
@@ -94,7 +79,6 @@ const addAuthInterceptor = (axiosInstance: any) => {
   // Add response interceptor for better error handling
   axiosInstance.interceptors.response.use(
     (response: any) => {
-      console.log("✅ API Response successful:", response.config.url, response.status);
       return response;
     },
     (error: any) => {

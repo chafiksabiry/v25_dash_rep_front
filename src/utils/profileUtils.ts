@@ -52,15 +52,12 @@ interface IpHistoryResponse {
  * Get profile data from localStorage or API if necessary
  */
 export const getProfileData = async () => {
-  console.log('🔍 Attempting to get profile data...');
 
   // Try to get from localStorage first
   const storedProfile = localStorage.getItem('profileData');
   const storedTimestamp = localStorage.getItem('profileDataTimestamp');
 
   if (!storedProfile) {
-    console.log('📭 No profile data found in localStorage');
-    console.log('🌐 Fetching fresh data from API...');
     return await fetchProfileFromAPI();
   }
 
@@ -69,21 +66,13 @@ export const getProfileData = async () => {
     (Date.now() - parseInt(storedTimestamp)) < CACHE_DURATION;
 
   if (dataIsFresh) {
-    console.log('✅ Using cached profile data from localStorage');
-    console.log(`⏱️ Cache age: ${Math.round((Date.now() - parseInt(storedTimestamp)) / 1000 / 60)} minutes`);
     try {
       const parsedData = JSON.parse(storedProfile);
-      console.log('🔢 Data properties:', Object.keys(parsedData));
       return parsedData;
     } catch (err) {
-      console.error('❌ Error parsing localStorage data:', err);
-      console.log('🌐 Falling back to API fetch...');
       return await fetchProfileFromAPI();
     }
   } else {
-    console.log('⏱️ Cached data expired');
-    console.log(`⏱️ Cache age: ${Math.round((Date.now() - parseInt(storedTimestamp || '0')) / 1000 / 60)} minutes (max: ${CACHE_DURATION / 1000 / 60} minutes)`);
-    console.log('🌐 Fetching fresh data from API...');
     return await fetchProfileFromAPI();
   }
 };
@@ -92,7 +81,6 @@ export const getProfileData = async () => {
  * Fetch profile data from API and update localStorage
  */
 export const fetchProfileFromAPI = async () => {
-  console.log('🌐 fetchProfileFromAPI: Starting API fetch process');
 
   // Get run mode from environment variable
   const runMode = import.meta.env.VITE_RUN_MODE || 'in-app';
@@ -100,12 +88,9 @@ export const fetchProfileFromAPI = async () => {
 
   // Determine userId based on run mode
   if (runMode === 'standalone') {
-    console.log("🔑 Running in standalone mode");
     // Use static userId from environment variable in standalone mode
     userId = import.meta.env.VITE_STANDALONE_USER_ID;
-    console.log("🔑 Using static userID from env:", userId);
   } else {
-    console.log("🔑 Running in in-app mode");
     // Use userId or agentId from cookies, session, or local storage
     userId = Cookies.get('userId') || 
              Cookies.get('agentId') || 
@@ -113,7 +98,6 @@ export const fetchProfileFromAPI = async () => {
              sessionStorage.getItem('agentId') ||
              localStorage.getItem('userId') ||
              localStorage.getItem('agentId');
-    console.log("🔑 userId found (Any source):", userId);
   }
 
     if (!userId) {
@@ -122,53 +106,40 @@ export const fetchProfileFromAPI = async () => {
       throw new Error('User ID not found');
     }
 
-  console.log(`👤 Using userId: ${userId}`);
 
   try {
-    console.log('🌐 Attempting to fetch profile by user ID...');
     const response = await profileApi.getById(userId);
-    console.log('✅ Successfully fetched profile by user ID');
-    console.log('🔍 Response structure:', response.data);
 
     // Handle different response structures
     const profileData = response.data.data || response.data;
-    console.log('📋 Extracted profile data:', profileData);
 
     if (!profileData) {
       throw new Error('No profile data found in response');
     }
 
-    console.log('💾 Storing profile data in localStorage');
     if (profileData._id) {
       localStorage.setItem('agentId', profileData._id);
-      console.log(`📋 Stored agentId: ${profileData._id}`);
     }
 
     // Store the entire profile data in localStorage
     localStorage.setItem('profileData', JSON.stringify(profileData));
     localStorage.setItem('profileDataTimestamp', Date.now().toString());
-    console.log('✅ Profile data cached successfully');
 
     return profileData;
   } catch (idError) {
     console.error('❌ Error fetching by ID:', idError);
-    console.log('🌐 Falling back to default profile endpoint...');
 
     try {
       const response = await profileApi.get();
-      console.log('✅ Successfully fetched profile from default endpoint');
       const profileData = response.data;
 
-      console.log('💾 Storing profile data in localStorage');
       if (profileData._id) {
         localStorage.setItem('agentId', profileData._id);
-        console.log(`📋 Stored agentId: ${profileData._id}`);
       }
 
       // Store the entire profile data in localStorage
       localStorage.setItem('profileData', JSON.stringify(profileData));
       localStorage.setItem('profileDataTimestamp', Date.now().toString());
-      console.log('✅ Profile data cached successfully');
 
       return profileData;
     } catch (fallbackError) {
@@ -182,18 +153,13 @@ export const fetchProfileFromAPI = async () => {
  * Update profile data in API and localStorage
  */
 export const updateProfileData = async (profileId: string, data: any) => {
-  console.log('🔄 Updating profile data...', { profileId, dataKeys: Object.keys(data) });
 
   try {
     // Update in API
-    console.log('🌐 Sending update to API...');
     const response = await profileApi.update(profileId, data);
-    console.log('✅ API update successful');
 
     // Get fresh data from API to ensure consistency
-    console.log('🔄 Refreshing cached data with latest from API...');
     await fetchProfileFromAPI();
-    console.log('✅ Cache refresh complete');
 
     return response.data;
   } catch (error) {
@@ -206,35 +172,29 @@ export const updateProfileData = async (profileId: string, data: any) => {
  * Check if profile data in localStorage is valid and not expired
  */
 export const isProfileDataValid = () => {
-  console.log('🔍 Checking if cached profile data is valid...');
 
   const storedProfile = localStorage.getItem('profileData');
   const storedTimestamp = localStorage.getItem('profileDataTimestamp');
 
   if (!storedProfile) {
-    console.log('📭 No profile data found in localStorage');
     return false;
   }
 
   if (!storedTimestamp) {
-    console.log('⏱️ No timestamp found for cached data');
     return false;
   }
 
   try {
     // Check if data is valid JSON
     JSON.parse(storedProfile);
-    console.log('✅ Cached data is valid JSON');
 
     // Check if data is fresh
     const cacheAge = Date.now() - parseInt(storedTimestamp);
     const dataIsFresh = cacheAge < CACHE_DURATION;
 
     if (dataIsFresh) {
-      console.log(`✅ Cache is fresh (${Math.round(cacheAge / 1000 / 60)} minutes old)`);
       return true;
     } else {
-      console.log(`⏱️ Cache expired (${Math.round(cacheAge / 1000 / 60)} minutes old, max: ${CACHE_DURATION / 1000 / 60} minutes)`);
       return false;
     }
   } catch (e) {
@@ -247,11 +207,9 @@ export const isProfileDataValid = () => {
  * Clear profile data from localStorage
  */
 export const clearProfileData = () => {
-  console.log('🧹 Clearing profile data from localStorage...');
   localStorage.removeItem('profileData');
   localStorage.removeItem('profileDataTimestamp');
   localStorage.removeItem('agentId');
-  console.log('✅ Profile data cleared');
 };
 
 /**
@@ -259,7 +217,6 @@ export const clearProfileData = () => {
  */
 export const updateBasicInfo = async (id: string, basicInfo: any) => {
   try {
-    console.log('🔄 Updating basic info...', { id, dataKeys: Object.keys(basicInfo) });
     const { data } = await profileApi.updateBasicInfo(id, basicInfo);
 
     // Refresh cached data
@@ -277,7 +234,6 @@ export const updateBasicInfo = async (id: string, basicInfo: any) => {
  */
 export const updateExperience = async (id: string, experience: any) => {
   try {
-    console.log('🔄 Updating experience...', { id });
     const { data } = await profileApi.updateExperience(id, experience);
 
     // Refresh cached data
@@ -295,7 +251,6 @@ export const updateExperience = async (id: string, experience: any) => {
  */
 export const updateSkills = async (id: string, skills: any) => {
   try {
-    console.log('🔄 Updating skills...', { id, skillTypes: Object.keys(skills) });
     const { data } = await profileApi.updateSkills(id, skills);
 
     // Refresh cached data
@@ -312,12 +267,10 @@ export const updateSkills = async (id: string, skills: any) => {
  * Get profile subscription plan
  */
 export const getProfilePlan = async (profileId: string): Promise<PlanResponse> => {
-  console.log('🔍 Fetching profile subscription plan...', { profileId });
 
   try {
     const response = await profileApi.getPlan(profileId);
-    console.log('✅ Successfully fetched plan data:', response.data);
-    return response.data;
+      return response.data;
   } catch (error) {
     console.error('❌ Error fetching plan data:', error);
     throw error;
@@ -372,12 +325,9 @@ export const getUserId = (): string => {
 
   // Determine userId based on run mode
   if (runMode === 'standalone') {
-    console.log("🔑 Running in standalone mode");
     // Use static userId from environment variable in standalone mode
     userId = import.meta.env.VITE_STANDALONE_USER_ID;
-    console.log("🔑 Using static userID from env:", userId);
   } else {
-    console.log("🔑 Running in in-app mode");
     // Use userId or agentId from cookies, session, or local storage
     userId = Cookies.get('userId') || 
              Cookies.get('agentId') || 
@@ -385,16 +335,13 @@ export const getUserId = (): string => {
              sessionStorage.getItem('agentId') ||
              localStorage.getItem('userId') ||
              localStorage.getItem('agentId') || '';
-    console.log("🔑 userId found (Any source):", userId);
   }
 
   if (!userId) {
-    console.error('❌ No userId found based on run mode:', runMode);
     window.location.href = '/auth';
     throw new Error('User ID not found');
   }
 
-  console.log(`👤 Using userId: ${userId}`);
   return userId;
 };
 
@@ -422,7 +369,6 @@ export const checkCountryMismatch = async (
     const firstLoginCountryCode = getFirstLoginCountryCode(ipHistoryResponse.data);
 
     if (!firstLoginCountryCode) {
-      console.log('No login history found');
       return null;
     }
 
