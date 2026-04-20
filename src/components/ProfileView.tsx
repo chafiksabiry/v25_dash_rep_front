@@ -213,25 +213,37 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
 
   const formatSkillsForDisplay = (skillsDataArr: any, type?: 'technical' | 'professional' | 'soft') => {
     if (!Array.isArray(skillsDataArr)) return [];
+    
     return skillsDataArr.map(item => {
-      // 1. Resolve Skill ID
-      const skillId = typeof item === 'string' ? item : (item.skill || item._id);
-      
-      // 2. Try to find name in already provided object
-      if (item.skill && typeof item.skill === 'object' && item.skill.name) return { name: item.skill.name };
-      if (item.name) return { name: item.name };
+      if (!item) return { name: 'Unknown' };
 
-      // 3. Resolve using dictionary if type is provided
+      // 1. Resolve Skill ID string
+      let skillId = '';
+      if (typeof item === 'string') {
+        skillId = item;
+      } else if (typeof item === 'object') {
+        // Check various possible ID fields
+        skillId = (typeof item.skill === 'string' ? item.skill : item.skill?._id) || item._id || item.id || '';
+      }
+
+      // 2. Try to find name in already provided object (if hydrated/populated)
+      if (typeof item.skill === 'object' && item.skill?.name) return { name: item.skill.name };
+      if (item.name && typeof item.name === 'string') return { name: item.name };
+
+      // 3. Resolve using dictionary if type is provided and dictionary is loaded
       if (type && skillsData[type] && skillId) {
-        const categoryGroups = Object.values(skillsData[type]);
-        for (const group of categoryGroups) {
-          const found = group.find(s => s._id === skillId);
-          if (found) return { name: found.name };
+        // Flatten categories to search through all skills
+        const allSkillsForType = Object.values(skillsData[type]).flat();
+        const found = allSkillsForType.find(s => s._id === skillId || s.id === skillId);
+        
+        if (found) {
+          return { name: found.name };
         }
       }
 
-      // 4. Fallback to ID or 'Unknown'
-      return { name: skillId || 'Unknown' };
+      // 4. Fallback with debug hint if resolution fails
+      const debugId = skillId ? ` (${skillId.substring(0, 4)})` : '';
+      return { name: skillId ? `Unresolved${debugId}` : 'Unknown' };
     });
   };
 
