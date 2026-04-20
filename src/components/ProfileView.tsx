@@ -269,7 +269,18 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-6 lg:p-10 space-y-10">
+    <div className="max-w-5xl mx-auto p-6 lg:p-10 space-y-8">
+      {/* Page Title & Phrase */}
+      <div className="mb-2">
+        <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Profile</h1>
+        <p className="text-gray-500 font-medium tracking-tight">View and manage your representative identity, professional properties, and performance metrics.</p>
+      </div>
+
+      {/* Navigation Tabs at the Top */}
+      <div className="w-full">
+        <ProfileNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+
       {/* Header / Identity Section (Twilio Style) */}
       <div className="bg-white rounded-3xl p-8 lg:p-10 shadow-sm border border-gray-100">
         <div className="flex flex-col md:flex-row gap-10 items-start">
@@ -301,7 +312,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
             {/* Action Buttons Top Right */}
             <div className="flex flex-wrap gap-3 mb-8 pb-6 border-b border-gray-50 justify-between items-center">
               <div>
-                <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-1">{profile.personalInfo?.name}</h1>
+                <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-1">{profile.personalInfo?.name}</h2>
                 <p className="text-sm font-bold text-harx-500 uppercase tracking-widest italic">{profile.professionalSummary?.currentRole || 'Representative'}</p>
               </div>
               <div className="flex items-center gap-3">
@@ -386,8 +397,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       </div>
 
       <div className="w-full">
-        <ProfileNavbar activeTab={activeTab} onTabChange={setActiveTab} />
-        <div className="flex-1 min-h-[600px] mt-8">
+        <div className="flex-1 min-h-[600px]">
           {renderActiveTab()}
         </div>
       </div>

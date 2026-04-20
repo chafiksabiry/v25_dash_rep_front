@@ -2133,7 +2133,13 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-6 pt-10 pb-4">
+        {/* Page Title & Phrase */}
+        <div className="mb-6">
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Edit Profile</h1>
+          <p className="text-gray-500 font-medium tracking-tight">Modify your representative information, professional properties, and visibility settings.</p>
+        </div>
+        
         <div className="w-full">
           {/* Right Column: Navbar & Tabs (Now Full Width) */}
           <div className="overflow-hidden">
