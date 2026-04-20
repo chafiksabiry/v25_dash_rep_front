@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   MapPin, Mail, Phone, Linkedin, Github, Target, Clock, Briefcase,
   Calendar, GraduationCap, Medal, Star, ThumbsUp, ThumbsDown, Trophy,
-  Edit, CreditCard, X, RefreshCw, CheckCircle
+  Edit, CreditCard, X, RefreshCw, CheckCircle, User, Zap, Globe
 } from 'lucide-react';
 import { getProfilePlan, checkCountryMismatch, updateProfileData } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
@@ -190,6 +190,43 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
 
     loadLocationData();
   }, []);
+
+  const [activeSection, setActiveSection] = useState('overview');
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      { threshold: 0.2, rootMargin: '-80px 0px -50% 0px' }
+    );
+
+    const sections = ['overview', 'skills', 'languages', 'experience'];
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 100;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchPlanData = async () => {
@@ -892,9 +929,36 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
       </div>
 
       {/* Right Column */}
-      <div className="md:col-span-8 space-y-6">
+      <div className="md:col-span-8 space-y-8">
+        {/* Section Navbar */}
+        <div className="sticky top-0 z-30 -mx-2 px-2 py-3 bg-gray-50/80 backdrop-blur-md">
+          <nav className="flex items-center gap-1 p-1.5 bg-white shadow-lg shadow-gray-200/50 rounded-2xl border border-gray-100">
+            {[
+              { id: 'overview', label: 'Profile', icon: User },
+              { id: 'skills', label: 'Skills', icon: Zap },
+              { id: 'languages', label: 'Languages', icon: Globe },
+              { id: 'experience', label: 'Experience', icon: Briefcase },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => scrollToSection(item.id)}
+                className={`
+                  flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300
+                  ${activeSection === item.id 
+                    ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20' 
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}
+                `}
+              >
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
         {/* About Section */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+        <div id="overview" className="scroll-mt-24 space-y-6">
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
           <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">About</h2>
 
           {/* Profile Description */}
@@ -1042,7 +1106,10 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
             <p className="text-gray-500 italic">No notable companies listed</p>
           )}
         </div>
+      </div>
 
+      {/* Skills Group Section */}
+      <div id="skills" className="scroll-mt-24 space-y-6">
         {/* Technical Skills Section */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
           <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Technical Skills</h2>
@@ -1212,8 +1279,12 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
           </div>
         </div>
 
-        {/* Languages Section - Moved from left column */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          </div>
+        </div>
+      </div>
+
+      {/* Languages Section - Moved from left column */}
+      <div id="languages" className="scroll-mt-24 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
           <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Languages</h2>
           {(!profile.personalInfo?.languages || profile.personalInfo.languages.length === 0) ? (
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">
@@ -1307,8 +1378,8 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
           )}
         </div>
 
-        {/* Experience Section - Always show this section */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+      {/* Experience Section - Always show this section */}
+      <div id="experience" className="scroll-mt-24 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
           <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Experience</h2>
           {(!profile.experience || profile.experience.length === 0) && (
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm flex items-center">

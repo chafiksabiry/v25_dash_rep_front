@@ -1423,13 +1423,13 @@ export function GigDetails() {
                   </div>
                 </div>
 
-                {/* Card 4: Minimum Volume Requirements */}
+                {/* Card 4: Minimum Volume Requirements For Bonus */}
                 <div className="p-6 rounded-2xl bg-amber-50/50 border border-amber-100/50 flex flex-col justify-between h-40 group hover:shadow-md transition-all relative">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-amber-100/50 rounded-xl">
                       <Target className="h-6 w-6 text-amber-600" />
                     </div>
-                    <span className="text-lg font-black text-gray-700">Minimum Volume Requirements</span>
+                    <span className="text-lg font-black text-gray-700">Minimum Volume Requirements For Bonus</span>
                   </div>
                   <div className="flex items-baseline justify-between w-full">
                     <span className="text-4xl font-black text-gray-900">{gig.commission.minimumVolume?.amount || 0}</span>
