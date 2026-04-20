@@ -46,6 +46,11 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
     professional: '',
     soft: ''
   });
+  const [dropdownOpenByType, setDropdownOpenByType] = useState<Record<'technical' | 'professional' | 'soft', boolean>>({
+    technical: false,
+    professional: false,
+    soft: false
+  });
 
   useEffect(() => {
     const loadSkills = async () => {
@@ -103,18 +108,33 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
         <input
           type="text"
           value={searchTermByType[type]}
-          onChange={(e) => setSearchTermByType((prev) => ({ ...prev, [type]: e.target.value }))}
+          onChange={(e) => {
+            setSearchTermByType((prev) => ({ ...prev, [type]: e.target.value }));
+            setDropdownOpenByType((prev) => ({ ...prev, [type]: true }));
+          }}
+          onFocus={() => setDropdownOpenByType((prev) => ({ ...prev, [type]: true }))}
+          onBlur={() => {
+            setTimeout(() => {
+              setDropdownOpenByType((prev) => ({ ...prev, [type]: false }));
+            }, 180);
+          }}
           placeholder={`Search ${type} skill...`}
-          className="w-full px-3 py-2.5 text-sm font-semibold rounded-t-xl border border-harx-100/80 bg-harx-50/40 text-harx-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-200"
+          className={`w-full px-3 py-2.5 text-sm font-semibold border border-harx-100/80 bg-harx-50/40 text-harx-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-200 ${
+            dropdownOpenByType[type] ? 'rounded-t-xl rounded-b-none' : 'rounded-xl'
+          }`}
         />
-        <div className="border border-t-0 border-harx-100/80 rounded-b-xl bg-white overflow-hidden">
+        {dropdownOpenByType[type] && (
+          <div className="border border-t-0 border-harx-100/80 rounded-b-xl bg-white overflow-hidden">
           <div className="max-h-[126px] overflow-y-auto">
             {options.length > 0 ? (
               options.map((skill) => (
                 <button
                   key={skill._id}
                   type="button"
-                  onClick={() => onAddSkill(type, skill._id)}
+                  onClick={() => {
+                    onAddSkill(type, skill._id);
+                    setDropdownOpenByType((prev) => ({ ...prev, [type]: false }));
+                  }}
                   className="w-full text-left px-3 py-2.5 border-b border-harx-50 last:border-b-0 hover:bg-harx-50/60 transition-colors"
                 >
                   <div className="text-sm font-bold text-harx-900">{skill.name}</div>
@@ -125,7 +145,8 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               <div className="px-3 py-3 text-xs text-slate-500">No more skills available for this section.</div>
             )}
           </div>
-        </div>
+          </div>
+        )}
       </div>
     );
   };
