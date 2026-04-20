@@ -2168,7 +2168,14 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         <div className="w-full">
           {/* Right Column: Navbar & Tabs (Now Full Width) */}
           <div className="overflow-hidden">
-            <EditNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+            <EditNavbar 
+              activeTab={activeTab} 
+              onTabChange={setActiveTab} 
+              onSave={handleSave}
+              loading={loading}
+              uploadingPhoto={uploadingPhoto}
+              uploadingVideo={uploadingVideo}
+            />
 
             <main className="min-h-[600px] mt-8">
               {activeTab === 'profile' && (
