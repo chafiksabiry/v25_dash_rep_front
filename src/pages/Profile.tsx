@@ -249,7 +249,7 @@ export function Profile() {
 
     const alreadyExists = nextSkills[type].some((entry: any) => getSkillRefId(entry) === skillId);
     if (!alreadyExists) {
-      nextSkills[type].push({
+      nextSkills[type].unshift({
         skill: skillId,
         level: 0,
         details: ''
@@ -392,7 +392,7 @@ export function Profile() {
     const payload = {
       professionalSummary: {
         ...currentSummary,
-        [section]: [...sourceIds, value]
+        [section]: [value, ...sourceIds]
       }
     };
 
@@ -403,7 +403,7 @@ export function Profile() {
         ...prev,
         professionalSummary: {
           ...(prev.professionalSummary || {}),
-          [section]: [...source, value]
+          [section]: [value, ...source]
         }
       };
     });
