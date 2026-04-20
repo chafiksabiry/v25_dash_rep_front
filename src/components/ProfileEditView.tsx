@@ -64,6 +64,7 @@ const proficiencyLevels = [
 type ProfileEditViewProps = {
   profile: any;
   onSave: (updatedProfile: any) => void;
+  initialTab?: string;
 };
 
 // Define proper types
@@ -231,7 +232,7 @@ const uploadPresentationVideo = async (
 // Add this near the top of the file with other imports
 const PROFILE_UPDATE_EVENT = 'PROFILE_UPDATED';
 
-export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initialProfile, onSave }) => {
+export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initialProfile, onSave, initialTab = 'profile' }) => {
   // Add console.log statements
   console.log('Initial Profile Data:', initialProfile);
   console.log('Initial Availability Data:', initialProfile.availability);
@@ -265,7 +266,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       availability: mergedAvailability
     };
   });
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [tempProfileDescription, setTempProfileDescription] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -434,6 +435,10 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
       }
     }
   }, [initialProfile]);
+
+  useEffect(() => {
+    setActiveTab(initialTab || 'profile');
+  }, [initialTab]);
 
   // Load countries and all timezones on component mount
   useEffect(() => {

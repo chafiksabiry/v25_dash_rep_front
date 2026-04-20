@@ -1,16 +1,27 @@
 import React from 'react';
-import { Clock, Calendar } from 'lucide-react';
+import { Clock, Calendar, Pencil } from 'lucide-react';
 
 interface ProfileTabProps {
   profile: any;
+  onEditItemClick: () => void;
 }
 
-export const ProfileTab: React.FC<ProfileTabProps> = ({ profile }) => {
+export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onEditItemClick }) => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* About Section */}
       <div className="bg-slate-100/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200/50">
-        <h2 className="text-xl font-black text-slate-900 tracking-tight mb-5">About</h2>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-black text-slate-900 tracking-tight">About</h2>
+          <button
+            type="button"
+            onClick={onEditItemClick}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Edit
+          </button>
+        </div>
         
         {/* Profile Description */}
         <div className="mb-6">
@@ -23,7 +34,17 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile }) => {
 
         {/* Introduction Video Section */}
         <div className="border-t border-slate-200/50 pt-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">Introduction Video</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-slate-800">Introduction Video</h3>
+            <button
+              type="button"
+              onClick={onEditItemClick}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </button>
+          </div>
           
           {profile.personalInfo?.presentationVideo?.url ? (
             <div className="space-y-4">

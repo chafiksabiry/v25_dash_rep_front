@@ -1,16 +1,18 @@
 import React from 'react';
-import { Star, Globe } from 'lucide-react';
+import { Star, Globe, Pencil } from 'lucide-react';
 
 interface LanguagesTabProps {
   profile: any;
   getProficiencyStars: (proficiency: string) => number;
   takeLanguageAssessment: (language: string, iso639_1Code?: string) => void;
+  onEditItemClick: () => void;
 }
 
 export const LanguagesTab: React.FC<LanguagesTabProps> = ({ 
   profile, 
   getProficiencyStars, 
-  takeLanguageAssessment 
+  takeLanguageAssessment,
+  onEditItemClick
 }) => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -63,12 +65,25 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
                     </div>
                   )}
 
-                  <button
-                    onClick={() => takeLanguageAssessment(languageName, languageCode)}
-                    className="w-full py-3 bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-900 border border-slate-200/50 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm active:scale-95"
-                  >
-                    {lang.assessmentResults ? 'Retake Assessment' : 'Start Assessment'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={onEditItemClick}
+                      className="py-3 px-4 bg-slate-50 text-slate-700 border border-slate-200/50 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm hover:bg-slate-100"
+                      title="Edit language"
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <Pencil className="w-3.5 h-3.5" />
+                        Edit
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => takeLanguageAssessment(languageName, languageCode)}
+                      className="flex-1 py-3 bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-900 border border-slate-200/50 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm active:scale-95"
+                    >
+                      {lang.assessmentResults ? 'Retake Assessment' : 'Start Assessment'}
+                    </button>
+                  </div>
                 </div>
               );
             })

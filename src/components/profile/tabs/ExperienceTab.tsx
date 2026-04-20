@@ -1,11 +1,12 @@
 import React from 'react';
-import { Briefcase, Calendar } from 'lucide-react';
+import { Briefcase, Calendar, Pencil } from 'lucide-react';
 
 interface ExperienceTabProps {
   profile: any;
+  onEditItemClick: () => void;
 }
 
-export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile }) => {
+export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onEditItemClick }) => {
   const formatDateToDD_MM_YYYY = (dateString: string) => {
     if (!dateString) return '';
     try {
@@ -54,9 +55,19 @@ export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile }) => {
                       <h3 className="text-lg font-black text-slate-900">{exp.title || exp.role}</h3>
                       <p className="text-harx-600 font-bold">{exp.company}</p>
                     </div>
-                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mt-1 md:mt-0">
-                      <Calendar className="w-4 h-4" />
-                      <span>{startDate} — {endDate}</span>
+                    <div className="flex items-center gap-2 mt-1 md:mt-0">
+                      <div className="flex items-center gap-2 text-sm font-bold text-slate-400">
+                        <Calendar className="w-4 h-4" />
+                        <span>{startDate} — {endDate}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={onEditItemClick}
+                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
+                        title="Edit experience"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
 

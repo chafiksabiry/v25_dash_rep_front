@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, CheckCircle, AlertTriangle, RefreshCw, ChevronRight } from 'lucide-react';
+import { Clock, CheckCircle, AlertTriangle, RefreshCw, ChevronRight, Pencil } from 'lucide-react';
 
 interface OnboardingTabProps {
   profile: any;
@@ -9,6 +9,7 @@ interface OnboardingTabProps {
   timezoneData: any;
   getTimezoneMismatchInfo: () => any;
   repWizardApi: any;
+  onEditItemClick: (tab?: string) => void;
 }
 
 export const OnboardingTab: React.FC<OnboardingTabProps> = ({
@@ -18,7 +19,8 @@ export const OnboardingTab: React.FC<OnboardingTabProps> = ({
   showLoadingSpinner,
   timezoneData,
   getTimezoneMismatchInfo,
-  repWizardApi
+  repWizardApi,
+  onEditItemClick
 }) => {
   const onboardingPhases = [1, 2, 3, 4];
   const timezoneMismatch = getTimezoneMismatchInfo();
@@ -117,6 +119,15 @@ export const OnboardingTab: React.FC<OnboardingTabProps> = ({
                     <ChevronRight className="w-5 h-5" />
                   </button>
                 )}
+
+                <button
+                  type="button"
+                  onClick={() => onEditItemClick('profile')}
+                  className="p-2 bg-slate-50 text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
+                  title="Edit onboarding related info"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
               </div>
             );
           })}
@@ -130,6 +141,14 @@ export const OnboardingTab: React.FC<OnboardingTabProps> = ({
             <Clock className="w-5 h-5" />
           </div>
           <h2 className="text-xl font-black text-slate-900 tracking-tight">Availability & Schedule</h2>
+          <button
+            type="button"
+            onClick={() => onEditItemClick('availability')}
+            className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Edit
+          </button>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

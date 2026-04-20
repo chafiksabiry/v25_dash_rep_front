@@ -56,7 +56,7 @@ export interface PlanResponse {
   plan: Partial<Plan>;
 }
 
-export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onProfileUpdate?: (updatedProfile: any) => void }> = ({ profile, onEditClick, onProfileUpdate }) => {
+export const ProfileView: React.FC<{ profile: any, onEditClick: (tab?: string) => void, onProfileUpdate?: (updatedProfile: any) => void }> = ({ profile, onEditClick, onProfileUpdate }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isPublishing, setIsPublishing] = useState(false);
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
@@ -380,21 +380,23 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
 
   const renderActiveTab = () => {
     switch (activeTab) {
-      case 'profile': return <ProfileTab profile={profile} />;
+      case 'profile': return <ProfileTab profile={profile} onEditItemClick={() => onEditClick('profile')} />;
       case 'skills': return (
         <SkillsTab 
           profile={profile} 
           formatSkillsForDisplay={formatSkillsForDisplay}
           findSkillData={findSkillData}
           takeContactCenterSkillAssessment={takeContactCenterSkillAssessment}
+          onEditItemClick={() => onEditClick('skills')}
         />
       );
-      case 'experience': return <ExperienceTab profile={profile} />;
+      case 'experience': return <ExperienceTab profile={profile} onEditItemClick={() => onEditClick('experience')} />;
       case 'languages': return (
         <LanguagesTab 
           profile={profile} 
           getProficiencyStars={getProficiencyStars}
           takeLanguageAssessment={takeLanguageAssessment}
+          onEditItemClick={() => onEditClick('languages')}
         />
       );
       case 'onboarding': return (
@@ -406,10 +408,11 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
           timezoneData={timezoneData}
           getTimezoneMismatchInfo={getTimezoneMismatchInfo}
           repWizardApi={repWizardApi}
+          onEditItemClick={(tab?: string) => onEditClick(tab || 'availability')}
         />
       );
-      case 'specialization': return <SpecializationTab profile={profile} />;
-      default: return <ProfileTab profile={profile} />;
+      case 'specialization': return <SpecializationTab profile={profile} onEditItemClick={() => onEditClick('specialization')} />;
+      default: return <ProfileTab profile={profile} onEditItemClick={() => onEditClick('profile')} />;
     }
   };
 
@@ -507,7 +510,7 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
                   </button>
                 )}
                 <button
-                  onClick={onEditClick}
+                  onClick={() => onEditClick()}
                   className="px-6 py-2.5 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 border border-slate-700"
                 >
                   <Edit size={16} />

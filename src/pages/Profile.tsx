@@ -142,6 +142,7 @@ export function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(window.location.search.includes('edit=true'));
+  const [editInitialTab, setEditInitialTab] = useState('profile');
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -260,11 +261,15 @@ export function Profile() {
           <ProfileEditView
             profile={profile}
             onSave={handleProfileUpdate}
+            initialTab={editInitialTab}
           />
         ) : (
           <ProfileView
             profile={profile}
-            onEditClick={() => setIsEditing(true)}
+            onEditClick={(tab?: string) => {
+              setEditInitialTab(tab || 'profile');
+              setIsEditing(true);
+            }}
             onProfileUpdate={handleProfileUpdate}
           />
         )}
