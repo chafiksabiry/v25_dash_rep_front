@@ -287,6 +287,12 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSaveAbout, on
 
           {isEditingVideo && (
             <div className="mb-4 space-y-3">
+              {wantsToRerecord && !recordedVideoUrl && (
+                <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2 leading-relaxed">
+                  <span className="font-bold text-slate-700">Durée maximum : 10 minutes.</span>{' '}
+                  L&apos;enregistrement s&apos;arrête automatiquement à cette limite ; un compteur s&apos;affiche pendant la capture.
+                </p>
+              )}
               {!!profile.personalInfo?.presentationVideo?.url && !wantsToRerecord && !isRecorderReady && !recordedVideoBlob && !recordedVideoUrl && (
                 <div className="space-y-3">
                   <video
