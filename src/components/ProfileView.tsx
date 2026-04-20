@@ -241,9 +241,9 @@ export const ProfileView: React.FC<{ profile: any, onEditClick: () => void, onPr
         }
       }
 
-      // 4. Fallback with debug hint if resolution fails
-      const debugId = skillId ? ` (${skillId.substring(0, 4)})` : '';
-      return { name: skillId ? `Unresolved${debugId}` : 'Unknown' };
+      // 4. Fallback with deep debug info if resolution fails
+      const debugInfo = JSON.stringify(item).substring(0, 40);
+      return { name: skillId ? `Unresolved (${skillId.substring(0, 4)})` : `Unknown [${debugInfo}]` };
     });
   };
 
