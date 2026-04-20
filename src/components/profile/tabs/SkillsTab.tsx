@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pencil, Plus, X } from 'lucide-react';
+import { Pencil, X } from 'lucide-react';
 import { fetchSkillsByType, Skill } from '../../../services/api/skills';
 
 interface SkillsTabProps {
@@ -41,7 +41,6 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
     professional: [],
     soft: []
   });
-  const [activeAddType, setActiveAddType] = useState<'technical' | 'professional' | 'soft' | null>(null);
   const [searchTermByType, setSearchTermByType] = useState<Record<'technical' | 'professional' | 'soft', string>>({
     technical: '',
     professional: '',
@@ -98,7 +97,6 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
   };
 
   const renderAddDropdown = (type: 'technical' | 'professional' | 'soft') => {
-    if (activeAddType !== type) return null;
     const options = getFilteredSkills(type);
     return (
       <div className="mt-3 w-full bg-white border border-harx-100/80 rounded-xl shadow-sm overflow-hidden">
@@ -164,20 +162,6 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
         <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-black text-harx-900">Technical</h2>
-            <div>
-              <button
-                type="button"
-                onClick={() => setActiveAddType(activeAddType === 'technical' ? null : 'technical')}
-                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-black uppercase tracking-widest transition-all ${
-                  activeAddType === 'technical'
-                    ? 'bg-gradient-harx text-white border-transparent shadow-md shadow-harx-500/20'
-                    : 'bg-harx-50 text-harx-700 border-harx-100 hover:bg-harx-100'
-                }`}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add
-              </button>
-            </div>
           </div>
           <div className="flex flex-wrap gap-2 items-start content-start">
             {formatSkillsForDisplay(profile.skills?.technical).map((skill: any, idx: number) =>
@@ -191,20 +175,6 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
         <div className="bg-harx-alt-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-alt-100/70">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-black text-harx-alt-900">Professional</h2>
-            <div>
-              <button
-                type="button"
-                onClick={() => setActiveAddType(activeAddType === 'professional' ? null : 'professional')}
-                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-black uppercase tracking-widest transition-all ${
-                  activeAddType === 'professional'
-                    ? 'bg-gradient-harx text-white border-transparent shadow-md shadow-harx-500/20'
-                    : 'bg-harx-50 text-harx-700 border-harx-100 hover:bg-harx-100'
-                }`}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add
-              </button>
-            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {formatSkillsForDisplay(profile.skills?.professional).map((skill: any, idx: number) =>
@@ -218,20 +188,6 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
         <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-black text-harx-900">Soft Skills</h2>
-            <div>
-              <button
-                type="button"
-                onClick={() => setActiveAddType(activeAddType === 'soft' ? null : 'soft')}
-                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-black uppercase tracking-widest transition-all ${
-                  activeAddType === 'soft'
-                    ? 'bg-gradient-harx text-white border-transparent shadow-md shadow-harx-500/20'
-                    : 'bg-harx-50 text-harx-700 border-harx-100 hover:bg-harx-100'
-                }`}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add
-              </button>
-            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {formatSkillsForDisplay(profile.skills?.soft).map((skill: any, idx: number) =>
