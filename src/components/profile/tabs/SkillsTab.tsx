@@ -271,6 +271,12 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
               {(() => {
                 const allContactCenterEntries = (profile.skills?.contactCenter || []) as any[];
                 const categorySkillSet = new Set(category.skills.map((s: string) => s.toLowerCase()));
+                const summaryActivities = (profile.professionalSummary?.activities || []).map((a: any) =>
+                  String(typeof a === 'string' ? a : a?.name || a?._id || '').toLowerCase()
+                );
+                const summaryIndustries = (profile.professionalSummary?.industries || []).map((i: any) =>
+                  String(typeof i === 'string' ? i : i?.name || i?._id || '').toLowerCase()
+                );
 
                 const selectedEntriesInCategory = allContactCenterEntries.filter((entry: any) => {
                   const entrySkill = String(entry?.skill || '');
@@ -283,6 +289,14 @@ export const SkillsTab: React.FC<SkillsTabProps> = ({
                 const selectedInCategory = new Set(
                   selectedEntriesInCategory.map((entry: any) => String(entry?.skill || '').toLowerCase())
                 );
+
+                // Also consider already chosen values from specialization data.
+                if (category.name === 'Activities') {
+                  summaryActivities.forEach((name: string) => selectedInCategory.add(name));
+                }
+                if (category.name === 'Industries') {
+                  summaryIndustries.forEach((name: string) => selectedInCategory.add(name));
+                }
 
                 const addableCategorySkills = category.skills.filter(
                   (skillName: string) => !selectedInCategory.has(skillName.toLowerCase())
