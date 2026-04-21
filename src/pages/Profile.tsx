@@ -327,6 +327,42 @@ export function Profile() {
     }
   };
 
+  const handleAddLanguage = async (item: { language: string; proficiency: string }) => {
+    if (!profile?._id) return;
+    const language = String(item.language || '').trim();
+    const proficiency = String(item.proficiency || 'B1').trim() || 'B1';
+    if (!language) return;
+
+    const currentLanguages = Array.isArray(profile.personalInfo?.languages) ? profile.personalInfo.languages : [];
+    const normalizeName = (entry: any) => {
+      if (typeof entry?.language === 'object' && entry.language) {
+        return String(entry.language.name || entry.language.code || '').trim().toLowerCase();
+      }
+      return String(entry?.language || '').trim().toLowerCase();
+    };
+    const exists = currentLanguages.some((l: any) => normalizeName(l) === language.toLowerCase());
+    if (exists) return;
+
+    const normalizeLanguageEntry = (lang: any) => ({
+      language: typeof lang.language === 'object' ? lang.language?._id : lang.language,
+      proficiency: lang.proficiency,
+      assessmentResults: lang.assessmentResults
+    });
+
+    const updatedLanguages = [
+      { language, proficiency },
+      ...currentLanguages.map(normalizeLanguageEntry).filter((entry: any) => !!entry.language),
+    ];
+
+    try {
+      await updateBasicInfo(profile._id, { languages: updatedLanguages });
+      const refreshed = await getProfileData();
+      setProfile(refreshed);
+    } catch (error) {
+      console.error('Error adding language:', error);
+    }
+  };
+
   const handleDeleteExperience = async (index: number) => {
     if (!profile?._id) return;
     const currentExperience = profile.experience || [];
@@ -544,6 +580,7 @@ export function Profile() {
             onDeleteSkill={handleDeleteSkill}
             onAddSkill={handleAddSkill}
             onDeleteLanguage={handleDeleteLanguage}
+            onAddLanguage={handleAddLanguage}
             onDeleteExperience={handleDeleteExperience}
             onAddExperience={handleAddExperience}
             onDeleteSpecializationItem={handleDeleteSpecializationItem}

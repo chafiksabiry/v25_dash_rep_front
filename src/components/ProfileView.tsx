@@ -62,6 +62,7 @@ export const ProfileView: React.FC<{
   onDeleteSkill?: (type: 'technical' | 'professional' | 'soft', index: number) => void,
   onAddSkill?: (type: 'technical' | 'professional' | 'soft', skillId: string) => void,
   onDeleteLanguage?: (index: number) => void,
+  onAddLanguage?: (item: { language: string; proficiency: string }) => void,
   onDeleteExperience?: (index: number) => void,
   onAddExperience?: (item: {
     title: string;
@@ -73,7 +74,7 @@ export const ProfileView: React.FC<{
   onDeleteSpecializationItem?: (section: 'industries' | 'activities' | 'notableCompanies', index: number) => void,
   onAddSpecializationItem?: (section: 'industries' | 'activities' | 'notableCompanies', value: string) => void,
   onProfileUpdate?: (updatedProfile: any) => void
-}> = ({ profile, onEditClick, onDeleteSkill, onAddSkill, onDeleteLanguage, onDeleteExperience, onAddExperience, onDeleteSpecializationItem, onAddSpecializationItem, onProfileUpdate }) => {
+}> = ({ profile, onEditClick, onDeleteSkill, onAddSkill, onDeleteLanguage, onAddLanguage, onDeleteExperience, onAddExperience, onDeleteSpecializationItem, onAddSpecializationItem, onProfileUpdate }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isPublishing, setIsPublishing] = useState(false);
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
@@ -634,7 +635,7 @@ export const ProfileView: React.FC<{
           profile={profile} 
           getProficiencyStars={getProficiencyStars}
           takeLanguageAssessment={takeLanguageAssessment}
-          onEditItemClick={() => onEditClick('languages')}
+          onAddItemClick={(item) => onAddLanguage?.(item)}
           onDeleteItemClick={(index) => onDeleteLanguage?.(index)}
         />
       );
@@ -647,7 +648,6 @@ export const ProfileView: React.FC<{
           timezoneData={timezoneData}
           getTimezoneMismatchInfo={getTimezoneMismatchInfo}
           repWizardApi={repWizardApi}
-          onEditItemClick={(tab?: string) => onEditClick(tab || 'availability')}
         />
       );
       case 'specialization': return (

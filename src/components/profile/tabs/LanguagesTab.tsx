@@ -1,11 +1,11 @@
-import React from 'react';
-import { Star, Globe, Pencil, Plus, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Star, Globe, Plus, X } from 'lucide-react';
 
 interface LanguagesTabProps {
   profile: any;
   getProficiencyStars: (proficiency: string) => number;
   takeLanguageAssessment: (language: string, iso639_1Code?: string) => void;
-  onEditItemClick: () => void;
+  onAddItemClick: (item: { language: string; proficiency: string }) => void;
   onDeleteItemClick: (index: number) => void;
 }
 
@@ -13,9 +13,19 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
   profile, 
   getProficiencyStars, 
   takeLanguageAssessment,
-  onEditItemClick,
+  onAddItemClick,
   onDeleteItemClick
 }) => {
+  const [draftLanguage, setDraftLanguage] = useState('');
+  const [draftProficiency, setDraftProficiency] = useState('B1');
+
+  const handleAddLanguage = () => {
+    const language = draftLanguage.trim();
+    if (!language) return;
+    onAddItemClick({ language, proficiency: draftProficiency });
+    setDraftLanguage('');
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
@@ -24,21 +34,38 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onEditItemClick}
+              onClick={handleAddLanguage}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               Add
             </button>
-            <button
-              type="button"
-              onClick={onEditItemClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit
-            </button>
           </div>
+        </div>
+        <div className="mb-6 grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-white/70 p-3 md:grid-cols-[minmax(0,1fr)_120px]">
+          <input
+            value={draftLanguage}
+            onChange={(e) => setDraftLanguage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddLanguage();
+              }
+            }}
+            placeholder="Type a language and press Enter..."
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200"
+          />
+          <select
+            value={draftProficiency}
+            onChange={(e) => setDraftProficiency(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200"
+          >
+            {['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].map((level) => (
+              <option key={level} value={level}>
+                {level}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {profile.personalInfo?.languages?.length > 0 ? (

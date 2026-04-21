@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, CheckCircle, AlertTriangle, RefreshCw, ChevronRight, Pencil } from 'lucide-react';
+import { Clock, CheckCircle, AlertTriangle, RefreshCw, ChevronRight } from 'lucide-react';
 
 interface OnboardingTabProps {
   profile: any;
@@ -9,7 +9,6 @@ interface OnboardingTabProps {
   timezoneData: any;
   getTimezoneMismatchInfo: () => any;
   repWizardApi: any;
-  onEditItemClick: (tab?: string) => void;
 }
 
 export const OnboardingTab: React.FC<OnboardingTabProps> = ({
@@ -19,8 +18,7 @@ export const OnboardingTab: React.FC<OnboardingTabProps> = ({
   showLoadingSpinner,
   timezoneData,
   getTimezoneMismatchInfo,
-  repWizardApi,
-  onEditItemClick
+  repWizardApi
 }) => {
   const onboardingPhases = [1, 2, 3, 4];
   const timezoneMismatch = getTimezoneMismatchInfo();
@@ -120,14 +118,6 @@ export const OnboardingTab: React.FC<OnboardingTabProps> = ({
                   </button>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => onEditItemClick('profile')}
-                  className="p-2 bg-harx-50 text-harx-700 border border-harx-100 rounded-xl hover:bg-harx-100 transition-colors"
-                  title="Edit onboarding related info"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
               </div>
             );
           })}
@@ -141,14 +131,6 @@ export const OnboardingTab: React.FC<OnboardingTabProps> = ({
             <Clock className="w-5 h-5" />
           </div>
           <h2 className="text-xl font-black text-harx-900 tracking-tight">Availability & Schedule</h2>
-          <button
-            type="button"
-            onClick={() => onEditItemClick('availability')}
-            className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            Edit
-          </button>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
