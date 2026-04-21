@@ -31,6 +31,7 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
 
   const [draftLanguage, setDraftLanguage] = useState('');
   const [draftProficiency, setDraftProficiency] = useState('B1');
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const existingNames = new Set(
     (profile.personalInfo?.languages || [])
@@ -55,6 +56,7 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
       proficiency: draftProficiency
     });
     setDraftLanguage('');
+    setShowAddForm(false);
   };
 
   return (
@@ -65,39 +67,49 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handleAddLanguage}
+              onClick={() => setShowAddForm((prev) => !prev)}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
-              Add
+              {showAddForm ? 'Close' : 'Add'}
             </button>
           </div>
         </div>
-        <div className="mb-6 grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-white/70 p-3 md:grid-cols-[minmax(0,1fr)_120px]">
-          <select
-            value={draftLanguage}
-            onChange={(e) => setDraftLanguage(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200"
-          >
-            <option value="">Select a language...</option>
-            {selectableLanguages.map((lang) => (
-              <option key={lang._id || `${lang.name}-${lang.code}`} value={lang._id || `${lang.name}-${lang.code}`}>
-                {lang.name}{lang.code ? ` (${lang.code})` : ''}
-              </option>
-            ))}
-          </select>
-          <select
-            value={draftProficiency}
-            onChange={(e) => setDraftProficiency(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200"
-          >
-            {proficiencyOptions.map((level) => (
-              <option key={level.value} value={level.value}>
-                {level.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {showAddForm && (
+          <div className="mb-6 grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-white/70 p-3 md:grid-cols-[minmax(0,1fr)_120px_auto]">
+            <select
+              value={draftLanguage}
+              onChange={(e) => setDraftLanguage(e.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200"
+            >
+              <option value="">Select a language...</option>
+              {selectableLanguages.map((lang) => (
+                <option key={lang._id || `${lang.name}-${lang.code}`} value={lang._id || `${lang.name}-${lang.code}`}>
+                  {lang.name}{lang.code ? ` (${lang.code})` : ''}
+                </option>
+              ))}
+            </select>
+            <select
+              value={draftProficiency}
+              onChange={(e) => setDraftProficiency(e.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200"
+            >
+              {proficiencyOptions.map((level) => (
+                <option key={level.value} value={level.value}>
+                  {level.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleAddLanguage}
+              disabled={!draftLanguage}
+              className="rounded-lg border border-harx-200 bg-harx-50 px-3 py-2 text-xs font-black uppercase tracking-widest text-harx-700 hover:bg-harx-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              Save
+            </button>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {profile.personalInfo?.languages?.length > 0 ? (
             profile.personalInfo.languages.map((lang: any, index: number) => {
