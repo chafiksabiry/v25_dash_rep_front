@@ -6,7 +6,7 @@ interface LanguagesTabProps {
   availableLanguages: Array<{ _id?: string; code?: string; name: string; nativeName?: string }>;
   getProficiencyStars: (proficiency: string) => number;
   takeLanguageAssessment: (language: string, iso639_1Code?: string) => void;
-  onAddItemClick: (item: { language: string; proficiency: string }) => void;
+  onAddItemClick: (item: { language: string; proficiency: string; languageId?: string }) => void;
   onDeleteItemClick: (index: number) => void;
 }
 
@@ -45,9 +45,15 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
   );
 
   const handleAddLanguage = () => {
-    const language = draftLanguage.trim();
-    if (!language) return;
-    onAddItemClick({ language, proficiency: draftProficiency });
+    const selected = selectableLanguages.find(
+      (lang) => (lang._id || `${lang.name}-${lang.code}`) === draftLanguage
+    );
+    if (!selected) return;
+    onAddItemClick({
+      language: String(selected.name || '').trim(),
+      languageId: selected._id,
+      proficiency: draftProficiency
+    });
     setDraftLanguage('');
   };
 
@@ -75,7 +81,7 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
           >
             <option value="">Select a language...</option>
             {selectableLanguages.map((lang) => (
-              <option key={lang._id || `${lang.name}-${lang.code}`} value={lang.name}>
+              <option key={lang._id || `${lang.name}-${lang.code}`} value={lang._id || `${lang.name}-${lang.code}`}>
                 {lang.name}{lang.code ? ` (${lang.code})` : ''}
               </option>
             ))}

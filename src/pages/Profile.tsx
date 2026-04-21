@@ -327,11 +327,12 @@ export function Profile() {
     }
   };
 
-  const handleAddLanguage = async (item: { language: string; proficiency: string }) => {
+  const handleAddLanguage = async (item: { language: string; proficiency: string; languageId?: string }) => {
     if (!profile?._id) return;
     const language = String(item.language || '').trim();
+    const languageId = String(item.languageId || '').trim();
     const proficiency = String(item.proficiency || 'B1').trim() || 'B1';
-    if (!language) return;
+    if (!language && !languageId) return;
 
     const currentLanguages = Array.isArray(profile.personalInfo?.languages) ? profile.personalInfo.languages : [];
     const normalizeName = (entry: any) => {
@@ -340,7 +341,11 @@ export function Profile() {
       }
       return String(entry?.language || '').trim().toLowerCase();
     };
-    const exists = currentLanguages.some((l: any) => normalizeName(l) === language.toLowerCase());
+    const exists = currentLanguages.some((l: any) => {
+      const currentId = typeof l?.language === 'object' ? String(l.language?._id || '') : String(l?.language || '');
+      if (languageId && currentId && currentId === languageId) return true;
+      return normalizeName(l) === language.toLowerCase();
+    });
     if (exists) return;
 
     const normalizeLanguageEntry = (lang: any) => ({
@@ -350,7 +355,7 @@ export function Profile() {
     });
 
     const updatedLanguages = [
-      { language, proficiency },
+      { language: languageId || language, proficiency },
       ...currentLanguages.map(normalizeLanguageEntry).filter((entry: any) => !!entry.language),
     ];
 

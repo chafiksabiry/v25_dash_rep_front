@@ -63,7 +63,7 @@ export const ProfileView: React.FC<{
   onDeleteSkill?: (type: 'technical' | 'professional' | 'soft', index: number) => void,
   onAddSkill?: (type: 'technical' | 'professional' | 'soft', skillId: string) => void,
   onDeleteLanguage?: (index: number) => void,
-  onAddLanguage?: (item: { language: string; proficiency: string }) => void,
+  onAddLanguage?: (item: { language: string; proficiency: string; languageId?: string }) => void,
   onDeleteExperience?: (index: number) => void,
   onAddExperience?: (item: {
     title: string;
