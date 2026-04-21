@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus, Pencil } from 'lucide-react';
 import { repApiClient } from '../../../utils/client';
 
 interface SpecializationTabProps {
