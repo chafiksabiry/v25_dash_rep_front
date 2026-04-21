@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Globe, Trash2, X, RefreshCw, Info } from 'lucide-react';
 import { Language } from '../../../../services/api/languages';
 
@@ -51,10 +51,29 @@ export const EditLanguagesTab: React.FC<EditLanguagesTabProps> = ({
   renderError,
   validationErrors
 }) => {
+  const [showAddLanguageForm, setShowAddLanguageForm] = useState(false);
+
+  const handleSelectLanguage = (language: Language) => {
+    addLanguage(language);
+    setShowAddLanguageForm(false);
+    setIsLanguageDropdownOpen(false);
+    setLanguageSearchTerm('');
+    setSelectedLanguageIndex(-1);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-        <h2 className="text-xl font-black text-gray-900 tracking-tight mb-5">Language Proficiency</h2>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-black text-gray-900 tracking-tight">Language Proficiency</h2>
+          <button
+            type="button"
+            onClick={() => setShowAddLanguageForm((prev) => !prev)}
+            className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
+          >
+            {showAddLanguageForm ? 'Close' : '+ Add'}
+          </button>
+        </div>
         
         <div className="bg-harx-50 p-6 rounded-2xl border border-harx-100 flex items-start gap-4 mb-8">
            <div className="p-2.5 bg-white rounded-xl text-harx-600 shadow-sm">
@@ -118,74 +137,76 @@ export const EditLanguagesTab: React.FC<EditLanguagesTabProps> = ({
         </div>
 
         {/* Add Language Tool */}
-        <div className="bg-gray-50 rounded-[32px] p-8 border border-gray-100">
-          <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6">Add New Language</h3>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={languageSearchTerm}
-                onChange={(e) => {
-                  setLanguageSearchTerm(e.target.value);
-                  setIsLanguageDropdownOpen(true);
-                  setSelectedLanguageIndex(-1);
-                }}
-                onFocus={() => setIsLanguageDropdownOpen(true)}
-                placeholder="Ex: French, Spanish, Arabic..."
-                className="w-full px-5 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 outline-none focus:ring-4 focus:ring-harx-500/5 transition-all"
-                disabled={loadingLanguages}
-              />
-              <div className="absolute right-5 top-1/2 -translate-y-1/2">
-                {loadingLanguages ? (
-                  <RefreshCw className="w-4 h-4 text-harx-500 animate-spin" />
-                ) : (
-                  <Globe className="w-4 h-4 text-gray-300" />
+        {showAddLanguageForm && (
+          <div className="bg-gray-50 rounded-[32px] p-8 border border-gray-100">
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6">Add New Language</h3>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={languageSearchTerm}
+                  onChange={(e) => {
+                    setLanguageSearchTerm(e.target.value);
+                    setIsLanguageDropdownOpen(true);
+                    setSelectedLanguageIndex(-1);
+                  }}
+                  onFocus={() => setIsLanguageDropdownOpen(true)}
+                  placeholder="Ex: French, Spanish, Arabic..."
+                  className="w-full px-5 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 outline-none focus:ring-4 focus:ring-harx-500/5 transition-all"
+                  disabled={loadingLanguages}
+                />
+                <div className="absolute right-5 top-1/2 -translate-y-1/2">
+                  {loadingLanguages ? (
+                    <RefreshCw className="w-4 h-4 text-harx-500 animate-spin" />
+                  ) : (
+                    <Globe className="w-4 h-4 text-gray-300" />
+                  )}
+                </div>
+
+                {isLanguageDropdownOpen && !loadingLanguages && (
+                  <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl max-h-60 overflow-auto scrollbar-hide py-2">
+                    {filteredLanguages.length > 0 ? (
+                      filteredLanguages.map((language, index) => (
+                        <button
+                          key={language._id}
+                          type="button"
+                          onClick={() => handleSelectLanguage(language)}
+                          className={`w-full text-left px-5 py-3 transition-colors ${
+                            index === selectedLanguageIndex ? 'bg-harx-50 text-harx-600' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="text-sm font-black">{language.name}</div>
+                              <div className="text-[10px] font-bold text-gray-400 uppercase italic">{language.nativeName}</div>
+                            </div>
+                            <span className="text-[10px] font-black px-2 py-1 bg-gray-100 rounded-lg">{language.code}</span>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-5 py-4 text-xs font-bold text-gray-400 italic">No exact matches found</div>
+                    )}
+                  </div>
                 )}
               </div>
 
-              {isLanguageDropdownOpen && !loadingLanguages && (
-                <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl max-h-60 overflow-auto scrollbar-hide py-2">
-                  {filteredLanguages.length > 0 ? (
-                    filteredLanguages.map((language, index) => (
-                      <button
-                        key={language._id}
-                        type="button"
-                        onClick={() => addLanguage(language)}
-                        className={`w-full text-left px-5 py-3 transition-colors ${
-                          index === selectedLanguageIndex ? 'bg-harx-50 text-harx-600' : 'hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="text-sm font-black">{language.name}</div>
-                            <div className="text-[10px] font-bold text-gray-400 uppercase italic">{language.nativeName}</div>
-                          </div>
-                          <span className="text-[10px] font-black px-2 py-1 bg-gray-100 rounded-lg">{language.code}</span>
-                        </div>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-5 py-4 text-xs font-bold text-gray-400 italic">No exact matches found</div>
-                  )}
-                </div>
-              )}
+              <div className="md:w-32">
+                <select
+                  value={tempLanguage.proficiency}
+                  onChange={(e) => setTempLanguage((prev: any) => ({ ...prev, proficiency: e.target.value }))}
+                  className="w-full px-4 py-4 bg-white border border-gray-100 rounded-2xl text-xs font-black uppercase tracking-widest outline-none transition-all"
+                  disabled={loadingLanguages}
+                >
+                  {proficiencyLevels.map(level => (
+                    <option key={level.value} value={level.value}>{level.value}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            
-            <div className="md:w-32">
-              <select
-                value={tempLanguage.proficiency}
-                onChange={(e) => setTempLanguage((prev: any) => ({ ...prev, proficiency: e.target.value }))}
-                className="w-full px-4 py-4 bg-white border border-gray-100 rounded-2xl text-xs font-black uppercase tracking-widest outline-none transition-all"
-                disabled={loadingLanguages}
-              >
-                {proficiencyLevels.map(level => (
-                  <option key={level.value} value={level.value}>{level.value}</option>
-                ))}
-              </select>
-            </div>
+            {renderError(validationErrors.languages, 'languages')}
           </div>
-          {renderError(validationErrors.languages, 'languages')}
-        </div>
+        )}
       </div>
     </div>
   );
