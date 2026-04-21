@@ -3,6 +3,7 @@ import { Star, Globe, Plus, X } from 'lucide-react';
 
 interface LanguagesTabProps {
   profile: any;
+  availableLanguages: Array<{ _id?: string; code?: string; name: string; nativeName?: string }>;
   getProficiencyStars: (proficiency: string) => number;
   takeLanguageAssessment: (language: string, iso639_1Code?: string) => void;
   onAddItemClick: (item: { language: string; proficiency: string }) => void;
@@ -11,6 +12,7 @@ interface LanguagesTabProps {
 
 export const LanguagesTab: React.FC<LanguagesTabProps> = ({ 
   profile, 
+  availableLanguages,
   getProficiencyStars, 
   takeLanguageAssessment,
   onAddItemClick,
@@ -18,6 +20,18 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
 }) => {
   const [draftLanguage, setDraftLanguage] = useState('');
   const [draftProficiency, setDraftProficiency] = useState('B1');
+
+  const existingNames = new Set(
+    (profile.personalInfo?.languages || [])
+      .map((lang: any) => {
+        if (typeof lang?.language === 'object' && lang.language) return String(lang.language.name || '').toLowerCase();
+        return String(lang?.language || '').toLowerCase();
+      })
+      .filter(Boolean)
+  );
+  const selectableLanguages = (availableLanguages || []).filter(
+    (lang) => !existingNames.has(String(lang.name || '').toLowerCase())
+  );
 
   const handleAddLanguage = () => {
     const language = draftLanguage.trim();
@@ -43,18 +57,18 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
           </div>
         </div>
         <div className="mb-6 grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-white/70 p-3 md:grid-cols-[minmax(0,1fr)_120px]">
-          <input
+          <select
             value={draftLanguage}
             onChange={(e) => setDraftLanguage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddLanguage();
-              }
-            }}
-            placeholder="Type a language and press Enter..."
             className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200"
-          />
+          >
+            <option value="">Select a language...</option>
+            {selectableLanguages.map((lang) => (
+              <option key={lang._id || `${lang.name}-${lang.code}`} value={lang.name}>
+                {lang.name}{lang.code ? ` (${lang.code})` : ''}
+              </option>
+            ))}
+          </select>
           <select
             value={draftProficiency}
             onChange={(e) => setDraftProficiency(e.target.value)}

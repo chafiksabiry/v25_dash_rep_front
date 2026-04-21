@@ -3,6 +3,7 @@ import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Pencil, Ca
 import { getProfilePlan, checkCountryMismatch, updateProfileData, fetchProfileFromAPI, getRepresentativePlans, updateProfilePlan } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 import { fetchAllSkills, fetchSkillById, Skill, SkillsByCategory, SkillType } from '../services/api/skills';
+import { fetchAllLanguages, Language as LanguageOption } from '../services/api/languages';
 
 // Components
 import { ProfileNavbar } from './profile/ProfileNavbar';
@@ -71,10 +72,17 @@ export const ProfileView: React.FC<{
     endDate?: string;
     description?: string;
   }) => void,
+  onUpdateExperience?: (index: number, item: {
+    title: string;
+    company: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }) => void,
   onDeleteSpecializationItem?: (section: 'industries' | 'activities' | 'notableCompanies', index: number) => void,
   onAddSpecializationItem?: (section: 'industries' | 'activities' | 'notableCompanies', value: string) => void,
   onProfileUpdate?: (updatedProfile: any) => void
-}> = ({ profile, onEditClick, onDeleteSkill, onAddSkill, onDeleteLanguage, onAddLanguage, onDeleteExperience, onAddExperience, onDeleteSpecializationItem, onAddSpecializationItem, onProfileUpdate }) => {
+}> = ({ profile, onEditClick, onDeleteSkill, onAddSkill, onDeleteLanguage, onAddLanguage, onDeleteExperience, onAddExperience, onUpdateExperience, onDeleteSpecializationItem, onAddSpecializationItem, onProfileUpdate }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isPublishing, setIsPublishing] = useState(false);
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
@@ -85,6 +93,7 @@ export const ProfileView: React.FC<{
   const [timezoneData, setTimezoneData] = useState<Timezone | null>(null);
   const [allTimezones, setAllTimezones] = useState<Timezone[]>([]);
   const [countries, setCountries] = useState<Timezone[]>([]);
+  const [availableLanguages, setAvailableLanguages] = useState<LanguageOption[]>([]);
   const [skillNameById, setSkillNameById] = useState<Record<string, string>>({});
 
   const [countryMismatch, setCountryMismatch] = useState<{
@@ -158,6 +167,18 @@ export const ProfileView: React.FC<{
       }
     };
     fetchAvailablePlans();
+  }, []);
+
+  useEffect(() => {
+    const loadLanguages = async () => {
+      try {
+        const languages = await fetchAllLanguages();
+        setAvailableLanguages(languages);
+      } catch (error) {
+        console.error('Error loading languages list:', error);
+      }
+    };
+    loadLanguages();
   }, []);
 
   useEffect(() => {
@@ -440,6 +461,29 @@ export const ProfileView: React.FC<{
     }
   };
 
+  const handleSaveAvailability = async (payload: { timeZone?: string; schedule: Array<{ day: string; hours: { start: string; end: string } }> }) => {
+    await handleInlineUpdate(
+      {
+        availability: {
+          ...(profile.availability || {}),
+          timeZone: payload.timeZone || profile.availability?.timeZone,
+          schedule: payload.schedule || [],
+        },
+      },
+      (prev) => ({
+        ...prev,
+        availability: {
+          ...(prev.availability || {}),
+          timeZone:
+            allTimezones.find((tz) => tz._id === (payload.timeZone || ''))
+            || payload.timeZone
+            || prev.availability?.timeZone,
+          schedule: payload.schedule || [],
+        },
+      })
+    );
+  };
+
   const openPublicInfoEditor = () => {
     const currentPlanId = String(planData?.plan?._id || '');
     const currentCountryId =
@@ -627,12 +671,14 @@ export const ProfileView: React.FC<{
         <ExperienceTab
           profile={profile}
           onAddItemClick={(item) => onAddExperience?.(item)}
+          onUpdateItemClick={(index, item) => onUpdateExperience?.(index, item)}
           onDeleteItemClick={(index) => onDeleteExperience?.(index)}
         />
       );
       case 'languages': return (
         <LanguagesTab 
           profile={profile} 
+          availableLanguages={availableLanguages}
           getProficiencyStars={getProficiencyStars}
           takeLanguageAssessment={takeLanguageAssessment}
           onAddItemClick={(item) => onAddLanguage?.(item)}
@@ -646,8 +692,10 @@ export const ProfileView: React.FC<{
           checkingCountryMismatch={checkingCountryMismatch}
           showLoadingSpinner={showLoadingSpinner}
           timezoneData={timezoneData}
+          allTimezones={allTimezones}
           getTimezoneMismatchInfo={getTimezoneMismatchInfo}
           repWizardApi={repWizardApi}
+          onSaveAvailability={handleSaveAvailability}
         />
       );
       case 'specialization': return (

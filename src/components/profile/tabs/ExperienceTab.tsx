@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Briefcase, Calendar, Plus, X } from 'lucide-react';
+import { Briefcase, Calendar, Plus, X, Pencil } from 'lucide-react';
 
 interface ExperienceTabProps {
   profile: any;
@@ -10,10 +10,17 @@ interface ExperienceTabProps {
     endDate?: string;
     description?: string;
   }) => void;
+  onUpdateItemClick: (index: number, item: {
+    title: string;
+    company: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }) => void;
   onDeleteItemClick: (index: number) => void;
 }
 
-export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onAddItemClick, onDeleteItemClick }) => {
+export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onAddItemClick, onUpdateItemClick, onDeleteItemClick }) => {
   const [draft, setDraft] = useState({
     title: '',
     company: '',
@@ -21,19 +28,33 @@ export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onAddItem
     endDate: '',
     description: '',
   });
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-  const submitAdd = () => {
+  const submitForm = () => {
     const title = draft.title.trim();
     const company = draft.company.trim();
     if (!title || !company) return;
-    onAddItemClick({
+    const payload = {
       title,
       company,
       startDate: draft.startDate || undefined,
       endDate: draft.endDate || undefined,
       description: draft.description.trim() || undefined,
-    });
+    };
+    if (editingIndex != null) {
+      onUpdateItemClick(editingIndex, payload);
+      setEditingIndex(null);
+    } else {
+      onAddItemClick(payload);
+    }
     setDraft({ title: '', company: '', startDate: '', endDate: '', description: '' });
+  };
+
+  const dateForInput = (value: string | undefined) => {
+    if (!value || value === 'present') return '';
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    return '';
   };
 
   const formatDateToDD_MM_YYYY = (dateString: string) => {
@@ -71,12 +92,24 @@ export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onAddItem
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={submitAdd}
+              onClick={submitForm}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
-              Add
+              {editingIndex != null ? 'Update' : 'Add'}
             </button>
+            {editingIndex != null && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingIndex(null);
+                  setDraft({ title: '', company: '', startDate: '', endDate: '', description: '' });
+                }}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </div>
         <div className="mb-6 grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-white/70 p-3 md:grid-cols-2">
@@ -110,10 +143,10 @@ export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onAddItem
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
-                submitAdd();
+                submitForm();
               }
             }}
-            placeholder="Short description (optional) and press Enter to add"
+            placeholder={`Short description (optional) and press Enter to ${editingIndex != null ? 'update' : 'add'}`}
             className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200 md:col-span-2"
           />
         </div>
@@ -139,6 +172,23 @@ export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onAddItem
                         <Calendar className="w-4 h-4" />
                         <span>{startDate} — {endDate}</span>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingIndex(index);
+                          setDraft({
+                            title: String(exp.title || exp.role || ''),
+                            company: String(exp.company || ''),
+                            startDate: dateForInput(exp.startDate),
+                            endDate: dateForInput(exp.endDate),
+                            description: String(exp.description || ''),
+                          });
+                        }}
+                        className="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
+                        title="Edit experience"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         type="button"
                         onClick={() => onDeleteItemClick(index)}

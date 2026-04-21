@@ -410,6 +410,39 @@ export function Profile() {
     }
   };
 
+  const handleUpdateExperience = async (index: number, item: {
+    title: string;
+    company: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }) => {
+    if (!profile?._id) return;
+    const currentExperience = Array.isArray(profile.experience) ? [...profile.experience] : [];
+    if (index < 0 || index >= currentExperience.length) return;
+    const title = String(item.title || '').trim();
+    const company = String(item.company || '').trim();
+    if (!title || !company) return;
+
+    currentExperience[index] = {
+      ...currentExperience[index],
+      title,
+      role: title,
+      company,
+      startDate: item.startDate || undefined,
+      endDate: item.endDate || undefined,
+      description: item.description ? String(item.description).trim() : undefined,
+    };
+
+    try {
+      await updateExperience(profile._id, currentExperience);
+      const refreshed = await getProfileData();
+      setProfile(refreshed);
+    } catch (error) {
+      console.error('Error updating experience:', error);
+    }
+  };
+
   const handleDeleteSpecializationItem = async (
     section: 'industries' | 'activities' | 'notableCompanies',
     index: number
@@ -583,6 +616,7 @@ export function Profile() {
             onAddLanguage={handleAddLanguage}
             onDeleteExperience={handleDeleteExperience}
             onAddExperience={handleAddExperience}
+            onUpdateExperience={handleUpdateExperience}
             onDeleteSpecializationItem={handleDeleteSpecializationItem}
             onAddSpecializationItem={handleAddSpecializationItem}
             onProfileUpdate={handleProfileUpdate}
