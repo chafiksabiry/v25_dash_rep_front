@@ -891,7 +891,8 @@ export const ProfileView: React.FC<{
                                   <button
                                     key={country._id || country.countryCode || country.zoneName}
                                     type="button"
-                                    onClick={() => {
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
                                       setPublicInfoDraft((prev) => ({
                                         ...prev,
                                         country: String(country.countryName || ''),

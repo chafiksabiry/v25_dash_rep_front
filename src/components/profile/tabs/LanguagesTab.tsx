@@ -18,6 +18,17 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
   onAddItemClick,
   onDeleteItemClick
 }) => {
+  const proficiencyOptions = [
+    { value: 'A1', label: 'A1 - Beginner' },
+    { value: 'A2', label: 'A2 - Elementary' },
+    { value: 'B1', label: 'B1 - Intermediate' },
+    { value: 'B2', label: 'B2 - Upper Intermediate' },
+    { value: 'C1', label: 'C1 - Advanced' },
+    { value: 'C2', label: 'C2 - Proficient' },
+  ];
+  const getProficiencyLabel = (value: string) =>
+    proficiencyOptions.find((option) => option.value === value)?.label || value;
+
   const [draftLanguage, setDraftLanguage] = useState('');
   const [draftProficiency, setDraftProficiency] = useState('B1');
 
@@ -74,9 +85,9 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
             onChange={(e) => setDraftProficiency(e.target.value)}
             className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200"
           >
-            {['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].map((level) => (
-              <option key={level} value={level}>
-                {level}
+            {proficiencyOptions.map((level) => (
+              <option key={level.value} value={level.value}>
+                {level.label}
               </option>
             ))}
           </select>
@@ -103,7 +114,7 @@ export const LanguagesTab: React.FC<LanguagesTabProps> = ({
                       </div>
                     </div>
                     <div className="px-3 py-1 bg-slate-50 rounded-lg text-xs font-black text-harx-500 shadow-sm border border-slate-200/30 uppercase italic">
-                      {lang.proficiency}
+                      {getProficiencyLabel(lang.proficiency)}
                     </div>
                   </div>
 
