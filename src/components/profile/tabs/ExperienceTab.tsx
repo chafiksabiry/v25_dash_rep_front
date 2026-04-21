@@ -1,13 +1,41 @@
-import React from 'react';
-import { Briefcase, Calendar, Pencil, Plus, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Briefcase, Calendar, Plus, X } from 'lucide-react';
 
 interface ExperienceTabProps {
   profile: any;
-  onEditItemClick: () => void;
+  onAddItemClick: (item: {
+    title: string;
+    company: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }) => void;
   onDeleteItemClick: (index: number) => void;
 }
 
-export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onEditItemClick, onDeleteItemClick }) => {
+export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onAddItemClick, onDeleteItemClick }) => {
+  const [draft, setDraft] = useState({
+    title: '',
+    company: '',
+    startDate: '',
+    endDate: '',
+    description: '',
+  });
+
+  const submitAdd = () => {
+    const title = draft.title.trim();
+    const company = draft.company.trim();
+    if (!title || !company) return;
+    onAddItemClick({
+      title,
+      company,
+      startDate: draft.startDate || undefined,
+      endDate: draft.endDate || undefined,
+      description: draft.description.trim() || undefined,
+    });
+    setDraft({ title: '', company: '', startDate: '', endDate: '', description: '' });
+  };
+
   const formatDateToDD_MM_YYYY = (dateString: string) => {
     if (!dateString) return '';
     try {
@@ -43,21 +71,51 @@ export const ExperienceTab: React.FC<ExperienceTabProps> = ({ profile, onEditIte
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onEditItemClick}
+              onClick={submitAdd}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               Add
             </button>
-            <button
-              type="button"
-              onClick={onEditItemClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit
-            </button>
           </div>
+        </div>
+        <div className="mb-6 grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-white/70 p-3 md:grid-cols-2">
+          <input
+            value={draft.title}
+            onChange={(e) => setDraft((p) => ({ ...p, title: e.target.value }))}
+            placeholder="Role / title"
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200"
+          />
+          <input
+            value={draft.company}
+            onChange={(e) => setDraft((p) => ({ ...p, company: e.target.value }))}
+            placeholder="Company"
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200"
+          />
+          <input
+            type="date"
+            value={draft.startDate}
+            onChange={(e) => setDraft((p) => ({ ...p, startDate: e.target.value }))}
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200"
+          />
+          <input
+            type="date"
+            value={draft.endDate}
+            onChange={(e) => setDraft((p) => ({ ...p, endDate: e.target.value }))}
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200"
+          />
+          <input
+            value={draft.description}
+            onChange={(e) => setDraft((p) => ({ ...p, description: e.target.value }))}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                submitAdd();
+              }
+            }}
+            placeholder="Short description (optional) and press Enter to add"
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-harx-200 md:col-span-2"
+          />
         </div>
         {profile.experience?.length > 0 ? (
           <div className="space-y-12 relative before:absolute before:inset-0 before:ml-4 before:-z-10 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-harx-200 before:to-transparent">

@@ -63,10 +63,17 @@ export const ProfileView: React.FC<{
   onAddSkill?: (type: 'technical' | 'professional' | 'soft', skillId: string) => void,
   onDeleteLanguage?: (index: number) => void,
   onDeleteExperience?: (index: number) => void,
+  onAddExperience?: (item: {
+    title: string;
+    company: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }) => void,
   onDeleteSpecializationItem?: (section: 'industries' | 'activities' | 'notableCompanies', index: number) => void,
   onAddSpecializationItem?: (section: 'industries' | 'activities' | 'notableCompanies', value: string) => void,
   onProfileUpdate?: (updatedProfile: any) => void
-}> = ({ profile, onEditClick, onDeleteSkill, onAddSkill, onDeleteLanguage, onDeleteExperience, onDeleteSpecializationItem, onAddSpecializationItem, onProfileUpdate }) => {
+}> = ({ profile, onEditClick, onDeleteSkill, onAddSkill, onDeleteLanguage, onDeleteExperience, onAddExperience, onDeleteSpecializationItem, onAddSpecializationItem, onProfileUpdate }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isPublishing, setIsPublishing] = useState(false);
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
@@ -618,7 +625,7 @@ export const ProfileView: React.FC<{
       case 'experience': return (
         <ExperienceTab
           profile={profile}
-          onEditItemClick={() => onEditClick('experience')}
+          onAddItemClick={(item) => onAddExperience?.(item)}
           onDeleteItemClick={(index) => onDeleteExperience?.(index)}
         />
       );

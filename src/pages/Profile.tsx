@@ -342,6 +342,38 @@ export function Profile() {
     }
   };
 
+  const handleAddExperience = async (item: {
+    title: string;
+    company: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }) => {
+    if (!profile?._id) return;
+    const title = String(item.title || '').trim();
+    const company = String(item.company || '').trim();
+    if (!title || !company) return;
+
+    const currentExperience = Array.isArray(profile.experience) ? profile.experience : [];
+    const nextEntry = {
+      title,
+      role: title,
+      company,
+      startDate: item.startDate || undefined,
+      endDate: item.endDate || undefined,
+      description: item.description ? String(item.description).trim() : undefined,
+    };
+    const updatedExperience = [nextEntry, ...currentExperience];
+
+    try {
+      await updateExperience(profile._id, updatedExperience);
+      const refreshed = await getProfileData();
+      setProfile(refreshed);
+    } catch (error) {
+      console.error('Error adding experience:', error);
+    }
+  };
+
   const handleDeleteSpecializationItem = async (
     section: 'industries' | 'activities' | 'notableCompanies',
     index: number
@@ -513,6 +545,7 @@ export function Profile() {
             onAddSkill={handleAddSkill}
             onDeleteLanguage={handleDeleteLanguage}
             onDeleteExperience={handleDeleteExperience}
+            onAddExperience={handleAddExperience}
             onDeleteSpecializationItem={handleDeleteSpecializationItem}
             onAddSpecializationItem={handleAddSpecializationItem}
             onProfileUpdate={handleProfileUpdate}
