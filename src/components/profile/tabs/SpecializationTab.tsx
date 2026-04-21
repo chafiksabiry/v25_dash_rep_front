@@ -1,21 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Plus, Pencil } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { repApiClient } from '../../../utils/client';
 
 interface SpecializationTabProps {
   profile: any;
-  onEditItemClick: () => void;
   onDeleteItemClick: (section: 'industries' | 'activities' | 'notableCompanies', index: number) => void;
-  onAddItemClick: (section: 'industries' | 'activities', value: string) => void;
+  onAddItemClick: (section: 'industries' | 'activities' | 'notableCompanies', value: string) => void;
 }
 
-export const SpecializationTab: React.FC<SpecializationTabProps> = ({ profile, onEditItemClick, onDeleteItemClick, onAddItemClick }) => {
+export const SpecializationTab: React.FC<SpecializationTabProps> = ({ profile, onDeleteItemClick, onAddItemClick }) => {
   const [allIndustries, setAllIndustries] = useState<Array<{ _id: string; name: string }>>([]);
   const [allActivities, setAllActivities] = useState<Array<{ _id: string; name: string }>>([]);
   const [industrySearch, setIndustrySearch] = useState('');
   const [activitySearch, setActivitySearch] = useState('');
   const [industryOpen, setIndustryOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
+  const [notableCompanyInput, setNotableCompanyInput] = useState('');
   const industryRef = useRef<HTMLDivElement | null>(null);
   const activityRef = useRef<HTMLDivElement | null>(null);
 
@@ -208,31 +208,26 @@ export const SpecializationTab: React.FC<SpecializationTabProps> = ({ profile, o
       </div>
 
       {/* Notable Companies */}
-      {profile.professionalSummary?.notableCompanies?.length > 0 && (
-        <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-black text-harx-900 tracking-tight">Notable Companies Worked For</h2>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onEditItemClick}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add
-              </button>
-              <button
-                type="button"
-                onClick={onEditItemClick}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                Edit
-              </button>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {profile.professionalSummary.notableCompanies.map((company: string, idx: number) => (
+      <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-harx-100/70">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-black text-harx-900 tracking-tight">Notable Companies Worked For</h2>
+          <button
+            type="button"
+            onClick={() => {
+              const value = notableCompanyInput.trim();
+              if (!value) return;
+              onAddItemClick('notableCompanies', value);
+              setNotableCompanyInput('');
+            }}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-harx-50 text-harx-700 border border-harx-100 text-xs font-black uppercase tracking-widest hover:bg-harx-100 transition-all"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {profile.professionalSummary?.notableCompanies?.length > 0 ? (
+            profile.professionalSummary.notableCompanies.map((company: string, idx: number) => (
               renderEditableBadge(
                 company,
                 'bg-slate-50 text-slate-700 border-slate-100',
@@ -240,10 +235,30 @@ export const SpecializationTab: React.FC<SpecializationTabProps> = ({ profile, o
                 'notableCompanies',
                 idx
               )
-            ))}
-          </div>
+            ))
+          ) : (
+            <p className="text-slate-500 italic">No notable companies specified</p>
+          )}
         </div>
-      )}
+        <div className="mt-4">
+          <input
+            type="text"
+            value={notableCompanyInput}
+            onChange={(e) => setNotableCompanyInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const value = notableCompanyInput.trim();
+                if (!value) return;
+                onAddItemClick('notableCompanies', value);
+                setNotableCompanyInput('');
+              }
+            }}
+            placeholder="Type company name and press Enter..."
+            className="w-full rounded-xl px-3 py-2.5 text-sm font-semibold border border-harx-100/80 bg-harx-50/40 text-harx-900 shadow-sm outline-none focus:ring-2 focus:ring-harx-200"
+          />
+        </div>
+      </div>
     </div>
   );
 };

@@ -378,21 +378,29 @@ export function Profile() {
   };
 
   const handleAddSpecializationItem = async (
-    section: 'industries' | 'activities',
+    section: 'industries' | 'activities' | 'notableCompanies',
     value: string
   ) => {
-    if (!profile?._id || !value) return;
+    const trimmedValue = String(value || '').trim();
+    if (!profile?._id || !trimmedValue) return;
     const currentSummary = profile.professionalSummary || {};
     const source = currentSummary[section] || [];
 
-    const normalizeValue = (entry: any) => (typeof entry === 'object' ? entry?._id : entry);
+    const normalizeValue = (entry: any) => {
+      if (section === 'notableCompanies') return String(entry || '').trim();
+      return typeof entry === 'object' ? entry?._id : entry;
+    };
     const sourceIds = source.map(normalizeValue).filter((v: any) => !!v);
-    if (sourceIds.includes(value)) return;
+    const alreadyExists =
+      section === 'notableCompanies'
+        ? sourceIds.some((v: any) => String(v).toLowerCase() === trimmedValue.toLowerCase())
+        : sourceIds.includes(trimmedValue);
+    if (alreadyExists) return;
 
     const payload = {
       professionalSummary: {
         ...currentSummary,
-        [section]: [value, ...sourceIds]
+        [section]: [trimmedValue, ...sourceIds]
       }
     };
 
@@ -403,7 +411,7 @@ export function Profile() {
         ...prev,
         professionalSummary: {
           ...(prev.professionalSummary || {}),
-          [section]: [value, ...source]
+          [section]: [trimmedValue, ...source]
         }
       };
     });

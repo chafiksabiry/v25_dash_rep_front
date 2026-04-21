@@ -64,7 +64,7 @@ export const ProfileView: React.FC<{
   onDeleteLanguage?: (index: number) => void,
   onDeleteExperience?: (index: number) => void,
   onDeleteSpecializationItem?: (section: 'industries' | 'activities' | 'notableCompanies', index: number) => void,
-  onAddSpecializationItem?: (section: 'industries' | 'activities', value: string) => void,
+  onAddSpecializationItem?: (section: 'industries' | 'activities' | 'notableCompanies', value: string) => void,
   onProfileUpdate?: (updatedProfile: any) => void
 }> = ({ profile, onEditClick, onDeleteSkill, onAddSkill, onDeleteLanguage, onDeleteExperience, onDeleteSpecializationItem, onAddSpecializationItem, onProfileUpdate }) => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -646,7 +646,6 @@ export const ProfileView: React.FC<{
       case 'specialization': return (
         <SpecializationTab
           profile={profile}
-          onEditItemClick={() => onEditClick('specialization')}
           onDeleteItemClick={(section, index) => onDeleteSpecializationItem?.(section, index)}
           onAddItemClick={(section, value) => onAddSpecializationItem?.(section, value)}
         />
