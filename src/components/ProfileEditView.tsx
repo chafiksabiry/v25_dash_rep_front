@@ -962,17 +962,25 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
         }
       }
 
-      // Continue with other profile updates
-      // Save personal info if modified (excluding video data which is handled separately)
-      if (modifiedSections.personalInfo) {
-        // Create a copy of personalInfo without video data for the basic-info endpoint
-        const { presentationVideo, ...personalInfoWithoutVideo } = profile.personalInfo;
+      // Continue with other profile updates.
+      // Build update tasks first to avoid sequential waits when sections are independent.
+      const updateTasks: Promise<any>[] = [];
 
-        console.log('📝 Saving personal info...', {
+      // Save basic info once (personal info + languages), instead of calling the same endpoint twice.
+      if (modifiedSections.personalInfo || modifiedSections.languages) {
+        const { presentationVideo, ...personalInfoWithoutVideo } = profile.personalInfo;
+        const basicInfoPayload = modifiedSections.languages
+          ? {
+            ...personalInfoWithoutVideo,
+            languages: profile.personalInfo?.languages || []
+          }
+          : personalInfoWithoutVideo;
+
+        console.log('📝 Saving basic info...', {
           endpoint: `/api/profiles/${profile._id}/basic-info`,
-          data: personalInfoWithoutVideo
+          data: basicInfoPayload
         });
-        await updateBasicInfo(profile._id, personalInfoWithoutVideo);
+        updateTasks.push(updateBasicInfo(profile._id, basicInfoPayload));
       }
 
       // Save professional summary if modified
@@ -981,7 +989,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           endpoint: `/api/profiles/${profile._id}`,
           data: { professionalSummary: profile.professionalSummary }
         });
-        await updateProfileData(profile._id, { professionalSummary: profile.professionalSummary });
+        updateTasks.push(updateProfileData(profile._id, { professionalSummary: profile.professionalSummary }));
       }
 
       // Save skills if modified
@@ -1063,7 +1071,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           endpoint: `/api/profiles/${profile._id}/skills`,
           data: formattedSkills
         });
-        await updateSkills(profile._id, formattedSkills);
+        updateTasks.push(updateSkills(profile._id, formattedSkills));
       }
 
       // Save experience if modified
@@ -1072,25 +1080,7 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           endpoint: `/api/profiles/${profile._id}/experience`,
           data: { experience: profile.experience }
         });
-        await updateExperience(profile._id, profile.experience);
-      }
-
-      // Save languages if modified
-      if (modifiedSections.languages) {
-        // Create a copy of personalInfo without video data for the basic-info endpoint
-        const { presentationVideo, ...personalInfoWithoutVideo } = profile.personalInfo;
-
-        console.log('📝 Saving languages...', {
-          endpoint: `/api/profiles/${profile._id}/basic-info`,
-          data: {
-            ...personalInfoWithoutVideo,
-            languages: profile.personalInfo?.languages || []
-          }
-        });
-        await updateBasicInfo(profile._id, {
-          ...personalInfoWithoutVideo,
-          languages: profile.personalInfo?.languages || []
-        });
+        updateTasks.push(updateExperience(profile._id, profile.experience));
       }
 
       // Save availability if modified
@@ -1099,7 +1089,11 @@ export const ProfileEditView: React.FC<ProfileEditViewProps> = ({ profile: initi
           endpoint: `/api/profiles/${profile._id}`,
           data: { availability: profile.availability }
         });
-        await updateProfileData(profile._id, { availability: profile.availability });
+        updateTasks.push(updateProfileData(profile._id, { availability: profile.availability }));
+      }
+
+      if (updateTasks.length > 0) {
+        await Promise.all(updateTasks);
       }
 
       // After all updates are done, refresh the profile data
