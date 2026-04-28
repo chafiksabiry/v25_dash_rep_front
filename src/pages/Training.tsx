@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { useRepTrainingNav } from '../contexts/RepTrainingNavContext';
+import { buildRepInteractivePresentationHtml } from '../utils/buildRepInteractivePresentationHtml';
 
 type JourneyRow = Record<string, unknown> & { __gigTitle?: string; __gigId?: string };
 type ModuleRow = { _id?: string; id?: string; title?: string; sections?: unknown[]; quizzes?: unknown[] };
@@ -1084,7 +1085,9 @@ export function Training() {
               </div>
               <div className="relative flex-1 overflow-y-auto bg-gradient-to-br from-[#0a1638] via-[#111a3e] to-[#1f1747] p-4 md:p-5">
                 {(() => {
-                  const repDeckHtml = extractRepDeckHtml(selectedJourney);
+                  const repDeckHtml =
+                    extractRepDeckHtml(selectedJourney) ||
+                    buildRepInteractivePresentationHtml(selectedJourney);
                   if (repDeckHtml) {
                     return (
                       <div className="h-full min-h-[640px] overflow-hidden rounded-2xl border border-white/20 bg-[#060b1d] shadow-2xl">
