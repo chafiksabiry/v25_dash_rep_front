@@ -64,6 +64,26 @@ type TrainingModuleCard = {
   quizzes: TrainingQuizQuestion[];
 };
 
+function extractRepDeckHtml(journey: JourneyRow | null): string {
+  if (!journey) return '';
+  const row = journey as Record<string, unknown>;
+  const methodologyData =
+    row.methodologyData && typeof row.methodologyData === 'object'
+      ? (row.methodologyData as Record<string, unknown>)
+      : null;
+  const htmlCandidates = [
+    methodologyData?.repInteractivePresentationHtml,
+    methodologyData?.repFormationDeckHtml,
+    row.repInteractivePresentationHtml,
+    row.repFormationDeckHtml
+  ];
+  for (const item of htmlCandidates) {
+    const html = String(item || '').trim();
+    if (html) return html;
+  }
+  return '';
+}
+
 function trainingApiBase(): string {
   const raw =
     import.meta.env.VITE_TRAINING_API_URL ||
@@ -1064,6 +1084,19 @@ export function Training() {
               </div>
               <div className="relative flex-1 overflow-y-auto bg-gradient-to-br from-[#0a1638] via-[#111a3e] to-[#1f1747] p-4 md:p-5">
                 {(() => {
+                  const repDeckHtml = extractRepDeckHtml(selectedJourney);
+                  if (repDeckHtml) {
+                    return (
+                      <div className="h-full min-h-[640px] overflow-hidden rounded-2xl border border-white/20 bg-[#060b1d] shadow-2xl">
+                        <iframe
+                          title={`${journeyTitle(selectedJourney)} interactive deck`}
+                          srcDoc={repDeckHtml}
+                          className="h-full w-full border-0"
+                          sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups allow-downloads"
+                        />
+                      </div>
+                    );
+                  }
                   if (selectedJourneyModules.length === 0) {
                     return <p className="text-sm text-gray-200">No modules available for this training.</p>;
                   }
