@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import {
@@ -6,15 +6,13 @@ import {
   Briefcase,
   Loader2,
   AlertCircle,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight
+  ChevronDown
 } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { useRepTrainingNav } from '../contexts/RepTrainingNavContext';
 
 type JourneyRow = Record<string, unknown> & { __gigTitle?: string; __gigId?: string };
-type ModuleRow = { _id?: string; id?: string; title?: string; sections?: unknown[] };
+type ModuleRow = { _id?: string; id?: string; title?: string; sections?: unknown[]; quizzes?: unknown[] };
 type SlideRow = { title?: string; subtitle?: string; content?: string; bullets?: string[] };
 type RepProgressRow = {
   journeyId?: string;
@@ -48,6 +46,14 @@ type TrainingSectionCard = {
   preview: string;
   globalIndex: number;
   slideId: string;
+  content: string;
+  bullets: string[];
+};
+
+type TrainingQuizQuestion = {
+  question: string;
+  options: string[];
+  correctAnswer: number;
 };
 
 type TrainingModuleCard = {
@@ -55,6 +61,7 @@ type TrainingModuleCard = {
   title: string;
   color: string;
   sections: TrainingSectionCard[];
+  quizzes: TrainingQuizQuestion[];
 };
 
 function trainingApiBase(): string {
@@ -63,14 +70,6 @@ function trainingApiBase(): string {
     import.meta.env.VITE_TRAINING_BACKEND_URL ||
     '';
   return String(raw).replace(/\/$/, '');
-}
-
-function openTrainingJourney(journeyId: string) {
-  const base = String(import.meta.env.VITE_TRAINING_WEB_BASE_URL || '').replace(/\/$/, '');
-  const url = base
-    ? `${base}/${journeyId}`
-    : `${window.location.origin.replace(/\/$/, '')}/training/repdashboard/${journeyId}`;
-  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function journeyTitle(j: Record<string, unknown>): string {
@@ -104,11 +103,6 @@ function extractSlides(j: JourneyRow): SlideRow[] {
   return slides as SlideRow[];
 }
 
-function safeHex(raw: unknown, fallback: string): string {
-  const s = String(raw || '').trim();
-  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(s) ? s : fallback;
-}
-
 function isMongoObjectId(raw: string): boolean {
   return /^[a-f\d]{24}$/i.test(String(raw || '').trim());
 }
@@ -124,7 +118,7 @@ function cleanPreview(raw: unknown): string {
 function buildJourneyModuleCards(journey: JourneyRow): TrainingModuleCard[] {
   const modules = extractModules(journey);
   const slides = extractSlides(journey);
-  if (slides.length <= 0) return [];
+  if (modules.length <= 0 && slides.length <= 0) return [];
 
   const palette = ['#7c3aed', '#0ea5e9', '#14b8a6', '#f97316', '#ef4444', '#a855f7'];
   const moduleCount = Math.max(1, modules.length || 1);
@@ -140,32 +134,79 @@ function buildJourneyModuleCards(journey: JourneyRow): TrainingModuleCard[] {
     const chunk = slides.slice(cursor, cursor + take);
     const moduleIdRaw = String(module?._id || module?.id || '').trim();
     const moduleId = isMongoObjectId(moduleIdRaw) ? moduleIdRaw : '';
-    const sectionNames = Array.isArray(module?.sections) ? module.sections : [];
-    const sections: TrainingSectionCard[] = chunk.map((slide, idx) => {
-      const sectionTitleRaw = sectionNames[idx];
-      const sectionTitle =
-        typeof sectionTitleRaw === 'string'
-          ? sectionTitleRaw
-          : typeof sectionTitleRaw === 'object' &&
-              sectionTitleRaw !== null &&
-              'title' in (sectionTitleRaw as Record<string, unknown>)
-            ? String((sectionTitleRaw as { title?: unknown }).title || '')
-            : '';
-      const title = sectionTitle.trim() || String(slide.title || `Section ${idx + 1}`);
-      const preview = cleanPreview(slide.content || slide.subtitle || '');
-      return {
-        title,
-        preview,
-        globalIndex: cursor + idx,
-        slideId: slideStableId(slide)
-      };
+    const moduleSections = Array.isArray(module?.sections) ? module.sections : [];
+    const sections: TrainingSectionCard[] =
+      moduleSections.length > 0
+        ? moduleSections.map((rawSection, idx) => {
+            const section =
+              typeof rawSection === 'object' && rawSection !== null
+                ? (rawSection as Record<string, unknown>)
+                : {};
+            const title =
+              String(
+                section.title ||
+                  section.name ||
+                  (typeof rawSection === 'string' ? rawSection : '') ||
+                  `Section ${idx + 1}`
+              ).trim() || `Section ${idx + 1}`;
+            const content = String(section.content || section.description || '').trim();
+            const bullets = Array.isArray(section.bullets)
+              ? section.bullets.map((b) => String(b || '').trim()).filter(Boolean)
+              : [];
+            return {
+              title,
+              preview: cleanPreview(content || bullets[0] || ''),
+              globalIndex: cursor + idx,
+              slideId: '',
+              content,
+              bullets
+            };
+          })
+        : chunk.map((slide, idx) => {
+            const title = String(slide.title || `Section ${idx + 1}`).trim();
+            const content = String(slide.content || slide.subtitle || '').trim();
+            const bullets = Array.isArray(slide.bullets)
+              ? slide.bullets.map((b) => String(b || '').trim()).filter(Boolean)
+              : [];
+            return {
+              title,
+              preview: cleanPreview(content),
+              globalIndex: cursor + idx,
+              slideId: slideStableId(slide),
+              content,
+              bullets
+            };
+          });
+    const quizzesRaw = Array.isArray(module?.quizzes) ? module.quizzes : [];
+    const quizzes: TrainingQuizQuestion[] = [];
+    quizzesRaw.forEach((rawQuiz) => {
+      const quiz =
+        typeof rawQuiz === 'object' && rawQuiz !== null ? (rawQuiz as Record<string, unknown>) : {};
+      const questions = Array.isArray(quiz.questions) ? quiz.questions : [];
+      questions.forEach((rawQuestion) => {
+        const q =
+          typeof rawQuestion === 'object' && rawQuestion !== null
+            ? (rawQuestion as Record<string, unknown>)
+            : {};
+        const options = Array.isArray(q.options)
+          ? q.options.map((o) => String(o || '').trim()).filter(Boolean)
+          : [];
+        const question = String(q.question || q.title || '').trim();
+        const correctAnswer = Number.isFinite(Number(q.correctAnswer))
+          ? Math.max(0, Math.floor(Number(q.correctAnswer)))
+          : 0;
+        if (question && options.length > 0) {
+          quizzes.push({ question, options, correctAnswer });
+        }
+      });
     });
 
     cards.push({
       moduleId,
       title: String(module?.title || `Module ${i + 1}`),
       color: palette[i % palette.length],
-      sections
+      sections,
+      quizzes
     });
     cursor += take;
   }
@@ -255,23 +296,6 @@ function initialSlideForContinue(
   return clampTrainingSlideIndex(approx - 1, slideCount);
 }
 
-function slideProgressPayload(journey: JourneyRow, slideIndex: number) {
-  const slides = extractSlides(journey);
-  const modules = extractModules(journey);
-  const n = slides.length;
-  if (n <= 0) return null;
-  const clamped = Math.min(Math.max(0, slideIndex), n - 1);
-  const mIdx =
-    modules.length > 0
-      ? Math.min(modules.length - 1, Math.floor((clamped / Math.max(n - 1, 1)) * modules.length))
-      : 0;
-  const moduleIdRaw = String(modules[mIdx]?._id || modules[mIdx]?.id || '').trim();
-  const moduleId = isMongoObjectId(moduleIdRaw) ? moduleIdRaw : '';
-  const pct = Math.min(100, Math.round(((clamped + 1) / n) * 100));
-  const slideId = slideStableId(slides[clamped]);
-  return { moduleId, pct, slideIndex: clamped, slideCount: n, slideId };
-}
-
 async function fetchEnrolledGigsForAgent(
   agentId: string,
   token: string
@@ -341,6 +365,10 @@ export function Training() {
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedModuleIndex, setSelectedModuleIndex] = useState<number | null>(null);
+  const [selectedSectionIndex, setSelectedSectionIndex] = useState<number | null>(null);
+  const [quizAnswersByModule, setQuizAnswersByModule] = useState<Record<number, Record<number, number>>>({});
+  const [quizPassedByModule, setQuizPassedByModule] = useState<Record<number, boolean>>({});
+  const [quizFeedbackByModule, setQuizFeedbackByModule] = useState<Record<number, string>>({});
   const [progressByJourney, setProgressByJourney] = useState<Record<string, RepProgressRow>>({});
   const [slideProgressSummary, setSlideProgressSummary] = useState<RepSlideProgressSummary | null>(null);
 
@@ -547,16 +575,6 @@ export function Training() {
     () => (selectedJourney ? buildJourneyModuleCards(selectedJourney) : []),
     [selectedJourney]
   );
-  const activeModuleIndexFromSlide = useMemo(() => {
-    if (!selectedJourneyModules.length) return 0;
-    for (let i = 0; i < selectedJourneyModules.length; i++) {
-      const rows = selectedJourneyModules[i].sections;
-      const first = rows[0]?.globalIndex ?? 0;
-      const last = rows[rows.length - 1]?.globalIndex ?? first;
-      if (activeSlide >= first && activeSlide <= last) return i;
-    }
-    return 0;
-  }, [selectedJourneyModules, activeSlide]);
   const slideSummaryByJourney = useMemo(() => {
     const map = new Map<string, RepSlideProgressSummary['journeys'][number]>();
     const rows = Array.isArray(slideProgressSummary?.journeys) ? slideProgressSummary.journeys : [];
@@ -611,11 +629,29 @@ export function Training() {
     );
   }, [selectedJourney, selectedJourneyGigId, displayJourneys, isJourneyCompleted]);
 
+  const isModuleUnlocked = useCallback(
+    (moduleIndex: number) => {
+      if (moduleIndex <= 0) return true;
+      return !!quizPassedByModule[moduleIndex - 1];
+    },
+    [quizPassedByModule]
+  );
+
   useEffect(() => {
     return () => {
       clearTrainingNav();
     };
   }, [clearTrainingNav]);
+
+  useEffect(() => {
+    if (!selectedJourneyId) {
+      setSelectedModuleIndex(null);
+      setSelectedSectionIndex(null);
+      setQuizAnswersByModule({});
+      setQuizPassedByModule({});
+      setQuizFeedbackByModule({});
+    }
+  }, [selectedJourneyId]);
 
   useEffect(() => {
     if (!selectedJourney) {
@@ -768,65 +804,22 @@ export function Training() {
     [repId]
   );
 
-  const postTrainingTrackingEvent = useCallback(
-    async (
-      journeyId: string,
-      moduleId: string,
-      payload: { slideIndex: number; slideCount: number; slideId: string }
-    ) => {
-      if (!repId) return;
-      const base = trainingApiBase();
-      if (!base) return;
-      try {
-        const body: Record<string, unknown> = {
-          repId,
-          journeyId,
-          moduleId,
-          slideIndex: payload.slideIndex,
-          event: 'slide_complete',
-          completed: true
-        };
-        if (payload.slideId) body.slideId = payload.slideId;
-        await axios.post(`${base}/training_journeys/tracking-events`, body);
-      } catch (e) {
-        console.warn('[Training] tracking-events save failed', e);
-      }
-    },
-    [repId]
-  );
-
-  /** Persist slide position + append tracking row on any navigation (arrows, sidebar, Continue). */
-  useEffect(() => {
-    if (!selectedJourney || !repId) return;
-    if (activeSlide < 0) return;
-    const jid = journeyKey(selectedJourney);
-    if (!jid) return;
-    const payload = slideProgressPayload(selectedJourney, activeSlide);
-    if (!payload) return;
-
-    const t = window.setTimeout(() => {
+  const persistJourneyProgressFromQuiz = useCallback(
+    async (journey: JourneyRow, nextQuizPassed: Record<number, boolean>, currentModuleIndex: number) => {
+      const jid = journeyKey(journey);
+      if (!jid) return;
+      const modules = buildJourneyModuleCards(journey);
+      const totalModules = Math.max(1, modules.length);
+      const passedCount = modules.reduce((acc, _m, idx) => (nextQuizPassed[idx] ? acc + 1 : acc), 0);
+      const pct = Math.min(100, Math.round((passedCount / totalModules) * 100));
+      const currentModule = modules[currentModuleIndex];
       const status: 'not_started' | 'in_progress' | 'completed' =
-        payload.pct >= 100 ? 'completed' : 'in_progress';
-      void (async () => {
-        await pushProgress(jid, payload.moduleId, payload.pct, status);
-        await postTrainingTrackingEvent(jid, payload.moduleId, {
-          slideIndex: payload.slideIndex,
-          slideCount: payload.slideCount,
-          slideId: payload.slideId
-        });
-        await fetchSlideProgressSummary();
-      })();
-    }, 400);
-
-    return () => window.clearTimeout(t);
-  }, [
-    selectedJourney,
-    activeSlide,
-    repId,
-    pushProgress,
-    postTrainingTrackingEvent,
-    fetchSlideProgressSummary
-  ]);
+        pct >= 100 ? 'completed' : pct > 0 ? 'in_progress' : 'not_started';
+      await pushProgress(jid, currentModule?.moduleId || '', pct, status);
+      await fetchSlideProgressSummary();
+    },
+    [pushProgress, fetchSlideProgressSummary]
+  );
 
   return (
     <div className={selectedJourney ? 'w-full h-[calc(100vh-120px)]' : 'space-y-6 w-full'}>
@@ -974,11 +967,8 @@ export function Training() {
             const id = journeyKey(j);
             const gig = gigLabel(j);
             const status = String(j.status || '—');
-            const modules = extractModules(j);
             const slides = extractSlides(j);
             const progress = id ? progressByJourney[id] : undefined;
-            const moduleTotal = Number(progress?.moduleTotal || modules.length || 0);
-            const moduleFinished = Number(progress?.moduleFinished || 0);
             const engagement = Number(progress?.engagementScore);
             const engagementPercent =
               Number.isFinite(engagement) ? Math.min(100, Math.round(engagement)) : 0;
@@ -1074,28 +1064,62 @@ export function Training() {
               </div>
               <div className="relative flex-1 overflow-y-auto bg-gradient-to-br from-[#0a1638] via-[#111a3e] to-[#1f1747] p-4 md:p-5">
                 {(() => {
-                  const slides = extractSlides(selectedJourney);
-                  if (slides.length === 0) {
-                    return <p className="text-sm text-gray-500">No slides available for this training.</p>;
+                  if (selectedJourneyModules.length === 0) {
+                    return <p className="text-sm text-gray-200">No modules available for this training.</p>;
                   }
                   const modules = selectedJourneyModules;
-                  const currentModuleIndex =
-                    selectedModuleIndex == null ? activeModuleIndexFromSlide : selectedModuleIndex;
+                  const currentModuleIndex = selectedModuleIndex == null ? 0 : selectedModuleIndex;
                   const currentModule = modules[currentModuleIndex] || null;
-                  const s = slides[activeSlide] || slides[0];
-                  const vc = ((s as unknown as { visualConfig?: Record<string, unknown> }).visualConfig || {}) as Record<string, unknown>;
-                  const isDark = String(vc.theme || '').toLowerCase() === 'dark';
-                  const bg = safeHex(vc.backgroundHex, isDark ? '#1f1b4f' : '#ffffff');
-                  const fg = safeHex(vc.textHex, isDark ? '#ffffff' : '#0f172a');
-                  const accent = safeHex(vc.accentHex, '#F43F5E');
-                  const slideStyle: React.CSSProperties = {
-                    background: String(vc.layout || '').toLowerCase() === 'gradient'
-                      ? `linear-gradient(135deg, ${bg}, ${safeHex(vc.accentHex, '#6D28D9')})`
-                      : bg,
-                    color: fg
-                  };
+                  const currentSection =
+                    currentModule && selectedSectionIndex != null
+                      ? currentModule.sections[selectedSectionIndex] || null
+                      : null;
+                  const moduleUnlocked =
+                    selectedModuleIndex == null ? true : isModuleUnlocked(selectedModuleIndex);
                   const showModuleGrid = selectedModuleIndex == null;
-                  const showSectionGrid = selectedModuleIndex != null && activeSlide < 0;
+                  const showSectionGrid = selectedModuleIndex != null && selectedSectionIndex == null;
+                  const showSectionDetail = selectedModuleIndex != null && selectedSectionIndex != null;
+                  const moduleQuizAnswers = quizAnswersByModule[currentModuleIndex] || {};
+                  const moduleQuizPassed = !!quizPassedByModule[currentModuleIndex];
+                  const canOpenNextModule =
+                    selectedModuleIndex != null &&
+                    moduleQuizPassed &&
+                    selectedModuleIndex < modules.length - 1;
+                  const moduleQuizCount = currentModule?.quizzes.length || 0;
+
+                  const submitModuleQuiz = async () => {
+                    if (!currentModule) return;
+                    if (!moduleUnlocked) return;
+                    if (moduleQuizCount <= 0) {
+                      setQuizPassedByModule((prev) => ({ ...prev, [currentModuleIndex]: true }));
+                      setQuizFeedbackByModule((prev) => ({
+                        ...prev,
+                        [currentModuleIndex]: 'Module valide (pas de quiz).'
+                      }));
+                      await persistJourneyProgressFromQuiz(
+                        selectedJourney,
+                        { ...quizPassedByModule, [currentModuleIndex]: true },
+                        currentModuleIndex
+                      );
+                      return;
+                    }
+                    let correct = 0;
+                    currentModule.quizzes.forEach((q, idx) => {
+                      if (moduleQuizAnswers[idx] === q.correctAnswer) correct += 1;
+                    });
+                    const score = Math.round((correct / Math.max(1, moduleQuizCount)) * 100);
+                    const passed = score >= 70;
+                    const nextPassed = { ...quizPassedByModule, [currentModuleIndex]: passed };
+                    setQuizPassedByModule(nextPassed);
+                    setQuizFeedbackByModule((prev) => ({
+                      ...prev,
+                      [currentModuleIndex]: passed
+                        ? `Quiz valide (${score}%).`
+                        : `Quiz non valide (${score}%). Minimum 70% requis.`
+                    }));
+                    await persistJourneyProgressFromQuiz(selectedJourney, nextPassed, currentModuleIndex);
+                  };
+
                   return (
                     <>
                       <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-3 text-white backdrop-blur">
@@ -1117,7 +1141,7 @@ export function Training() {
                             {selectedModuleIndex != null && (
                               <button
                                 type="button"
-                                onClick={() => setActiveSlide(-1)}
+                                onClick={() => setSelectedSectionIndex(null)}
                                 className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white"
                               >
                                 Sections
@@ -1134,14 +1158,21 @@ export function Training() {
                               key={`${module.title}-${idx}`}
                               type="button"
                               onClick={() => {
+                                if (!isModuleUnlocked(idx)) return;
                                 setSelectedModuleIndex(idx);
-                                setActiveSlide(-1);
+                                setSelectedSectionIndex(null);
                               }}
-                              className="group rounded-2xl border border-white/15 bg-white/10 p-4 text-left text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-white/15"
+                              disabled={!isModuleUnlocked(idx)}
+                              className="group rounded-2xl border border-white/15 bg-white/10 p-4 text-left text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Module {idx + 1}</p>
                               <h4 className="mt-1 line-clamp-2 text-base font-extrabold">{module.title}</h4>
                               <p className="mt-2 text-xs text-white/80">{module.sections.length} sections</p>
+                              {!isModuleUnlocked(idx) && (
+                                <p className="mt-2 text-[11px] font-semibold text-amber-200">
+                                  Valide le quiz du module precedent pour debloquer.
+                                </p>
+                              )}
                               <div className="mt-3 h-1.5 rounded-full bg-white/10">
                                 <div
                                   className="h-1.5 rounded-full transition-all"
@@ -1154,86 +1185,128 @@ export function Training() {
                       )}
 
                       {showSectionGrid && currentModule && (
-                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                          {currentModule.sections.map((section, idx) => (
-                            <button
-                              key={`${section.title}-${section.globalIndex}`}
-                              type="button"
-                              onClick={() => setActiveSlide(section.globalIndex)}
-                              className="rounded-2xl border border-white/20 bg-white/10 p-4 text-left text-white transition hover:bg-white/15"
-                            >
-                              <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: currentModule.color }}>
-                                Section {idx + 1}
-                              </p>
-                              <h5 className="mt-1 line-clamp-2 text-sm font-black">{section.title}</h5>
-                              {section.preview ? (
-                                <p className="mt-2 line-clamp-3 text-xs text-white/75">{section.preview}</p>
-                              ) : null}
-                            </button>
-                          ))}
+                        <div className="space-y-4">
+                          {!moduleUnlocked && (
+                            <div className="rounded-xl border border-amber-300/30 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-100">
+                              Ce module est verrouille. Valide le quiz du module precedent.
+                            </div>
+                          )}
+                          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                            {currentModule.sections.map((section, idx) => (
+                              <button
+                                key={`${section.title}-${section.globalIndex}`}
+                                type="button"
+                                onClick={() => {
+                                  if (!moduleUnlocked) return;
+                                  setSelectedSectionIndex(idx);
+                                  setActiveSlide(Math.max(0, section.globalIndex));
+                                }}
+                                disabled={!moduleUnlocked}
+                                className="rounded-2xl border border-white/20 bg-white/10 p-4 text-left text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: currentModule.color }}>
+                                  Section {idx + 1}
+                                </p>
+                                <h5 className="mt-1 line-clamp-2 text-sm font-black">{section.title}</h5>
+                                {section.preview ? (
+                                  <p className="mt-2 line-clamp-3 text-xs text-white/75">{section.preview}</p>
+                                ) : null}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       )}
 
-                      {!showModuleGrid && !showSectionGrid && (
-                        <>
-                          <div
-                            className="relative min-h-[420px] overflow-hidden rounded-3xl border p-7 shadow-2xl"
-                            style={{ ...slideStyle, borderColor: `${accent}55` }}
-                          >
-                            <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full" style={{ backgroundColor: `${accent}33` }} />
-                            <div className="pointer-events-none absolute -left-10 bottom-[-30px] h-32 w-32 rounded-full" style={{ backgroundColor: `${accent}33` }} />
-                            <h4 className="max-w-4xl text-3xl font-black leading-tight md:text-5xl" style={{ color: fg }}>
-                              {String(s.title || 'Slide')}
-                            </h4>
-                            {s.subtitle ? (
-                              <p
-                                className="mt-4 inline-block rounded-2xl border px-4 py-2 text-lg font-semibold"
-                                style={{ borderColor: `${fg}66`, color: accent, backgroundColor: `${fg}11` }}
-                              >
-                                {String(s.subtitle)}
-                              </p>
+                      {showSectionDetail && currentModule && currentSection && (
+                        <div className="space-y-4">
+                          <div className="rounded-2xl border border-white/15 bg-white/10 p-6 text-white">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: currentModule.color }}>
+                              {currentModule.title}
+                            </p>
+                            <h4 className="mt-2 text-2xl font-black">{currentSection.title}</h4>
+                            {currentSection.content ? (
+                              <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-white/90">{currentSection.content}</p>
                             ) : null}
-                            {s.content ? (
-                              <p className="mt-5 max-w-4xl text-base leading-7" style={{ color: fg }}>
-                                {String(s.content)}
-                              </p>
-                            ) : null}
-                            {Array.isArray(s.bullets) && s.bullets.length > 0 ? (
-                              <ul className="mt-4 list-disc space-y-1 pl-5 text-sm" style={{ color: fg }}>
-                                {s.bullets.slice(0, 5).map((b, i) => (
-                                  <li key={i}>{String(b)}</li>
+                            {currentSection.bullets.length > 0 && (
+                              <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-white/90">
+                                {currentSection.bullets.map((b, i) => (
+                                  <li key={`${b}-${i}`}>{b}</li>
                                 ))}
                               </ul>
-                            ) : null}
+                            )}
                           </div>
 
-                          <div className="mt-3 flex items-center justify-between">
-                            <button
-                              type="button"
-                              onClick={() => setActiveSlide((p) => Math.max(0, p - 1))}
-                              disabled={activeSlide === 0}
-                              className="rounded-full border border-white/20 bg-white/10 p-3 text-white shadow-lg disabled:opacity-40"
-                            >
-                              <ChevronLeft className="h-5 w-5" />
-                            </button>
-                            <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white shadow-sm">
-                              {activeSlide + 1} / {slides.length}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActiveSlide((p) => Math.min(slides.length - 1, p + 1));
-                              }}
-                              disabled={activeSlide >= slides.length - 1}
-                              className="rounded-full border border-white/20 bg-white/10 p-3 text-white shadow-lg disabled:opacity-40"
-                            >
-                              <ChevronRight className="h-5 w-5" />
-                            </button>
+                          <div className="rounded-2xl border border-fuchsia-300/30 bg-fuchsia-400/10 p-5 text-white">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-fuchsia-100">
+                              Quiz module
+                            </p>
+                            {moduleQuizCount <= 0 ? (
+                              <p className="mt-2 text-sm text-white/90">Aucun quiz configure pour ce module.</p>
+                            ) : (
+                              <div className="mt-3 space-y-4">
+                                {currentModule.quizzes.map((q, qIdx) => (
+                                  <div key={`${q.question}-${qIdx}`} className="rounded-xl border border-white/20 bg-black/10 p-3">
+                                    <p className="text-sm font-bold text-white">{qIdx + 1}. {q.question}</p>
+                                    <div className="mt-2 grid gap-2">
+                                      {q.options.map((opt, oIdx) => (
+                                        <button
+                                          key={`${opt}-${oIdx}`}
+                                          type="button"
+                                          onClick={() =>
+                                            setQuizAnswersByModule((prev) => ({
+                                              ...prev,
+                                              [currentModuleIndex]: {
+                                                ...(prev[currentModuleIndex] || {}),
+                                                [qIdx]: oIdx
+                                              }
+                                            }))
+                                          }
+                                          className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition ${
+                                            moduleQuizAnswers[qIdx] === oIdx
+                                              ? 'border-cyan-300 bg-cyan-400/20 text-cyan-50'
+                                              : 'border-white/20 bg-white/5 text-white/90 hover:bg-white/10'
+                                          }`}
+                                        >
+                                          {opt}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => void submitModuleQuiz()}
+                                className="rounded-xl bg-harx-600 px-4 py-2 text-xs font-black uppercase tracking-widest text-white hover:bg-harx-700"
+                              >
+                                Valider quiz
+                              </button>
+                              {canOpenNextModule && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedModuleIndex((prev) => (prev == null ? 0 : prev + 1));
+                                    setSelectedSectionIndex(null);
+                                  }}
+                                  className="rounded-xl border border-cyan-300/30 bg-cyan-400/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-cyan-100"
+                                >
+                                  Module suivant
+                                </button>
+                              )}
+                            </div>
+                            {quizFeedbackByModule[currentModuleIndex] && (
+                              <p className="mt-3 text-xs font-semibold text-white/90">
+                                {quizFeedbackByModule[currentModuleIndex]}
+                              </p>
+                            )}
                           </div>
-                        </>
+                        </div>
                       )}
 
-                      {activeSlide >= slides.length - 1 && (
+                      {Object.values(quizPassedByModule).filter(Boolean).length >= modules.length &&
+                        modules.length > 0 && (
                         <div className="mt-4 rounded-2xl border border-harx-100 bg-white p-4 shadow-sm">
                           <div className="text-sm font-black uppercase tracking-widest text-harx-600">Felicitations</div>
                           <p className="mt-1 text-sm text-gray-700">
@@ -1267,6 +1340,7 @@ export function Training() {
                                   const targetSlides = extractSlides(nextIncompleteJourneyForGig);
                                   setSelectedJourneyId(targetId);
                                   setSelectedModuleIndex(null);
+                                  setSelectedSectionIndex(null);
                                   setActiveSlide(
                                     initialSlideForContinue(targetSlides.length, nextSlideRow, engagementPercent)
                                   );
