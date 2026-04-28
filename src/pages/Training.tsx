@@ -941,7 +941,7 @@ export function Training() {
               The training service responded successfully but has no published journeys for this
               gig. Your org may still be preparing content, the journey may still be in draft, or
               the journey may be linked to a different gig id than the one in the Marketplace.
-              Only journeys with status active, rehearsal, or completed are shown.
+              All journeys linked to this gig are shown, including draft/not published.
             </p>
           ) : gigFetchOutcome?.gigId === gigFilter && gigFetchOutcome.kind === 'not_found' ? (
             <p className="text-sm mt-2">
