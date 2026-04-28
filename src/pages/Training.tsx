@@ -43,6 +43,20 @@ type RepSlideProgressSummary = {
   formulaHuman: string;
 };
 
+type TrainingSectionCard = {
+  title: string;
+  preview: string;
+  globalIndex: number;
+  slideId: string;
+};
+
+type TrainingModuleCard = {
+  moduleId: string;
+  title: string;
+  color: string;
+  sections: TrainingSectionCard[];
+};
+
 function trainingApiBase(): string {
   const raw =
     import.meta.env.VITE_TRAINING_API_URL ||
@@ -93,6 +107,69 @@ function extractSlides(j: JourneyRow): SlideRow[] {
 function safeHex(raw: unknown, fallback: string): string {
   const s = String(raw || '').trim();
   return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(s) ? s : fallback;
+}
+
+function isMongoObjectId(raw: string): boolean {
+  return /^[a-f\d]{24}$/i.test(String(raw || '').trim());
+}
+
+function cleanPreview(raw: unknown): string {
+  return String(raw || '')
+    .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
+    .replace(/[*_`#>-]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildJourneyModuleCards(journey: JourneyRow): TrainingModuleCard[] {
+  const modules = extractModules(journey);
+  const slides = extractSlides(journey);
+  if (slides.length <= 0) return [];
+
+  const palette = ['#7c3aed', '#0ea5e9', '#14b8a6', '#f97316', '#ef4444', '#a855f7'];
+  const moduleCount = Math.max(1, modules.length || 1);
+  const base = Math.floor(slides.length / moduleCount);
+  let remainder = slides.length % moduleCount;
+  let cursor = 0;
+  const cards: TrainingModuleCard[] = [];
+
+  for (let i = 0; i < moduleCount; i++) {
+    const module = modules[i];
+    const take = base + (remainder > 0 ? 1 : 0);
+    if (remainder > 0) remainder -= 1;
+    const chunk = slides.slice(cursor, cursor + take);
+    const moduleIdRaw = String(module?._id || module?.id || '').trim();
+    const moduleId = isMongoObjectId(moduleIdRaw) ? moduleIdRaw : '';
+    const sectionNames = Array.isArray(module?.sections) ? module.sections : [];
+    const sections: TrainingSectionCard[] = chunk.map((slide, idx) => {
+      const sectionTitleRaw = sectionNames[idx];
+      const sectionTitle =
+        typeof sectionTitleRaw === 'string'
+          ? sectionTitleRaw
+          : typeof sectionTitleRaw === 'object' &&
+              sectionTitleRaw !== null &&
+              'title' in (sectionTitleRaw as Record<string, unknown>)
+            ? String((sectionTitleRaw as { title?: unknown }).title || '')
+            : '';
+      const title = sectionTitle.trim() || String(slide.title || `Section ${idx + 1}`);
+      const preview = cleanPreview(slide.content || slide.subtitle || '');
+      return {
+        title,
+        preview,
+        globalIndex: cursor + idx,
+        slideId: slideStableId(slide)
+      };
+    });
+
+    cards.push({
+      moduleId,
+      title: String(module?.title || `Module ${i + 1}`),
+      color: palette[i % palette.length],
+      sections
+    });
+    cursor += take;
+  }
+  return cards;
 }
 
 function mergeJourney(
@@ -188,7 +265,8 @@ function slideProgressPayload(journey: JourneyRow, slideIndex: number) {
     modules.length > 0
       ? Math.min(modules.length - 1, Math.floor((clamped / Math.max(n - 1, 1)) * modules.length))
       : 0;
-  const moduleId = String(modules[mIdx]?._id || modules[mIdx]?.id || `module-${mIdx + 1}`);
+  const moduleIdRaw = String(modules[mIdx]?._id || modules[mIdx]?.id || '').trim();
+  const moduleId = isMongoObjectId(moduleIdRaw) ? moduleIdRaw : '';
   const pct = Math.min(100, Math.round(((clamped + 1) / n) * 100));
   const slideId = slideStableId(slides[clamped]);
   return { moduleId, pct, slideIndex: clamped, slideCount: n, slideId };
@@ -262,6 +340,7 @@ export function Training() {
   }, [routeGigId]);
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [selectedModuleIndex, setSelectedModuleIndex] = useState<number | null>(null);
   const [progressByJourney, setProgressByJourney] = useState<Record<string, RepProgressRow>>({});
   const [slideProgressSummary, setSlideProgressSummary] = useState<RepSlideProgressSummary | null>(null);
 
@@ -464,6 +543,20 @@ export function Training() {
     () => displayJourneys.find((j) => journeyKey(j) === selectedJourneyId) || null,
     [displayJourneys, selectedJourneyId]
   );
+  const selectedJourneyModules = useMemo(
+    () => (selectedJourney ? buildJourneyModuleCards(selectedJourney) : []),
+    [selectedJourney]
+  );
+  const activeModuleIndexFromSlide = useMemo(() => {
+    if (!selectedJourneyModules.length) return 0;
+    for (let i = 0; i < selectedJourneyModules.length; i++) {
+      const rows = selectedJourneyModules[i].sections;
+      const first = rows[0]?.globalIndex ?? 0;
+      const last = rows[rows.length - 1]?.globalIndex ?? first;
+      if (activeSlide >= first && activeSlide <= last) return i;
+    }
+    return 0;
+  }, [selectedJourneyModules, activeSlide]);
   const slideSummaryByJourney = useMemo(() => {
     const map = new Map<string, RepSlideProgressSummary['journeys'][number]>();
     const rows = Array.isArray(slideProgressSummary?.journeys) ? slideProgressSummary.journeys : [];
@@ -580,7 +673,7 @@ export function Training() {
     setTrainingNav({
       trainingModules: modules,
       activeTrainingModuleIndex: activeModuleIndex,
-      activeTrainingSlideIndex: activeSlide
+      activeTrainingSlideIndex: Math.max(0, activeSlide)
     });
   }, [selectedJourney, activeSlide, setTrainingNav]);
 
@@ -705,6 +798,7 @@ export function Training() {
   /** Persist slide position + append tracking row on any navigation (arrows, sidebar, Continue). */
   useEffect(() => {
     if (!selectedJourney || !repId) return;
+    if (activeSlide < 0) return;
     const jid = journeyKey(selectedJourney);
     if (!jid) return;
     const payload = slideProgressPayload(selectedJourney, activeSlide);
@@ -945,6 +1039,7 @@ export function Training() {
                       if (!id) return;
                       const slideCount = slides.length;
                       setSelectedJourneyId(id);
+                      setSelectedModuleIndex(null);
                       setActiveSlide(initialSlideForContinue(slideCount, slideRow, engagementPercent));
                     }}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-harx-600 text-white px-4 py-3 text-xs font-black uppercase tracking-widest hover:bg-harx-700 transition-colors disabled:opacity-40"
@@ -962,12 +1057,13 @@ export function Training() {
 
       {!listLoading && !error && selectedJourney && (
         <div className="h-full overflow-hidden rounded-2xl border border-harx-100 bg-white shadow-sm">
-            <div className="flex h-full min-h-0 flex-col bg-slate-50">
+            <div className="flex h-full min-h-0 flex-col bg-[#060b1d]">
               <div className="flex items-center gap-3 border-b border-harx-100 bg-white px-4 py-2.5">
                 <button
                   type="button"
                   onClick={() => {
                     setSelectedJourneyId(null);
+                    setSelectedModuleIndex(null);
                     void fetchSlideProgressSummary();
                   }}
                   className="rounded-xl border border-harx-200 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-harx-600 hover:bg-harx-50"
@@ -976,12 +1072,16 @@ export function Training() {
                 </button>
                 <h3 className="truncate text-sm font-black text-harx-700">{journeyTitle(selectedJourney)}</h3>
               </div>
-              <div className="relative flex-1 p-4 md:p-5">
+              <div className="relative flex-1 overflow-y-auto bg-gradient-to-br from-[#0a1638] via-[#111a3e] to-[#1f1747] p-4 md:p-5">
                 {(() => {
                   const slides = extractSlides(selectedJourney);
                   if (slides.length === 0) {
                     return <p className="text-sm text-gray-500">No slides available for this training.</p>;
                   }
+                  const modules = selectedJourneyModules;
+                  const currentModuleIndex =
+                    selectedModuleIndex == null ? activeModuleIndexFromSlide : selectedModuleIndex;
+                  const currentModule = modules[currentModuleIndex] || null;
                   const s = slides[activeSlide] || slides[0];
                   const vc = ((s as unknown as { visualConfig?: Record<string, unknown> }).visualConfig || {}) as Record<string, unknown>;
                   const isDark = String(vc.theme || '').toLowerCase() === 'dark';
@@ -994,78 +1094,144 @@ export function Training() {
                       : bg,
                     color: fg
                   };
+                  const showModuleGrid = selectedModuleIndex == null;
+                  const showSectionGrid = selectedModuleIndex != null && activeSlide < 0;
                   return (
                     <>
-                      <div
-                        className="relative h-[calc(100%-48px)] min-h-[420px] overflow-hidden rounded-3xl border p-7 shadow-xl"
-                        style={{ ...slideStyle, borderColor: `${accent}55` }}
-                      >
-                        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full" style={{ backgroundColor: `${accent}33` }} />
-                        <div className="pointer-events-none absolute -left-10 bottom-[-30px] h-32 w-32 rounded-full" style={{ backgroundColor: `${accent}33` }} />
-                        <h4 className="max-w-4xl text-3xl font-black leading-tight md:text-5xl" style={{ color: fg }}>
-                          {String(s.title || 'Slide')}
-                        </h4>
-                        {s.subtitle ? (
-                          <p
-                            className="mt-4 inline-block rounded-2xl border px-4 py-2 text-lg font-semibold"
-                            style={{ borderColor: `${fg}66`, color: accent, backgroundColor: `${fg}11` }}
+                      <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-3 text-white backdrop-blur">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200/80">HARX Training</p>
+                            <p className="truncate text-sm font-bold">{journeyTitle(selectedJourney)}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {selectedModuleIndex != null && (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedModuleIndex(null)}
+                                className="rounded-xl border border-cyan-300/40 bg-cyan-400/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-cyan-100"
+                              >
+                                Modules
+                              </button>
+                            )}
+                            {selectedModuleIndex != null && (
+                              <button
+                                type="button"
+                                onClick={() => setActiveSlide(-1)}
+                                className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white"
+                              >
+                                Sections
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {showModuleGrid && (
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                          {modules.map((module, idx) => (
+                            <button
+                              key={`${module.title}-${idx}`}
+                              type="button"
+                              onClick={() => {
+                                setSelectedModuleIndex(idx);
+                                setActiveSlide(-1);
+                              }}
+                              className="group rounded-2xl border border-white/15 bg-white/10 p-4 text-left text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-white/15"
+                            >
+                              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Module {idx + 1}</p>
+                              <h4 className="mt-1 line-clamp-2 text-base font-extrabold">{module.title}</h4>
+                              <p className="mt-2 text-xs text-white/80">{module.sections.length} sections</p>
+                              <div className="mt-3 h-1.5 rounded-full bg-white/10">
+                                <div
+                                  className="h-1.5 rounded-full transition-all"
+                                  style={{ width: '100%', backgroundColor: module.color }}
+                                />
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {showSectionGrid && currentModule && (
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                          {currentModule.sections.map((section, idx) => (
+                            <button
+                              key={`${section.title}-${section.globalIndex}`}
+                              type="button"
+                              onClick={() => setActiveSlide(section.globalIndex)}
+                              className="rounded-2xl border border-white/20 bg-white/10 p-4 text-left text-white transition hover:bg-white/15"
+                            >
+                              <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: currentModule.color }}>
+                                Section {idx + 1}
+                              </p>
+                              <h5 className="mt-1 line-clamp-2 text-sm font-black">{section.title}</h5>
+                              {section.preview ? (
+                                <p className="mt-2 line-clamp-3 text-xs text-white/75">{section.preview}</p>
+                              ) : null}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {!showModuleGrid && !showSectionGrid && (
+                        <>
+                          <div
+                            className="relative min-h-[420px] overflow-hidden rounded-3xl border p-7 shadow-2xl"
+                            style={{ ...slideStyle, borderColor: `${accent}55` }}
                           >
-                            {String(s.subtitle)}
-                          </p>
-                        ) : null}
-                        {s.content ? (
-                          <p className="mt-5 max-w-4xl text-base leading-7" style={{ color: fg }}>
-                            {String(s.content)}
-                          </p>
-                        ) : null}
-                        {Array.isArray(s.bullets) && s.bullets.length > 0 ? (
-                          <ul className="mt-4 list-disc space-y-1 pl-5 text-sm" style={{ color: fg }}>
-                            {s.bullets.slice(0, 5).map((b, i) => (
-                              <li key={i}>{String(b)}</li>
-                            ))}
-                          </ul>
-                        ) : null}
-                      </div>
+                            <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full" style={{ backgroundColor: `${accent}33` }} />
+                            <div className="pointer-events-none absolute -left-10 bottom-[-30px] h-32 w-32 rounded-full" style={{ backgroundColor: `${accent}33` }} />
+                            <h4 className="max-w-4xl text-3xl font-black leading-tight md:text-5xl" style={{ color: fg }}>
+                              {String(s.title || 'Slide')}
+                            </h4>
+                            {s.subtitle ? (
+                              <p
+                                className="mt-4 inline-block rounded-2xl border px-4 py-2 text-lg font-semibold"
+                                style={{ borderColor: `${fg}66`, color: accent, backgroundColor: `${fg}11` }}
+                              >
+                                {String(s.subtitle)}
+                              </p>
+                            ) : null}
+                            {s.content ? (
+                              <p className="mt-5 max-w-4xl text-base leading-7" style={{ color: fg }}>
+                                {String(s.content)}
+                              </p>
+                            ) : null}
+                            {Array.isArray(s.bullets) && s.bullets.length > 0 ? (
+                              <ul className="mt-4 list-disc space-y-1 pl-5 text-sm" style={{ color: fg }}>
+                                {s.bullets.slice(0, 5).map((b, i) => (
+                                  <li key={i}>{String(b)}</li>
+                                ))}
+                              </ul>
+                            ) : null}
+                          </div>
 
-                      <button
-                        type="button"
-                        onClick={() => setActiveSlide((p) => Math.max(0, p - 1))}
-                        disabled={activeSlide === 0}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full border border-rose-200 bg-white p-3 text-fuchsia-600 shadow-lg disabled:opacity-40"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveSlide((p) => Math.min(slides.length - 1, p + 1));
-                        }}
-                        disabled={activeSlide >= slides.length - 1}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full border border-rose-200 bg-white p-3 text-fuchsia-600 shadow-lg disabled:opacity-40"
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
-
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className="rounded-full border border-rose-100 bg-white px-3 py-1 text-xs font-bold text-gray-600 shadow-sm">
-                          {activeSlide + 1} / {slides.length}
-                        </span>
-                        <span className="rounded-full border border-rose-100 bg-white px-3 py-1 text-xs font-bold text-gray-600 shadow-sm">
-                          {(() => {
-                            const modCount = extractModules(selectedJourney).length || 1;
-                            const mIdx =
-                              modCount > 0
-                                ? Math.min(
-                                    modCount - 1,
-                                    Math.floor(
-                                      (activeSlide / Math.max(slides.length - 1, 1)) * modCount
-                                    )
-                                  )
-                                : 0;
-                            return `${mIdx + 1} / ${modCount}`;
-                          })()}
-                        </span>
-                      </div>
+                          <div className="mt-3 flex items-center justify-between">
+                            <button
+                              type="button"
+                              onClick={() => setActiveSlide((p) => Math.max(0, p - 1))}
+                              disabled={activeSlide === 0}
+                              className="rounded-full border border-white/20 bg-white/10 p-3 text-white shadow-lg disabled:opacity-40"
+                            >
+                              <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                              {activeSlide + 1} / {slides.length}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveSlide((p) => Math.min(slides.length - 1, p + 1));
+                              }}
+                              disabled={activeSlide >= slides.length - 1}
+                              className="rounded-full border border-white/20 bg-white/10 p-3 text-white shadow-lg disabled:opacity-40"
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </button>
+                          </div>
+                        </>
+                      )}
 
                       {activeSlide >= slides.length - 1 && (
                         <div className="mt-4 rounded-2xl border border-harx-100 bg-white p-4 shadow-sm">
@@ -1100,6 +1266,7 @@ export function Training() {
                                   );
                                   const targetSlides = extractSlides(nextIncompleteJourneyForGig);
                                   setSelectedJourneyId(targetId);
+                                  setSelectedModuleIndex(null);
                                   setActiveSlide(
                                     initialSlideForContinue(targetSlides.length, nextSlideRow, engagementPercent)
                                   );
