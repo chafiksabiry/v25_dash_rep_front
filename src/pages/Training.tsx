@@ -31,6 +31,8 @@ type RepProgressRow = {
   moduleTotal?: number;
   moduleFinished?: number;
   moduleInProgress?: number;
+  /** Moyenne des % modules côté suivi structuré (rep_training_tracking.progressPercentage). */
+  progressPercentage?: number;
   engagementScore?: number;
   lastAccessed?: string;
   /** Objet moduleId → état (sectionProgress, quizProgress, …) depuis rep_progress */
@@ -1752,8 +1754,13 @@ export function Training() {
             const slides = extractSlides(j);
             const progress = id ? progressByJourney[id] : undefined;
             const engagement = Number(progress?.engagementScore);
+            const storedCoursePct = Number(progress?.progressPercentage);
             const engagementPercent =
-              Number.isFinite(engagement) ? Math.min(100, Math.round(engagement)) : 0;
+              Number.isFinite(storedCoursePct) && storedCoursePct > 0
+                ? Math.min(100, Math.round(storedCoursePct))
+                : Number.isFinite(engagement)
+                  ? Math.min(100, Math.round(engagement))
+                  : 0;
             const slideRow =
               id && slideProgressSummary?.journeys
                 ? slideProgressSummary.journeys.find((x) => x.journeyId === id)
@@ -1771,13 +1778,19 @@ export function Training() {
                 ? Number(slideRow.completedUnits)
                 : slideRow?.slidesSeen ?? 0;
             if (!slideRow && progressTotal > 0) {
-              if (Number(progress?.moduleFinished) >= 0) {
-                progressDone = Math.min(progressTotal, Number(progress?.moduleFinished || 0));
-              } else if (engagementPercent > 0) {
-                progressDone = Math.min(
-                  progressTotal,
-                  Math.round((engagementPercent / 100) * progressTotal)
-                );
+              const modulesDone = Number(progress?.moduleFinished ?? 0);
+              if (modulesDone > 0) {
+                progressDone = Math.min(progressTotal, modulesDone);
+              } else {
+                const coursePct = engagementPercent;
+                if (coursePct > 0) {
+                  progressDone = Math.min(
+                    progressTotal,
+                    Math.round((coursePct / 100) * progressTotal)
+                  );
+                } else {
+                  progressDone = 0;
+                }
               }
             }
             const slidePercent =
