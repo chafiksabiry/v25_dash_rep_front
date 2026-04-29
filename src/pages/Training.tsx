@@ -40,6 +40,14 @@ type RepSlideProgressSummary = {
   journeys: {
     journeyId: string;
     journeyTitle: string;
+    completedUnits?: number;
+    totalUnits?: number;
+    completedModules?: number;
+    totalModules?: number;
+    completedSections?: number;
+    totalSections?: number;
+    completedQuizzes?: number;
+    totalQuizzes?: number;
     slidesSeen: number;
     slidesTotal: number;
     ratio: number;
@@ -850,17 +858,30 @@ export function Training() {
               id && slideProgressSummary?.journeys
                 ? slideProgressSummary.journeys.find((x) => x.journeyId === id)
                 : undefined;
-            const slidesTotal =
-              slideRow && slideRow.slidesTotal > 0 ? slideRow.slidesTotal : slides.length;
-            let slidesSeen = slideRow?.slidesSeen ?? 0;
-            if (!slideRow && slidesTotal > 0 && engagementPercent > 0) {
-              slidesSeen = Math.min(
-                slidesTotal,
-                Math.round((engagementPercent / 100) * slidesTotal)
-              );
+            const progressTotal =
+              slideRow && Number(slideRow.totalUnits) > 0
+                ? Number(slideRow.totalUnits)
+                : slideRow && slideRow.slidesTotal > 0
+                  ? slideRow.slidesTotal
+                  : Number(progress?.moduleTotal) > 0
+                    ? Number(progress?.moduleTotal)
+                    : slides.length;
+            let progressDone =
+              slideRow && Number(slideRow.completedUnits) >= 0
+                ? Number(slideRow.completedUnits)
+                : slideRow?.slidesSeen ?? 0;
+            if (!slideRow && progressTotal > 0) {
+              if (Number(progress?.moduleFinished) >= 0) {
+                progressDone = Math.min(progressTotal, Number(progress?.moduleFinished || 0));
+              } else if (engagementPercent > 0) {
+                progressDone = Math.min(
+                  progressTotal,
+                  Math.round((engagementPercent / 100) * progressTotal)
+                );
+              }
             }
             const slidePercent =
-              slidesTotal > 0 ? Math.min(100, Math.round((slidesSeen / slidesTotal) * 100)) : 0;
+              progressTotal > 0 ? Math.min(100, Math.round((progressDone / progressTotal) * 100)) : 0;
             return (
               <li
                 key={id || journeyTitle(j)}
@@ -885,12 +906,12 @@ export function Training() {
                   <div className="mt-3">
                     <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-gray-500">
                       <span>Progress</span>
-                      <span className="tabular-nums">{slidesTotal > 0 ? `${slidePercent}%` : '—'}</span>
+                      <span className="tabular-nums">{progressTotal > 0 ? `${slidePercent}%` : '—'}</span>
                     </div>
                     <div className="h-2 rounded-full bg-gray-100">
                       <div
                         className="h-2 rounded-full bg-harx-500 transition-[width]"
-                        style={{ width: `${slidesTotal > 0 ? slidePercent : 0}%` }}
+                        style={{ width: `${progressTotal > 0 ? slidePercent : 0}%` }}
                       />
                     </div>
                   </div>
