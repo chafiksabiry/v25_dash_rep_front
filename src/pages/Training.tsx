@@ -1226,6 +1226,26 @@ export function Training() {
     ? !!formationViewerQuizState[activeQuizTimerCtx.qk]?.locked
     : false;
 
+  const restartQuizSlide = useCallback((slideKey: string) => {
+    quizTimerSlideRef.current = null;
+    setFormationViewerQuizPage((prev) => ({ ...prev, [slideKey]: 0 }));
+    setQuizSlideWrongStrikes((prev) => ({ ...prev, [slideKey]: 0 }));
+    setFormationViewerQuizState((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((k) => {
+        if (k.startsWith(`${slideKey}-q`)) delete next[k];
+      });
+      return next;
+    });
+    setQuizQuestionCountdownSec((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((k) => {
+        if (k.startsWith(`${slideKey}-q`)) delete next[k];
+      });
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     if (!activeQuizTimerCtx || activeQuizQuestionLocked) return;
     const { slide, page, qk, total } = activeQuizTimerCtx;
@@ -1913,6 +1933,13 @@ export function Training() {
                                   {qState.locked ? '—' : `${countdown}s`}
                                 </span>
                                 <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => restartQuizSlide(slide.key)}
+                                    className="rounded-lg border border-amber-400/40 bg-[#12172f] px-2.5 py-1 font-semibold text-amber-100 transition hover:border-amber-300/70"
+                                  >
+                                    Refaire quiz
+                                  </button>
                                   <button
                                     type="button"
                                     disabled={page <= 0}
