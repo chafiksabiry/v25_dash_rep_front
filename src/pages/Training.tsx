@@ -980,7 +980,7 @@ export function Training() {
       if (!base) return null;
       try {
         const r = await axios.get<{ success?: boolean; data?: unknown }>(
-          `${base}/progress/${encodeURIComponent(repId)}/${encodeURIComponent(courseId)}`
+          `${base}/training_journeys/progress/${encodeURIComponent(repId)}/${encodeURIComponent(courseId)}`
         );
         const parsed = normalizeStructuredProgress(r.data?.data);
         if (parsed) {
@@ -1071,14 +1071,14 @@ export function Training() {
       progress >= 100 && !hasQuizzes ? 'completed' : progress > 0 ? 'in_progress' : 'not_started';
 
     axios
-      .post(`${base}/section/start`, {
+      .post(`${base}/training_journeys/section/start`, {
         repId,
         courseId: selectedJourneyId,
         moduleId,
         sectionId: sectionIdForApi,
       })
       .then(() =>
-        axios.post(`${base}/section/complete`, {
+        axios.post(`${base}/training_journeys/section/complete`, {
           repId,
           courseId: selectedJourneyId,
           moduleId,
@@ -1266,7 +1266,7 @@ export function Training() {
           return qState?.selected ?? -1;
         });
       void axios
-        .post(`${base}/quiz/submit`, {
+        .post(`${base}/training_journeys/quiz/submit`, {
           repId,
           courseId: selectedJourneyId,
           moduleId,
