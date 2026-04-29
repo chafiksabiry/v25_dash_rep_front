@@ -602,6 +602,23 @@ export function Training() {
         });
         cursor += take;
       }
+    } else if (modules.length > 0) {
+      // Fallback for journeys built only from modules/sections:
+      // keep sidebar populated so it doesn't show "No slides".
+      let cursor = 0;
+      modules.forEach((m) => {
+        const sectionTitles =
+          Array.isArray(m.sections) && m.sections.length > 0 ? m.sections : ['Overview'];
+        m.slides = sectionTitles.map((title) => {
+          const globalIndex = cursor;
+          cursor += 1;
+          return {
+            title: String(title || 'Section'),
+            globalIndex,
+            slideId: '',
+          };
+        });
+      });
     }
     const activeModuleIndex =
       modules.length > 0 && slides.length > 0
