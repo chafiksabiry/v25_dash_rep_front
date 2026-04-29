@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import {
   BookOpen,
   Briefcase,
+  Clock3,
   Loader2,
   AlertCircle,
   ChevronDown,
@@ -77,6 +78,8 @@ type ViewerSlide =
       questions: Array<{ quizTitle: string; question: any; correctAnswer: number }>;
     };
 
+type ModulePlanItem = { durationMinutes?: unknown };
+
 function trainingApiBase(): string {
   const raw =
     import.meta.env.VITE_TRAINING_API_URL ||
@@ -114,6 +117,28 @@ function extractSlides(j: JourneyRow): SlideRow[] {
   const slides = p.slides;
   if (!Array.isArray(slides)) return [];
   return slides as SlideRow[];
+}
+
+function extractModuleDurationsMinutes(j: JourneyRow): number[] {
+  const planRaw = Array.isArray(j.modulePlan) ? (j.modulePlan as ModulePlanItem[]) : [];
+  const fromPlan = planRaw
+    .map((m) => Number(m?.durationMinutes))
+    .map((n) => (Number.isFinite(n) && n > 0 ? Math.floor(n) : 0));
+  if (fromPlan.some((n) => n > 0)) return fromPlan;
+
+  const modules = extractModules(j);
+  return modules.map((m: any) => {
+    const n = Number(m?.duration);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+  });
+}
+
+function formatDurationHMS(ms: number): string {
+  const safe = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(safe / 3600);
+  const m = Math.floor((safe % 3600) / 60);
+  const s = safe % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 function mergeJourney(
@@ -309,6 +334,8 @@ export function Training() {
   >({});
   const [sessionElapsedMs, setSessionElapsedMs] = useState(0);
   const [sessionManualDurationMs, setSessionManualDurationMs] = useState(0);
+  const [moduleElapsedMs, setModuleElapsedMs] = useState(0);
+  const [moduleManualDurationMs, setModuleManualDurationMs] = useState(0);
   const progressSyncInFlightRef = useRef<Set<string>>(new Set());
 
   const displayJourneys = useMemo(() => {
@@ -613,6 +640,23 @@ export function Training() {
     return () => window.clearInterval(t);
   }, [selectedJourneyId]);
 
+  const currentModuleIndex = useMemo(() => {
+    if (!currentFormationViewerSlide) return null;
+    if (currentFormationViewerSlide.kind === 'overview') return 0;
+    return currentFormationViewerSlide.moduleIndex;
+  }, [currentFormationViewerSlide]);
+
+  useEffect(() => {
+    setModuleElapsedMs(0);
+    setModuleManualDurationMs(0);
+    if (!selectedJourneyId || currentModuleIndex == null) return;
+    const startedAt = Date.now();
+    const t = window.setInterval(() => {
+      setModuleElapsedMs(Date.now() - startedAt);
+    }, 1000);
+    return () => window.clearInterval(t);
+  }, [selectedJourneyId, currentModuleIndex]);
+
   useEffect(() => {
     if (!selectedJourney) {
       clearTrainingNav();
@@ -843,17 +887,35 @@ export function Training() {
         : null,
     [slideProgressSummary, selectedJourneyId]
   );
-  const formationFollowedDurationMs =
+  const moduleDurationsMinutes = useMemo(
+    () => (selectedJourney ? extractModuleDurationsMinutes(selectedJourney) : []),
+    [selectedJourney]
+  );
+  const plannedTotalMs = useMemo(
+    () => moduleDurationsMinutes.reduce((acc, n) => acc + Math.max(0, n), 0) * 60 * 1000,
+    [moduleDurationsMinutes]
+  );
+  const plannedCurrentModuleMs = useMemo(() => {
+    if (currentModuleIndex == null) return 0;
+    return Math.max(0, Number(moduleDurationsMinutes[currentModuleIndex] || 0)) * 60 * 1000;
+  }, [moduleDurationsMinutes, currentModuleIndex]);
+
+  const trackedFormationMs =
     Math.max(0, Number(selectedJourneySummary?.followedDurationMs || 0)) +
     sessionElapsedMs +
     sessionManualDurationMs;
-  const formationTimerLabel = useMemo(() => {
-    const totalSec = Math.floor(formationFollowedDurationMs / 1000);
-    const h = Math.floor(totalSec / 3600);
-    const m = Math.floor((totalSec % 3600) / 60);
-    const s = totalSec % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  }, [formationFollowedDurationMs]);
+  const trackedModuleMs = moduleElapsedMs + moduleManualDurationMs;
+
+  const formationRemainingMs =
+    plannedTotalMs > 0 ? Math.max(0, plannedTotalMs - trackedFormationMs) : 0;
+  const moduleRemainingMs =
+    plannedCurrentModuleMs > 0 ? Math.max(0, plannedCurrentModuleMs - trackedModuleMs) : 0;
+
+  const formationTimerLabel = useMemo(
+    () => formatDurationHMS(formationRemainingMs),
+    [formationRemainingMs]
+  );
+  const moduleTimerLabel = useMemo(() => formatDurationHMS(moduleRemainingMs), [moduleRemainingMs]);
 
   const syncQuizDuration = useCallback(
     async (moduleIndex: number) => {
@@ -869,6 +931,7 @@ export function Training() {
       const base = trainingApiBase();
       if (!base) return;
       setSessionManualDurationMs((ms) => ms + 40000);
+      setModuleManualDurationMs((ms) => ms + 40000);
       try {
         await axios.post(`${base}/training_journeys/rep-progress`, {
           repId,
@@ -1144,9 +1207,26 @@ export function Training() {
                   Back to list
                 </button>
                 <h3 className="truncate text-sm font-black text-harx-700">{journeyTitle(selectedJourney)}</h3>
-                <span className="ml-auto rounded-full border border-harx-200 bg-white px-3 py-1 text-[11px] font-bold text-harx-700">
-                  Timer {formationTimerLabel}
-                </span>
+                <div className="ml-auto grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className="rounded-xl border border-harx-200 bg-gradient-to-r from-white to-harx-50 px-3 py-1.5">
+                    <div className="flex items-center gap-2">
+                      <Clock3 className="h-3.5 w-3.5 text-harx-600" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-harx-500">
+                        Timer total
+                      </p>
+                    </div>
+                    <p className="mt-0.5 text-xs font-extrabold text-harx-700">{formationTimerLabel}</p>
+                  </div>
+                  <div className="rounded-xl border border-harx-200 bg-gradient-to-r from-white to-harx-50 px-3 py-1.5">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-3.5 w-3.5 text-harx-600" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-harx-500">
+                        Timer module
+                      </p>
+                    </div>
+                    <p className="mt-0.5 text-xs font-extrabold text-harx-700">{moduleTimerLabel}</p>
+                  </div>
+                </div>
               </div>
               <div
                 className="relative flex-1 overflow-y-auto p-4 md:p-5"
