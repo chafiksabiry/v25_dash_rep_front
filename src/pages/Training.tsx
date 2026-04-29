@@ -33,6 +33,8 @@ type RepProgressRow = {
   moduleInProgress?: number;
   engagementScore?: number;
   lastAccessed?: string;
+  /** Objet moduleId → état (sectionProgress, quizProgress, …) depuis rep_progress */
+  modules?: Record<string, Record<string, unknown>>;
 };
 
 /** Aligné sur GET /training_journeys/rep/:repId/progress-summary */
@@ -69,13 +71,27 @@ type ViewerSlide =
       modules: Array<{ title: string; moduleIndex: number; sections: Array<{ title: string; sectionIndex: number }> }>;
     }
   | { key: string; kind: 'module_intro'; moduleIndex: number; totalModules: number; mod: any }
-  | { key: string; kind: 'section'; moduleIndex: number; totalModules: number; section: any; modTitle: string }
+  | {
+      key: string;
+      kind: 'section';
+      moduleIndex: number;
+      sectionIndex: number;
+      totalModules: number;
+      section: any;
+      modTitle: string;
+    }
   | {
       key: string;
       kind: 'quiz_group';
       moduleIndex: number;
       totalModules: number;
-      questions: Array<{ quizTitle: string; question: any; correctAnswer: number }>;
+      questions: Array<{
+        quizTitle: string;
+        quizKey: string;
+        quizId?: string;
+        question: any;
+        correctAnswer: number;
+      }>;
     };
 
 type ModulePlanItem = { durationMinutes?: unknown };
@@ -181,6 +197,36 @@ function normalizeMongoId(raw: unknown): string {
     return normalizeMongoId((raw as { _id: unknown })._id);
   }
   return String(raw).trim();
+}
+
+function deriveCompletedSectionsMapFromProgressRow(
+  row: RepProgressRow | undefined
+): Record<string, string[]> {
+  if (!row?.modules || typeof row.modules !== 'object') return {};
+  const out: Record<string, string[]> = {};
+  for (const [moduleId, mpRaw] of Object.entries(row.modules)) {
+    const keys = new Set<string>();
+    const mp = mpRaw as Record<string, unknown>;
+    const completed = mp.completedSections;
+    if (Array.isArray(completed)) {
+      for (const x of completed) {
+        const oid = normalizeMongoId(x);
+        if (oid && /^[a-f\d]{24}$/i.test(oid)) keys.add(oid);
+        else if (x != null && String(x).trim()) keys.add(String(x).trim());
+      }
+    }
+    const sp = mp.sectionProgress;
+    if (Array.isArray(sp)) {
+      for (const item of sp) {
+        if (item && typeof item === 'object' && String((item as { status?: unknown }).status) === 'completed') {
+          const sk = String((item as { sectionKey?: unknown }).sectionKey || '').trim();
+          if (sk) keys.add(sk);
+        }
+      }
+    }
+    out[moduleId] = [...keys];
+  }
+  return out;
 }
 
 /** Id Mongo d’une slide (tracking) ; vide si absent (l’API utilisera slideIndex). */
@@ -337,6 +383,8 @@ export function Training() {
   const [moduleElapsedMs, setModuleElapsedMs] = useState(0);
   const [moduleManualDurationMs, setModuleManualDurationMs] = useState(0);
   const progressSyncInFlightRef = useRef<Set<string>>(new Set());
+  const sectionProgressSentRef = useRef<Set<string>>(new Set());
+  const quizOutcomeSentRef = useRef<Set<string>>(new Set());
 
   const displayJourneys = useMemo(() => {
     if (gigFilter === '__all__') return journeys;
@@ -567,19 +615,35 @@ export function Training() {
           key: `m${mi}-s${si}`,
           kind: 'section',
           moduleIndex: mi,
+          sectionIndex: si,
           totalModules,
           section: sec,
           modTitle: String(mod?.title || `Module ${mi + 1}`),
         });
       });
       const quizzes = Array.isArray(mod?.quizzes) ? mod.quizzes : [];
-      const moduleQuestions: Array<{ quizTitle: string; question: any; correctAnswer: number }> = [];
+      const moduleQuestions: Array<{
+        quizTitle: string;
+        quizKey: string;
+        quizId?: string;
+        question: any;
+        correctAnswer: number;
+      }> = [];
       quizzes.forEach((qz: any, qi: number) => {
         const quizTitle = String(qz?.title || `Quiz ${qi + 1}`);
+        const quizId =
+          normalizeMongoId((qz as any)?._id) || normalizeMongoId((qz as any)?.id) || undefined;
+        const quizKey = quizId || quizTitle.trim() || `m${mi}-q${qi}`;
         const questions = Array.isArray(qz?.questions) ? qz.questions : [];
         questions.forEach((q: any) => {
           const correct = typeof q?.correctAnswer === 'number' ? q.correctAnswer : 0;
-          moduleQuestions.push({ quizTitle, question: q, correctAnswer: correct });
+          moduleQuestions.push({
+            quizTitle,
+            quizKey,
+            quizId,
+            question: q,
+            correctAnswer: correct,
+          });
         });
       });
       if (moduleQuestions.length > 0) {
@@ -613,19 +677,27 @@ export function Training() {
       ? currentFormationViewerSlide.questions
       : [];
     if (questions.length === 0) return true;
-    let answered = 0;
-    let correct = 0;
+    const byQuiz = new Map<
+      string,
+      { answered: number; total: number; correct: number }
+    >();
     questions.forEach((q, idx) => {
+      const bucket = String(q.quizKey || q.quizTitle || 'quiz').trim() || 'quiz';
+      if (!byQuiz.has(bucket)) byQuiz.set(bucket, { answered: 0, total: 0, correct: 0 });
+      const row = byQuiz.get(bucket)!;
+      row.total += 1;
       const qKey = `${currentFormationViewerSlide.key}-q${idx}`;
       const state = formationViewerQuizState[qKey];
       if (!state || !state.locked || state.selected === null) return;
-      answered += 1;
-      if (state.selected === q.correctAnswer) correct += 1;
+      row.answered += 1;
+      if (state.selected === q.correctAnswer) row.correct += 1;
     });
-    // Default passing threshold: 70%
-    if (answered < questions.length) return false;
-    const percent = (correct / questions.length) * 100;
-    return percent >= 70;
+    for (const row of byQuiz.values()) {
+      if (row.answered < row.total) return false;
+      const percent = row.total > 0 ? (row.correct / row.total) * 100 : 0;
+      if (percent < 70) return false;
+    }
+    return true;
   }, [currentFormationViewerSlide, formationViewerQuizState]);
 
   const repViewerTheme = useMemo(
@@ -649,7 +721,24 @@ export function Training() {
       setSessionElapsedMs(0);
       setSessionManualDurationMs(0);
     }
+    sectionProgressSentRef.current.clear();
+    quizOutcomeSentRef.current.clear();
   }, [selectedJourneyId]);
+
+  useEffect(() => {
+    if (!selectedJourneyId) return;
+    const row = progressByJourney[selectedJourneyId];
+    const derived = deriveCompletedSectionsMapFromProgressRow(row);
+    if (Object.keys(derived).length === 0) return;
+    setCompletedSectionsByJourney((prev) => {
+      const prevJ = prev[selectedJourneyId] || {};
+      const nextJ: Record<string, string[]> = { ...prevJ };
+      for (const [modId, keys] of Object.entries(derived)) {
+        nextJ[modId] = [...new Set([...(prevJ[modId] || []), ...keys])];
+      }
+      return { ...prev, [selectedJourneyId]: nextJ };
+    });
+  }, [selectedJourneyId, progressByJourney]);
 
   useEffect(() => {
     if (!selectedJourneyId) return;
@@ -832,38 +921,39 @@ export function Training() {
       normalizeMongoId((moduleRow as any)?._id) ||
       normalizeMongoId((moduleRow as any)?.id) ||
       String(slide.moduleIndex);
-    const sectionId =
+    const sectionKey =
       normalizeMongoId((slide.section as any)?._id) ||
       normalizeMongoId((slide.section as any)?.id) ||
       String((slide.section as any)?.title || '').trim() ||
-      `section-${slide.moduleIndex}-${formationViewerSlideIndex}`;
-    if (!moduleId || !sectionId) return;
+      slide.key;
+    const sectionMongoId =
+      normalizeMongoId((slide.section as any)?._id) ||
+      normalizeMongoId((slide.section as any)?.id) ||
+      '';
+    if (!moduleId || !sectionKey) return;
+    if (!/^[a-f\d]{24}$/i.test(moduleId)) return;
 
-    const alreadyDone = !!completedSectionsByJourney[selectedJourneyId]?.[moduleId]?.includes(sectionId);
-    if (alreadyDone) return;
+    const sentKey = `${selectedJourneyId}:${moduleId}:${sectionKey}`;
+    if (sectionProgressSentRef.current.has(sentKey)) return;
 
-    const syncKey = `${selectedJourneyId}:${moduleId}:${sectionId}`;
+    const syncKey = sentKey;
     if (progressSyncInFlightRef.current.has(syncKey)) return;
     progressSyncInFlightRef.current.add(syncKey);
 
     const base = trainingApiBase();
     if (!base) return;
 
-    const currentDone = completedSectionsByJourney[selectedJourneyId]?.[moduleId] || [];
-    const nextDone = [...new Set([...currentDone, sectionId])];
     const sections = Array.isArray((moduleRow as any)?.sections) ? (moduleRow as any).sections : [];
     const quizzes = Array.isArray((moduleRow as any)?.quizzes) ? (moduleRow as any).quizzes : [];
     const totalSections = sections.length;
     const hasQuizzes = quizzes.length > 0;
-    const progress =
-      totalSections > 0 ? Math.min(100, Math.round((nextDone.length / totalSections) * 100)) : 0;
-    const status: 'not_started' | 'in_progress' | 'completed' =
-      progress >= 100 && !hasQuizzes ? 'completed' : progress > 0 ? 'in_progress' : 'not_started';
     const sectionDurationMs = Math.max(
       10000,
       Math.floor(Number((slide.section as any)?.duration || 0) * 60 * 1000) || 45000
     );
 
+    const currentDone = completedSectionsByJourney[selectedJourneyId]?.[moduleId] || [];
+    const nextDone = [...new Set([...currentDone, sectionKey])];
     setCompletedSectionsByJourney((prev) => ({
       ...prev,
       [selectedJourneyId]: {
@@ -872,6 +962,11 @@ export function Training() {
       },
     }));
 
+    const progress =
+      totalSections > 0 ? Math.min(100, Math.round((nextDone.length / totalSections) * 100)) : 0;
+    const status: 'not_started' | 'in_progress' | 'completed' =
+      progress >= 100 && !hasQuizzes ? 'completed' : progress > 0 ? 'in_progress' : 'not_started';
+
     axios
       .post(`${base}/training_journeys/rep-progress`, {
         repId,
@@ -879,10 +974,17 @@ export function Training() {
         moduleId,
         progress,
         status,
-        completedSections: nextDone,
-        durationMs: sectionDurationMs,
+        completedSections: nextDone.filter((id) => /^[a-f\d]{24}$/i.test(id)),
+        sectionUpdate: {
+          sectionKey,
+          sectionMongoId: /^[a-f\d]{24}$/i.test(sectionMongoId) ? sectionMongoId : undefined,
+          title: String((slide.section as any)?.title || '').trim() || undefined,
+          status: 'completed',
+          durationMs: sectionDurationMs,
+        },
       })
       .then(async () => {
+        sectionProgressSentRef.current.add(sentKey);
         await Promise.all([fetchTrainingProgressRows(), fetchSlideProgressSummary()]);
       })
       .catch(() => undefined)
@@ -894,7 +996,6 @@ export function Training() {
     selectedJourneyId,
     selectedJourney,
     currentFormationViewerSlide,
-    formationViewerSlideIndex,
     completedSectionsByJourney,
     fetchTrainingProgressRows,
     fetchSlideProgressSummary,
@@ -938,7 +1039,10 @@ export function Training() {
   const moduleTimerLabel = useMemo(() => formatDurationHMS(moduleRemainingMs), [moduleRemainingMs]);
 
   const syncQuizDuration = useCallback(
-    async (moduleIndex: number) => {
+    async (
+      moduleIndex: number,
+      quizMeta?: { quizKey: string; quizId?: string }
+    ) => {
       if (!repId || !selectedJourneyId || !selectedJourney) return;
       const modules = extractModules(selectedJourney);
       const mod = modules[moduleIndex];
@@ -947,7 +1051,7 @@ export function Training() {
         normalizeMongoId((mod as any)?._id) ||
         normalizeMongoId((mod as any)?.id) ||
         String(moduleIndex);
-      if (!moduleId) return;
+      if (!moduleId || !/^[a-f\d]{24}$/i.test(moduleId)) return;
       const base = trainingApiBase();
       if (!base) return;
       setSessionManualDurationMs((ms) => ms + 40000);
@@ -958,7 +1062,16 @@ export function Training() {
           journeyId: selectedJourneyId,
           moduleId,
           status: 'in_progress',
-          durationMs: 40000,
+          durationMs: quizMeta ? 0 : 40000,
+          quizUpdate: quizMeta
+            ? {
+                quizKey: quizMeta.quizKey,
+                quizMongoId:
+                  quizMeta.quizId && /^[a-f\d]{24}$/i.test(quizMeta.quizId) ? quizMeta.quizId : undefined,
+                status: 'in_progress',
+                durationMs: 40000,
+              }
+            : undefined,
         });
         await Promise.all([fetchTrainingProgressRows(), fetchSlideProgressSummary()]);
       } catch {
@@ -973,6 +1086,107 @@ export function Training() {
       fetchSlideProgressSummary,
     ]
   );
+
+  useEffect(() => {
+    if (!repId || !selectedJourneyId || !selectedJourney) return;
+    const slide = currentFormationViewerSlide;
+    if (!slide || slide.kind !== 'quiz_group' || !isCurrentQuizPassed) return;
+
+    const modules = extractModules(selectedJourney);
+    const mod = modules[slide.moduleIndex];
+    if (!mod) return;
+    const moduleId =
+      normalizeMongoId((mod as any)?._id) ||
+      normalizeMongoId((mod as any)?.id) ||
+      String(slide.moduleIndex);
+    if (!moduleId || !/^[a-f\d]{24}$/i.test(moduleId)) return;
+
+    const base = trainingApiBase();
+    if (!base) return;
+
+    const questions = Array.isArray(slide.questions) ? slide.questions : [];
+    const buckets = new Map<
+      string,
+      {
+        quizId?: string;
+        title: string;
+        total: number;
+        correct: number;
+        answered: number;
+        attempts: number;
+      }
+    >();
+    questions.forEach((q, idx) => {
+      const bucket = String(q.quizKey || q.quizTitle || 'quiz').trim() || 'quiz';
+      if (!buckets.has(bucket)) {
+        buckets.set(bucket, {
+          quizId: q.quizId && /^[a-f\d]{24}$/i.test(q.quizId) ? q.quizId : undefined,
+          title: q.quizTitle,
+          total: 0,
+          correct: 0,
+          answered: 0,
+          attempts: 0,
+        });
+      }
+      const row = buckets.get(bucket)!;
+      row.total += 1;
+      const qKey = `${slide.key}-q${idx}`;
+      const st = formationViewerQuizState[qKey];
+      if (st?.locked && st.selected !== null) {
+        row.answered += 1;
+        if (st.selected === q.correctAnswer) row.correct += 1;
+        row.attempts += Math.min(3, Math.max(0, Number(st.attempts || 0)));
+      }
+    });
+
+    for (const stats of buckets.values()) {
+      if (stats.answered < stats.total) return;
+    }
+
+    for (const [quizKey, stats] of buckets.entries()) {
+      const score = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+      const passed = score >= 70;
+      const ouKey = `${selectedJourneyId}:${moduleId}:${quizKey}`;
+      if (quizOutcomeSentRef.current.has(ouKey)) continue;
+      const syncKey = `quiz:${ouKey}`;
+      if (progressSyncInFlightRef.current.has(syncKey)) continue;
+      progressSyncInFlightRef.current.add(syncKey);
+      void axios
+        .post(`${base}/training_journeys/rep-progress`, {
+          repId,
+          journeyId: selectedJourneyId,
+          moduleId,
+          status: 'in_progress',
+          quizUpdate: {
+            quizKey,
+            quizMongoId: stats.quizId,
+            title: stats.title,
+            status: passed ? 'passed' : 'failed',
+            score,
+            attempts: stats.attempts,
+            passed,
+            durationMs: 0,
+          },
+        })
+        .then(async () => {
+          quizOutcomeSentRef.current.add(ouKey);
+          await Promise.all([fetchTrainingProgressRows(), fetchSlideProgressSummary()]);
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          progressSyncInFlightRef.current.delete(syncKey);
+        });
+    }
+  }, [
+    repId,
+    selectedJourneyId,
+    selectedJourney,
+    currentFormationViewerSlide,
+    formationViewerQuizState,
+    isCurrentQuizPassed,
+    fetchTrainingProgressRows,
+    fetchSlideProgressSummary,
+  ]);
 
   return (
     <div className={selectedJourney ? 'w-full h-[calc(100vh-120px)]' : 'space-y-6 w-full'}>
@@ -1503,6 +1717,37 @@ export function Training() {
                             h3: ({ children }) => (
                               <h6 className="mb-2 mt-4 text-base font-bold text-white first:mt-0">{children}</h6>
                             ),
+                            table: ({ children }) => (
+                              <div
+                                className="my-3 overflow-x-auto rounded-xl border"
+                                style={{ borderColor: moduleTheme.border, background: viewerThemeTokens.cardBg }}
+                              >
+                                <table className="min-w-full border-collapse text-sm">{children}</table>
+                              </div>
+                            ),
+                            thead: ({ children }) => (
+                              <thead style={{ background: moduleTheme.softBg }}>{children}</thead>
+                            ),
+                            tbody: ({ children }) => <tbody>{children}</tbody>,
+                            tr: ({ children }) => (
+                              <tr className="align-top even:bg-white/5">{children}</tr>
+                            ),
+                            th: ({ children }) => (
+                              <th
+                                className="border-b px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-white"
+                                style={{ borderColor: moduleTheme.border }}
+                              >
+                                {children}
+                              </th>
+                            ),
+                            td: ({ children }) => (
+                              <td
+                                className="border-b px-3 py-2 text-[13px] leading-6 text-slate-200"
+                                style={{ borderColor: moduleTheme.border }}
+                              >
+                                {children}
+                              </td>
+                            ),
                           };
                           return (
                             <div
@@ -1679,7 +1924,10 @@ export function Training() {
                                           locked: shouldLock,
                                         },
                                       }));
-                                      void syncQuizDuration(slide.moduleIndex);
+                                      void syncQuizDuration(slide.moduleIndex, {
+                                        quizKey: currentQuestion.quizKey,
+                                        quizId: currentQuestion.quizId,
+                                      });
                                     }}
                                     className="mt-4 w-full rounded-xl bg-gradient-to-r from-harx-600 to-harx-alt-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
                                   >
