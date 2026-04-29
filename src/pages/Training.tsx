@@ -607,6 +607,26 @@ export function Training() {
     [formationViewerSlideIndexByKey]
   );
   const currentFormationViewerSlide = formationViewerSlides[formationViewerSlideIndex];
+  const isCurrentQuizPassed = useMemo(() => {
+    if (!currentFormationViewerSlide || currentFormationViewerSlide.kind !== 'quiz_group') return true;
+    const questions = Array.isArray(currentFormationViewerSlide.questions)
+      ? currentFormationViewerSlide.questions
+      : [];
+    if (questions.length === 0) return true;
+    let answered = 0;
+    let correct = 0;
+    questions.forEach((q, idx) => {
+      const qKey = `${currentFormationViewerSlide.key}-q${idx}`;
+      const state = formationViewerQuizState[qKey];
+      if (!state || !state.locked || state.selected === null) return;
+      answered += 1;
+      if (state.selected === q.correctAnswer) correct += 1;
+    });
+    // Default passing threshold: 70%
+    if (answered < questions.length) return false;
+    const percent = (correct / questions.length) * 100;
+    return percent >= 70;
+  }, [currentFormationViewerSlide, formationViewerQuizState]);
 
   const repViewerTheme = useMemo(
     () => resolveRepViewerTheme(selectedJourney, selectedJourneyId || ''),
@@ -1748,7 +1768,9 @@ export function Training() {
                           Math.min(formationViewerSlides.length - 1, i + 1)
                         )
                       }
-                      disabled={formationViewerSlideIndex >= formationViewerSlides.length - 1}
+                      disabled={
+                        formationViewerSlideIndex >= formationViewerSlides.length - 1 || !isCurrentQuizPassed
+                      }
                       className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
                       style={{
                         borderColor: viewerThemeTokens.accentBorder,
@@ -1759,6 +1781,11 @@ export function Training() {
                       Suivant <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
+                  {currentFormationViewerSlide?.kind === 'quiz_group' && !isCurrentQuizPassed ? (
+                    <p className="mt-2 text-center text-[11px] font-semibold text-amber-300">
+                      Quiz non valide. Le bouton suivant reste grise jusqu&apos;a validation (&gt;= 70%).
+                    </p>
+                  ) : null}
                 </div>
               )}
           </div>
