@@ -1226,10 +1226,15 @@ export function Training() {
     ? !!formationViewerQuizState[activeQuizTimerCtx.qk]?.locked
     : false;
 
-  const restartQuizSlide = useCallback((slideKey: string) => {
+  const restartQuizSlide = useCallback((slide: any) => {
+    const slideKey = String(slide?.key || '');
+    if (!slideKey) return;
     quizTimerSlideRef.current = null;
     setFormationViewerQuizPage((prev) => ({ ...prev, [slideKey]: 0 }));
-    setQuizSlideWrongStrikes((prev) => ({ ...prev, [slideKey]: 0 }));
+    setQuizSlideWrongStrikes((prev) => ({
+      ...prev,
+      [slideKey]: Math.min(3, (prev[slideKey] ?? 0) + 1),
+    }));
     setFormationViewerQuizState((prev) => {
       const next = { ...prev };
       Object.keys(next).forEach((k) => {
@@ -1244,7 +1249,27 @@ export function Training() {
       });
       return next;
     });
-  }, []);
+    if (selectedJourneyId && selectedJourney) {
+      const modules = extractModules(selectedJourney);
+      const mod = modules[slide.moduleIndex];
+      const moduleId =
+        normalizeMongoId((mod as any)?._id) ||
+        normalizeMongoId((mod as any)?.id) ||
+        String(slide.moduleIndex);
+      if (moduleId && /^[a-f\d]{24}$/i.test(moduleId)) {
+        const quizKeys = Array.from(
+          new Set(
+            (Array.isArray(slide.questions) ? slide.questions : [])
+              .map((q: any) => String(q?.quizKey || q?.quizTitle || '').trim())
+              .filter(Boolean)
+          )
+        );
+        quizKeys.forEach((quizKey) => {
+          quizOutcomeSentRef.current.delete(`${selectedJourneyId}:${moduleId}:${quizKey}`);
+        });
+      }
+    }
+  }, [selectedJourney, selectedJourneyId]);
 
   useEffect(() => {
     if (!activeQuizTimerCtx || activeQuizQuestionLocked) return;
@@ -1935,7 +1960,7 @@ export function Training() {
                                 <div className="flex items-center gap-1.5">
                                   <button
                                     type="button"
-                                    onClick={() => restartQuizSlide(slide.key)}
+                                    onClick={() => restartQuizSlide(slide)}
                                     className="rounded-lg border border-amber-400/40 bg-[#12172f] px-2.5 py-1 font-semibold text-amber-100 transition hover:border-amber-300/70"
                                   >
                                     Refaire quiz
