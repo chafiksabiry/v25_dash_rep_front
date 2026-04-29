@@ -299,7 +299,7 @@ export function Training() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [formationViewerSlideIndex, setFormationViewerSlideIndex] = useState(0);
   const [formationViewerQuizState, setFormationViewerQuizState] = useState<
-    Record<string, { selected: number | null; revealed: boolean }>
+    Record<string, { selected: number | null; revealed: boolean; attempts: number; locked: boolean }>
   >({});
   const [formationViewerQuizPage, setFormationViewerQuizPage] = useState<Record<string, number>>({});
   const [progressByJourney, setProgressByJourney] = useState<Record<string, RepProgressRow>>({});
@@ -1430,6 +1430,8 @@ export function Training() {
                           const qState = formationViewerQuizState[qKey] || {
                             selected: null as number | null,
                             revealed: false,
+                            attempts: 0,
+                            locked: false,
                           };
                           const correctIdx =
                             typeof currentQuestion?.correctAnswer === 'number'
@@ -1447,6 +1449,9 @@ export function Training() {
                               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
                                 <span className="rounded-full border border-harx-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-harx-100">
                                   Question {page + 1} / {totalQuestions}
+                                </span>
+                                <span className="rounded-full border border-harx-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-harx-100">
+                                  Essais: {Math.min(qState.attempts, 3)} / 3
                                 </span>
                                 <div className="flex items-center gap-1.5">
                                   <button
@@ -1493,14 +1498,16 @@ export function Training() {
                                     <button
                                       key={oi}
                                       type="button"
-                                      disabled={qState.revealed}
+                                      disabled={qState.revealed || qState.locked}
                                       onClick={() => {
-                                        if (qState.revealed) return;
+                                        if (qState.revealed || qState.locked) return;
                                         setFormationViewerQuizState((prev) => ({
                                           ...prev,
                                           [qKey]: {
                                             selected: oi,
                                             revealed: prev[qKey]?.revealed ?? false,
+                                            attempts: prev[qKey]?.attempts ?? 0,
+                                            locked: prev[qKey]?.locked ?? false,
                                           },
                                         }));
                                       }}
@@ -1525,23 +1532,39 @@ export function Training() {
                                 })}
                               </div>
                               {!qState.revealed ? (
-                                <button
-                                  type="button"
-                                  disabled={qState.selected === null}
-                                  onClick={() => {
-                                    setFormationViewerQuizState((prev) => ({
-                                      ...prev,
-                                      [qKey]: {
-                                        selected: prev[qKey]?.selected ?? null,
-                                        revealed: true,
-                                      },
-                                    }));
-                                    void syncQuizDuration(slide.moduleIndex);
-                                  }}
-                                  className="mt-4 w-full rounded-xl bg-gradient-to-r from-harx-600 to-harx-alt-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  Valider ma réponse
-                                </button>
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={qState.selected === null || qState.locked}
+                                    onClick={() => {
+                                      const selectedIdx = qState.selected;
+                                      if (selectedIdx === null || qState.locked) return;
+                                      const correct = selectedIdx === correctIdx;
+                                      const nextAttempts = Math.min(3, (qState.attempts || 0) + 1);
+                                      const shouldLock = correct || nextAttempts >= 3;
+                                      setFormationViewerQuizState((prev) => ({
+                                        ...prev,
+                                        [qKey]: {
+                                          selected: selectedIdx,
+                                          revealed: shouldLock,
+                                          attempts: nextAttempts,
+                                          locked: shouldLock,
+                                        },
+                                      }));
+                                      void syncQuizDuration(slide.moduleIndex);
+                                    }}
+                                    className="mt-4 w-full rounded-xl bg-gradient-to-r from-harx-600 to-harx-alt-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {qState.attempts >= 2 ? 'Dernier essai' : 'Valider ma réponse'}
+                                  </button>
+                                  {qState.attempts > 0 && qState.selected !== correctIdx ? (
+                                    <p className="mt-2 text-xs font-medium text-amber-300">
+                                      Mauvaise réponse, réessaie ({Math.max(0, 3 - qState.attempts)} essai
+                                      {Math.max(0, 3 - qState.attempts) > 1 ? 's' : ''} restant
+                                      {Math.max(0, 3 - qState.attempts) > 1 ? 's' : ''}).
+                                    </p>
+                                  ) : null}
+                                </>
                               ) : (
                                 <div className="mt-4 rounded-xl border border-harx-500/20 bg-[#12172f] px-3 py-3">
                                   <p
@@ -1552,7 +1575,9 @@ export function Training() {
                                     {isCorrect
                                       ? 'Bonne réponse !'
                                       : isWrong
-                                        ? 'Ce n’était pas la bonne réponse.'
+                                        ? qState.attempts >= 3
+                                          ? 'Ce n’était pas la bonne réponse. Limite de 3 essais atteinte.'
+                                          : 'Ce n’était pas la bonne réponse.'
                                         : 'Réponse affichée.'}
                                   </p>
                                   {String(q?.explanation || '').trim() ? (
