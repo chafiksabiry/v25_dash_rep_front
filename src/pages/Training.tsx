@@ -1923,7 +1923,40 @@ export function Training() {
                             revealed: false,
                             locked: false,
                           };
-                          const moduleStrikes = Math.min(3, quizSlideWrongStrikes[slide.key] ?? 0);
+                          const modules = extractModules(selectedJourney || ({} as JourneyRow));
+                          const mod = modules[slide.moduleIndex];
+                          const moduleId =
+                            normalizeMongoId((mod as any)?._id) ||
+                            normalizeMongoId((mod as any)?.id) ||
+                            String(slide.moduleIndex);
+                          const journeyProgress = selectedJourneyId ? progressByJourney[selectedJourneyId] : undefined;
+                          const moduleProgressAny =
+                            moduleId && journeyProgress?.modules && typeof journeyProgress.modules === 'object'
+                              ? (journeyProgress.modules as Record<string, any>)[moduleId]
+                              : undefined;
+                          const quizProgressRows = Array.isArray(moduleProgressAny?.quizProgress)
+                            ? moduleProgressAny.quizProgress
+                            : [];
+                          const activeQuizKeys = new Set(
+                            (Array.isArray(slide.questions) ? slide.questions : [])
+                              .map((qq: any) => String(qq?.quizKey || '').trim())
+                              .filter(Boolean)
+                          );
+                          const backendAttempts = quizProgressRows.reduce((acc: number, row: any) => {
+                            if (!activeQuizKeys.has(String(row?.quizKey || '').trim())) return acc;
+                            return Math.max(acc, Number(row?.attempts || 0));
+                          }, 0);
+                          const lockedUntilTs = quizProgressRows.reduce((acc: number, row: any) => {
+                            if (!activeQuizKeys.has(String(row?.quizKey || '').trim())) return acc;
+                            const ts = Date.parse(String(row?.lockedUntil || ''));
+                            return Number.isFinite(ts) ? Math.max(acc, ts) : acc;
+                          }, 0);
+                          const moduleLockRemainingMs = Math.max(0, lockedUntilTs - Date.now());
+                          const moduleLockedByCooldown = moduleLockRemainingMs > 0;
+                          const moduleStrikes = Math.min(
+                            3,
+                            Math.max(quizSlideWrongStrikes[slide.key] ?? 0, backendAttempts)
+                          );
                           const countdown =
                             qState.locked || qState.revealed
                               ? 0
@@ -1955,12 +1988,17 @@ export function Training() {
                                   Essais (module): {moduleStrikes} / 3
                                 </span>
                                 <span className="rounded-full border border-amber-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-amber-100">
-                                  {qState.locked ? '—' : `${countdown}s`}
+                                  {moduleLockedByCooldown
+                                    ? `Cooldown ${Math.ceil(moduleLockRemainingMs / 60000)}m`
+                                    : qState.locked
+                                      ? '—'
+                                      : `${countdown}s`}
                                 </span>
                                 <div className="flex items-center gap-1.5">
                                   <button
                                     type="button"
                                     onClick={() => restartQuizSlide(slide)}
+                                    disabled={moduleLockedByCooldown || moduleStrikes >= 3}
                                     className="rounded-lg border border-amber-400/40 bg-[#12172f] px-2.5 py-1 font-semibold text-amber-100 transition hover:border-amber-300/70"
                                   >
                                     Refaire quiz
@@ -2015,9 +2053,10 @@ export function Training() {
                                     <button
                                       key={oi}
                                       type="button"
-                                      disabled={qState.revealed || qState.locked}
+                                      disabled={qState.revealed || qState.locked || moduleLockedByCooldown}
+                                      aria-disabled={moduleLockedByCooldown}
                                       onClick={() => {
-                                        if (qState.revealed || qState.locked) return;
+                                        if (qState.revealed || qState.locked || moduleLockedByCooldown) return;
                                         const wrong = oi !== correctIdx;
                                         if (wrong) {
                                           setQuizSlideWrongStrikes((prev) => ({
