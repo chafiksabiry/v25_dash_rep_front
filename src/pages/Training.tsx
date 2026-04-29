@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import ReactMarkdown, { type Components } from 'react-markdown';
@@ -273,6 +273,10 @@ export function Training() {
   const [formationViewerQuizPage, setFormationViewerQuizPage] = useState<Record<string, number>>({});
   const [progressByJourney, setProgressByJourney] = useState<Record<string, RepProgressRow>>({});
   const [slideProgressSummary, setSlideProgressSummary] = useState<RepSlideProgressSummary | null>(null);
+  const [completedSectionsByJourney, setCompletedSectionsByJourney] = useState<
+    Record<string, Record<string, string[]>>
+  >({});
+  const progressSyncInFlightRef = useRef<Set<string>>(new Set());
 
   const displayJourneys = useMemo(() => {
     if (gigFilter === '__all__') return journeys;
@@ -664,25 +668,29 @@ export function Training() {
     return () => window.removeEventListener('rep-training-goto-slide', onGotoSlide as EventListener);
   }, [selectedJourney]);
 
-  useEffect(() => {
+  const fetchTrainingProgressRows = useCallback(async () => {
     if (!repId) return;
     const base = trainingApiBase();
     if (!base) return;
-    axios
-      .get<{ success?: boolean; data?: RepProgressRow[] }>(
+    try {
+      const r = await axios.get<{ success?: boolean; data?: RepProgressRow[] }>(
         `${base}/training_journeys/rep/${encodeURIComponent(repId)}/trainings-progress`
-      )
-      .then((r) => {
-        const rows = Array.isArray(r.data?.data) ? r.data.data : [];
-        const map: Record<string, RepProgressRow> = {};
-        rows.forEach((row) => {
-          const key = String(row.journeyId || '').trim();
-          if (key) map[key] = row;
-        });
-        setProgressByJourney(map);
-      })
-      .catch(() => undefined);
+      );
+      const rows = Array.isArray(r.data?.data) ? r.data.data : [];
+      const map: Record<string, RepProgressRow> = {};
+      rows.forEach((row) => {
+        const key = String(row.journeyId || '').trim();
+        if (key) map[key] = row;
+      });
+      setProgressByJourney(map);
+    } catch {
+      /* ignore */
+    }
   }, [repId]);
+
+  useEffect(() => {
+    void fetchTrainingProgressRows();
+  }, [fetchTrainingProgressRows]);
 
   const fetchSlideProgressSummary = useCallback(async () => {
     if (!repId) return;
@@ -702,6 +710,82 @@ export function Training() {
   useEffect(() => {
     void fetchSlideProgressSummary();
   }, [fetchSlideProgressSummary]);
+
+  useEffect(() => {
+    if (!repId || !selectedJourneyId || !selectedJourney) return;
+    const slide = currentFormationViewerSlide;
+    if (!slide || slide.kind !== 'section') return;
+
+    const modules = extractModules(selectedJourney);
+    const moduleRow = modules[slide.moduleIndex];
+    if (!moduleRow) return;
+
+    const moduleId =
+      normalizeMongoId((moduleRow as any)?._id) ||
+      normalizeMongoId((moduleRow as any)?.id) ||
+      String(slide.moduleIndex);
+    const sectionId =
+      normalizeMongoId((slide.section as any)?._id) ||
+      normalizeMongoId((slide.section as any)?.id) ||
+      String((slide.section as any)?.title || '').trim() ||
+      `section-${slide.moduleIndex}-${formationViewerSlideIndex}`;
+    if (!moduleId || !sectionId) return;
+
+    const alreadyDone = !!completedSectionsByJourney[selectedJourneyId]?.[moduleId]?.includes(sectionId);
+    if (alreadyDone) return;
+
+    const syncKey = `${selectedJourneyId}:${moduleId}:${sectionId}`;
+    if (progressSyncInFlightRef.current.has(syncKey)) return;
+    progressSyncInFlightRef.current.add(syncKey);
+
+    const base = trainingApiBase();
+    if (!base) return;
+
+    const currentDone = completedSectionsByJourney[selectedJourneyId]?.[moduleId] || [];
+    const nextDone = [...new Set([...currentDone, sectionId])];
+    const sections = Array.isArray((moduleRow as any)?.sections) ? (moduleRow as any).sections : [];
+    const quizzes = Array.isArray((moduleRow as any)?.quizzes) ? (moduleRow as any).quizzes : [];
+    const totalSections = sections.length;
+    const hasQuizzes = quizzes.length > 0;
+    const progress =
+      totalSections > 0 ? Math.min(100, Math.round((nextDone.length / totalSections) * 100)) : 0;
+    const status: 'not_started' | 'in_progress' | 'completed' =
+      progress >= 100 && !hasQuizzes ? 'completed' : progress > 0 ? 'in_progress' : 'not_started';
+
+    setCompletedSectionsByJourney((prev) => ({
+      ...prev,
+      [selectedJourneyId]: {
+        ...(prev[selectedJourneyId] || {}),
+        [moduleId]: nextDone,
+      },
+    }));
+
+    axios
+      .post(`${base}/training_journeys/rep-progress`, {
+        repId,
+        journeyId: selectedJourneyId,
+        moduleId,
+        progress,
+        status,
+        completedSections: nextDone,
+      })
+      .then(async () => {
+        await Promise.all([fetchTrainingProgressRows(), fetchSlideProgressSummary()]);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        progressSyncInFlightRef.current.delete(syncKey);
+      });
+  }, [
+    repId,
+    selectedJourneyId,
+    selectedJourney,
+    currentFormationViewerSlide,
+    formationViewerSlideIndex,
+    completedSectionsByJourney,
+    fetchTrainingProgressRows,
+    fetchSlideProgressSummary,
+  ]);
 
   return (
     <div className={selectedJourney ? 'w-full h-[calc(100vh-120px)]' : 'space-y-6 w-full'}>
