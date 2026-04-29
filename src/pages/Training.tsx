@@ -628,7 +628,9 @@ export function Training() {
           )
         : 0;
     setTrainingNav({
-      trainingModules: modules,
+      // Hide training module dropdowns from the sidebar:
+      // keep only the top-level "Training" section visible.
+      trainingModules: [],
       activeTrainingModuleIndex: activeModuleIndex,
       activeTrainingSlideIndex: Math.max(0, activeSlide)
     });
