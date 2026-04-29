@@ -428,7 +428,12 @@ export function Training() {
   const [moduleElapsedMs, setModuleElapsedMs] = useState(0);
   const [moduleManualDurationMs, setModuleManualDurationMs] = useState(0);
   const progressSyncInFlightRef = useRef<Set<string>>(new Set());
-  const sectionProgressSentRef = useRef<Set<string>>(new Set());
+  /** POST /section/start déjà envoyé pour cette clé (même parcours). */
+  const sectionStartSentRef = useRef<Set<string>>(new Set());
+  /** POST /section/complete déjà envoyé (évite doublons au « Suivant »). */
+  const sectionCompleteSentRef = useRef<Set<string>>(new Set());
+  /** Index précédent du viewer formation — pour détecter navigation avant → suivant. */
+  const prevFormationSlideIndexRef = useRef<number | null>(null);
   const quizOutcomeSentRef = useRef<Set<string>>(new Set());
 
   const displayJourneys = useMemo(() => {
@@ -737,6 +742,20 @@ export function Training() {
     selectedJourney,
     structuredProgressByJourney,
   ]);
+
+  /** Dernière slide du viewer = une section : pas d’index suivant, il faut « Terminer » pour envoyer complete. */
+  const atLastFormationSlideSection = useMemo(() => {
+    if (formationViewerSlides.length === 0) return false;
+    if (formationViewerSlideIndex < formationViewerSlides.length - 1) return false;
+    return currentFormationViewerSlide?.kind === 'section';
+  }, [formationViewerSlides, formationViewerSlideIndex, currentFormationViewerSlide]);
+
+  const blockFormationNextByEndPosition = useMemo(() => {
+    if (formationViewerSlides.length === 0) return false;
+    if (formationViewerSlideIndex < formationViewerSlides.length - 1) return false;
+    return currentFormationViewerSlide?.kind !== 'section';
+  }, [formationViewerSlides, formationViewerSlideIndex, currentFormationViewerSlide]);
+
   const isCurrentQuizPassed = useMemo(() => {
     if (!currentFormationViewerSlide || currentFormationViewerSlide.kind !== 'quiz_group') return true;
     const questions = Array.isArray(currentFormationViewerSlide.questions)
@@ -790,7 +809,9 @@ export function Training() {
       setSessionElapsedMs(0);
       setSessionManualDurationMs(0);
     }
-    sectionProgressSentRef.current.clear();
+    sectionStartSentRef.current.clear();
+    sectionCompleteSentRef.current.clear();
+    prevFormationSlideIndexRef.current = null;
     quizOutcomeSentRef.current.clear();
   }, [selectedJourneyId]);
 
@@ -995,6 +1016,89 @@ export function Training() {
     [repId]
   );
 
+  /** POST /section/complete — appelé au « Suivant » (sortie section) ou sur dernière slide section. */
+  const completeSectionProgressAtLeave = useCallback(
+    async (args: { moduleIndex: number; section: unknown }) => {
+      if (!repId || !selectedJourneyId || !selectedJourney) return;
+      const modules = extractModules(selectedJourney);
+      const moduleRow = modules[args.moduleIndex];
+      if (!moduleRow) return;
+      const moduleId =
+        normalizeMongoId((moduleRow as any)?._id) ||
+        normalizeMongoId((moduleRow as any)?.id) ||
+        String(args.moduleIndex);
+      const sec = args.section as { _id?: unknown; id?: unknown } | null;
+      const sectionMongoId = normalizeMongoId(sec?._id) || normalizeMongoId(sec?.id) || '';
+      if (!/^[a-f\d]{24}$/i.test(moduleId) || !/^[a-f\d]{24}$/i.test(sectionMongoId)) return;
+
+      const sentKey = `${selectedJourneyId}:${moduleId}:${sectionMongoId}`;
+      if (sectionCompleteSentRef.current.has(sentKey)) return;
+
+      const sections = Array.isArray((moduleRow as any)?.sections) ? (moduleRow as any).sections : [];
+      const quizzes = Array.isArray((moduleRow as any)?.quizzes) ? (moduleRow as any).quizzes : [];
+      const totalSections = sections.length;
+      const hasQuizzes = quizzes.length > 0;
+      const sectionDurationMs = Math.max(
+        10000,
+        Math.floor(Number((sec as any)?.duration || 0) * 60 * 1000) || 45000
+      );
+      const syncKey = `complete:${sentKey}`;
+      if (progressSyncInFlightRef.current.has(syncKey)) return;
+      progressSyncInFlightRef.current.add(syncKey);
+      const base = trainingApiBase();
+      if (!base) {
+        progressSyncInFlightRef.current.delete(syncKey);
+        return;
+      }
+
+      const currentDone = completedSectionsByJourney[selectedJourneyId]?.[moduleId] || [];
+      const nextDone = [...new Set([...currentDone, sectionMongoId])];
+      setCompletedSectionsByJourney((prevMap) => ({
+        ...prevMap,
+        [selectedJourneyId]: {
+          ...(prevMap[selectedJourneyId] || {}),
+          [moduleId]: nextDone,
+        },
+      }));
+      const progress =
+        totalSections > 0 ? Math.min(100, Math.round((nextDone.length / totalSections) * 100)) : 0;
+      const status: 'not_started' | 'in_progress' | 'completed' =
+        progress >= 100 && !hasQuizzes ? 'completed' : progress > 0 ? 'in_progress' : 'not_started';
+
+      try {
+        await axios.post(`${base}/training_journeys/section/complete`, {
+          repId,
+          courseId: selectedJourneyId,
+          moduleId,
+          sectionId: sectionMongoId,
+          progress,
+          status,
+          completedSections: nextDone.filter((id) => /^[a-f\d]{24}$/i.test(id)),
+          durationMs: sectionDurationMs,
+        });
+        sectionCompleteSentRef.current.add(sentKey);
+        await Promise.all([
+          fetchTrainingProgressRows(),
+          fetchSlideProgressSummary(),
+          fetchStructuredProgress(selectedJourneyId),
+        ]);
+      } catch {
+        /* ignore */
+      } finally {
+        progressSyncInFlightRef.current.delete(syncKey);
+      }
+    },
+    [
+      repId,
+      selectedJourneyId,
+      selectedJourney,
+      completedSectionsByJourney,
+      fetchTrainingProgressRows,
+      fetchSlideProgressSummary,
+      fetchStructuredProgress,
+    ]
+  );
+
   useEffect(() => {
     void fetchSlideProgressSummary();
   }, [fetchSlideProgressSummary]);
@@ -1037,38 +1141,17 @@ export function Training() {
     if (!sectionIdForApi || !/^[a-f\d]{24}$/i.test(sectionIdForApi)) return;
 
     const sentKey = `${selectedJourneyId}:${moduleId}:${sectionIdForApi || sectionKey}`;
-    if (sectionProgressSentRef.current.has(sentKey)) return;
+    if (sectionStartSentRef.current.has(sentKey)) return;
 
-    const syncKey = sentKey;
+    const syncKey = `start:${sentKey}`;
     if (progressSyncInFlightRef.current.has(syncKey)) return;
     progressSyncInFlightRef.current.add(syncKey);
 
     const base = trainingApiBase();
-    if (!base) return;
-
-    const sections = Array.isArray((moduleRow as any)?.sections) ? (moduleRow as any).sections : [];
-    const quizzes = Array.isArray((moduleRow as any)?.quizzes) ? (moduleRow as any).quizzes : [];
-    const totalSections = sections.length;
-    const hasQuizzes = quizzes.length > 0;
-    const sectionDurationMs = Math.max(
-      10000,
-      Math.floor(Number((slide.section as any)?.duration || 0) * 60 * 1000) || 45000
-    );
-
-    const currentDone = completedSectionsByJourney[selectedJourneyId]?.[moduleId] || [];
-    const nextDone = [...new Set([...currentDone, sectionIdForApi || sectionKey])];
-    setCompletedSectionsByJourney((prev) => ({
-      ...prev,
-      [selectedJourneyId]: {
-        ...(prev[selectedJourneyId] || {}),
-        [moduleId]: nextDone,
-      },
-    }));
-
-    const progress =
-      totalSections > 0 ? Math.min(100, Math.round((nextDone.length / totalSections) * 100)) : 0;
-    const status: 'not_started' | 'in_progress' | 'completed' =
-      progress >= 100 && !hasQuizzes ? 'completed' : progress > 0 ? 'in_progress' : 'not_started';
+    if (!base) {
+      progressSyncInFlightRef.current.delete(syncKey);
+      return;
+    }
 
     axios
       .post(`${base}/training_journeys/section/start`, {
@@ -1077,20 +1160,8 @@ export function Training() {
         moduleId,
         sectionId: sectionIdForApi,
       })
-      .then(() =>
-        axios.post(`${base}/training_journeys/section/complete`, {
-          repId,
-          courseId: selectedJourneyId,
-          moduleId,
-          sectionId: sectionIdForApi,
-          progress,
-          status,
-          completedSections: nextDone.filter((id) => /^[a-f\d]{24}$/i.test(id)),
-          durationMs: sectionDurationMs,
-        })
-      )
       .then(async () => {
-        sectionProgressSentRef.current.add(sentKey);
+        sectionStartSentRef.current.add(sentKey);
         await Promise.all([
           fetchTrainingProgressRows(),
           fetchSlideProgressSummary(),
@@ -1106,9 +1177,34 @@ export function Training() {
     selectedJourneyId,
     selectedJourney,
     currentFormationViewerSlide,
-    completedSectionsByJourney,
     fetchTrainingProgressRows,
     fetchSlideProgressSummary,
+    fetchStructuredProgress,
+  ]);
+
+  /** Marque la section comme terminée seulement après « Suivant » (index qui augmente), pas à l’ouverture. */
+  useEffect(() => {
+    if (!repId || !selectedJourneyId || !selectedJourney) return;
+    const slides = formationViewerSlides;
+    if (slides.length === 0) return;
+
+    const prev = prevFormationSlideIndexRef.current;
+    const cur = formationViewerSlideIndex;
+
+    if (prev !== null && cur > prev && prev >= 0 && prev < slides.length) {
+      const left = slides[prev];
+      if (left?.kind === 'section') {
+        void completeSectionProgressAtLeave({ moduleIndex: left.moduleIndex, section: left.section });
+      }
+    }
+
+    prevFormationSlideIndexRef.current = cur;
+  }, [
+    selectedJourneyId,
+    selectedJourney,
+    formationViewerSlides,
+    formationViewerSlideIndex,
+    completeSectionProgressAtLeave,
   ]);
 
   const selectedJourneySummary = useMemo(
@@ -2271,13 +2367,23 @@ export function Training() {
                     </span>
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        if (
+                          atLastFormationSlideSection &&
+                          currentFormationViewerSlide?.kind === 'section'
+                        ) {
+                          void completeSectionProgressAtLeave({
+                            moduleIndex: currentFormationViewerSlide.moduleIndex,
+                            section: currentFormationViewerSlide.section,
+                          });
+                          return;
+                        }
                         setFormationViewerSlideIndex((i) =>
                           Math.min(formationViewerSlides.length - 1, i + 1)
-                        )
-                      }
+                        );
+                      }}
                       disabled={
-                        formationViewerSlideIndex >= formationViewerSlides.length - 1 ||
+                        blockFormationNextByEndPosition ||
                         !isCurrentQuizPassed ||
                         isNextModuleLocked
                       }
@@ -2288,7 +2394,8 @@ export function Training() {
                         boxShadow: viewerThemeTokens.accentShadow,
                       }}
                     >
-                      Suivant <ChevronRight className="h-4 w-4" />
+                      {atLastFormationSlideSection ? 'Terminer la section' : 'Suivant'}{' '}
+                      <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
                   {currentFormationViewerSlide?.kind === 'quiz_group' && !isCurrentQuizPassed ? (
