@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
+import ReactMarkdown, { type Components } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   BookOpen,
   Briefcase,
@@ -8,10 +10,17 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  CheckCircle,
+  X
 } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { useRepTrainingNav } from '../contexts/RepTrainingNavContext';
+import {
+  getModuleColorStyles,
+  getViewerThemeTokens,
+  resolveRepViewerTheme,
+} from '../utils/trainingViewerTheme';
 
 type JourneyRow = Record<string, unknown> & { __gigTitle?: string; __gigId?: string };
 type ModuleRow = { _id?: string; id?: string; title?: string; sections?: unknown[]; quizzes?: unknown[] };
@@ -527,6 +536,12 @@ export function Training() {
   );
   const currentFormationViewerSlide = formationViewerSlides[formationViewerSlideIndex];
 
+  const repViewerTheme = useMemo(
+    () => resolveRepViewerTheme(selectedJourney, selectedJourneyId || ''),
+    [selectedJourney, selectedJourneyId]
+  );
+  const viewerThemeTokens = useMemo(() => getViewerThemeTokens(repViewerTheme), [repViewerTheme]);
+  const moduleColorStyles = useMemo(() => getModuleColorStyles(repViewerTheme), [repViewerTheme]);
 
   useEffect(() => {
     return () => {
@@ -886,8 +901,8 @@ export function Training() {
 
       {!listLoading && !error && selectedJourney && (
         <div className="h-full overflow-hidden rounded-2xl border border-harx-100 bg-white shadow-sm">
-            <div className="flex h-full min-h-0 flex-col bg-[#060b1d]">
-              <div className="flex items-center gap-3 border-b border-harx-100 bg-white px-4 py-2.5">
+          <div className="flex h-full min-h-0 flex-col" style={{ background: viewerThemeTokens.shellBg }}>
+            <div className="flex items-center gap-3 border-b border-harx-100 bg-white px-4 py-2.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -900,119 +915,419 @@ export function Training() {
                 </button>
                 <h3 className="truncate text-sm font-black text-harx-700">{journeyTitle(selectedJourney)}</h3>
               </div>
-              <div className="relative flex-1 overflow-y-auto bg-gradient-to-br from-[#0a1638] via-[#111a3e] to-[#1f1747] p-4 md:p-5">
+              <div
+                className="relative flex-1 overflow-y-auto p-4 md:p-5"
+                style={{ background: viewerThemeTokens.contentBg }}
+              >
                 {(() => {
                   if (!currentFormationViewerSlide) return <p className="text-sm text-slate-300">Aucun module.</p>;
                   return (
                     <div className="mx-auto w-full max-w-5xl">
                       {currentFormationViewerSlide.kind === 'overview' ? (
-                        <div className="rounded-3xl border border-harx-500/30 bg-[#0b1025]/90 p-4 sm:p-6">
-                          <div className="rounded-2xl border border-harx-500/20 p-4 sm:p-5">
+                        <div
+                          className="rounded-3xl border p-4 sm:p-6"
+                          style={{
+                            borderColor: viewerThemeTokens.accentBorder,
+                            background: viewerThemeTokens.panelBg,
+                            boxShadow: viewerThemeTokens.accentShadow,
+                          }}
+                        >
+                          <div
+                            className="rounded-2xl border p-4 backdrop-blur-sm sm:p-5"
+                            style={{
+                              borderColor: viewerThemeTokens.accentBorder,
+                              background: 'linear-gradient(90deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))',
+                            }}
+                          >
                             <div className="flex flex-wrap items-center justify-between gap-3">
                               <div>
-                                <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-harx-300">HARX Training</p>
-                                <h3 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">{journeyTitle(selectedJourney)}</h3>
+                                <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-harx-300">
+                                  HARX Training
+                                </p>
+                                <h3 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
+                                  {journeyTitle(selectedJourney)}
+                                </h3>
                               </div>
-                              <span className="inline-flex items-center rounded-full border border-harx-400/40 bg-harx-500/20 px-3 py-1 text-[11px] font-semibold text-white">
+                              <span
+                                className="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold text-white"
+                                style={{
+                                  borderColor: moduleColorStyles[0].chipBorder,
+                                  background: moduleColorStyles[0].chipBg,
+                                }}
+                              >
                                 {currentFormationViewerSlide.modules.length} modules
                               </span>
                             </div>
-                            <p className="mt-2 text-sm text-slate-300">Choisissez un module pour afficher son contenu organise par sections.</p>
+                            <p className="mt-2 text-sm text-slate-300">
+                              Choisissez un module pour afficher son contenu organise par sections.
+                            </p>
                           </div>
                           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                            {currentFormationViewerSlide.modules.map((mod) => (
-                              <div key={`overview-mod-${mod.moduleIndex}`} className="rounded-2xl border border-harx-500/30 bg-[#12172f] p-3">
-                                <button
-                                  type="button"
-                                  onClick={() => jumpToFormationSlide(`m${mod.moduleIndex}-intro`)}
-                                  className="group flex w-full items-start justify-between gap-3 rounded-xl bg-gradient-to-r from-harx-600/90 to-harx-alt-500/90 px-3 py-2.5 text-left text-white"
+                            {currentFormationViewerSlide.modules.map((mod) => {
+                              const moduleTheme =
+                                moduleColorStyles[mod.moduleIndex % moduleColorStyles.length];
+                              return (
+                                <div
+                                  key={`overview-mod-${mod.moduleIndex}`}
+                                  className="rounded-2xl border p-3 shadow-[0_10px_35px_-20px_rgba(236,72,153,0.35)] transition-all duration-300 hover:-translate-y-0.5"
+                                  style={{
+                                    borderColor: moduleTheme.border,
+                                    background: viewerThemeTokens.cardBg,
+                                    boxShadow: moduleTheme.glow,
+                                  }}
                                 >
-                                  <span className="min-w-0">
-                                    <span className="block text-[10px] font-bold uppercase tracking-wider text-white/90">Module {mod.moduleIndex + 1}</span>
-                                    <span className="mt-0.5 block truncate text-sm font-semibold">{mod.title}</span>
-                                  </span>
-                                  <span className="inline-flex shrink-0 items-center rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">Ouvrir</span>
-                                </button>
-                                <div className="mt-2 flex items-center justify-between text-[11px] text-slate-300">
-                                  <span>{mod.sections.length} section(s)</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => jumpToFormationSlide(`m${mod.moduleIndex}-intro`)}
+                                    className="group flex w-full items-start justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-white shadow-sm transition hover:brightness-105"
+                                    style={{ background: moduleTheme.accentBg }}
+                                  >
+                                    <span className="min-w-0">
+                                      <span className="block text-[10px] font-bold uppercase tracking-wider text-white/90">
+                                        Module {mod.moduleIndex + 1}
+                                      </span>
+                                      <span className="mt-0.5 block truncate text-sm font-semibold">{mod.title}</span>
+                                    </span>
+                                    <span className="inline-flex shrink-0 items-center rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                                      Ouvrir
+                                    </span>
+                                  </button>
+                                  <div className="mt-2 flex items-center justify-between text-[11px] text-slate-300">
+                                    <span>{mod.sections.length} section(s)</span>
+                                  </div>
+                                  <p
+                                    className="mt-2 rounded-lg border border-dashed px-2.5 py-2 text-xs text-slate-300"
+                                    style={{ borderColor: moduleTheme.border, background: moduleTheme.softBg }}
+                                  >
+                                    Cliquez sur le module pour voir les sections.
+                                  </p>
                                 </div>
-                                <p className="mt-2 rounded-lg border border-dashed border-harx-500/30 bg-[#0b1025]/80 px-2.5 py-2 text-xs text-slate-300">
-                                  Cliquez sur le module pour voir les sections.
-                                </p>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       ) : currentFormationViewerSlide.kind === 'module_intro' ? (
                         (() => {
                           const mod = currentFormationViewerSlide.mod;
+                          const moduleTheme =
+                            moduleColorStyles[
+                              currentFormationViewerSlide.moduleIndex % moduleColorStyles.length
+                            ];
                           const sections = Array.isArray(mod?.sections) ? mod.sections : [];
+                          const sectionCount = sections.length;
+                          const desc = String(mod?.description || '').trim();
+                          const showFullDescription = sectionCount === 0 && !!desc;
                           return (
-                            <div className="rounded-3xl border border-harx-500/30 bg-[#0b1025]/90 p-5 sm:p-7">
-                              <p className="mb-2 inline-flex rounded-full border border-harx-400/40 bg-harx-500/20 px-2.5 py-1 text-xs font-semibold text-white">
-                                Module {currentFormationViewerSlide.moduleIndex + 1} / {currentFormationViewerSlide.totalModules}
+                            <div
+                              className="rounded-3xl border bg-[#0b1025]/90 p-5 sm:p-7"
+                              style={{ borderColor: moduleTheme.border, boxShadow: moduleTheme.glow }}
+                            >
+                              <p
+                                className="mb-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold text-white"
+                                style={{ borderColor: moduleTheme.chipBorder, background: moduleTheme.chipBg }}
+                              >
+                                Module {currentFormationViewerSlide.moduleIndex + 1} /{' '}
+                                {currentFormationViewerSlide.totalModules}
                               </p>
-                              <h3 className="mb-3 text-xl font-extrabold tracking-tight text-white sm:text-2xl">{String(mod?.title || 'Module')}</h3>
-                              <p className="text-sm leading-relaxed text-slate-300">Contenu du module par sections.</p>
-                              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                {sections.map((sec: any, si: number) => (
-                                  <button
-                                    key={`module-intro-sec-${currentFormationViewerSlide.moduleIndex}-${si}`}
-                                    type="button"
-                                    onClick={() => jumpToFormationSlide(`m${currentFormationViewerSlide.moduleIndex}-s${si}`)}
-                                    className="w-full rounded-2xl border border-harx-500/30 bg-[#12172f] p-3 text-left transition-all duration-300 hover:-translate-y-0.5"
-                                  >
-                                    <div className="flex items-start gap-2">
-                                      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-harx-500/30 text-[11px] font-bold text-white ring-1 ring-harx-400/40">{si + 1}</span>
-                                      <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-semibold text-white">{String(sec?.title || `Section ${si + 1}`)}</p>
-                                      </div>
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
+                              <h3 className="mb-3 text-xl font-extrabold tracking-tight text-white sm:text-2xl">
+                                {String(mod?.title || 'Module')}
+                              </h3>
+                              {showFullDescription ? (
+                                <div className="prose prose-sm max-w-none text-slate-200">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{desc}</ReactMarkdown>
+                                </div>
+                              ) : sectionCount > 0 ? (
+                                <>
+                                  <p className="text-sm leading-relaxed text-slate-300">
+                                    Contenu du module par sections.
+                                  </p>
+                                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                    {sections.map((sec: any, si: number) => {
+                                      const sectionTitle = String(sec?.title || `Section ${si + 1}`).trim();
+                                      const rawContent = String(sec?.content || '').trim();
+                                      const preview = rawContent
+                                        .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
+                                        .replace(/[*_`#>-]/g, '')
+                                        ? rawContent
+                                            .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
+                                            .replace(/[*_`#>-]/g, '')
+                                            .replace(/\s+/g, ' ')
+                                            .slice(0, 170)
+                                            .trim()
+                                        : '';
+                                      return (
+                                        <button
+                                          key={`module-intro-sec-${currentFormationViewerSlide.moduleIndex}-${si}`}
+                                          type="button"
+                                          onClick={() =>
+                                            jumpToFormationSlide(`m${currentFormationViewerSlide.moduleIndex}-s${si}`)
+                                          }
+                                          className="w-full rounded-2xl border p-3 text-left transition-all duration-300 hover:-translate-y-0.5"
+                                          style={{
+                                            borderColor: moduleTheme.border,
+                                            background: viewerThemeTokens.cardBg,
+                                            boxShadow: moduleTheme.glow,
+                                          }}
+                                        >
+                                          <div className="flex items-start gap-2">
+                                            <span
+                                              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold text-white ring-1"
+                                              style={{
+                                                background: moduleTheme.chipBg,
+                                                borderColor: moduleTheme.chipBorder,
+                                              }}
+                                            >
+                                              {si + 1}
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                              <p className="truncate text-sm font-semibold text-white">{sectionTitle}</p>
+                                              {preview ? (
+                                                <p className="mt-1 text-xs leading-relaxed text-slate-300">
+                                                  {preview}
+                                                  {rawContent.length > 170 ? '…' : ''}
+                                                </p>
+                                              ) : (
+                                                <p className="mt-1 text-xs text-slate-400">
+                                                  Aucun contenu texte pour cette section.
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-sm text-slate-300">Pas de description pour ce module.</p>
+                              )}
                             </div>
                           );
                         })()
                       ) : currentFormationViewerSlide.kind === 'section' ? (
-                        <div className="rounded-3xl border border-harx-500/30 bg-[#0b1025]/90 p-5 sm:p-7">
-                          <p className="mb-2 inline-flex rounded-full border border-harx-400/40 bg-harx-500/20 px-2.5 py-1 text-xs font-semibold text-white">{currentFormationViewerSlide.modTitle}</p>
-                          <h3 className="mb-3 text-lg font-bold text-white sm:text-xl">{String(currentFormationViewerSlide.section?.title || 'Section')}</h3>
-                          <div className="rounded-2xl border border-harx-500/30 bg-[#12172f] p-4">
-                            <p className="whitespace-pre-wrap text-sm leading-7 text-slate-200">{String(currentFormationViewerSlide.section?.content || 'Contenu vide.')}</p>
-                          </div>
-                        </div>
+                        (() => {
+                          const cfs = currentFormationViewerSlide;
+                          const moduleTheme =
+                            moduleColorStyles[cfs.moduleIndex % moduleColorStyles.length];
+                          const sectionMdComponents: Components = {
+                            p: ({ children }) => (
+                              <p className="mb-3 text-[15px] leading-7 text-slate-200 last:mb-0">{children}</p>
+                            ),
+                            ul: ({ children }) => (
+                              <ul
+                                className="mb-3 space-y-2 rounded-xl border p-3 last:mb-0"
+                                style={{ borderColor: moduleTheme.border, background: moduleTheme.softBg }}
+                              >
+                                {children}
+                              </ul>
+                            ),
+                            li: ({ children }) => (
+                              <li className="flex items-start gap-2 text-[14px] leading-6 text-slate-200">
+                                <span
+                                  className="mt-2 inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                                  style={{ background: moduleTheme.chipBorder }}
+                                />
+                                <span className="flex-1">{children}</span>
+                              </li>
+                            ),
+                            strong: ({ children }) => (
+                              <strong className="font-semibold text-white">{children}</strong>
+                            ),
+                            h1: ({ children }) => (
+                              <h4 className="mb-2 mt-4 text-xl font-bold text-white first:mt-0">{children}</h4>
+                            ),
+                            h2: ({ children }) => (
+                              <h5 className="mb-2 mt-4 text-lg font-bold text-white first:mt-0">{children}</h5>
+                            ),
+                            h3: ({ children }) => (
+                              <h6 className="mb-2 mt-4 text-base font-bold text-white first:mt-0">{children}</h6>
+                            ),
+                          };
+                          return (
+                            <div
+                              className="rounded-3xl border bg-[#0b1025]/90 p-5 sm:p-7"
+                              style={{
+                                borderColor: moduleTheme.border,
+                                boxShadow: moduleTheme.glow,
+                              }}
+                            >
+                              <p
+                                className="mb-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold text-white"
+                                style={{
+                                  borderColor: moduleTheme.chipBorder,
+                                  background: moduleTheme.chipBg,
+                                }}
+                              >
+                                {cfs.modTitle}
+                              </p>
+                              <h3 className="mb-3 text-lg font-bold text-white sm:text-xl">
+                                {String(cfs.section?.title || 'Section')}
+                              </h3>
+                              {String(cfs.section?.content || '').trim() ? (
+                                <div
+                                  className="rounded-2xl border p-4"
+                                  style={{
+                                    borderColor: moduleTheme.border,
+                                    background: viewerThemeTokens.cardBg,
+                                    boxShadow: moduleTheme.glow,
+                                  }}
+                                >
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={sectionMdComponents}>
+                                    {String(cfs.section.content)}
+                                  </ReactMarkdown>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-slate-300">Contenu vide.</p>
+                              )}
+                            </div>
+                          );
+                        })()
                       ) : (
                         (() => {
                           const slide = currentFormationViewerSlide;
                           const totalQuestions = slide.questions.length;
-                          const page = Math.min(Math.max(formationViewerQuizPage[slide.key] ?? 0, 0), Math.max(0, totalQuestions - 1));
+                          const page = Math.min(
+                            Math.max(formationViewerQuizPage[slide.key] ?? 0, 0),
+                            Math.max(0, totalQuestions - 1)
+                          );
                           const currentQuestion = slide.questions[page];
                           const q = currentQuestion?.question;
                           const opts = Array.isArray(q?.options) ? q.options : [];
                           const qKey = `${slide.key}-q${page}`;
-                          const qState = formationViewerQuizState[qKey] || { selected: null as number | null, revealed: false };
+                          const qState = formationViewerQuizState[qKey] || {
+                            selected: null as number | null,
+                            revealed: false,
+                          };
+                          const correctIdx =
+                            typeof currentQuestion?.correctAnswer === 'number'
+                              ? currentQuestion.correctAnswer
+                              : 0;
+                          const isCorrect =
+                            qState.revealed && qState.selected !== null && qState.selected === correctIdx;
+                          const isWrong =
+                            qState.revealed && qState.selected !== null && qState.selected !== correctIdx;
                           return (
-                            <div className="rounded-3xl border border-harx-500/30 bg-[#0b1025]/90 p-5 sm:p-7">
-                              <p className="mb-2 inline-flex rounded-full border border-harx-400/40 bg-harx-500/20 px-2.5 py-1 text-xs font-semibold text-harx-100">{currentQuestion?.quizTitle || `Quiz module ${slide.moduleIndex + 1}`}</p>
+                            <div className="rounded-3xl border border-harx-500/30 bg-[#0b1025]/90 p-5 shadow-[0_20px_70px_-25px_rgba(236,72,153,0.4)] sm:p-7">
+                              <p className="mb-2 inline-flex rounded-full border border-harx-400/40 bg-harx-500/20 px-2.5 py-1 text-xs font-semibold text-harx-100">
+                                {currentQuestion?.quizTitle || `Quiz module ${slide.moduleIndex + 1}`}
+                              </p>
                               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-                                <span className="rounded-full border border-harx-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-harx-100">Question {page + 1} / {totalQuestions}</span>
-                              </div>
-                              <p className="mb-4 text-base font-semibold text-white sm:text-lg">{String(q?.question || '')}</p>
-                              <div className="space-y-2">
-                                {opts.map((op: string, oi: number) => (
+                                <span className="rounded-full border border-harx-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-harx-100">
+                                  Question {page + 1} / {totalQuestions}
+                                </span>
+                                <div className="flex items-center gap-1.5">
                                   <button
-                                    key={oi}
                                     type="button"
-                                    disabled={qState.revealed}
-                                    onClick={() => setFormationViewerQuizState((prev) => ({ ...prev, [qKey]: { selected: oi, revealed: prev[qKey]?.revealed ?? false } }))}
-                                    className={`flex w-full rounded-xl border px-3 py-2.5 text-left text-sm transition ${qState.selected === oi ? 'border-harx-400 bg-harx-500/25 text-white' : 'border-harx-500/20 bg-[#12172f] text-slate-100'}`}
+                                    disabled={page <= 0}
+                                    onClick={() =>
+                                      setFormationViewerQuizPage((prev) => ({
+                                        ...prev,
+                                        [slide.key]: Math.max(0, (prev[slide.key] ?? 0) - 1),
+                                      }))
+                                    }
+                                    className="rounded-lg border border-harx-500/30 bg-[#12172f] px-2.5 py-1 font-semibold text-slate-200 transition hover:border-harx-400/60 disabled:opacity-40"
                                   >
-                                    <span className="mr-2 font-mono text-xs text-slate-400">{oi + 1}.</span>
-                                    <span className="flex-1">{String(op)}</span>
+                                    Précédente
                                   </button>
-                                ))}
+                                  <button
+                                    type="button"
+                                    disabled={page >= totalQuestions - 1}
+                                    onClick={() =>
+                                      setFormationViewerQuizPage((prev) => ({
+                                        ...prev,
+                                        [slide.key]: Math.min(
+                                          totalQuestions - 1,
+                                          (prev[slide.key] ?? 0) + 1
+                                        ),
+                                      }))
+                                    }
+                                    className="rounded-lg border border-harx-400/40 bg-gradient-to-r from-harx-600/85 to-harx-alt-500/85 px-2.5 py-1 font-semibold text-white transition hover:brightness-110 disabled:opacity-40"
+                                  >
+                                    Suivante
+                                  </button>
+                                </div>
                               </div>
+                              <p className="mb-4 text-base font-semibold text-white sm:text-lg">
+                                {String(q?.question || '')}
+                              </p>
+                              <div className="space-y-2" role="radiogroup" aria-label="Réponses">
+                                {opts.map((op: string, oi: number) => {
+                                  const selected = qState.selected === oi;
+                                  const showAsCorrect = qState.revealed && oi === correctIdx;
+                                  const wrongSelected =
+                                    qState.revealed && qState.selected === oi && oi !== correctIdx;
+                                  return (
+                                    <button
+                                      key={oi}
+                                      type="button"
+                                      disabled={qState.revealed}
+                                      onClick={() => {
+                                        if (qState.revealed) return;
+                                        setFormationViewerQuizState((prev) => ({
+                                          ...prev,
+                                          [qKey]: {
+                                            selected: oi,
+                                            revealed: prev[qKey]?.revealed ?? false,
+                                          },
+                                        }));
+                                      }}
+                                      className={`flex w-full rounded-xl border px-3 py-2.5 text-left text-sm transition ${
+                                        showAsCorrect
+                                          ? 'border-emerald-400 bg-emerald-500/20 font-semibold text-emerald-100'
+                                          : wrongSelected
+                                            ? 'border-rose-400 bg-rose-500/20 text-rose-100'
+                                            : selected && !qState.revealed
+                                              ? 'border-harx-400 bg-harx-500/25 text-white'
+                                              : 'border-harx-500/20 bg-[#12172f] text-slate-100 hover:border-harx-400/40'
+                                      }`}
+                                    >
+                                      <span className="mr-2 font-mono text-xs text-slate-400">{oi + 1}.</span>
+                                      <span className="flex-1">{String(op)}</span>
+                                      {showAsCorrect ? (
+                                        <CheckCircle className="ml-2 h-4 w-4 shrink-0 text-emerald-600" />
+                                      ) : null}
+                                      {wrongSelected ? <X className="ml-2 h-4 w-4 shrink-0 text-rose-600" /> : null}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              {!qState.revealed ? (
+                                <button
+                                  type="button"
+                                  disabled={qState.selected === null}
+                                  onClick={() =>
+                                    setFormationViewerQuizState((prev) => ({
+                                      ...prev,
+                                      [qKey]: {
+                                        selected: prev[qKey]?.selected ?? null,
+                                        revealed: true,
+                                      },
+                                    }))
+                                  }
+                                  className="mt-4 w-full rounded-xl bg-gradient-to-r from-harx-600 to-harx-alt-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  Valider ma réponse
+                                </button>
+                              ) : (
+                                <div className="mt-4 rounded-xl border border-harx-500/20 bg-[#12172f] px-3 py-3">
+                                  <p
+                                    className={`text-sm font-semibold ${
+                                      isCorrect ? 'text-emerald-300' : isWrong ? 'text-rose-300' : 'text-slate-200'
+                                    }`}
+                                  >
+                                    {isCorrect
+                                      ? 'Bonne réponse !'
+                                      : isWrong
+                                        ? 'Ce n’était pas la bonne réponse.'
+                                        : 'Réponse affichée.'}
+                                  </p>
+                                  {String(q?.explanation || '').trim() ? (
+                                    <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                                      {String(q.explanation)}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              )}
                             </div>
                           );
                         })()
@@ -1022,22 +1337,64 @@ export function Training() {
                 })()}
               </div>
               {formationViewerSlides.length > 0 && (
-                <div className="shrink-0 border-t border-harx-500/20 bg-[#0b1025] px-4 py-3 sm:px-6">
-                  <div className="mb-3 h-2 w-full overflow-hidden rounded-full border border-harx-500/30 bg-[#12172f]">
-                    <div className="h-full rounded-full bg-gradient-to-r from-harx-600 to-harx-alt-500 transition-[width] duration-300 ease-out" style={{ width: `${((formationViewerSlideIndex + 1) / formationViewerSlides.length) * 100}%` }} />
+                <div
+                  className="shrink-0 border-t px-4 py-3 sm:px-6"
+                  style={{ borderColor: viewerThemeTokens.accentBorder, background: viewerThemeTokens.panelBg }}
+                >
+                  <div
+                    className="mb-3 h-2 w-full overflow-hidden rounded-full border"
+                    style={{ borderColor: viewerThemeTokens.accentBorder, background: viewerThemeTokens.cardBg }}
+                  >
+                    <div
+                      className="h-full rounded-full transition-[width] duration-300 ease-out"
+                      style={{
+                        background: viewerThemeTokens.accentBg,
+                        boxShadow: viewerThemeTokens.accentShadow,
+                        width: `${((formationViewerSlideIndex + 1) / formationViewerSlides.length) * 100}%`,
+                      }}
+                    />
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <button type="button" onClick={() => setFormationViewerSlideIndex((i) => Math.max(0, i - 1))} disabled={formationViewerSlideIndex <= 0} className="inline-flex items-center gap-1.5 rounded-full border border-harx-500/30 bg-[#12172f] px-3.5 py-2 text-xs font-semibold text-slate-100 disabled:opacity-40">
+                    <button
+                      type="button"
+                      onClick={() => setFormationViewerSlideIndex((i) => Math.max(0, i - 1))}
+                      disabled={formationViewerSlideIndex <= 0}
+                      className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold text-slate-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{
+                        borderColor: viewerThemeTokens.accentBorder,
+                        background: viewerThemeTokens.cardBg,
+                        boxShadow: viewerThemeTokens.accentShadow,
+                      }}
+                    >
                       <ChevronLeft className="h-4 w-4" /> Précédent
                     </button>
-                    <span className="rounded-full border border-harx-500/30 bg-[#12172f] px-3 py-1 text-xs font-medium text-white">{formationViewerSlideIndex + 1} / {formationViewerSlides.length}</span>
-                    <button type="button" onClick={() => setFormationViewerSlideIndex((i) => Math.min(formationViewerSlides.length - 1, i + 1))} disabled={formationViewerSlideIndex >= formationViewerSlides.length - 1} className="inline-flex items-center gap-1.5 rounded-full border border-harx-500/30 bg-gradient-to-r from-harx-600 to-harx-alt-500 px-3.5 py-2 text-xs font-semibold text-white disabled:opacity-40">
+                    <span
+                      className="rounded-full border px-3 py-1 text-xs font-medium text-white"
+                      style={{ borderColor: viewerThemeTokens.accentBorder, background: viewerThemeTokens.cardBg }}
+                    >
+                      {formationViewerSlideIndex + 1} / {formationViewerSlides.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormationViewerSlideIndex((i) =>
+                          Math.min(formationViewerSlides.length - 1, i + 1)
+                        )
+                      }
+                      disabled={formationViewerSlideIndex >= formationViewerSlides.length - 1}
+                      className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{
+                        borderColor: viewerThemeTokens.accentBorder,
+                        background: viewerThemeTokens.accentBg,
+                        boxShadow: viewerThemeTokens.accentShadow,
+                      }}
+                    >
                       Suivant <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
               )}
-            </div>
+          </div>
         </div>
       )}
     </div>
