@@ -435,6 +435,8 @@ export function Training() {
   /** Index précédent du viewer formation — pour détecter navigation avant → suivant. */
   const prevFormationSlideIndexRef = useRef<number | null>(null);
   const quizOutcomeSentRef = useRef<Set<string>>(new Set());
+  /** POST /quiz/start déjà réussi pour cette clé (réinitialisé en quittant le slide quiz). */
+  const quizStartSentRef = useRef<Set<string>>(new Set());
 
   const displayJourneys = useMemo(() => {
     if (gigFilter === '__all__') return journeys;
@@ -756,6 +758,29 @@ export function Training() {
     return currentFormationViewerSlide?.kind !== 'section';
   }, [formationViewerSlides, formationViewerSlideIndex, currentFormationViewerSlide]);
 
+  /** Toutes les questions du bloc ont une réponse verrouillée (peu importe la note). Sert à envoyer quiz/submit même en échec sous 70 %. */
+  const isCurrentQuizFullyAnswered = useMemo(() => {
+    if (!currentFormationViewerSlide || currentFormationViewerSlide.kind !== 'quiz_group') return false;
+    const questions = Array.isArray(currentFormationViewerSlide.questions)
+      ? currentFormationViewerSlide.questions
+      : [];
+    if (questions.length === 0) return false;
+    const byQuiz = new Map<string, { answered: number; total: number }>();
+    questions.forEach((q, idx) => {
+      const bucket = String(q.quizKey || q.quizTitle || 'quiz').trim() || 'quiz';
+      if (!byQuiz.has(bucket)) byQuiz.set(bucket, { answered: 0, total: 0 });
+      const row = byQuiz.get(bucket)!;
+      row.total += 1;
+      const qKey = `${currentFormationViewerSlide.key}-q${idx}`;
+      const state = formationViewerQuizState[qKey];
+      if (state?.locked) row.answered += 1;
+    });
+    for (const row of byQuiz.values()) {
+      if (row.answered < row.total) return false;
+    }
+    return true;
+  }, [currentFormationViewerSlide, formationViewerQuizState]);
+
   const isCurrentQuizPassed = useMemo(() => {
     if (!currentFormationViewerSlide || currentFormationViewerSlide.kind !== 'quiz_group') return true;
     const questions = Array.isArray(currentFormationViewerSlide.questions)
@@ -813,6 +838,7 @@ export function Training() {
     sectionCompleteSentRef.current.clear();
     prevFormationSlideIndexRef.current = null;
     quizOutcomeSentRef.current.clear();
+    quizStartSentRef.current.clear();
   }, [selectedJourneyId]);
 
   useEffect(() => {
@@ -1293,10 +1319,81 @@ export function Training() {
     ]
   );
 
+  const requestQuizStartForSlide = useCallback(
+    async (
+      slide: Extract<ViewerSlide, { kind: 'quiz_group' }>,
+      options?: { ignoreSentRef?: boolean }
+    ) => {
+      if (!repId || !selectedJourneyId || !selectedJourney) return;
+      const modules = extractModules(selectedJourney);
+      const moduleRow = modules[slide.moduleIndex];
+      if (!moduleRow) return;
+      const moduleId =
+        normalizeMongoId((moduleRow as any)?._id) ||
+        normalizeMongoId((moduleRow as any)?.id) ||
+        String(slide.moduleIndex);
+      if (!moduleId || !/^[a-f\d]{24}$/i.test(moduleId)) return;
+
+      const questions = Array.isArray(slide.questions) ? slide.questions : [];
+      const quizIds = new Set<string>();
+      for (const q of questions) {
+        const id =
+          (q.quizId && /^[a-f\d]{24}$/i.test(String(q.quizId)) ? String(q.quizId) : '') ||
+          (/^[a-f\d]{24}$/i.test(String(q.quizKey || '')) ? String(q.quizKey) : '');
+        if (id) quizIds.add(id);
+      }
+      if (quizIds.size === 0) return;
+
+      const base = trainingApiBase();
+      if (!base) return;
+
+      for (const quizId of quizIds) {
+        const sentKey = `${selectedJourneyId}:${moduleId}:${quizId}`;
+        if (!options?.ignoreSentRef && quizStartSentRef.current.has(sentKey)) continue;
+        const syncKey = `quizstart:${sentKey}`;
+        if (progressSyncInFlightRef.current.has(syncKey)) continue;
+        progressSyncInFlightRef.current.add(syncKey);
+        try {
+          await axios.post(`${base}/training_journeys/quiz/start`, {
+            repId,
+            courseId: selectedJourneyId,
+            moduleId,
+            quizId,
+          });
+          quizStartSentRef.current.add(sentKey);
+          await Promise.all([
+            fetchTrainingProgressRows(),
+            fetchSlideProgressSummary(),
+            fetchStructuredProgress(selectedJourneyId),
+          ]);
+        } catch {
+          /* ignore */
+        } finally {
+          progressSyncInFlightRef.current.delete(syncKey);
+        }
+      }
+    },
+    [
+      repId,
+      selectedJourneyId,
+      selectedJourney,
+      fetchTrainingProgressRows,
+      fetchSlideProgressSummary,
+      fetchStructuredProgress,
+    ]
+  );
+
   useEffect(() => {
     if (!repId || !selectedJourneyId || !selectedJourney) return;
     const slide = currentFormationViewerSlide;
-    if (!slide || slide.kind !== 'quiz_group' || !isCurrentQuizPassed) return;
+    if (!slide || slide.kind !== 'quiz_group') return;
+    void requestQuizStartForSlide(slide);
+  }, [repId, selectedJourneyId, selectedJourney, currentFormationViewerSlide, requestQuizStartForSlide]);
+
+  useEffect(() => {
+    if (!repId || !selectedJourneyId || !selectedJourney) return;
+    const slide = currentFormationViewerSlide;
+    if (!slide || slide.kind !== 'quiz_group' || !isCurrentQuizFullyAnswered) return;
 
     const modules = extractModules(selectedJourney);
     const mod = modules[slide.moduleIndex];
@@ -1356,7 +1453,10 @@ export function Training() {
       progressSyncInFlightRef.current.add(syncKey);
       const answers = questions
         .map((q, idx) => ({ q, idx }))
-        .filter(({ q }) => String(q.quizKey || '').trim() === quizKey)
+        .filter(
+          ({ q }) =>
+            (String(q.quizKey || q.quizTitle || 'quiz').trim() || 'quiz') === quizKey
+        )
         .map(({ idx }) => {
           const qState = formationViewerQuizState[`${slide.key}-q${idx}`];
           return qState?.selected ?? -1;
@@ -1388,7 +1488,7 @@ export function Training() {
     selectedJourney,
     currentFormationViewerSlide,
     formationViewerQuizState,
-    isCurrentQuizPassed,
+    isCurrentQuizFullyAnswered,
     fetchTrainingProgressRows,
     fetchSlideProgressSummary,
     fetchStructuredProgress,
@@ -1448,9 +1548,25 @@ export function Training() {
         quizKeys.forEach((quizKey) => {
           quizOutcomeSentRef.current.delete(`${selectedJourneyId}:${moduleId}:${quizKey}`);
         });
+        const quizIds = new Set(
+          (Array.isArray(slide.questions) ? slide.questions : [])
+            .map((q: any) => {
+              const id =
+                (q?.quizId && /^[a-f\d]{24}$/i.test(String(q.quizId)) ? String(q.quizId) : '') ||
+                (/^[a-f\d]{24}$/i.test(String(q?.quizKey || '')) ? String(q.quizKey) : '');
+              return id;
+            })
+            .filter(Boolean)
+        );
+        quizIds.forEach((qid) => {
+          quizStartSentRef.current.delete(`${selectedJourneyId}:${moduleId}:${qid}`);
+        });
       }
     }
-  }, [selectedJourney, selectedJourneyId]);
+    if (slide?.kind === 'quiz_group') {
+      void requestQuizStartForSlide(slide, { ignoreSentRef: true });
+    }
+  }, [selectedJourney, selectedJourneyId, requestQuizStartForSlide]);
 
   useEffect(() => {
     if (!activeQuizTimerCtx || activeQuizQuestionLocked) return;
