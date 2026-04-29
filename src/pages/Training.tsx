@@ -37,6 +37,20 @@ type RepProgressRow = {
   modules?: Record<string, Record<string, unknown>>;
 };
 
+type StructuredModuleProgress = {
+  moduleId: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'locked';
+  progressPercentage: number;
+};
+
+type StructuredProgressRow = {
+  repId: string;
+  courseId: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'locked';
+  progressPercentage: number;
+  modules: StructuredModuleProgress[];
+};
+
 /** Aligné sur GET /training_journeys/rep/:repId/progress-summary */
 type RepSlideProgressSummary = {
   trainingCount: number;
@@ -102,6 +116,24 @@ function trainingApiBase(): string {
     import.meta.env.VITE_TRAINING_BACKEND_URL ||
     '';
   return String(raw).replace(/\/$/, '');
+}
+
+function normalizeStructuredProgress(raw: any): StructuredProgressRow | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const modules = Array.isArray(raw.modules)
+    ? raw.modules.map((m: any) => ({
+        moduleId: normalizeMongoId(m?.moduleId),
+        status: String(m?.status || 'pending') as StructuredModuleProgress['status'],
+        progressPercentage: Number(m?.progressPercentage || 0),
+      }))
+    : [];
+  return {
+    repId: normalizeMongoId(raw.repId),
+    courseId: normalizeMongoId(raw.courseId),
+    status: String(raw.status || 'pending') as StructuredProgressRow['status'],
+    progressPercentage: Number(raw.progressPercentage || 0),
+    modules,
+  };
 }
 
 function journeyTitle(j: Record<string, unknown>): string {
@@ -387,6 +419,7 @@ export function Training() {
   const quizTimerSlideRef = useRef<{ qk: string } | null>(null);
   const [progressByJourney, setProgressByJourney] = useState<Record<string, RepProgressRow>>({});
   const [slideProgressSummary, setSlideProgressSummary] = useState<RepSlideProgressSummary | null>(null);
+  const [structuredProgressByJourney, setStructuredProgressByJourney] = useState<Record<string, StructuredProgressRow>>({});
   const [completedSectionsByJourney, setCompletedSectionsByJourney] = useState<
     Record<string, Record<string, string[]>>
   >({});
@@ -683,6 +716,27 @@ export function Training() {
     [formationViewerSlideIndexByKey]
   );
   const currentFormationViewerSlide = formationViewerSlides[formationViewerSlideIndex];
+  const isNextModuleLocked = useMemo(() => {
+    if (!selectedJourneyId || !currentFormationViewerSlide) return false;
+    const nextSlide = formationViewerSlides[formationViewerSlideIndex + 1];
+    if (!nextSlide || nextSlide.kind === 'overview') return false;
+    const nextModuleIndex = nextSlide.moduleIndex;
+    const selected = selectedJourney ? extractModules(selectedJourney) : [];
+    const nextModule = selected[nextModuleIndex];
+    if (!nextModule) return false;
+    const nextModuleId = normalizeMongoId((nextModule as any)?._id) || normalizeMongoId((nextModule as any)?.id);
+    const structured = structuredProgressByJourney[selectedJourneyId];
+    if (!structured || !Array.isArray(structured.modules)) return false;
+    const moduleState = structured.modules.find((m) => m.moduleId === nextModuleId);
+    return moduleState?.status === 'locked';
+  }, [
+    selectedJourneyId,
+    currentFormationViewerSlide,
+    formationViewerSlides,
+    formationViewerSlideIndex,
+    selectedJourney,
+    structuredProgressByJourney,
+  ]);
   const isCurrentQuizPassed = useMemo(() => {
     if (!currentFormationViewerSlide || currentFormationViewerSlide.kind !== 'quiz_group') return true;
     const questions = Array.isArray(currentFormationViewerSlide.questions)
@@ -919,9 +973,36 @@ export function Training() {
     }
   }, [repId, gigFilter]);
 
+  const fetchStructuredProgress = useCallback(
+    async (courseId: string) => {
+      if (!repId || !courseId) return null;
+      const base = trainingApiBase();
+      if (!base) return null;
+      try {
+        const r = await axios.get<{ success?: boolean; data?: unknown }>(
+          `${base}/progress/${encodeURIComponent(repId)}/${encodeURIComponent(courseId)}`
+        );
+        const parsed = normalizeStructuredProgress(r.data?.data);
+        if (parsed) {
+          setStructuredProgressByJourney((prev) => ({ ...prev, [courseId]: parsed }));
+          return parsed;
+        }
+      } catch {
+        /* ignore */
+      }
+      return null;
+    },
+    [repId]
+  );
+
   useEffect(() => {
     void fetchSlideProgressSummary();
   }, [fetchSlideProgressSummary]);
+
+  useEffect(() => {
+    if (!selectedJourneyId) return;
+    void fetchStructuredProgress(selectedJourneyId);
+  }, [selectedJourneyId, fetchStructuredProgress]);
 
   useEffect(() => {
     if (!repId || !selectedJourneyId || !selectedJourney) return;
@@ -953,6 +1034,7 @@ export function Training() {
           : '';
     if (!moduleId || !sectionKey) return;
     if (!/^[a-f\d]{24}$/i.test(moduleId)) return;
+    if (!sectionIdForApi || !/^[a-f\d]{24}$/i.test(sectionIdForApi)) return;
 
     const sentKey = `${selectedJourneyId}:${moduleId}:${sectionIdForApi || sectionKey}`;
     if (sectionProgressSentRef.current.has(sentKey)) return;
@@ -989,27 +1071,31 @@ export function Training() {
       progress >= 100 && !hasQuizzes ? 'completed' : progress > 0 ? 'in_progress' : 'not_started';
 
     axios
-      .post(`${base}/training_journeys/rep-progress`, {
+      .post(`${base}/section/start`, {
         repId,
-        journeyId: selectedJourneyId,
+        courseId: selectedJourneyId,
         moduleId,
-        progress,
-        status,
-        completedSections: nextDone.filter((id) => /^[a-f\d]{24}$/i.test(id)),
-        ...(sectionIdForApi
-          ? {
-              sectionUpdate: {
-                sectionId: sectionIdForApi,
-                title: String((slide.section as any)?.title || '').trim() || undefined,
-                status: 'completed' as const,
-                durationMs: sectionDurationMs,
-              },
-            }
-          : {}),
+        sectionId: sectionIdForApi,
       })
+      .then(() =>
+        axios.post(`${base}/section/complete`, {
+          repId,
+          courseId: selectedJourneyId,
+          moduleId,
+          sectionId: sectionIdForApi,
+          progress,
+          status,
+          completedSections: nextDone.filter((id) => /^[a-f\d]{24}$/i.test(id)),
+          durationMs: sectionDurationMs,
+        })
+      )
       .then(async () => {
         sectionProgressSentRef.current.add(sentKey);
-        await Promise.all([fetchTrainingProgressRows(), fetchSlideProgressSummary()]);
+        await Promise.all([
+          fetchTrainingProgressRows(),
+          fetchSlideProgressSummary(),
+          fetchStructuredProgress(selectedJourneyId),
+        ]);
       })
       .catch(() => undefined)
       .finally(() => {
@@ -1166,35 +1252,34 @@ export function Training() {
       if (stats.answered < stats.total) return;
     }
 
-    const strikesForSlide = quizSlideWrongStrikes[slide.key] ?? 0;
     for (const [quizKey, stats] of buckets.entries()) {
-      const score = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
-      const passed = score >= 70;
       const ouKey = `${selectedJourneyId}:${moduleId}:${quizKey}`;
       if (quizOutcomeSentRef.current.has(ouKey)) continue;
       const syncKey = `quiz:${ouKey}`;
       if (progressSyncInFlightRef.current.has(syncKey)) continue;
       progressSyncInFlightRef.current.add(syncKey);
+      const answers = questions
+        .map((q, idx) => ({ q, idx }))
+        .filter(({ q }) => String(q.quizKey || '').trim() === quizKey)
+        .map(({ idx }) => {
+          const qState = formationViewerQuizState[`${slide.key}-q${idx}`];
+          return qState?.selected ?? -1;
+        });
       void axios
-        .post(`${base}/training_journeys/rep-progress`, {
+        .post(`${base}/quiz/submit`, {
           repId,
-          journeyId: selectedJourneyId,
+          courseId: selectedJourneyId,
           moduleId,
-          status: 'in_progress',
-          quizUpdate: {
-            quizKey,
-            quizMongoId: stats.quizId,
-            title: stats.title,
-            status: passed ? 'passed' : 'failed',
-            score,
-            attempts: strikesForSlide,
-            passed,
-            durationMs: 0,
-          },
+          quizId: stats.quizId,
+          answers,
         })
         .then(async () => {
           quizOutcomeSentRef.current.add(ouKey);
-          await Promise.all([fetchTrainingProgressRows(), fetchSlideProgressSummary()]);
+          await Promise.all([
+            fetchTrainingProgressRows(),
+            fetchSlideProgressSummary(),
+            fetchStructuredProgress(selectedJourneyId),
+          ]);
         })
         .catch(() => undefined)
         .finally(() => {
@@ -1210,7 +1295,7 @@ export function Training() {
     isCurrentQuizPassed,
     fetchTrainingProgressRows,
     fetchSlideProgressSummary,
-    quizSlideWrongStrikes,
+    fetchStructuredProgress,
   ]);
 
   const activeQuizTimerCtx = useMemo(() => {
@@ -2192,7 +2277,9 @@ export function Training() {
                         )
                       }
                       disabled={
-                        formationViewerSlideIndex >= formationViewerSlides.length - 1 || !isCurrentQuizPassed
+                        formationViewerSlideIndex >= formationViewerSlides.length - 1 ||
+                        !isCurrentQuizPassed ||
+                        isNextModuleLocked
                       }
                       className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
                       style={{
@@ -2208,6 +2295,11 @@ export function Training() {
                     <p className="mt-2 text-center text-[11px] font-semibold text-amber-300">
                       Répondez à toutes les questions (40 s max par question). Le bouton Suivant s’active dès
                       une note &gt;= 70 %.
+                    </p>
+                  ) : null}
+                  {isNextModuleLocked ? (
+                    <p className="mt-2 text-center text-[11px] font-semibold text-amber-300">
+                      Le module suivant est verrouille. Completez le module courant (sections + quiz &gt;= 70%).
                     </p>
                   ) : null}
                 </div>
