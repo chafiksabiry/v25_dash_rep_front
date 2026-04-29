@@ -34,7 +34,7 @@ type RepProgressRow = {
   lastAccessed?: string;
 };
 
-/** Aligné sur GET /training_journeys/rep/:repId/slide-progress-summary */
+/** Aligné sur GET /training_journeys/rep/:repId/progress-summary */
 type RepSlideProgressSummary = {
   trainingCount: number;
   journeys: {
@@ -698,7 +698,7 @@ export function Training() {
     if (!base) return;
     try {
       const r = await axios.get<{ success?: boolean; data?: RepSlideProgressSummary }>(
-        `${base}/training_journeys/rep/${encodeURIComponent(repId)}/slide-progress-summary`,
+        `${base}/training_journeys/rep/${encodeURIComponent(repId)}/progress-summary`,
         gigFilter === '__all__' ? {} : { params: { gigId: gigFilter } }
       );
       setSlideProgressSummary(r.data?.data ?? null);
