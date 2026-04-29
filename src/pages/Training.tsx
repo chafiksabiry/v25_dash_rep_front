@@ -1195,36 +1195,64 @@ export function Training() {
       {!listLoading && !error && selectedJourney && (
         <div className="h-full overflow-hidden rounded-2xl border border-harx-100 bg-white shadow-sm">
           <div className="flex h-full min-h-0 flex-col" style={{ background: viewerThemeTokens.shellBg }}>
-            <div className="flex items-center gap-3 border-b border-harx-100 bg-white px-4 py-2.5">
+            <div
+              className="flex flex-wrap items-center gap-2 border-b px-3 py-2 sm:flex-nowrap sm:gap-3 sm:px-4 sm:py-2.5"
+              style={{
+                borderColor: viewerThemeTokens.accentBorder,
+                background:
+                  'linear-gradient(180deg, rgba(7,10,30,0.96) 0%, rgba(10,15,45,0.88) 100%)',
+              }}
+            >
                 <button
                   type="button"
                   onClick={() => {
                     setSelectedJourneyId(null);
                     void fetchSlideProgressSummary();
                   }}
-                  className="rounded-xl border border-harx-200 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-harx-600 hover:bg-harx-50"
+                  className="rounded-xl border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-100 transition hover:-translate-y-0.5"
+                  style={{
+                    borderColor: viewerThemeTokens.accentBorder,
+                    background: viewerThemeTokens.cardBg,
+                    boxShadow: viewerThemeTokens.accentShadow,
+                  }}
                 >
                   Back to list
                 </button>
-                <h3 className="truncate text-sm font-black text-harx-700">{journeyTitle(selectedJourney)}</h3>
-                <div className="ml-auto grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <div className="rounded-xl border border-harx-200 bg-gradient-to-r from-white to-harx-50 px-3 py-1.5">
-                    <div className="flex items-center gap-2">
-                      <Clock3 className="h-3.5 w-3.5 text-harx-600" />
-                      <p className="text-[10px] font-black uppercase tracking-widest text-harx-500">
+                <h3 className="min-w-0 flex-1 truncate text-sm font-black text-white">
+                  {journeyTitle(selectedJourney)}
+                </h3>
+                <div className="ml-auto grid w-full grid-cols-2 gap-2 sm:w-auto">
+                  <div
+                    className="rounded-xl border px-2.5 py-1.5 sm:px-3"
+                    style={{
+                      borderColor: viewerThemeTokens.accentBorder,
+                      background: viewerThemeTokens.cardBg,
+                      boxShadow: viewerThemeTokens.accentShadow,
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Clock3 className="h-3.5 w-3.5 text-slate-200" />
+                      <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-300">
                         Timer total
                       </p>
                     </div>
-                    <p className="mt-0.5 text-xs font-extrabold text-harx-700">{formationTimerLabel}</p>
+                    <p className="mt-0.5 text-xs font-extrabold text-white">{formationTimerLabel}</p>
                   </div>
-                  <div className="rounded-xl border border-harx-200 bg-gradient-to-r from-white to-harx-50 px-3 py-1.5">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="h-3.5 w-3.5 text-harx-600" />
-                      <p className="text-[10px] font-black uppercase tracking-widest text-harx-500">
+                  <div
+                    className="rounded-xl border px-2.5 py-1.5 sm:px-3"
+                    style={{
+                      borderColor: viewerThemeTokens.accentBorder,
+                      background: viewerThemeTokens.cardBg,
+                      boxShadow: viewerThemeTokens.accentShadow,
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <BookOpen className="h-3.5 w-3.5 text-slate-200" />
+                      <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-300">
                         Timer module
                       </p>
                     </div>
-                    <p className="mt-0.5 text-xs font-extrabold text-harx-700">{moduleTimerLabel}</p>
+                    <p className="mt-0.5 text-xs font-extrabold text-white">{moduleTimerLabel}</p>
                   </div>
                 </div>
               </div>
