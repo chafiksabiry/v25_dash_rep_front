@@ -95,16 +95,16 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
   const initials = getInitials(userName);
 
   return (
-    <header className="h-20 bg-gradient-to-r from-white via-pink-50/50 to-orange-50/30 backdrop-blur-md shadow-sm border-b border-pink-100 flex items-center justify-between px-8 shrink-0 z-20">
+    <header className="h-20 bg-gradient-to-r from-[#1a0f14] to-[#3a0a1f] backdrop-blur-md shadow-lg border-b border-white/5 flex items-center justify-between px-8 shrink-0 z-20">
       <div className="flex w-full items-center justify-between">
         <button
-          className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-gray-500 hover:bg-gray-100 hover:text-harx-500 transition-all duration-300 shadow-sm md:hidden"
+          className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all duration-300 shadow-sm md:hidden"
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         >
           <Menu className="h-5 w-5" />
         </button>
         <div className="flex items-center space-x-6 ml-auto">
-          <div className="flex items-center space-x-3 p-2 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
+          <div className="flex items-center space-x-3 p-2 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-white/10">
           {profileData?.personalInfo?.photo?.url ? (
             <img
               src={profileData.personalInfo.photo.url}
@@ -117,8 +117,8 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
             </div>
           )}
           <div className="text-right">
-            <p className="text-sm font-black tracking-tight text-gray-900">{userName}</p>
-            <p className="text-xs font-semibold text-pink-600 uppercase tracking-wider">{userRole}</p>
+            <p className="text-sm font-black tracking-tight text-white">{userName}</p>
+            <p className="text-xs font-semibold text-pink-400 uppercase tracking-wider">{userRole}</p>
           </div>
         </div>
       </div>
