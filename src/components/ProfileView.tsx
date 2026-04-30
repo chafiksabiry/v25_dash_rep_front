@@ -4,6 +4,8 @@ import { getProfilePlan, checkCountryMismatch, updateProfileData, fetchProfileFr
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 import { fetchAllSkills, fetchSkillById, Skill, SkillsByCategory, SkillType } from '../services/api/skills';
 import { fetchAllLanguages, Language as LanguageOption } from '../services/api/languages';
+import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 // Components
 import { ProfileNavbar } from './profile/ProfileNavbar';
@@ -114,10 +116,14 @@ export const ProfileView: React.FC<{
   const [publicInfoDraft, setPublicInfoDraft] = useState({
     country: '',
     countryId: '',
-    email: '',
     phone: '',
     growthPlanId: ''
   });
+  const [imgSrc, setImgSrc] = useState('');
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Load countries and all timezones on component mount
@@ -610,9 +616,76 @@ export const ProfileView: React.FC<{
     }
   };
 
-  const handlePhotoSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !profile?._id) return;
+  const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setImgSrc(reader.result?.toString() || '');
+        setIsCropModalOpen(true);
+      });
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget;
+    const crop = centerCrop(
+      makeAspectCrop(
+        {
+          unit: '%',
+          width: 90,
+        },
+        1,
+        width,
+        height
+      ),
+      width,
+      height
+    );
+    setCrop(crop);
+  };
+
+  const getCroppedImg = async (image: HTMLImageElement, pixelCrop: PixelCrop): Promise<Blob> => {
+    const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    
+    // Set canvas size to the actual cropped pixels in the original image for high quality
+    canvas.width = pixelCrop.width * scaleX;
+    canvas.height = pixelCrop.height * scaleY;
+    
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x * scaleX,
+      pixelCrop.y * scaleY,
+      pixelCrop.width * scaleX,
+      pixelCrop.height * scaleY,
+      0,
+      0,
+      pixelCrop.width * scaleX,
+      pixelCrop.height * scaleY
+    );
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Canvas is empty'));
+          return;
+        }
+        resolve(blob);
+      }, 'image/jpeg', 0.95);
+    });
+  };
+
+  const handleCropComplete = async () => {
+    if (!imgRef.current || !completedCrop || !profile?._id) return;
 
     const token = localStorage.getItem('token');
     if (!token) {
@@ -622,8 +695,11 @@ export const ProfileView: React.FC<{
 
     try {
       setIsUploadingPhoto(true);
+      setIsCropModalOpen(false);
+      
+      const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
       const formData = new FormData();
-      formData.append('photo', file);
+      formData.append('photo', croppedBlob, 'profile.jpg');
 
       const response = await fetch(`${import.meta.env.VITE_REP_API_URL}/api/profiles/${profile._id}/photo`, {
         method: 'PUT',
@@ -637,12 +713,11 @@ export const ProfileView: React.FC<{
         throw new Error(`Photo upload failed with status ${response.status}`);
       }
 
-      // Refresh full profile so UI stays consistent with backend response shape
       const refreshed = await fetchProfileFromAPI();
       onProfileUpdate?.(refreshed);
     } catch (error) {
-      console.error('Error uploading profile photo:', error);
-      window.alert('Failed to upload photo.');
+      console.error('Error uploading cropped photo:', error);
+      window.alert('Failed to upload cropped photo.');
     } finally {
       setIsUploadingPhoto(false);
       if (photoInputRef.current) {
@@ -1076,6 +1151,56 @@ export const ProfileView: React.FC<{
                 className="px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-bold uppercase tracking-wider hover:opacity-90"
               >
                 Choose Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Crop Modal */}
+      {isCropModalOpen && imgSrc && (
+        <div className="fixed inset-0 z-[130] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xl font-black text-slate-900">Crop Profile Photo</h3>
+              <button 
+                onClick={() => setIsCropModalOpen(false)}
+                className="p-2 hover:bg-slate-50 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-auto p-6 bg-slate-50/50 flex justify-center items-center">
+              <ReactCrop
+                crop={crop}
+                onChange={c => setCrop(c)}
+                onComplete={c => setCompletedCrop(c)}
+                aspect={1}
+                circularCrop
+              >
+                <img
+                  ref={imgRef}
+                  src={imgSrc}
+                  alt="Crop"
+                  onLoad={onImageLoad}
+                  className="max-w-full max-h-[50vh] object-contain"
+                />
+              </ReactCrop>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-end gap-3">
+              <button
+                onClick={() => setIsCropModalOpen(false)}
+                className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCropComplete}
+                className="px-8 py-2.5 rounded-xl bg-gradient-harx text-white text-sm font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-harx-500/20 active:scale-95"
+              >
+                Save Photo
               </button>
             </div>
           </div>

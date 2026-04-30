@@ -62,7 +62,7 @@ interface UserProfile {
 }
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  useAuth();
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -100,7 +100,7 @@ function AppContent() {
 
   return (
     <RepTrainingNavProvider>
-      <RoutingWrapper 
+      <RoutingWrapper
         userProfile={userProfile}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
@@ -118,17 +118,17 @@ function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen }: any) {
   return (
     <div className="flex h-screen bg-black overflow-hidden">
       {!isProfileEdit && (
-        <Sidebar 
-          phases={userProfile?.onboardingProgress?.phases} 
+        <Sidebar
+          phases={userProfile?.onboardingProgress?.phases}
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
           isCollapsed={false}
-          setIsCollapsed={() => {}}
+          setIsCollapsed={() => { }}
         />
       )}
       <div className="flex-1 flex flex-col overflow-hidden bg-black">
         {!isProfileEdit && (
-          <TopBar 
+          <TopBar
             isSidebarOpen={isSidebarOpen}
             setIsSidebarOpen={setIsSidebarOpen}
           />
