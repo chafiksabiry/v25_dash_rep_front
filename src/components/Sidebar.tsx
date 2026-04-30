@@ -145,7 +145,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
 
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-30 bg-[#a1087c] text-white transition-all duration-300 ease-in-out md:relative shadow-2xl flex flex-col overflow-hidden ${
+      className={`fixed inset-y-0 left-0 z-30 bg-black text-white transition-all duration-300 ease-in-out md:relative shadow-2xl flex flex-col overflow-hidden ${
         !isSidebarOpen
           ? '-translate-x-full md:translate-x-0'
           : 'translate-x-0'
@@ -159,13 +159,13 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
         {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
 
-      <div className={`h-[90px] flex items-center justify-between border-b border-white/20 bg-white/10 backdrop-blur-sm transition-all duration-300 shrink-0 ${isCollapsed ? 'px-4 justify-center' : 'px-6'}`}>
+      <div className={`h-[90px] flex items-center justify-between bg-black transition-all duration-300 shrink-0 ${isCollapsed ? 'px-4 justify-center' : 'px-6'}`}>
         <div className="flex items-center space-x-3.5">
           <div className="relative shrink-0 w-full flex justify-center">
             <img
-              src={`${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo-pink.png`}
+              src={`${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo-black.png`}
               alt="HARX Logo"
-              className="w-full h-auto object-contain relative z-10 scale-125"
+              className="w-full h-auto object-contain relative z-10 scale-110"
             />
           </div>
         </div>
@@ -385,7 +385,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
         ))}
       </nav>
 
-      <div className={`shrink-0 sticky bottom-0 bg-white/10 backdrop-blur-md border-t border-white/20 transition-all duration-300 ${isCollapsed ? 'p-3 flex justify-center' : 'p-4'}`}>
+      <div className={`shrink-0 sticky bottom-0 bg-black transition-all duration-300 ${isCollapsed ? 'p-3 flex justify-center' : 'p-4'}`}>
         <button
           onClick={logout}
           className={`flex items-center rounded-xl transition-all duration-300 group font-bold text-sm text-gray-400 hover:bg-harx-600/20 hover:text-harx-400 ${
