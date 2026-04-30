@@ -35,6 +35,8 @@ type RepProgressRow = {
   progressPercentage?: number;
   engagementScore?: number;
   lastAccessed?: string;
+  currentModuleId?: string;
+  currentQuizPageBySlide?: Record<string, number>;
   /** Objet moduleId → état (sectionProgress, quizProgress, …) depuis rep_progress */
   modules?: Record<string, Record<string, unknown>>;
 };
@@ -883,6 +885,42 @@ export function Training() {
     }, 1000);
     return () => window.clearInterval(t);
   }, [selectedJourneyId, currentModuleIndex]);
+
+  /** Persiste slide courante + pages quiz dans rep_training_tracking (debounce). */
+  useEffect(() => {
+    if (!repId || !selectedJourneyId || !selectedJourney) return;
+    const slide = formationViewerSlides[formationViewerSlideIndex];
+    if (!slide) return;
+    const modules = extractModules(selectedJourney);
+    const moduleIndex = slide.kind === 'overview' ? 0 : slide.moduleIndex;
+    const mod = modules[moduleIndex];
+    const moduleId =
+      normalizeMongoId((mod as any)?._id) || normalizeMongoId((mod as any)?.id) || '';
+    if (!/^[a-f\d]{24}$/i.test(moduleId)) return;
+    const base = trainingApiBase();
+    if (!base) return;
+    const tid = window.setTimeout(() => {
+      void axios
+        .post(`${base}/training_journeys/rep-progress`, {
+          repId,
+          journeyId: selectedJourneyId,
+          moduleId,
+          status: 'in_progress',
+          currentSlideIndex: formationViewerSlideIndex,
+          currentModuleId: moduleId,
+          currentQuizPageBySlide: formationViewerQuizPage,
+        })
+        .catch(() => undefined);
+    }, 2000);
+    return () => window.clearTimeout(tid);
+  }, [
+    repId,
+    selectedJourneyId,
+    selectedJourney,
+    formationViewerSlides,
+    formationViewerSlideIndex,
+    formationViewerQuizPage,
+  ]);
 
   useEffect(() => {
     if (!selectedJourney) {
