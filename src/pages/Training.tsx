@@ -1811,6 +1811,7 @@ export function Training() {
                   : Number(progress?.moduleTotal) > 0
                     ? Number(progress?.moduleTotal)
                     : slides.length;
+            let useCoursePercentForBar = false;
             let progressDone =
               slideRow && Number(slideRow.completedUnits) >= 0
                 ? Number(slideRow.completedUnits)
@@ -1819,20 +1820,24 @@ export function Training() {
               const modulesDone = Number(progress?.moduleFinished ?? 0);
               if (modulesDone > 0) {
                 progressDone = Math.min(progressTotal, modulesDone);
+              } else if (engagementPercent > 0) {
+                /** `progressTotal` est souvent le nombre de modules (ex. 7) : (7/100)*7 arrondit à 0 — le % formation est déjà 0–100. */
+                useCoursePercentForBar = true;
               } else {
-                const coursePct = engagementPercent;
-                if (coursePct > 0) {
-                  progressDone = Math.min(
-                    progressTotal,
-                    Math.round((coursePct / 100) * progressTotal)
-                  );
-                } else {
-                  progressDone = 0;
-                }
+                progressDone = 0;
               }
             }
-            const slidePercent =
-              progressTotal > 0 ? Math.min(100, Math.round((progressDone / progressTotal) * 100)) : 0;
+            let slidePercent = useCoursePercentForBar
+              ? engagementPercent
+              : progressTotal > 0
+                ? Math.min(100, Math.round((progressDone / progressTotal) * 100))
+                : engagementPercent > 0
+                  ? engagementPercent
+                  : 0;
+            if (!useCoursePercentForBar && slidePercent === 0 && engagementPercent > 0) {
+              slidePercent = engagementPercent;
+            }
+            const showProgressFigure = progressTotal > 0 || slidePercent > 0 || engagementPercent > 0;
             return (
               <li
                 key={id || journeyTitle(j)}
@@ -1857,12 +1862,14 @@ export function Training() {
                   <div className="mt-3">
                     <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-gray-500">
                       <span>Progress</span>
-                      <span className="tabular-nums">{progressTotal > 0 ? `${slidePercent}%` : '—'}</span>
+                      <span className="tabular-nums">
+                        {showProgressFigure ? `${slidePercent}%` : '—'}
+                      </span>
                     </div>
                     <div className="h-2 rounded-full bg-gray-100">
                       <div
                         className="h-2 rounded-full bg-harx-500 transition-[width]"
-                        style={{ width: `${progressTotal > 0 ? slidePercent : 0}%` }}
+                        style={{ width: `${showProgressFigure ? slidePercent : 0}%` }}
                       />
                     </div>
                   </div>
