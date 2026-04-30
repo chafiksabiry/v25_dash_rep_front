@@ -145,7 +145,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
 
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-30 bg-gradient-to-b from-orange-500 to-pink-600 text-white transition-all duration-300 ease-in-out md:relative shadow-2xl flex flex-col overflow-hidden ${
+      className={`fixed inset-y-0 left-0 z-30 bg-[#a1087c] text-white transition-all duration-300 ease-in-out md:relative shadow-2xl flex flex-col overflow-hidden ${
         !isSidebarOpen
           ? '-translate-x-full md:translate-x-0'
           : 'translate-x-0'

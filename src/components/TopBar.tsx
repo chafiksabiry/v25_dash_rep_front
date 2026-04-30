@@ -95,7 +95,7 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
   const initials = getInitials(userName);
 
   return (
-    <header className="h-20 bg-gradient-to-r from-orange-500 to-pink-600 shadow-xl border-b border-white/20 flex items-center justify-between px-8 shrink-0 z-20">
+    <header className="h-20 bg-[#bb0f53] shadow-xl border-b border-white/10 flex items-center justify-between px-8 shrink-0 z-20">
       <div className="flex w-full items-center justify-between">
         <button
           className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all duration-300 shadow-sm md:hidden"
