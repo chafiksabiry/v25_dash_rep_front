@@ -22,6 +22,8 @@ import {
   getViewerThemeTokens,
   resolveRepViewerTheme,
 } from '../utils/trainingViewerTheme';
+import { CertificationView } from '../components/CertificationView';
+import { getProfileData } from '../utils/profileUtils';
 
 type JourneyRow = Record<string, unknown> & { __gigTitle?: string; __gigId?: string };
 type ModuleRow = { _id?: string; id?: string; title?: string; sections?: unknown[]; quizzes?: unknown[] };
@@ -680,6 +682,8 @@ export function Training() {
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [formationViewerSlideIndex, setFormationViewerSlideIndex] = useState(0);
+  const [showCertification, setShowCertification] = useState(false);
+  const [traineeProfile, setTraineeProfile] = useState<any>(null);
   type QuizQuestionState = {
     selected: number | null;
     revealed: boolean;
@@ -819,6 +823,22 @@ export function Training() {
       cancelled = true;
     };
   }, []);
+
+  // Fetch profile for certification
+  useEffect(() => {
+    getProfileData().then(data => setTraineeProfile(data));
+  }, []);
+
+  // Trigger certification view when journey is completed
+  useEffect(() => {
+    if (selectedJourneyId && structuredProgressByJourney[selectedJourneyId]?.status === 'completed') {
+      // Small delay to ensure everything is saved before showing the "wow" screen
+      const timer = setTimeout(() => {
+        setShowCertification(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedJourneyId, structuredProgressByJourney]);
 
   // When user picks a gig, refetch trainings for that gig so the list updates even if the initial bulk load failed
   useEffect(() => {
@@ -2987,6 +3007,14 @@ export function Training() {
               )}
           </div>
         </div>
+      )}
+      {showCertification && selectedJourney && (
+        <CertificationView
+          traineeName={traineeProfile?.basicInfo?.firstName ? `${traineeProfile.basicInfo.firstName} ${traineeProfile.basicInfo.lastName || ''}` : 'Trainee'}
+          trainingTitle={journeyTitle(selectedJourney)}
+          completionDate={new Date().toLocaleDateString('fr-FR')}
+          onClose={() => setShowCertification(false)}
+        />
       )}
     </div>
   );
