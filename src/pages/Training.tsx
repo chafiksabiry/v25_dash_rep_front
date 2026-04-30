@@ -109,6 +109,8 @@ type ViewerSlide =
         quizTitle: string;
         quizKey: string;
         quizId?: string;
+        /** Plafond de soumissions complètes (journey `maxAttempts`, défaut 3). */
+        maxAttempts?: number;
         question: any;
         correctAnswer: number;
       }>;
@@ -334,6 +336,18 @@ function viewerSlideCountFromJourney(journey: JourneyRow): number {
   return count;
 }
 
+function readQuizMaxAttemptsFromJourneyDoc(qz: unknown): number {
+  const q = qz as Record<string, unknown> | null;
+  if (!q) return 3;
+  const raw = Number(q.maxAttempts ?? q.max_attempts ?? q.attemptLimit ?? q.attemptsAllowed);
+  if (Number.isFinite(raw) && raw >= 1) return Math.min(100, Math.floor(raw));
+  return 3;
+}
+
+function maxQuizAttemptsForFormationSlide(slide: { questions: Array<{ maxAttempts?: number }> }): number {
+  return Math.max(1, ...slide.questions.map((q) => Number(q.maxAttempts) || 3));
+}
+
 function journeyModuleHasFormationQuizSlot(mod: ModuleRow): boolean {
   const quizzes = Array.isArray(mod?.quizzes) ? mod.quizzes : [];
   return quizzes.some((qz: any) => Array.isArray(qz?.questions) && qz.questions.length > 0);
@@ -379,6 +393,115 @@ function sectionIsCompletedFromProgress(
     if (cs.some((x) => normalizeMongoId(x) === sid)) return true;
   }
   return false;
+}
+
+type RepModuleProgressStatus = 'locked' | 'completed' | 'in_progress' | 'pending';
+
+function getStructuredModuleStatusForRep(
+  moduleId: string,
+  moduleIndex: number,
+  structured: StructuredProgressRow | undefined,
+  row: RepProgressRow | undefined
+): RepModuleProgressStatus {
+  const fromList = structured?.modules?.find((m) => m.moduleId === moduleId);
+  if (fromList?.status) return fromList.status as RepModuleProgressStatus;
+  const mp = row?.modules?.[moduleId] as Record<string, unknown> | undefined;
+  const st = mp && typeof mp.status === 'string' ? String(mp.status) : '';
+  if (st === 'locked' || st === 'completed' || st === 'in_progress' || st === 'pending') {
+    return st as RepModuleProgressStatus;
+  }
+  if (moduleIndex === 0) return 'in_progress';
+  return 'locked';
+}
+
+function getOverviewCurrentModuleIndex(
+  journey: JourneyRow,
+  structured: StructuredProgressRow | undefined,
+  row: RepProgressRow | undefined
+): { currentMi: number; allModulesCompleted: boolean } {
+  const modules = extractModules(journey);
+  if (modules.length === 0) return { currentMi: 0, allModulesCompleted: true };
+  let allDone = true;
+  for (let mi = 0; mi < modules.length; mi++) {
+    const mid =
+      normalizeMongoId((modules[mi] as any)?._id) || normalizeMongoId((modules[mi] as any)?.id) || '';
+    const st = getStructuredModuleStatusForRep(mid, mi, structured, row);
+    if (st !== 'completed') allDone = false;
+  }
+  if (allDone) {
+    return { currentMi: Math.max(0, modules.length - 1), allModulesCompleted: true };
+  }
+  for (let mi = 0; mi < modules.length; mi++) {
+    const mid =
+      normalizeMongoId((modules[mi] as any)?._id) || normalizeMongoId((modules[mi] as any)?.id) || '';
+    const st = getStructuredModuleStatusForRep(mid, mi, structured, row);
+    if (st === 'locked') continue;
+    if (st !== 'completed') return { currentMi: mi, allModulesCompleted: false };
+  }
+  return { currentMi: Math.max(0, modules.length - 1), allModulesCompleted: false };
+}
+
+/** Carte module vue d’ensemble : verrouillée côté API ou module « après » le parcours courant. */
+function isOverviewModuleCardLocked(
+  moduleIndex: number,
+  journey: JourneyRow,
+  structured: StructuredProgressRow | undefined,
+  row: RepProgressRow | undefined
+): boolean {
+  const modules = extractModules(journey);
+  const mod = modules[moduleIndex];
+  if (!mod) return true;
+  const mid =
+    normalizeMongoId((mod as any)?._id) || normalizeMongoId((mod as any)?.id) || '';
+  const st = getStructuredModuleStatusForRep(mid, moduleIndex, structured, row);
+  if (st === 'locked') return true;
+  const { currentMi, allModulesCompleted } = getOverviewCurrentModuleIndex(journey, structured, row);
+  if (allModulesCompleted) return false;
+  return moduleIndex > currentMi;
+}
+
+/** Index de la première section non terminée ; `sections.length` si tout est fait. */
+function firstIncompleteSectionIndexForModule(
+  moduleIndex: number,
+  journey: JourneyRow,
+  row: RepProgressRow | undefined
+): number {
+  const modules = extractModules(journey);
+  const mod = modules[moduleIndex];
+  if (!mod) return 0;
+  const mid =
+    normalizeMongoId((mod as any)?._id) || normalizeMongoId((mod as any)?.id) || '';
+  const mp =
+    row?.modules && typeof row.modules === 'object'
+      ? ((row.modules as Record<string, unknown>)[mid] as Record<string, unknown> | undefined)
+      : undefined;
+  const sections = Array.isArray(mod.sections) ? mod.sections : [];
+  for (let si = 0; si < sections.length; si++) {
+    if (!sectionIsCompletedFromProgress(sections[si], si, mp)) return si;
+  }
+  return sections.length;
+}
+
+/** Intro module : sections strictement après la prochaine à faire (ou tout terminé → quiz via Suivant). */
+function isModuleIntroSectionNavigationLocked(
+  moduleIndex: number,
+  sectionIndex: number,
+  journey: JourneyRow,
+  structured: StructuredProgressRow | undefined,
+  row: RepProgressRow | undefined
+): boolean {
+  const modules = extractModules(journey);
+  const mod = modules[moduleIndex];
+  if (!mod) return true;
+  const mid =
+    normalizeMongoId((mod as any)?._id) || normalizeMongoId((mod as any)?.id) || '';
+  const modSt = getStructuredModuleStatusForRep(mid, moduleIndex, structured, row);
+  if (modSt === 'locked') return true;
+  if (!row?.modules || typeof row.modules !== 'object') return false;
+  const firstInc = firstIncompleteSectionIndexForModule(moduleIndex, journey, row);
+  const sections = Array.isArray(mod.sections) ? mod.sections : [];
+  if (firstInc >= sections.length) return true;
+  return sectionIndex > firstInc;
 }
 
 function quizIsPassedFromProgress(qz: unknown, _qi: number, mp: Record<string, unknown> | undefined): boolean {
@@ -831,6 +954,7 @@ export function Training() {
         quizTitle: string;
         quizKey: string;
         quizId?: string;
+        maxAttempts?: number;
         question: any;
         correctAnswer: number;
       }> = [];
@@ -840,12 +964,14 @@ export function Training() {
           normalizeMongoId((qz as any)?._id) || normalizeMongoId((qz as any)?.id) || undefined;
         const quizKey = quizId || quizTitle.trim() || `m${mi}-q${qi}`;
         const questions = Array.isArray(qz?.questions) ? qz.questions : [];
+        const cap = readQuizMaxAttemptsFromJourneyDoc(qz);
         questions.forEach((q: any) => {
           const correct = typeof q?.correctAnswer === 'number' ? q.correctAnswer : 0;
           moduleQuestions.push({
             quizTitle,
             quizKey,
             quizId,
+            maxAttempts: cap,
             question: q,
             correctAnswer: correct,
           });
@@ -1024,16 +1150,55 @@ export function Training() {
     return currentFormationViewerSlide.moduleIndex;
   }, [currentFormationViewerSlide]);
 
+  /** Après max tentatives échouées ou pendant lockedUntil : on fige le chrono « module » (API). */
+  const quizModuleTimeFrozen = useMemo(() => {
+    const slide = currentFormationViewerSlide;
+    if (!slide || slide.kind !== 'quiz_group' || !selectedJourneyId || !selectedJourney) return false;
+    const modules = extractModules(selectedJourney);
+    const mod = modules[slide.moduleIndex];
+    const moduleId =
+      normalizeMongoId((mod as any)?._id) || normalizeMongoId((mod as any)?.id) || '';
+    if (!moduleId || !/^[a-f\d]{24}$/i.test(moduleId)) return false;
+    const mp = progressByJourney[selectedJourneyId]?.modules?.[moduleId] as Record<string, unknown> | undefined;
+    const quizProg = mp?.quizProgress as Array<Record<string, unknown>> | undefined;
+    if (!Array.isArray(quizProg)) return false;
+    const activeKeys = new Set(
+      slide.questions.map((q) => String(q.quizKey || '').trim()).filter(Boolean)
+    );
+    let maxCap = 3;
+    let att = 0;
+    let lockUntil = 0;
+    let anyPassed = false;
+    for (const row of quizProg) {
+      const k = String(row?.quizKey || '').trim();
+      if (!activeKeys.has(k)) continue;
+      maxCap = Math.max(maxCap, Number(row?.maxAttempts || 0) || 3);
+      att = Math.max(att, Number(row?.attempts || 0));
+      const lu = Date.parse(String(row?.lockedUntil || ''));
+      if (Number.isFinite(lu)) lockUntil = Math.max(lockUntil, lu);
+      if (row?.passed === true || String(row?.status) === 'passed') anyPassed = true;
+    }
+    const fromJourney = Math.max(
+      3,
+      ...slide.questions.map((q) => Number((q as { maxAttempts?: unknown }).maxAttempts) || 3)
+    );
+    maxCap = Math.max(maxCap, fromJourney);
+    if (Date.now() < lockUntil) return true;
+    if (!anyPassed && att >= maxCap) return true;
+    return false;
+  }, [currentFormationViewerSlide, selectedJourneyId, selectedJourney, progressByJourney]);
+
   useEffect(() => {
     setModuleElapsedMs(0);
     setModuleManualDurationMs(0);
     if (!selectedJourneyId || currentModuleIndex == null) return;
+    if (quizModuleTimeFrozen) return;
     const startedAt = Date.now();
     const t = window.setInterval(() => {
       setModuleElapsedMs(Date.now() - startedAt);
     }, 1000);
     return () => window.clearInterval(t);
-  }, [selectedJourneyId, currentModuleIndex]);
+  }, [selectedJourneyId, currentModuleIndex, quizModuleTimeFrozen]);
 
   /** Persiste slide courante + pages quiz dans rep_training_tracking (debounce). */
   useEffect(() => {
@@ -1666,7 +1831,12 @@ export function Training() {
             fetchStructuredProgress(selectedJourneyId),
           ]);
         })
-        .catch(() => undefined)
+        .catch((err: unknown) => {
+          const st = (err as { response?: { status?: number } })?.response?.status;
+          if (st === 403 || st === 409) {
+            quizOutcomeSentRef.current.add(ouKey);
+          }
+        })
         .finally(() => {
           progressSyncInFlightRef.current.delete(syncKey);
         });
@@ -1703,7 +1873,7 @@ export function Training() {
     setFormationViewerQuizPage((prev) => ({ ...prev, [slideKey]: 0 }));
     setQuizSlideWrongStrikes((prev) => ({
       ...prev,
-      [slideKey]: Math.min(3, (prev[slideKey] ?? 0) + 1),
+      [slideKey]: Math.min(maxQuizAttemptsForFormationSlide(slide), (prev[slideKey] ?? 0) + 1),
     }));
     setFormationViewerQuizState((prev) => {
       const next = { ...prev };
@@ -2184,13 +2354,28 @@ export function Training() {
                             </p>
                           </div>
                           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                            {currentFormationViewerSlide.modules.map((mod) => {
+                            {(() => {
+                              const ovStructured = selectedJourneyId
+                                ? structuredProgressByJourney[selectedJourneyId]
+                                : undefined;
+                              const ovRow = selectedJourneyId ? progressByJourney[selectedJourneyId] : undefined;
+                              return currentFormationViewerSlide.modules.map((mod) => {
                               const moduleTheme =
                                 moduleColorStyles[mod.moduleIndex % moduleColorStyles.length];
+                              const modLocked =
+                                selectedJourney &&
+                                isOverviewModuleCardLocked(
+                                  mod.moduleIndex,
+                                  selectedJourney,
+                                  ovStructured,
+                                  ovRow
+                                );
                               return (
                                 <div
                                   key={`overview-mod-${mod.moduleIndex}`}
-                                  className="rounded-2xl border p-3 shadow-[0_10px_35px_-20px_rgba(236,72,153,0.35)] transition-all duration-300 hover:-translate-y-0.5"
+                                  className={`rounded-2xl border p-3 shadow-[0_10px_35px_-20px_rgba(236,72,153,0.35)] transition-all duration-300 ${
+                                    modLocked ? 'opacity-45 saturate-0' : 'hover:-translate-y-0.5'
+                                  }`}
                                   style={{
                                     borderColor: moduleTheme.border,
                                     background: viewerThemeTokens.cardBg,
@@ -2199,8 +2384,11 @@ export function Training() {
                                 >
                                   <button
                                     type="button"
+                                    disabled={!!modLocked}
                                     onClick={() => jumpToFormationSlide(`m${mod.moduleIndex}-intro`)}
-                                    className="group flex w-full items-start justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-white shadow-sm transition hover:brightness-105"
+                                    className={`group flex w-full items-start justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-white shadow-sm transition ${
+                                      modLocked ? 'cursor-not-allowed' : 'hover:brightness-105'
+                                    }`}
                                     style={{ background: moduleTheme.accentBg }}
                                   >
                                     <span className="min-w-0">
@@ -2210,7 +2398,7 @@ export function Training() {
                                       <span className="mt-0.5 block truncate text-sm font-semibold">{mod.title}</span>
                                     </span>
                                     <span className="inline-flex shrink-0 items-center rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                                      Ouvrir
+                                      {modLocked ? 'Verrouillé' : 'Ouvrir'}
                                     </span>
                                   </button>
                                   <div className="mt-2 flex items-center justify-between text-[11px] text-slate-300">
@@ -2224,7 +2412,8 @@ export function Training() {
                                   </p>
                                 </div>
                               );
-                            })}
+                            });
+                            })()}
                           </div>
                         </div>
                       ) : currentFormationViewerSlide.kind === 'module_intro' ? (
@@ -2238,6 +2427,10 @@ export function Training() {
                           const sectionCount = sections.length;
                           const desc = String(mod?.description || '').trim();
                           const showFullDescription = sectionCount === 0 && !!desc;
+                          const introStructured = selectedJourneyId
+                            ? structuredProgressByJourney[selectedJourneyId]
+                            : undefined;
+                          const introRow = selectedJourneyId ? progressByJourney[selectedJourneyId] : undefined;
                           return (
                             <div
                               className="rounded-3xl border bg-[#0b1025]/90 p-5 sm:p-7"
@@ -2276,14 +2469,28 @@ export function Training() {
                                             .slice(0, 170)
                                             .trim()
                                         : '';
+                                      const secLocked =
+                                        !!selectedJourney &&
+                                        isModuleIntroSectionNavigationLocked(
+                                          currentFormationViewerSlide.moduleIndex,
+                                          si,
+                                          selectedJourney,
+                                          introStructured,
+                                          introRow
+                                        );
                                       return (
                                         <button
                                           key={`module-intro-sec-${currentFormationViewerSlide.moduleIndex}-${si}`}
                                           type="button"
+                                          disabled={secLocked}
                                           onClick={() =>
                                             jumpToFormationSlide(`m${currentFormationViewerSlide.moduleIndex}-s${si}`)
                                           }
-                                          className="w-full rounded-2xl border p-3 text-left transition-all duration-300 hover:-translate-y-0.5"
+                                          className={`w-full rounded-2xl border p-3 text-left transition-all duration-300 ${
+                                            secLocked
+                                              ? 'cursor-not-allowed opacity-45 saturate-0'
+                                              : 'hover:-translate-y-0.5'
+                                          }`}
                                           style={{
                                             borderColor: moduleTheme.border,
                                             background: viewerThemeTokens.cardBg,
@@ -2474,6 +2681,14 @@ export function Training() {
                             if (!activeQuizKeys.has(String(row?.quizKey || '').trim())) return acc;
                             return Math.max(acc, Number(row?.attempts || 0));
                           }, 0);
+                          const maxAttemptsFromApi = quizProgressRows.reduce((acc: number, row: any) => {
+                            if (!activeQuizKeys.has(String(row?.quizKey || '').trim())) return acc;
+                            return Math.max(acc, Number(row?.maxAttempts || 0));
+                          }, 0);
+                          const quizMaxCap = Math.max(
+                            1,
+                            maxAttemptsFromApi || maxQuizAttemptsForFormationSlide(slide)
+                          );
                           const lockedUntilTs = quizProgressRows.reduce((acc: number, row: any) => {
                             if (!activeQuizKeys.has(String(row?.quizKey || '').trim())) return acc;
                             const ts = Date.parse(String(row?.lockedUntil || ''));
@@ -2481,8 +2696,11 @@ export function Training() {
                           }, 0);
                           const moduleLockRemainingMs = Math.max(0, lockedUntilTs - Date.now());
                           const moduleLockedByCooldown = moduleLockRemainingMs > 0;
+                          const quizAttemptsBlocked =
+                            !isCurrentQuizPassed &&
+                            (moduleLockedByCooldown || backendAttempts >= quizMaxCap);
                           const moduleStrikes = Math.min(
-                            3,
+                            quizMaxCap,
                             Math.max(quizSlideWrongStrikes[slide.key] ?? 0, backendAttempts)
                           );
                           const countdown =
@@ -2513,7 +2731,7 @@ export function Training() {
                                   Question {page + 1} / {totalQuestions}
                                 </span>
                                 <span className="rounded-full border border-harx-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-harx-100">
-                                  Essais (module): {moduleStrikes} / 3
+                                  Essais (soumissions): {moduleStrikes} / {quizMaxCap}
                                 </span>
                                 <span className="rounded-full border border-amber-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-amber-100">
                                   {moduleLockedByCooldown
@@ -2526,7 +2744,7 @@ export function Training() {
                                   <button
                                     type="button"
                                     onClick={() => restartQuizSlide(slide)}
-                                    disabled={moduleLockedByCooldown || moduleStrikes >= 3}
+                                    disabled={quizAttemptsBlocked}
                                     className="rounded-lg border border-amber-400/40 bg-[#12172f] px-2.5 py-1 font-semibold text-amber-100 transition hover:border-amber-300/70"
                                   >
                                     Refaire quiz
@@ -2581,15 +2799,23 @@ export function Training() {
                                     <button
                                       key={oi}
                                       type="button"
-                                      disabled={qState.revealed || qState.locked || moduleLockedByCooldown}
-                                      aria-disabled={moduleLockedByCooldown}
+                                      disabled={
+                                        qState.revealed || qState.locked || moduleLockedByCooldown || quizAttemptsBlocked
+                                      }
+                                      aria-disabled={moduleLockedByCooldown || quizAttemptsBlocked}
                                       onClick={() => {
-                                        if (qState.revealed || qState.locked || moduleLockedByCooldown) return;
+                                        if (
+                                          qState.revealed ||
+                                          qState.locked ||
+                                          moduleLockedByCooldown ||
+                                          quizAttemptsBlocked
+                                        )
+                                          return;
                                         const wrong = oi !== correctIdx;
                                         if (wrong) {
                                           setQuizSlideWrongStrikes((prev) => ({
                                             ...prev,
-                                            [slide.key]: Math.min(3, (prev[slide.key] ?? 0) + 1),
+                                            [slide.key]: Math.min(quizMaxCap, (prev[slide.key] ?? 0) + 1),
                                           }));
                                         }
                                         setFormationViewerQuizState((prev) => ({
@@ -2747,8 +2973,9 @@ export function Training() {
                   </div>
                   {currentFormationViewerSlide?.kind === 'quiz_group' && !isCurrentQuizPassed ? (
                     <p className="mt-2 text-center text-[11px] font-semibold text-amber-300">
-                      Répondez à toutes les questions (40 s max par question). Le bouton Suivant s’active dès
-                      une note &gt;= 70 %.
+                      {quizModuleTimeFrozen
+                        ? 'Nombre maximum de tentatives atteint. Le chrono « module » est en pause ; en cas de blocage temporaire, le délai restant s’affiche sur le bandeau du quiz.'
+                        : 'Répondez à toutes les questions (40 s max par question). Le bouton Suivant s’active dès une note ≥ 70 %.'}
                     </p>
                   ) : null}
                   {isNextModuleLocked ? (
