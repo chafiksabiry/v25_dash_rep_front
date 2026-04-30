@@ -161,24 +161,13 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
 
       <div className={`h-[90px] flex items-center justify-between border-b border-white/5 bg-[#0a0b14]/50 backdrop-blur-sm transition-all duration-300 shrink-0 ${isCollapsed ? 'px-4 justify-center' : 'px-6'}`}>
         <div className="flex items-center space-x-3.5">
-          <div className="relative shrink-0">
-            <div className="absolute inset-0 bg-gradient-to-br from-harx-500/40 to-harx-600/40 blur-md rounded-lg scale-90"></div>
+          <div className="relative shrink-0 w-full flex justify-center">
             <img
               src={`${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo-pink.png`}
               alt="HARX Logo"
-              className="h-11 w-11 object-contain relative z-10 rounded-lg shadow-xl"
+              className="w-full h-auto object-contain relative z-10 scale-125"
             />
           </div>
-          {!isCollapsed && (
-            <div className="flex flex-col justify-center overflow-hidden">
-              <span className="text-[11px] font-black text-transparent bg-clip-text bg-gradient-to-r from-harx-400 to-harx-600 tracking-[0.25em] uppercase leading-none mb-1">
-                HARX
-              </span>
-              <span className="text-xl font-black text-white tracking-tight uppercase leading-none whitespace-nowrap">
-                Dashboard
-              </span>
-            </div>
-          )}
         </div>
         {!isCollapsed && (
           <button
