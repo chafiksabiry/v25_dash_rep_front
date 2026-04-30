@@ -145,7 +145,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
 
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-30 bg-gradient-to-b from-[#0f111a] to-[#150a11] text-white transition-all duration-300 ease-in-out md:relative shadow-2xl border-r border-white/10 flex flex-col overflow-hidden ${
+      className={`fixed inset-y-0 left-0 z-30 bg-gradient-to-b from-[#1a0f14] via-[#0f111a] to-[#0a0b14] text-white transition-all duration-300 ease-in-out md:relative shadow-2xl border-r border-white/5 flex flex-col overflow-hidden ${
         !isSidebarOpen
           ? '-translate-x-full md:translate-x-0'
           : 'translate-x-0'
@@ -159,7 +159,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
         {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
 
-      <div className={`h-[90px] flex items-center justify-between border-b border-white/5 bg-[#0a0b14]/50 backdrop-blur-sm transition-all duration-300 shrink-0 ${isCollapsed ? 'px-4 justify-center' : 'px-6'}`}>
+      <div className={`h-[90px] flex items-center justify-between border-b border-white/5 bg-gradient-to-r from-orange-500/10 to-pink-500/10 backdrop-blur-md transition-all duration-300 shrink-0 ${isCollapsed ? 'px-4 justify-center' : 'px-6'}`}>
         <div className="flex items-center space-x-3.5">
           <div className="relative shrink-0 w-full flex justify-center">
             <img
@@ -195,7 +195,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                       : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
                   }`}
                 >
-                  <div className={`p-2 rounded-xl transition-all shrink-0 ${isTrainingOpen || window.location.pathname.includes(item.path) ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
+                  <div className={`p-2 rounded-xl transition-all shrink-0 ${isTrainingOpen || window.location.pathname.includes(item.path) ? 'bg-gradient-to-br from-orange-500 to-pink-600 text-white shadow-lg shadow-pink-500/30' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
                     <item.icon className="h-5 w-5" />
                   </div>
                   <span className="font-black text-sm tracking-tight whitespace-nowrap overflow-hidden flex-1 text-left">{item.label}</span>
@@ -313,7 +313,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                       : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
                   }`}
                 >
-                  <div className={`p-2 rounded-xl transition-all shrink-0 ${isWorkspaceOpen || window.location.pathname.includes(item.path) ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
+                  <div className={`p-2 rounded-xl transition-all shrink-0 ${isWorkspaceOpen || window.location.pathname.includes(item.path) ? 'bg-gradient-to-br from-orange-500 to-pink-600 text-white shadow-lg shadow-pink-500/30' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
                     <item.icon className="h-5 w-5" />
                   </div>
                   <span className="font-black text-sm tracking-tight whitespace-nowrap overflow-hidden flex-1 text-left">{item.label}</span>
@@ -356,7 +356,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                     isCollapsed ? 'justify-center p-3' : 'space-x-3 py-3 px-5'
                   } ${
                     isActive
-                      ? 'bg-gradient-harx text-white shadow-xl shadow-harx-500/25 ring-1 ring-white/10'
+                      ? 'bg-gradient-to-br from-orange-500 to-pink-600 text-white shadow-xl shadow-pink-500/30 ring-1 ring-white/10'
                       : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
                   }`
                 }

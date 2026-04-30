@@ -95,7 +95,7 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
   const initials = getInitials(userName);
 
   return (
-    <header className="h-20 bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100/50 flex items-center justify-between px-8 shrink-0 z-20">
+    <header className="h-20 bg-gradient-to-r from-white via-white to-pink-50/30 backdrop-blur-md shadow-sm border-b border-pink-100/50 flex items-center justify-between px-8 shrink-0 z-20">
       <div className="flex w-full items-center justify-between">
         <button
           className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-gray-500 hover:bg-gray-100 hover:text-harx-500 transition-all duration-300 shadow-sm md:hidden"
@@ -112,13 +112,13 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
               className="w-10 h-10 rounded-xl object-cover shadow-sm"
             />
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-harx-100 to-harx-200 flex items-center justify-center text-harx-600 font-black shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-white font-black shadow-sm">
               {initials}
             </div>
           )}
           <div className="text-right">
             <p className="text-sm font-black tracking-tight text-gray-900">{userName}</p>
-            <p className="text-xs font-semibold text-harx-500 uppercase tracking-wider">{userRole}</p>
+            <p className="text-xs font-semibold text-pink-600 uppercase tracking-wider">{userRole}</p>
           </div>
         </div>
       </div>
