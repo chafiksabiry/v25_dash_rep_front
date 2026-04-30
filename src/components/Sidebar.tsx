@@ -159,13 +159,13 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
         {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
 
-      <div className={`h-[90px] flex items-center justify-between border-b border-white/5 bg-gradient-to-r from-orange-500/10 to-pink-500/10 backdrop-blur-md transition-all duration-300 shrink-0 ${isCollapsed ? 'px-4 justify-center' : 'px-6'}`}>
+      <div className={`h-[90px] flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-orange-500 to-pink-600 transition-all duration-300 shrink-0 ${isCollapsed ? 'px-4 justify-center' : 'px-6'}`}>
         <div className="flex items-center space-x-3.5">
           <div className="relative shrink-0 w-full flex justify-center">
             <img
               src={`${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo-pink.png`}
               alt="HARX Logo"
-              className="w-full h-auto object-contain relative z-10 scale-125"
+              className="w-full h-auto object-contain relative z-10 scale-110 brightness-110 contrast-110"
             />
           </div>
         </div>
