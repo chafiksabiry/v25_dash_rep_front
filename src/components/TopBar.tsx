@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, Search, User, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { getUserInfo } from '../utils/authUtils';
 
 interface TopBarProps {
@@ -30,7 +30,7 @@ const PROFILE_UPDATE_EVENT = 'PROFILE_UPDATED';
 
 export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  
+
   const loadProfileData = () => {
     console.log('🔄 TopBar component: Loading profile data');
     try {
@@ -47,7 +47,7 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
             currentRole: userInfo.currentRole
           }
         };
-        
+
         setProfileData(adaptedProfileData);
       } else {
         console.log('⚠️ TopBar component: No profile data available');
@@ -76,22 +76,22 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
 
   // Get user's name or default to "User"
   const userName = profileData?.personalInfo?.name || 'User';
-  
+
   // Get user's role or default to "HARX Rep"
   const userRole = profileData?.professionalSummary?.currentRole || 'HARX Rep';
-  
+
   // Generate user's initials for avatar placeholder
   const getInitials = (name: string) => {
     if (!name || name === 'User') return 'U';
-    
+
     const names = name.split(' ');
     if (names.length === 1) {
       return names[0].charAt(0).toUpperCase();
     }
-    
+
     return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
   };
-  
+
   const initials = getInitials(userName);
 
   return (
@@ -105,24 +105,23 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
         </button>
         <div className="flex items-center space-x-6 ml-auto">
           <div className="flex items-center space-x-3 p-2 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-white/10">
-          {profileData?.personalInfo?.photo?.url ? (
-            <img
-              src={profileData.personalInfo.photo.url}
-              alt={userName}
-              className="w-10 h-10 rounded-xl object-cover shadow-sm"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white font-black shadow-sm border border-white/20">
-              {initials}
+            {profileData?.personalInfo?.photo?.url ? (
+              <img
+                src={profileData.personalInfo.photo.url}
+                alt={userName}
+                className="w-10 h-10 rounded-xl object-cover shadow-sm"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white font-black shadow-sm border border-white/20">
+                {initials}
+              </div>
+            )}
+            <div className="text-right">
+              <p className="text-sm font-black tracking-tight text-white">{userName}</p>
             </div>
-          )}
-          <div className="text-right">
-            <p className="text-sm font-black tracking-tight text-white">{userName}</p>
-            <p className="text-xs font-semibold text-white/80 uppercase tracking-wider">{userRole}</p>
           </div>
         </div>
       </div>
-    </div>
     </header>
   );
 }

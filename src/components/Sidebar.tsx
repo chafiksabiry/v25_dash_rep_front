@@ -149,17 +149,10 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
         !isSidebarOpen
           ? '-translate-x-full md:translate-x-0'
           : 'translate-x-0'
-      } ${isCollapsed ? 'w-20' : 'w-72'}`}
+      } w-72`}
     >
-      {/* Toggle Button - Modern Floating Style */}
-      <button 
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-12 bg-harx-500 text-white rounded-full p-1.5 shadow-lg shadow-harx-500/30 hover:scale-110 active:scale-95 transition-all z-[60] hidden md:flex"
-      >
-        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-      </button>
 
-      <div className={`h-[90px] flex items-center justify-between bg-black transition-all duration-300 shrink-0 ${isCollapsed ? 'px-4 justify-center' : 'px-6'}`}>
+      <div className={`h-[90px] flex items-center justify-between bg-black transition-all duration-300 shrink-0 px-6`}>
         <div className="flex items-center space-x-3.5">
           <div className="relative shrink-0 w-full flex justify-center">
             <img

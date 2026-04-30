@@ -66,7 +66,7 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     console.log('🚀 App component mounted - initializing application');
@@ -105,14 +105,14 @@ function AppContent() {
         userProfile={userProfile}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
       />
     </RepTrainingNavProvider>
   );
 }
 
-function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen, isCollapsed, setIsCollapsed }: any) {
+function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen }: any) {
   const location = useLocation();
   const isProfileEdit = location.pathname.includes('/profile') && location.search.includes('edit=true');
 
@@ -123,8 +123,8 @@ function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen, isCollap
           phases={userProfile?.onboardingProgress?.phases} 
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
+          isCollapsed={false}
+          setIsCollapsed={() => {}}
         />
       )}
       <div className="flex-1 flex flex-col overflow-hidden bg-black">
