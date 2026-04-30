@@ -164,13 +164,9 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
           <div className="relative shrink-0">
             <div className="absolute inset-0 bg-gradient-to-br from-harx-500/40 to-harx-600/40 blur-md rounded-lg scale-90"></div>
             <img
-              src={`${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo_harx.png`}
+              src={`${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo-pink.png`}
               alt="HARX Logo"
-              className="h-11 w-11 object-contain relative z-10 rounded-lg shadow-xl border border-white/10"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = `${import.meta.env.VITE_FRONT_URL && !import.meta.env.VITE_FRONT_URL.endsWith('/') ? import.meta.env.VITE_FRONT_URL + '/' : import.meta.env.VITE_FRONT_URL || ''}logo_harx.jpg`;
-              }}
+              className="h-11 w-11 object-contain relative z-10 rounded-lg shadow-xl"
             />
           </div>
           {!isCollapsed && (
