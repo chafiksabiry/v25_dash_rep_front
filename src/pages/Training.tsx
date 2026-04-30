@@ -34,6 +34,8 @@ type RepProgressRow = {
   /** Moyenne des % modules côté suivi structuré (rep_training_tracking.progressPercentage). */
   progressPercentage?: number;
   engagementScore?: number;
+  /** Index 0-based du viewer formation (persisté `slideIndex` côté API trainings-progress). */
+  currentSlideIndex?: number;
   lastAccessed?: string;
   currentModuleId?: string;
   currentQuizPageBySlide?: Record<string, number>;
@@ -288,7 +290,7 @@ function clampTrainingSlideIndex(index: number, slideCount: number): number {
   return Math.min(slideCount - 1, Math.max(0, i));
 }
 
-/** Reprend la bonne slide : champ API `currentSlideIndex`, sinon repli engagement (comme le backend). */
+/** Reprend la slide du viewer : `currentSlideIndex` (rep-progress / summary), jamais `completedUnits` (autre échelle). */
 function initialSlideForContinue(
   slideCount: number,
   slideRow:
@@ -303,13 +305,6 @@ function initialSlideForContinue(
   engagementPercent: number
 ): number {
   if (slideCount <= 0) return 0;
-  if (
-    slideRow != null &&
-    typeof slideRow.completedUnits === 'number' &&
-    Number.isFinite(slideRow.completedUnits)
-  ) {
-    return clampTrainingSlideIndex(slideRow.completedUnits, slideCount);
-  }
   if (
     slideRow != null &&
     typeof slideRow.currentSlideIndex === 'number' &&
@@ -337,6 +332,160 @@ function viewerSlideCountFromJourney(journey: JourneyRow): number {
     if (hasQuestions) count += 1; // quiz_group
   });
   return count;
+}
+
+function journeyModuleHasFormationQuizSlot(mod: ModuleRow): boolean {
+  const quizzes = Array.isArray(mod?.quizzes) ? mod.quizzes : [];
+  return quizzes.some((qz: any) => Array.isArray(qz?.questions) && qz.questions.length > 0);
+}
+
+function formationViewerLinearIndexForSection(modules: ModuleRow[], mi: number, si: number): number {
+  let idx = 1;
+  for (let m = 0; m < mi; m++) {
+    const mod = modules[m];
+    const secLen = Array.isArray(mod?.sections) ? mod.sections.length : 0;
+    idx += 1 + secLen + (journeyModuleHasFormationQuizSlot(mod) ? 1 : 0);
+  }
+  return idx + 1 + si;
+}
+
+function formationViewerLinearIndexForQuiz(modules: ModuleRow[], mi: number): number {
+  let idx = 1;
+  for (let m = 0; m < mi; m++) {
+    const mod = modules[m];
+    const secLen = Array.isArray(mod?.sections) ? mod.sections.length : 0;
+    idx += 1 + secLen + (journeyModuleHasFormationQuizSlot(mod) ? 1 : 0);
+  }
+  const mod = modules[mi];
+  const secLen = Array.isArray(mod?.sections) ? mod.sections.length : 0;
+  return idx + 1 + secLen;
+}
+
+function sectionIsCompletedFromProgress(
+  sec: unknown,
+  si: number,
+  mp: Record<string, unknown> | undefined
+): boolean {
+  if (!mp) return false;
+  const s = sec as { _id?: unknown; id?: unknown } | null;
+  const sid = normalizeMongoId(s?._id) || normalizeMongoId(s?.id);
+  const sp = mp.sectionProgress as Array<{ sectionId?: unknown; status?: unknown }> | undefined;
+  if (Array.isArray(sp)) {
+    const row = sp.find((x) => normalizeMongoId(x?.sectionId) === sid) ?? sp[si];
+    if (row && String((row as { status?: unknown }).status) === 'completed') return true;
+  }
+  const cs = mp.completedSections;
+  if (Array.isArray(cs) && sid) {
+    if (cs.some((x) => normalizeMongoId(x) === sid)) return true;
+  }
+  return false;
+}
+
+function quizIsPassedFromProgress(qz: unknown, _qi: number, mp: Record<string, unknown> | undefined): boolean {
+  if (!mp) return false;
+  const q = qz as { _id?: unknown; id?: unknown; title?: unknown };
+  const qid = normalizeMongoId(q?._id) || normalizeMongoId(q?.id);
+  const title = String(q?.title || '').trim();
+  const qp = mp.quizProgress as Array<{ quizKey?: unknown; status?: unknown; passed?: boolean }> | undefined;
+  if (Array.isArray(qp)) {
+    for (const row of qp) {
+      const key = normalizeMongoId(row?.quizKey);
+      if (qid && key === qid && (row.passed || String(row?.status) === 'passed' || String(row?.status) === 'completed'))
+        return true;
+      if (!qid && title && String(row?.quizKey || '').includes(title)) return !!(row.passed || String(row?.status) === 'passed');
+    }
+  }
+  const qs = mp.quizScores as Array<{ quizId?: unknown; passed?: boolean }> | undefined;
+  if (Array.isArray(qs) && qs.some((x) => normalizeMongoId(x?.quizId) === qid && x?.passed)) return true;
+  return false;
+}
+
+function hasStructuredResumeMergeEvidence(row: RepProgressRow | undefined): boolean {
+  if (!row?.modules || typeof row.modules !== 'object') return false;
+  for (const mp of Object.values(row.modules)) {
+    const p = mp as Record<string, unknown>;
+    if (String(p.status || '') === 'in_progress' || String(p.status || '') === 'completed') return true;
+    const cs = p.completedSections;
+    if (Array.isArray(cs) && cs.length > 0) return true;
+    const sp = p.sectionProgress;
+    if (Array.isArray(sp)) {
+      for (const it of sp) {
+        const st = String((it as { status?: unknown }).status || '');
+        if (st === 'completed' || st === 'in_progress') return true;
+      }
+    }
+    const qp = p.quizProgress;
+    if (Array.isArray(qp)) {
+      for (const it of qp) {
+        const st = String((it as { status?: unknown }).status || '');
+        if (st && st !== 'pending') return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** Première slide du viewer formation non terminée d’après `trainings-progress` (sections/quiz), aligné backend. */
+function formationResumeSlideIndexFromRepRow(
+  journey: JourneyRow,
+  row: RepProgressRow | undefined
+): number | null {
+  const modules = extractModules(journey);
+  if (modules.length === 0 || !row?.modules || typeof row.modules !== 'object') return null;
+  const modsObj = row.modules as Record<string, Record<string, unknown>>;
+  for (let mi = 0; mi < modules.length; mi++) {
+    const mod = modules[mi] as ModuleRow;
+    const mid = normalizeMongoId((mod as any)?._id) || normalizeMongoId((mod as any)?.id);
+    const mp = mid ? modsObj[mid] : undefined;
+    const modStatus = String(mp?.status || 'pending');
+    if (modStatus === 'locked') continue;
+    const sections = Array.isArray(mod.sections) ? mod.sections : [];
+    for (let si = 0; si < sections.length; si++) {
+      if (!sectionIsCompletedFromProgress(sections[si], si, mp)) {
+        return formationViewerLinearIndexForSection(modules, mi, si);
+      }
+    }
+    if (journeyModuleHasFormationQuizSlot(mod)) {
+      const quizzes = Array.isArray(mod.quizzes) ? mod.quizzes : [];
+      let qxi = 0;
+      for (const qz of quizzes) {
+        const questions = Array.isArray((qz as any)?.questions) ? (qz as any).questions : [];
+        if (questions.length === 0) continue;
+        if (!quizIsPassedFromProgress(qz, qxi, mp)) {
+          return formationViewerLinearIndexForQuiz(modules, mi);
+        }
+        qxi += 1;
+      }
+    }
+    if (modStatus === 'completed') continue;
+  }
+  return null;
+}
+
+function mergeFormationResumeWithPersisted(
+  journey: JourneyRow,
+  row: RepProgressRow | undefined,
+  slideCount: number,
+  persisted: number | undefined,
+  engagementPercent: number
+): number {
+  if (slideCount <= 0) return 0;
+  const p = Number(persisted);
+  const baseFromPersist =
+    Number.isFinite(p) && p >= 0 ? clampTrainingSlideIndex(Math.floor(p), slideCount) : null;
+  const structured = formationResumeSlideIndexFromRepRow(journey, row);
+  let base = baseFromPersist ?? 0;
+  if (
+    structured != null &&
+    hasStructuredResumeMergeEvidence(row) &&
+    structured > base
+  ) {
+    base = structured;
+  }
+  if (baseFromPersist == null && !(structured != null && hasStructuredResumeMergeEvidence(row))) {
+    return initialSlideForContinue(slideCount, undefined, engagementPercent);
+  }
+  return clampTrainingSlideIndex(base, slideCount);
 }
 
 async function fetchEnrolledGigsForAgent(
@@ -1881,7 +2030,31 @@ export function Training() {
                     onClick={() => {
                       if (!id) return;
                       const slideCount = viewerSlideCountFromJourney(j);
-                      const resumeAt = initialSlideForContinue(slideCount, slideRow, engagementPercent);
+                      const fromSummary =
+                        slideRow != null &&
+                        typeof slideRow.currentSlideIndex === 'number' &&
+                        Number.isFinite(slideRow.currentSlideIndex)
+                          ? slideRow.currentSlideIndex
+                          : undefined;
+                      const fromProgress =
+                        progress != null &&
+                        typeof progress.currentSlideIndex === 'number' &&
+                        Number.isFinite(progress.currentSlideIndex)
+                          ? progress.currentSlideIndex
+                          : undefined;
+                      const persisted =
+                        typeof fromSummary === 'number'
+                          ? fromSummary
+                          : typeof fromProgress === 'number'
+                            ? fromProgress
+                            : undefined;
+                      const resumeAt = mergeFormationResumeWithPersisted(
+                        j,
+                        progress,
+                        slideCount,
+                        persisted,
+                        engagementPercent
+                      );
                       setFormationViewerSlideIndex(resumeAt);
                       setSelectedJourneyId(id);
                       setActiveSlide(resumeAt);
