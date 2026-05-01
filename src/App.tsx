@@ -104,8 +104,6 @@ function AppContent() {
         userProfile={userProfile}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
-        isSidebarOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen}
       />
     </RepTrainingNavProvider>
   );
@@ -135,16 +133,8 @@ function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen }: any) {
         )}
         <main className={`flex-1 overflow-y-auto bg-white rounded-tl-[24px] ${location.pathname.includes('/profile') ? 'p-0' : 'px-8 py-6'}`}>
           <Routes>
-            <Route path="/" element={
-              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                <Dashboard />
-              </PhaseProtectedRoute>
-            } />
-            <Route path="/dashboard" element={
-              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                <Dashboard />
-              </PhaseProtectedRoute>
-            } />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/gigs-marketplace" element={
               <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
                 <GigsMarketplace />
