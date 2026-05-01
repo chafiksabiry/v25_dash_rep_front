@@ -3,6 +3,7 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { ProfileView } from '../components/ProfileView';
 import { ProfileEditView } from '../components/ProfileEditView';
 import { getProfileData, updateProfileData, updateSkills, updateBasicInfo, updateExperience } from '../utils/profileUtils';
+import { setProfileData } from '../utils/authUtils';
 
 // Import Timezone type from repWizard service
 import { Timezone } from '../services/api/repWizard';
@@ -178,13 +179,18 @@ export function Profile() {
     loadProfile();
   }, []);
 
+  const updateProfileStateAndStorage = (data: ProfileData) => {
+    setProfile(data);
+    setProfileData(data);
+    // Notify other components
+    window.dispatchEvent(new CustomEvent('PROFILE_UPDATED'));
+  };
+
   // Handle profile update
   const handleProfileUpdate = async (updatedProfile: ProfileData) => {
     try {
-      // Just update the local state and exit edit mode
-      // No need to make another API call since ProfileEditView already handled the updates
-      console.log('📝 Updating local profile state with saved changes');
-      setProfile(updatedProfile);
+      console.log('📝 Updating local profile state and storage with saved changes');
+      updateProfileStateAndStorage(updatedProfile);
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating profile state:', error);
@@ -232,7 +238,7 @@ export function Profile() {
     try {
       await updateSkills(profile._id, payload);
       const refreshed = await getProfileData();
-      setProfile(refreshed);
+      updateProfileStateAndStorage(refreshed);
     } catch (error) {
       console.error('Error deleting skill:', error);
     }
@@ -295,7 +301,7 @@ export function Profile() {
       // Rollback if API fails
       try {
         const refreshed = await getProfileData();
-        setProfile(refreshed);
+        updateProfileStateAndStorage(refreshed);
       } catch (refreshError) {
         console.error('Error refreshing profile after failed skill add:', refreshError);
       }
@@ -321,7 +327,7 @@ export function Profile() {
     try {
       await updateBasicInfo(profile._id, { languages: updatedLanguages });
       const refreshed = await getProfileData();
-      setProfile(refreshed);
+      updateProfileStateAndStorage(refreshed);
     } catch (error) {
       console.error('Error deleting language:', error);
     }
@@ -362,7 +368,7 @@ export function Profile() {
     try {
       await updateBasicInfo(profile._id, { languages: updatedLanguages });
       const refreshed = await getProfileData();
-      setProfile(refreshed);
+      updateProfileStateAndStorage(refreshed);
     } catch (error) {
       console.error('Error adding language:', error);
     }
@@ -377,7 +383,7 @@ export function Profile() {
     try {
       await updateExperience(profile._id, updatedExperience);
       const refreshed = await getProfileData();
-      setProfile(refreshed);
+      updateProfileStateAndStorage(refreshed);
     } catch (error) {
       console.error('Error deleting experience:', error);
     }
@@ -409,7 +415,7 @@ export function Profile() {
     try {
       await updateExperience(profile._id, updatedExperience);
       const refreshed = await getProfileData();
-      setProfile(refreshed);
+      updateProfileStateAndStorage(refreshed);
     } catch (error) {
       console.error('Error adding experience:', error);
     }
@@ -442,7 +448,7 @@ export function Profile() {
     try {
       await updateExperience(profile._id, currentExperience);
       const refreshed = await getProfileData();
-      setProfile(refreshed);
+      updateProfileStateAndStorage(refreshed);
     } catch (error) {
       console.error('Error updating experience:', error);
     }
@@ -477,7 +483,7 @@ export function Profile() {
     try {
       await updateProfileData(profile._id, payload);
       const refreshed = await getProfileData();
-      setProfile(refreshed);
+      updateProfileStateAndStorage(refreshed);
     } catch (error) {
       console.error('Error deleting specialization item:', error);
     }
@@ -529,7 +535,7 @@ export function Profile() {
       // Rollback if API fails
       try {
         const refreshed = await getProfileData();
-        setProfile(refreshed);
+        updateProfileStateAndStorage(refreshed);
       } catch (refreshError) {
         console.error('Error refreshing profile after failed specialization add:', refreshError);
       }

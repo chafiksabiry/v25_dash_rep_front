@@ -80,16 +80,16 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
 
   const navItems = [
     {
+      icon: LayoutDashboard,
+      label: 'Dashboard',
+      path: '/',
+      isAccessible: () => true
+    },
+    {
       icon: UserCircle,
       label: 'Profile',
       path: '/profile',
       isAccessible: () => true
-    },
-    {
-      icon: LayoutDashboard,
-      label: 'Dashboard',
-      path: '/dashboard',
-      isAccessible: () => isPhaseCompleted(5)
     },
     {
       icon: Briefcase,

@@ -51,10 +51,6 @@ export const isAuthenticated = (): boolean => {
   return !!agentId;
 };
 
-/**
- * Récupère les données complètes du profil utilisateur depuis localStorage
- * @returns {any | null} Les données du profil ou null si non trouvées
- */
 export const getProfileData = (): any | null => {
   try {
     const profileDataString = localStorage.getItem('profileData');
@@ -65,6 +61,19 @@ export const getProfileData = (): any | null => {
     console.error('Erreur lors de la lecture de profileData:', error);
   }
   return null;
+};
+
+/**
+ * Met à jour les données du profil dans le localStorage
+ * @param {any} data Les nouvelles données du profil
+ */
+export const setProfileData = (data: any): void => {
+  if (!data) return;
+  try {
+    localStorage.setItem('profileData', JSON.stringify(data));
+  } catch (error) {
+    console.error('Erreur lors de la sauvegarde de profileData:', error);
+  }
 };
 
 /**

@@ -608,6 +608,7 @@ export const ProfileView: React.FC<{
 
       const refreshed = await fetchProfileFromAPI();
       onProfileUpdate?.(refreshed);
+      window.dispatchEvent(new CustomEvent('PROFILE_UPDATED'));
     } catch (error) {
       console.error('Error uploading presentation video:', error);
       window.alert('Failed to upload video.');
@@ -715,6 +716,7 @@ export const ProfileView: React.FC<{
 
       const refreshed = await fetchProfileFromAPI();
       onProfileUpdate?.(refreshed);
+      window.dispatchEvent(new CustomEvent('PROFILE_UPDATED'));
     } catch (error) {
       console.error('Error uploading cropped photo:', error);
       window.alert('Failed to upload cropped photo.');
