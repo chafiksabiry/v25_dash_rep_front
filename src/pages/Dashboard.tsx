@@ -1,7 +1,8 @@
 import React from 'react';
 import { TrendingUp, Users, DollarSign, Clock, Star, Bell, BookOpen, MessageSquare, Phone, Target, Award, ArrowRight, Briefcase, Zap, Shield, CheckCircle2 } from 'lucide-react';
 
-export function Dashboard() {
+export function Dashboard({ userName }: { userName?: string }) {
+  const displayName = userName ? userName.split(' ')[0] : 'User';
   const stats = [
     { icon: TrendingUp, label: 'Total Earnings', value: '$12,450', change: '+14%', type: 'positive', color: 'harx' },
     { icon: Users, label: 'Completed Projects', value: '156', change: '+7%', type: 'positive', color: 'blue' },
@@ -93,7 +94,7 @@ export function Dashboard() {
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-1">
             <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">
-              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-harx">John!</span>
+              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-harx">{displayName}!</span>
             </h1>
             <p className="text-slate-500 font-medium tracking-tight">Your professional metrics are looking exceptional today.</p>
           </div>

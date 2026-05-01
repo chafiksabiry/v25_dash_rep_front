@@ -58,7 +58,11 @@ interface UserProfile {
       };
     };
   };
-  // Add other profile fields as needed
+  personalInfo: {
+    name: string;
+    email: string;
+    phone?: string;
+  };
 }
 
 function AppContent() {
@@ -133,8 +137,8 @@ function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen }: any) {
         )}
         <main className={`flex-1 overflow-y-auto bg-white rounded-tl-[24px] ${location.pathname.includes('/profile') ? 'p-0' : 'px-8 py-6'}`}>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/" element={<Dashboard userName={userProfile?.personalInfo?.name} />} />
+            <Route path="/dashboard" element={<Dashboard userName={userProfile?.personalInfo?.name} />} />
             <Route path="/gigs-marketplace" element={
               <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
                 <GigsMarketplace />
