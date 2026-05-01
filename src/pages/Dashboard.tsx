@@ -250,7 +250,7 @@ export function Dashboard({ profile }: DashboardProps) {
                   {category.items.length > 0 ? (
                     category.items.map((skill: any, sIdx: number) => (
                       <span key={sIdx} className={`px-3 py-1 rounded-lg bg-${category.color}-50 text-${category.color}-700 text-[10px] font-black uppercase border border-${category.color}-100`}>
-                        {typeof skill === 'string' ? skill : (skill.name || skill.skill)}
+                        {typeof skill === 'string' ? skill : (skill.name || (typeof skill.skill === 'object' ? skill.skill?.name : skill.skill) || 'Unknown Skill')}
                       </span>
                     ))
                   ) : (
