@@ -1117,7 +1117,7 @@ export function GigDetails() {
                 <p className="text-lg text-gray-500 font-medium mb-4">{gig.category}</p>
                 <div className="flex items-center gap-4">
                   <span className="inline-block px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest bg-harx-alt-50 text-harx-alt-700">
-                    {gig.seniority.level}
+                    {gig.seniority?.level || 'N/A'}
                   </span>
                   <span className="text-sm text-gray-600">
                     at <span className="font-medium text-gray-900">{gig.companyId?.name || (gig as any).company || gig.userId?.fullName || 'Unknown'}</span>
@@ -1182,7 +1182,7 @@ export function GigDetails() {
               <div className="flex items-center text-gray-600">
                 <DollarSign className="w-5 h-5 mr-2" />
                 <div>
-                  <p className="text-sm font-medium">{gig.commission.commission_per_call} {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || gig.commission.currency?.code || 'USD' : gig.commission.currency}</p>
+                  <p className="text-sm font-medium">{gig.commission?.commission_per_call || 0} {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || gig.commission?.currency?.code || 'USD' : gig.commission?.currency || 'USD'}</p>
                   <p className="text-xs">Commission per Call</p>
                 </div>
               </div>
@@ -1190,7 +1190,7 @@ export function GigDetails() {
               <div className="flex items-center text-gray-600">
                 <Users className="w-5 h-5 mr-2" />
                 <div>
-                  <p className="text-sm font-medium">{gig.seniority.yearsExperience} years</p>
+                  <p className="text-sm font-medium">{gig.seniority?.yearsExperience || 'N/A'} years</p>
                   <p className="text-xs">Experience</p>
                 </div>
               </div>
@@ -1380,9 +1380,9 @@ export function GigDetails() {
                     <span className="text-lg font-black text-gray-700">Per call compensation</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black text-gray-900">{gig.commission.commission_per_call ?? 0}</span>
+                    <span className="text-4xl font-black text-gray-900">{gig.commission?.commission_per_call ?? 0}</span>
                     <span className="text-2xl text-gray-400 font-black">
-                      {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'}
+                      {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}
                     </span>
                   </div>
                 </div>
@@ -1397,12 +1397,12 @@ export function GigDetails() {
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl font-black text-gray-900">
-                      {typeof gig.commission.transactionCommission === 'number' 
+                      {typeof gig.commission?.transactionCommission === 'number' 
                         ? gig.commission.transactionCommission 
-                        : (gig.commission.transactionCommission as any)?.amount || 0}
+                        : (gig.commission?.transactionCommission as any)?.amount || 0}
                     </span>
                     <span className="text-2xl text-gray-400 font-black">
-                      {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'}
+                      {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}
                     </span>
                   </div>
                 </div>
@@ -1416,9 +1416,9 @@ export function GigDetails() {
                     <span className="text-lg font-black text-gray-700">Bonus & Incentives</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black text-gray-900">{gig.commission.bonusAmount || 0}</span>
+                    <span className="text-4xl font-black text-gray-900">{gig.commission?.bonusAmount || 0}</span>
                     <span className="text-2xl text-gray-400 font-black">
-                      {typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'}
+                      {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}
                     </span>
                   </div>
                 </div>
@@ -1432,15 +1432,15 @@ export function GigDetails() {
                     <span className="text-lg font-black text-gray-700">Minimum Volume Requirements For Bonus</span>
                   </div>
                   <div className="flex items-baseline justify-between w-full">
-                    <span className="text-4xl font-black text-gray-900">{gig.commission.minimumVolume?.amount || 0}</span>
+                    <span className="text-4xl font-black text-gray-900">{gig.commission?.minimumVolume?.amount || 0}</span>
                     <div className="px-3 py-1 bg-white/80 border border-gray-200 rounded-lg text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                      {gig.commission.minimumVolume?.period || 'MONTHLY'}
+                      {gig.commission?.minimumVolume?.period || 'MONTHLY'}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {gig.commission.additionalDetails && (
+              {gig.commission?.additionalDetails && (
                 <div className="mt-6 pt-6 border-t border-gray-100">
                   <div className="flex items-center gap-2 mb-2">
                     <FileText className="h-4 w-4 text-gray-400" />
@@ -1520,8 +1520,8 @@ export function GigDetails() {
                       <div className="space-y-2">
                         {gig.team.structure.map((role, index) => (
                           <div key={index} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
-                            <span>{role.count}x {role.seniority.level}</span>
-                            <span className="text-gray-600">{role.seniority.yearsExperience} years exp.</span>
+                            <span>{role.count}x {role.seniority?.level || 'N/A'}</span>
+                            <span className="text-gray-600">{role.seniority?.yearsExperience || 'N/A'} years exp.</span>
                           </div>
                         ))}
                       </div>

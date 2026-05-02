@@ -1165,7 +1165,7 @@ export function GigsMarketplace() {
                 return bVal - aVal;
               }
               case 'experience':
-                return parseInt(b.seniority.yearsExperience) - parseInt(a.seniority.yearsExperience);
+                return (parseInt(b.seniority?.yearsExperience || '0')) - (parseInt(a.seniority?.yearsExperience || '0'));
               case 'latest':
               default:
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -1198,7 +1198,7 @@ export function GigsMarketplace() {
                 return bVal - aVal;
               }
               case 'experience':
-                return parseInt(b.seniority.yearsExperience) - parseInt(a.seniority.yearsExperience);
+                return (parseInt(b.seniority?.yearsExperience || '0')) - (parseInt(a.seniority?.yearsExperience || '0'));
               case 'latest':
               default:
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -1419,11 +1419,11 @@ export function GigsMarketplace() {
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center text-sm text-gray-500">
                     <span>
-                      {gig.commission.commission_per_call !== undefined
+                      {gig.commission?.commission_per_call !== undefined
                         ? `${gig.commission.commission_per_call} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'} / call`
-                        : `${gig.commission.baseAmount || 0} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'}/yr base`}
+                        : `${gig.commission?.baseAmount || 0} ${typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}/yr base`}
                     </span>
-                    {(gig.commission.bonus && gig.commission.bonus != 0 || gig.commission.bonusAmount && gig.commission.bonusAmount != "0") && (
+                    {(gig.commission?.bonus && gig.commission.bonus != 0 || gig.commission?.bonusAmount && gig.commission.bonusAmount != "0") && (
                       <span className="ml-1 text-xs font-bold text-emerald-600">
                         + {gig.commission.bonusAmount || gig.commission.bonus} bonus
                       </span>
@@ -1431,7 +1431,7 @@ export function GigsMarketplace() {
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
                     <Users className="w-4 h-4 mr-2" />
-                    <span>{gig.seniority.yearsExperience} years experience</span>
+                    <span>{gig.seniority?.yearsExperience || 'N/A'} years experience</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
                     <Globe className="w-4 h-4 mr-2" />
@@ -1607,11 +1607,11 @@ export function GigsMarketplace() {
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center text-sm text-gray-500">
                         <span>
-                          {gig.commission.commission_per_call !== undefined
+                          {gig.commission?.commission_per_call !== undefined
                             ? `${gig.commission.commission_per_call} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'} / call`
-                            : `${gig.commission.baseAmount || 0} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'}/yr base`}
+                            : `${gig.commission?.baseAmount || 0} ${typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}/yr base`}
                         </span>
-                        {(gig.commission.bonus && gig.commission.bonus != 0 || gig.commission.bonusAmount && gig.commission.bonusAmount != "0") && (
+                        {(gig.commission?.bonus && gig.commission.bonus != 0 || gig.commission?.bonusAmount && gig.commission.bonusAmount != "0") && (
                           <span className="ml-1 text-xs text-green-600">
                             + {gig.commission.bonusAmount || gig.commission.bonus} bonus
                           </span>
@@ -1619,7 +1619,7 @@ export function GigsMarketplace() {
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Users className="w-4 h-4 mr-2" />
-                        <span>{gig.seniority.yearsExperience} years experience</span>
+                        <span>{gig.seniority?.yearsExperience || 'N/A'} years experience</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
@@ -1769,7 +1769,7 @@ export function GigsMarketplace() {
                         </span>
                         {('commission' in enrollment.gig && (enrollment.gig.commission?.bonus && enrollment.gig.commission.bonus != 0 || enrollment.gig.commission?.bonusAmount && enrollment.gig.commission.bonusAmount != "0")) && (
                           <span className="ml-1 text-xs text-green-600">
-                            + {enrollment.gig.commission.bonusAmount || enrollment.gig.commission.bonus} bonus
+                            + {enrollment.gig.commission?.bonusAmount || enrollment.gig.commission?.bonus} bonus
                           </span>
                         )}
                       </div>
@@ -1959,7 +1959,7 @@ export function GigsMarketplace() {
                         </span>
                         {('commission' in enrolledGig.gig && (enrolledGig.gig.commission?.bonus && enrolledGig.gig.commission.bonus != 0 || enrolledGig.gig.commission?.bonusAmount && enrolledGig.gig.commission.bonusAmount != "0")) && (
                           <span className="ml-1 text-xs text-green-600">
-                            + {enrolledGig.gig.commission.bonusAmount || enrolledGig.gig.commission.bonus} bonus
+                            + {enrolledGig.gig.commission?.bonusAmount || enrolledGig.gig.commission?.bonus} bonus
                           </span>
                         )}
                       </div>
