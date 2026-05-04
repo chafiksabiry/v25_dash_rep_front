@@ -292,7 +292,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                 </div>
               </div>
 
-              <div className="flex-1 max-w-md">
+              <div className="flex-1 max-w-lg">
                 {(() => {
                   const recordingUrl = selectedCall.recording_url_cloudinary || selectedCall.recording_url;
                   if (!recordingUrl) return <div className="text-[10px] font-black text-slate-400 uppercase text-center py-2 bg-slate-100/50 rounded-xl italic">No recording</div>;
