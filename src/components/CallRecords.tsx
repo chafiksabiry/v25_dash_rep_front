@@ -15,6 +15,7 @@ import {
   Star,
   Globe,
   Download,
+  TrendingUp,
   Activity as ActivityIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -366,12 +367,20 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                 </div>
               ) : (
                 <div className="max-w-5xl mx-auto space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {[
-                      { label: 'Agent Fluency', data: selectedCall.ai_call_score?.["Agent fluency"], color: 'blue', icon: Globe },
-                      { label: 'Sentiment Analysis', data: selectedCall.ai_call_score?.["Sentiment analysis"], color: 'indigo', icon: ActivityIcon },
-                      { label: 'Fraud Detection', data: selectedCall.ai_call_score?.["Fraud detection"], color: 'rose', icon: Shield }
-                    ].map((metric, mIdx) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {[
+                        { label: 'Agent Fluency', data: selectedCall.ai_call_score?.["Agent fluency"], icon: Globe },
+                        { label: 'Sentiment Analysis', data: selectedCall.ai_call_score?.["Sentiment analysis"], icon: ActivityIcon },
+                        { label: 'Fraud Detection', data: selectedCall.ai_call_score?.["Fraud detection"], icon: Shield },
+                        { 
+                          label: 'Conversion Potential', 
+                          data: { 
+                            score: Math.round(((selectedCall.ai_call_score?.["Agent fluency"]?.score || 0) * 0.4) + ((selectedCall.ai_call_score?.["Sentiment analysis"]?.score || 0) * 0.6)),
+                            feedback: "Probabilité de conversion basée sur l'élocution et le sentiment du client."
+                          }, 
+                          icon: TrendingUp 
+                        }
+                      ].map((metric, mIdx) => (
                       <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl">
                         <div className="flex justify-between items-start mb-6">
                           <div className={`w-12 h-12 rounded-2xl bg-harx-50 text-harx-600 flex items-center justify-center`}>

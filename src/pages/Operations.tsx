@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Users, AlertTriangle, Settings, Database, Zap, BarChart, Shield } from 'lucide-react';
+import { Activity as ActivityIcon, Users, AlertTriangle, Settings, Database, Zap, BarChart, Shield } from 'lucide-react';
 import { CallRecords } from '../components/CallRecords';
 
 export function Operations() {
@@ -8,7 +8,7 @@ export function Operations() {
       title: 'System Health',
       value: '99.9%',
       status: 'Optimal',
-      icon: Activity,
+      icon: ActivityIcon,
       color: 'green',
     },
     {
