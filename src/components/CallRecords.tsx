@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
+import { PremiumAudioPlayer } from './PremiumAudioPlayer';
 
 export interface CallRecord {
   _id: string;
@@ -291,12 +292,12 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                 </div>
               </div>
 
-              <div className="flex-1 max-w-md mx-4">
+              <div className="flex-1 max-w-xl mx-4">
                 {(() => {
                   const recordingUrl = selectedCall.recording_url_cloudinary || selectedCall.recording_url;
                   if (!recordingUrl) return <div className="text-[10px] font-black text-slate-400 uppercase text-center py-2 bg-slate-100/50 rounded-xl italic">No recording</div>;
                   const finalUrl = (recordingUrl.includes('twilio.com') && !recordingUrl.endsWith('.mp3')) ? `${recordingUrl}.mp3` : recordingUrl;
-                  return <audio controls src={finalUrl} className="h-10 w-full" />;
+                  return <PremiumAudioPlayer url={finalUrl} />;
                 })()}
               </div>
 
