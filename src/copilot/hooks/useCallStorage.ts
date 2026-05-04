@@ -4,17 +4,26 @@ import { TwilioCallService } from '../services/twilioCallService';
 
 export const useCallStorage = () => {
   const { state, dispatch } = useAgent();
-  const storeCall = useCallback(async (callSid: string, leadId: string, isRecordingOverride?: boolean) => {
-    const agentId = localStorage.getItem('agentId') || ""; // Fetch active agent ID with fallback
+  const storeCall = useCallback(async (
+    callSid: string, 
+    leadId: string, 
+    isRecordingOverride?: boolean,
+    gigId?: string,
+    companyId?: string
+  ) => {
+    const agentId = localStorage.getItem('agentId') || ""; 
+    const userId = localStorage.getItem('userId') || agentId; // Actual user ID if available
 
     try {
       const callData = await TwilioCallService.storeCallInDB({
         callSid,
         agentId,
         leadId,
-        userId: agentId,
+        userId,
         isRecording: isRecordingOverride !== undefined ? isRecordingOverride : state.callState.isRecording,
-        transcript: state.transcript // Send the real-time transcript to the backend
+        transcript: state.transcript,
+        gigId,
+        companyId
       });
 
       if (callData && callData.recording_url_cloudinary) {

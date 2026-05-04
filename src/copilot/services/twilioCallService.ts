@@ -7,12 +7,18 @@ export interface CallStorageData {
   userId: string;
   isRecording: boolean;
   transcript?: any[];
+  gigId?: string;
+  companyId?: string;
 }
 
 export class TwilioCallService {
   static async storeCallInDB(data: CallStorageData): Promise<any> {
     try {
-      console.log('🔄 Starting call storage process...');
+      console.log('🔄 Starting call storage process...', { 
+        sid: data.callSid, 
+        gigId: data.gigId, 
+        companyId: data.companyId 
+      });
 
       // Step 1: Wait for Twilio to process the recording (7s) - ONLY if recording
       if (data.isRecording) {
@@ -51,7 +57,9 @@ export class TwilioCallService {
         call,
         cloudinaryrecord: cloudinaryRecord.data.url,
         userId: data.userId,
-        transcript: formattedTranscript
+        transcript: formattedTranscript,
+        gigId: data.gigId,
+        companyId: data.companyId
       });
 
       console.log('📝 Call stored in DB:', (callInDB.data as any)._id);

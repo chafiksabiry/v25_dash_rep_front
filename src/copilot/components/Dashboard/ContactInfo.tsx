@@ -261,7 +261,12 @@ export function ContactInfo() {
         try {
           if (sidToSave) {
             console.log(`💾 Triggering save for SID: ${sidToSave} (Recording: ${recordingStatus})`);
-            await storeCall(sidToSave, contact.id, recordingStatus);
+            
+            // Extract IDs for root level storage
+            const gigId = (apiLead as any)?.gigId?._id || (apiLead as any)?.gigId || null;
+            const companyId = (apiLead as any)?.companyId || null;
+
+            await storeCall(sidToSave, contact.id, recordingStatus, gigId, companyId);
             console.log('✅ Call details saved successfully via disconnect handler');
           } else {
             console.warn('⚠️ No SID available in Ref during disconnect');
@@ -352,7 +357,12 @@ export function ContactInfo() {
         // Store call in database when it disconnects (handles both agent and lead hangup)
         if (currentCallSid && contact.id) {
           console.log(`💾 Call disconnected. Triggering storage for SID: ${currentCallSid}. Recording: ${isRecordingRef.current}`);
-          await storeCall(currentCallSid, contact.id, isRecordingRef.current);
+          
+          // Extract IDs for root level storage
+          const gigId = (apiLead as any)?.gigId?._id || (apiLead as any)?.gigId || null;
+          const companyId = (apiLead as any)?.companyId || null;
+
+          await storeCall(currentCallSid, contact.id, isRecordingRef.current, gigId, companyId);
         }
 
         // Ajout : dispatch END_CALL pour mettre à jour le context global
