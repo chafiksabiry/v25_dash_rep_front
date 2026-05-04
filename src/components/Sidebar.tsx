@@ -98,6 +98,12 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       isAccessible: () => isPhaseCompleted(4)
     },
     {
+      icon: Phone,
+      label: 'Calls',
+      path: '/calls',
+      isAccessible: () => true
+    },
+    {
       icon: GraduationCap,
       label: 'Training',
       path: '/training',

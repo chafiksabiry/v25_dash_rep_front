@@ -18,6 +18,7 @@ import { Community } from './pages/Community';
 import { WalletPage } from './pages/Wallet';
 import { ImportLeads } from './pages/ImportLeads';
 import { SessionPlanning } from './pages/SessionPlanning';
+import { Calls } from './pages/Calls';
 import CallReportCard from './components/CallReport';
 import { fetchProfileFromAPI } from './utils/profileUtils';
 import { PhaseProtectedRoute } from './components/ProtectedRoute';
@@ -170,6 +171,7 @@ function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen }: any) {
               </PhaseProtectedRoute>
             } />
             <Route path="/session-planning" element={<SessionPlanning />} />
+            <Route path="/calls" element={<Calls />} />
             <Route path="/call-report" element={
               <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
                 <CallReportCard />
