@@ -14,7 +14,8 @@ import {
   MessageSquare,
   Star,
   Globe,
-  Download
+  Download,
+  Activity as ActivityIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
@@ -256,7 +257,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                             className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100 transition-all"
                             title="AI Insights"
                           >
-                            <Activity className="w-5 h-5" />
+                            <ActivityIcon className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
@@ -320,7 +321,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                 onClick={() => setActiveTab('insights')}
                 className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'insights' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
               >
-                <Activity className="w-4 h-4" />
+                <ActivityIcon className="w-4 h-4" />
                 AI Insights
               </button>
             </div>
@@ -367,7 +368,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {[
                       { label: 'Agent Fluency', data: selectedCall.ai_call_score?.["Agent fluency"], color: 'blue', icon: Globe },
-                      { label: 'Sentiment Analysis', data: selectedCall.ai_call_score?.["Sentiment analysis"], color: 'indigo', icon: Activity },
+                      { label: 'Sentiment Analysis', data: selectedCall.ai_call_score?.["Sentiment analysis"], color: 'indigo', icon: ActivityIcon },
                       { label: 'Fraud Detection', data: selectedCall.ai_call_score?.["Fraud detection"], color: 'rose', icon: Shield }
                     ].map((metric, mIdx) => (
                       <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl">

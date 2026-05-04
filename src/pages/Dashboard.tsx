@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Users, DollarSign, Clock, Star, Bell, BookOpen, MessageSquare, Phone, Target, Award, ArrowRight, Briefcase, Zap, Shield, CheckCircle2, Layout, Globe, Activity } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Clock, Star, Bell, BookOpen, MessageSquare, Phone, Target, Award, ArrowRight, Briefcase, Zap, Shield, CheckCircle2, Layout, Globe, Activity as ActivityIcon } from 'lucide-react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -174,7 +174,7 @@ export function Dashboard({ profile }: DashboardProps) {
           <div className="px-10 py-8 border-b border-white/40 flex items-center justify-between bg-white/20">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-harx-500 text-white flex items-center justify-center shadow-lg shadow-harx-500/20">
-                <Activity className="w-6 h-6" />
+                <ActivityIcon className="w-6 h-6" />
               </div>
               <div>
                 <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase tracking-widest">
