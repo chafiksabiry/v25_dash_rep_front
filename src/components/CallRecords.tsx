@@ -272,14 +272,14 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
 
       {/* Modal Detail View */}
       {selectedCall && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setSelectedCall(null)}></div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setSelectedCall(null)}></div>
           
-          <div className="relative bg-white w-full max-w-5xl max-h-[90vh] rounded-[40px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+          <div className="relative bg-white w-full max-w-4xl max-h-[85vh] rounded-[48px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-white/20">
             {/* Modal Header */}
-            <div className="px-8 py-8 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div className="px-8 py-8 border-b border-slate-100 bg-slate-50/40 flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-xl shadow-indigo-600/20">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-harx text-white flex items-center justify-center shadow-xl shadow-harx-500/20">
                   <Phone className="w-7 h-7" />
                 </div>
                 <div>
@@ -292,7 +292,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                 </div>
               </div>
 
-              <div className="flex-1 max-w-xl mx-4">
+              <div className="flex-1 max-w-md">
                 {(() => {
                   const recordingUrl = selectedCall.recording_url_cloudinary || selectedCall.recording_url;
                   if (!recordingUrl) return <div className="text-[10px] font-black text-slate-400 uppercase text-center py-2 bg-slate-100/50 rounded-xl italic">No recording</div>;
@@ -313,14 +313,14 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
             <div className="px-8 py-4 bg-white border-b border-slate-100 flex items-center gap-4">
               <button 
                 onClick={() => setActiveTab('transcript')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'transcript' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'transcript' ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
               >
                 <MessageSquare className="w-4 h-4" />
                 Transcript
               </button>
               <button 
                 onClick={() => setActiveTab('insights')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'insights' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'insights' ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
               >
                 <ActivityIcon className="w-4 h-4" />
                 AI Insights
@@ -342,7 +342,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           <div className={`px-5 py-4 rounded-3xl text-sm font-medium leading-relaxed ${
                             t.speaker?.toLowerCase().includes('agent') 
                               ? 'bg-white text-slate-700 rounded-tl-none border border-slate-100 shadow-sm' 
-                              : 'bg-indigo-600 text-white rounded-tr-none shadow-lg shadow-indigo-600/20'
+                              : 'bg-gradient-harx text-white rounded-tr-none shadow-lg shadow-harx-500/20'
                           }`}>
                             {t.text}
                           </div>
@@ -374,11 +374,11 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                     ].map((metric, mIdx) => (
                       <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl">
                         <div className="flex justify-between items-start mb-6">
-                          <div className={`w-12 h-12 rounded-2xl bg-${metric.color}-50 text-${metric.color}-600 flex items-center justify-center`}>
+                          <div className={`w-12 h-12 rounded-2xl bg-harx-50 text-harx-600 flex items-center justify-center`}>
                             <metric.icon className="w-6 h-6" />
                           </div>
                           <div className="text-right">
-                            <span className={`text-2xl font-black text-${metric.color}-600`}>{metric.data?.score || 0}%</span>
+                            <span className={`text-2xl font-black text-harx-600`}>{metric.data?.score || 0}%</span>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Score</p>
                           </div>
                         </div>
