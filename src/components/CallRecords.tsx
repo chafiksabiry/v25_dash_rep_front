@@ -416,9 +416,9 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
             <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
               <button 
                 onClick={() => setSelectedCall(null)}
-                className="px-8 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-800 transition-all"
+                className="px-8 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-800 transition-all shadow-lg"
               >
-                Close
+                Close Details
               </button>
             </div>
           </div>
