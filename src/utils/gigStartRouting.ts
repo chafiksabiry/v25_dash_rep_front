@@ -98,12 +98,16 @@ export async function resolveGigStartRoute(gigId: string): Promise<StartRouteDec
     return { target: 'training', reason: `Training check failed (${trainingRes.status})` };
   }
   const summary = await trainingRes.json();
-  const trainingCount = Number(summary?.trainingCount || 0);
-  const overallPercent = Number(summary?.overallPercent || 0);
+  const journeys = Array.isArray(summary?.data?.journeys) ? summary.data.journeys : [];
   const gigHasTrainings = await hasGigTrainings(gigId, headers);
-  const isTrainingComplete = gigHasTrainings ? overallPercent >= 100 : trainingCount === 0 ? true : overallPercent >= 100;
+
+  // Strict check: every journey for this gig must be 'completed' and reach 100%
+  const isTrainingComplete = gigHasTrainings 
+    ? journeys.length > 0 && journeys.every((j: any) => j.status === 'completed' && j.slidesSeen >= j.slidesTotal)
+    : true;
+
   if (!isTrainingComplete) {
-    return { target: 'training', reason: 'Training incomplete for this gig' };
+    return { target: 'training', reason: 'Training incomplete or quiz scores below 70 for this gig' };
   }
 
   // Condition 3: active reserved slot now
