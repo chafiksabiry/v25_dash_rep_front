@@ -53,7 +53,7 @@ const globalState = {
     if (leadId) globalState.currentLeadId = leadId;
     globalState.notifySubscribers();
   },
-  saveCallToDB: async (isRecording: boolean = true) => {
+  saveCallToDB: async (isRecording: boolean = true, transactionOccurred?: boolean | null) => {
     if (globalState.isSaving || !globalState.currentCallSid) {
       console.log("⚠️ Save already in progress or no CallSid available");
       return;
@@ -100,7 +100,8 @@ const globalState = {
         leadId: globalState.currentLeadId,
         call,
         cloudinaryrecord: cloudinaryRecord.data.url,
-        userId: globalState.currentAgentId || "system"
+        userId: globalState.currentAgentId || "system",
+        transactionOccurred: transactionOccurred
       });
       
       console.log('📝 Call stored in DB:', callInDB.data._id);
@@ -177,8 +178,8 @@ if (typeof window !== 'undefined') {
     setCallDetails: (callSid: string, agentId: string, leadId?: string) => {
       globalState.setCallDetails(callSid, agentId, leadId);
     },
-    saveCallToDB: async (isRecording?: boolean) => {
-      return await globalState.saveCallToDB(isRecording);
+    saveCallToDB: async (isRecording?: boolean, transactionOccurred?: boolean | null) => {
+      return await globalState.saveCallToDB(isRecording, transactionOccurred);
     }
   };
 }

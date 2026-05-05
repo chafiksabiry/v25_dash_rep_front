@@ -61,6 +61,8 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isRecording, setIsRecording] = useState(true);
   const isRecordingRef = useRef(true);
+  const [hasTransaction, setHasTransaction] = useState<boolean | null>(null);
+  const isTransactionRef = useRef<boolean | null>(null);
   const [callStatus, setCallStatus] = useState<CallStatus>("idle");
   const [connection, setConnection] = useState<Call | null>(null);
   const [device, setDevice] = useState<Device | null>(null);
@@ -483,8 +485,9 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
                     if (currentCallSid) {
                       // Use Ref to get the latest value regardless of closure
                       const finalRecordingStatus = isRecordingRef.current;
-                      await AIAssistantAPI.saveCallToDB(finalRecordingStatus);
-                      console.log(`✅ Successfully saved call details to DB (Recording: ${finalRecordingStatus})`);
+                      const finalTransactionStatus = isTransactionRef.current;
+                      await AIAssistantAPI.saveCallToDB(finalRecordingStatus, finalTransactionStatus);
+                      console.log(`✅ Successfully saved call details to DB (Recording: ${finalRecordingStatus}, Transaction: ${finalTransactionStatus})`);
                       if (onCallSaved) {
                         onCallSaved();
                       }
@@ -959,6 +962,30 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
         >
           <StopCircle className="w-6 h-6 mx-auto" />
         </button>
+      </div>
+
+      <div className="mb-4">
+        <p className="text-sm font-medium text-gray-700 mb-2">Transaction conclue ?</p>
+        <div className="flex justify-center space-x-4">
+          <button 
+            onClick={() => {
+              setHasTransaction(true);
+              isTransactionRef.current = true;
+            }}
+            className={`px-4 py-2 rounded-md font-medium transition-colors ${hasTransaction === true ? 'bg-green-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+          >
+            Oui
+          </button>
+          <button 
+            onClick={() => {
+              setHasTransaction(false);
+              isTransactionRef.current = false;
+            }}
+            className={`px-4 py-2 rounded-md font-medium transition-colors ${hasTransaction === false ? 'bg-red-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+          >
+            Non
+          </button>
+        </div>
       </div>
 
       <div className="text-sm text-gray-500">
