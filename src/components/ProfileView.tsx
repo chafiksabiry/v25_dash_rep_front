@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Pencil, Camera, ChevronDown } from 'lucide-react';
 import { getProfilePlan, checkCountryMismatch, updateProfileData, fetchProfileFromAPI, getRepresentativePlans, updateProfilePlan } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
@@ -85,6 +86,7 @@ export const ProfileView: React.FC<{
   onAddSpecializationItem?: (section: 'industries' | 'activities' | 'notableCompanies', value: string) => void,
   onProfileUpdate?: (updatedProfile: any) => void
 }> = ({ profile, onEditClick, onDeleteSkill, onAddSkill, onDeleteLanguage, onAddLanguage, onDeleteExperience, onAddExperience, onUpdateExperience, onDeleteSpecializationItem, onAddSpecializationItem, onProfileUpdate }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('profile');
   const [isPublishing, setIsPublishing] = useState(false);
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
@@ -788,28 +790,28 @@ export const ProfileView: React.FC<{
 
   const headerContentMap: Record<string, { title: string; subtitle: string }> = {
     profile: {
-      title: "Representative Identity",
-      subtitle: "Manage your professional persona and core identification properties."
+      title: t('profile.tabs.profile.title'),
+      subtitle: t('profile.tabs.profile.subtitle')
     },
     skills: {
-      title: "Expertise & Competencies",
-      subtitle: "Highlight your technical strengths and soft skills for placement opportunities."
+      title: t('profile.tabs.skills.title'),
+      subtitle: t('profile.tabs.skills.subtitle')
     },
     experience: {
-      title: "Professional Milestones",
-      subtitle: "Detail your career history and previous representative successes."
+      title: t('profile.tabs.experience.title'),
+      subtitle: t('profile.tabs.experience.subtitle')
     },
     languages: {
-      title: "Linguistic Profile",
-      subtitle: "Showcase your language proficiency and communication capabilities."
+      title: t('profile.tabs.languages.title'),
+      subtitle: t('profile.tabs.languages.subtitle')
     },
     onboarding: {
-      title: "Evolution Progress",
-      subtitle: "Track your journey through the representation onboarding phases."
+      title: t('profile.tabs.onboarding.title'),
+      subtitle: t('profile.tabs.onboarding.subtitle')
     },
     specialization: {
-      title: "Industry Verticals",
-      subtitle: "Review your specific sector focus and professional domain expertise."
+      title: t('profile.tabs.specialization.title'),
+      subtitle: t('profile.tabs.specialization.subtitle')
     }
   };
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Phone, Mail, User,
   Paperclip, Image, MoreHorizontal, PhoneOutgoing, XCircle,
@@ -74,6 +75,7 @@ function isTodayReservation(rawDate: unknown, now: Date): boolean {
 }
 
 export function Workspace() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
@@ -636,7 +638,7 @@ export function Workspace() {
   return (
     <div className="space-y-6">
       <div className="mb-8">
-        <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-6">Workspace</h1>
+        <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-6">{t('workspace.title')}</h1>
         
         {enrolledGigs.length > 0 && (
           <div className="flex flex-col items-start space-y-2 relative">

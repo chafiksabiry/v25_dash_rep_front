@@ -1,8 +1,10 @@
 import React from 'react';
 import { Activity as ActivityIcon, Users, AlertTriangle, Settings, Database, Zap, BarChart, Shield } from 'lucide-react';
 import { CallRecords } from '../components/CallRecords';
+import { useTranslation } from 'react-i18next';
 
 export function Operations() {
+  const { t } = useTranslation();
   const metrics = [
     {
       title: 'System Health',
@@ -64,9 +66,9 @@ export function Operations() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Operations Panel</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('operations.title')}</h1>
         <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
-          Emergency Shutdown
+          {t('operations.emergencyShutdown')}
         </button>
       </div>
 

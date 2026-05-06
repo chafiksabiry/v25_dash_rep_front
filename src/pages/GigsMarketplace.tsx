@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Skeleton } from '../components/ui/Skeleton';
+import { useTranslation } from 'react-i18next';
 
 import { useNavigate } from 'react-router-dom';
 import { User, Users, Globe, Calendar, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -14,8 +15,6 @@ interface PopulatedGig {
   title: string;
   description: string;
   category: string;
-
-  // 👤 User populé
   userId: {
     _id: string;
     email: string;
@@ -317,6 +316,7 @@ interface EnrolledGig {
 }
 
 export function GigsMarketplace() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const agentId = getAgentId();
 
@@ -1254,7 +1254,7 @@ export function GigsMarketplace() {
           <Skeleton className="h-10 w-48" variant="rounded" />
           <Skeleton className="h-20 w-full" variant="rounded" />
         </div>
-        
+
         <div className="flex space-x-8 border-b border-gray-100 pb-4">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-6 w-24" variant="rounded" />)}
         </div>
@@ -1290,7 +1290,7 @@ export function GigsMarketplace() {
     <div className="space-y-6">
       <div className="space-y-4">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Marketplace</h1>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t('gigsMarketplace.title')}</h1>
           <p className="mt-2 text-gray-600 max-w-3xl">
             Explore exciting opportunities posted by companies worldwide. Find projects that match your skills and interests, and take control of your professional journey. Browse through available gigs and bookmark your favorites for future reference.
           </p>
@@ -1305,7 +1305,7 @@ export function GigsMarketplace() {
             : 'text-gray-400 hover:text-gray-600'
             }`}
         >
-          Available Gigs
+          {t('gigsMarketplace.tabs.available')}
           {activeTab === 'available' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-harx-500 rounded-full"></div>}
         </button>
         <button
@@ -1315,7 +1315,7 @@ export function GigsMarketplace() {
             : 'text-gray-400 hover:text-gray-600'
             }`}
         >
-          Enrolled Gigs
+          {t('gigsMarketplace.tabs.enrolled')}
           {activeTab === 'enrolled' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-harx-500 rounded-full"></div>}
         </button>
         <button
@@ -1325,7 +1325,7 @@ export function GigsMarketplace() {
             : 'text-gray-400 hover:text-gray-600'
             }`}
         >
-          Favorite Gigs
+          {t('gigsMarketplace.tabs.favorite')}
           {activeTab === 'favorite' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-harx-500 rounded-full"></div>}
         </button>
         <button
@@ -1335,7 +1335,7 @@ export function GigsMarketplace() {
             : 'text-gray-400 hover:text-gray-600'
             }`}
         >
-          Invited Gigs
+          {t('gigsMarketplace.tabs.invited')}
           {activeTab === 'invited' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-harx-500 rounded-full"></div>}
         </button>
       </div>
@@ -1463,7 +1463,7 @@ export function GigsMarketplace() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              setExpandedIndustries(prev => ({...prev, [gig._id]: !prev[gig._id]}));
+                              setExpandedIndustries(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
                             }}
                             className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
                           >
@@ -1489,7 +1489,7 @@ export function GigsMarketplace() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              setExpandedActivities(prev => ({...prev, [gig._id]: !prev[gig._id]}));
+                              setExpandedActivities(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
                             }}
                             className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
                           >
@@ -1651,7 +1651,7 @@ export function GigsMarketplace() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  setExpandedIndustries(prev => ({...prev, [gig._id]: !prev[gig._id]}));
+                                  setExpandedIndustries(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
                                 }}
                                 className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
                               >
@@ -1677,7 +1677,7 @@ export function GigsMarketplace() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  setExpandedActivities(prev => ({...prev, [gig._id]: !prev[gig._id]}));
+                                  setExpandedActivities(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
                                 }}
                                 className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
                               >
@@ -1807,7 +1807,7 @@ export function GigsMarketplace() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  setExpandedIndustries(prev => ({...prev, [enrollment.gig._id]: !prev[enrollment.gig._id]}));
+                                  setExpandedIndustries(prev => ({ ...prev, [enrollment.gig._id]: !prev[enrollment.gig._id] }));
                                 }}
                                 className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
                               >
@@ -1842,7 +1842,7 @@ export function GigsMarketplace() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  setExpandedActivities(prev => ({...prev, [enrollment.gig._id]: !prev[enrollment.gig._id]}));
+                                  setExpandedActivities(prev => ({ ...prev, [enrollment.gig._id]: !prev[enrollment.gig._id] }));
                                 }}
                                 className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
                               >
@@ -1997,7 +1997,7 @@ export function GigsMarketplace() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  setExpandedIndustries(prev => ({...prev, [enrolledGig.gig._id]: !prev[enrolledGig.gig._id]}));
+                                  setExpandedIndustries(prev => ({ ...prev, [enrolledGig.gig._id]: !prev[enrolledGig.gig._id] }));
                                 }}
                                 className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
                               >
@@ -2032,7 +2032,7 @@ export function GigsMarketplace() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  setExpandedActivities(prev => ({...prev, [enrolledGig.gig._id]: !prev[enrolledGig.gig._id]}));
+                                  setExpandedActivities(prev => ({ ...prev, [enrolledGig.gig._id]: !prev[enrolledGig.gig._id] }));
                                 }}
                                 className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
                               >

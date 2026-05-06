@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Wallet, Clock, DollarSign, ArrowUpRight, ArrowDownRight, CreditCard, Ban as Bank, Shield, AlertCircle, Download, Filter, ChevronRight, Lock, Bell } from 'lucide-react';
 
 export function WalletPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('transactions');
   const [selectedDateRange, setSelectedDateRange] = useState('this-month');
 
   const balanceStats = [
     {
-      title: 'Available Balance',
+      title: t('wallet.availableBalance'),
       amount: '$1,250.00',
       icon: Wallet,
       change: '+$450 this week',
       status: 'positive'
     },
     {
-      title: 'Pending Earnings',
+      title: t('wallet.pendingEarnings'),
       amount: '$325.00',
       icon: Clock,
       change: '2 transactions pending',
       status: 'neutral'
     },
     {
-      title: 'Lifetime Earnings',
+      title: t('wallet.lifetimeEarnings'),
       amount: '$12,450.00',
       icon: DollarSign,
       change: 'Since joining',
@@ -82,14 +84,14 @@ export function WalletPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Wallet & Earnings</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('wallet.title')}</h1>
         <div className="flex items-center space-x-4">
           <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
             <Download className="w-4 h-4" />
-            <span>Download Statement</span>
+            <span>{t('wallet.downloadStatement')}</span>
           </button>
           <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            Withdraw Funds
+            {t('wallet.withdrawFunds')}
           </button>
         </div>
       </div>
@@ -120,7 +122,7 @@ export function WalletPage() {
           <div className="bg-white rounded-xl shadow-sm">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Transaction History</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{t('wallet.transactionHistory')}</h2>
                 <div className="flex items-center space-x-3">
                   <select
                     value={selectedDateRange}

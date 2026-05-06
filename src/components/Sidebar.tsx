@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing, GraduationCap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRepTrainingNav } from '../contexts/RepTrainingNavContext';
+import { useTranslation } from 'react-i18next';
 
 // Declare qiankun global variables
 declare global {
@@ -47,6 +48,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
   const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const isPhaseCompleted = (phaseNumber: number): boolean => {
     if (!phases) return false;
@@ -81,31 +83,31 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
   const navItems = [
     {
       icon: LayoutDashboard,
-      label: 'Dashboard',
+      label: t('sidebar.dashboard'),
       path: '/',
       isAccessible: () => true
     },
     {
       icon: UserCircle,
-      label: 'Profile',
+      label: t('sidebar.profile'),
       path: '/profile',
       isAccessible: () => true
     },
     {
       icon: Briefcase,
-      label: 'Marketplace',
+      label: t('sidebar.marketplace'),
       path: '/gigs-marketplace',
       isAccessible: () => isPhaseCompleted(4)
     },
     {
       icon: Phone,
-      label: 'Calls',
+      label: t('sidebar.calls'),
       path: '/calls',
       isAccessible: () => true
     },
     {
       icon: GraduationCap,
-      label: 'Training',
+      label: t('sidebar.training'),
       path: '/training',
       isAccessible: () => isPhaseCompleted(4),
       subItems: trainingModules.map((module, idx) => ({
@@ -117,24 +119,24 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
     },
     {
       icon: Monitor,
-      label: 'Workspace',
+      label: t('sidebar.workspace'),
       path: '/workspace',
       isAccessible: () => isPhaseCompleted(4),
       subItems: [
-        { label: 'Leads', path: '/workspace?tab=voice', icon: User },
-        { label: 'Call History', path: '/workspace?tab=calls', icon: PhoneOutgoing },
-        { label: 'Copilot', path: '/workspace?tab=copilot', icon: Phone }
+        { label: t('sidebar.leads'), path: '/workspace?tab=voice', icon: User },
+        { label: t('sidebar.callHistory'), path: '/workspace?tab=calls', icon: PhoneOutgoing },
+        { label: t('sidebar.copilot'), path: '/workspace?tab=copilot', icon: Phone }
       ]
     },
     {
       icon: Calendar,
-      label: 'Session Planning',
+      label: t('sidebar.sessionPlanning'),
       path: '/session-planning',
       isAccessible: () => true
     },
     {
       icon: Settings,
-      label: 'Operations',
+      label: t('sidebar.operations'),
       path: '/operations',
       isAccessible: () => isPhaseCompleted(5)
     },
@@ -394,7 +396,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
           <div className="p-2 rounded-lg bg-gray-800/50 group-hover:bg-harx-500/20 transition-colors shrink-0">
             <LogOut className="h-4 w-4" />
           </div>
-          {!isCollapsed && <span>Logout</span>}
+          {!isCollapsed && <span>{t('sidebar.logout')}</span>}
         </button>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Users, DollarSign, Clock, Star, Bell, BookOpen, MessageSquare, Phone, Target, Award, ArrowRight, Briefcase, Zap, Shield, CheckCircle2, Layout, Globe, Activity as ActivityIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -28,6 +29,7 @@ export function Dashboard({ profile }: DashboardProps) {
   const [callsData, setCallsData] = useState<any[]>([]);
   const [gigsData, setGigsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const userId = profile?._id || localStorage.getItem('userId');
@@ -73,10 +75,10 @@ export function Dashboard({ profile }: DashboardProps) {
   const onboardingProgress = calculateOnboardingProgress();
 
   const stats = [
-    { icon: TrendingUp, label: 'REPS Score', value: `${overallScore}/100`, change: 'Current', type: 'positive', color: 'harx' },
-    { icon: Layout, label: 'Onboarding', value: `${onboardingProgress}%`, change: 'Progress', type: 'positive', color: 'blue' },
-    { icon: Briefcase, label: 'Gigs Enrolled', value: gigsData.length, change: 'Active', type: 'neutral', color: 'amber' },
-    { icon: Phone, label: 'Calls Passed', value: callsData.length, change: 'Total', type: 'positive', color: 'emerald' },
+    { icon: TrendingUp, label: t('dashboard.stats.repsScore'), value: `${overallScore}/100`, change: t('dashboard.stats.current'), type: 'positive', color: 'harx' },
+    { icon: Layout, label: t('dashboard.stats.onboarding'), value: `${onboardingProgress}%`, change: t('dashboard.stats.progress'), type: 'positive', color: 'blue' },
+    { icon: Briefcase, label: t('dashboard.stats.gigsEnrolled'), value: gigsData.length, change: t('dashboard.stats.active'), type: 'neutral', color: 'amber' },
+    { icon: Phone, label: t('dashboard.stats.callsPassed'), value: callsData.length, change: t('dashboard.stats.total'), type: 'positive', color: 'emerald' },
   ];
 
   const processCallsForChart = () => {
@@ -102,7 +104,7 @@ export function Dashboard({ profile }: DashboardProps) {
       labels: range.map(d => dayNames[d.getDay()]),
       datasets: [
         {
-          label: 'Calls',
+          label: t('dashboard.performance.chartLabel'),
           data: counts,
           backgroundColor: 'rgba(59, 130, 246, 0.5)',
           borderColor: 'rgb(59, 130, 246)',
@@ -125,10 +127,10 @@ export function Dashboard({ profile }: DashboardProps) {
   };
 
   const performanceMetrics = [
-    { label: 'Professionalism', value: profile?.skills?.contactCenter?.[0]?.assessmentResults?.keyMetrics?.professionalism || 85, icon: Shield, color: 'text-blue-500' },
-    { label: 'Effectiveness', value: profile?.skills?.contactCenter?.[0]?.assessmentResults?.keyMetrics?.effectiveness || 90, icon: Zap, color: 'text-amber-500' },
-    { label: 'Customer Focus', value: profile?.skills?.contactCenter?.[0]?.assessmentResults?.keyMetrics?.customerFocus || 92, icon: Users, color: 'text-emerald-500' },
-    { label: 'Overall Match', value: `${overallScore}%`, icon: Target, color: 'text-harx-500' }
+    { label: t('dashboard.expertise.professionalism'), value: profile?.skills?.contactCenter?.[0]?.assessmentResults?.keyMetrics?.professionalism || 85, icon: Shield, color: 'text-blue-500' },
+    { label: t('dashboard.expertise.effectiveness'), value: profile?.skills?.contactCenter?.[0]?.assessmentResults?.keyMetrics?.effectiveness || 90, icon: Zap, color: 'text-amber-500' },
+    { label: t('dashboard.expertise.customerFocus'), value: profile?.skills?.contactCenter?.[0]?.assessmentResults?.keyMetrics?.customerFocus || 92, icon: Users, color: 'text-emerald-500' },
+    { label: t('dashboard.expertise.overallMatch'), value: `${overallScore}%`, icon: Target, color: 'text-harx-500' }
   ];
 
   return (
@@ -178,10 +180,10 @@ export function Dashboard({ profile }: DashboardProps) {
               </div>
               <div>
                 <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase tracking-widest">
-                  Performance Activity
+                  {t('dashboard.performance.title')}
                 </h2>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-                  Your daily call volume
+                  {t('dashboard.performance.subtitle')}
                 </p>
               </div>
             </div>
@@ -196,7 +198,7 @@ export function Dashboard({ profile }: DashboardProps) {
         {/* Assessment Metrics */}
         <div className="bg-slate-950 rounded-[40px] p-10 shadow-2xl relative overflow-hidden group h-full">
           <div className="absolute top-0 right-0 w-64 h-64 bg-harx-500/20 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-harx-500/30 transition-colors"></div>
-          <h2 className="text-xs font-black text-white uppercase tracking-[0.3em] mb-10 relative z-10 opacity-70">Expertise Analysis</h2>
+          <h2 className="text-xs font-black text-white uppercase tracking-[0.3em] mb-10 relative z-10 opacity-70">{t('dashboard.expertise.title')}</h2>
           <div className="grid grid-cols-1 gap-6 relative z-10">
             {performanceMetrics.map((metric, index) => (
               <div key={index} className="flex items-center justify-between p-5 rounded-[24px] bg-white/5 border border-white/10 hover:bg-white/10 transition-all group/item">

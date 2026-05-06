@@ -1,0 +1,115 @@
+{
+  "sidebar": {
+    "dashboard": "Tableau de Bord",
+    "profile": "Profil",
+    "marketplace": "Missions",
+    "calls": "Appels",
+    "training": "Formation",
+    "workspace": "Espace de Travail",
+    "leads": "Prospects",
+    "callHistory": "Historique",
+    "copilot": "Copilote",
+    "sessionPlanning": "Planification",
+    "operations": "Opérations",
+    "logout": "Déconnexion",
+    "activeGuide": "Guide Actif",
+    "interactiveStep": "Étape Interactive"
+  },
+  "topbar": {
+    "changeLanguage": "Changer de langue",
+    "userRole": "Représentant HARX",
+    "defaultUser": "Utilisateur"
+  },
+  "dashboard": {
+    "stats": {
+      "repsScore": "Score REPS",
+      "onboarding": "Intégration",
+      "gigsEnrolled": "Missions inscrites",
+      "callsPassed": "Appels passés",
+      "current": "Actuel",
+      "progress": "Progression",
+      "active": "Actif",
+      "total": "Total"
+    },
+    "performance": {
+      "title": "Activité de Performance",
+      "subtitle": "Votre volume d'appels quotidien",
+      "chartLabel": "Appels"
+    },
+    "expertise": {
+      "title": "Analyse d'Expertise",
+      "professionalism": "Professionnalisme",
+      "effectiveness": "Efficacité",
+      "customerFocus": "Orientation Client",
+      "overallMatch": "Adéquation Globale"
+    }
+  },
+  "calls": {
+    "title": "Mes Appels",
+    "subtitle": "Consultez vos performances et les détails de vos interactions",
+    "recordsTitle": "Enregistrements d'appels",
+    "refresh": "Actualiser",
+    "noCalls": "Aucun appel trouvé",
+    "noCallsDetail": "Commencez à passer des appels depuis votre espace de travail pour voir votre historique et les analyses de performance de l'IA ici.",
+    "transcript": "Transcription",
+    "aiInsights": "Analyses IA",
+    "executiveSummary": "Résumé Exécutif",
+    "closeDetails": "Fermer les détails"
+  },
+  "workspace": {
+    "title": "Espace de Travail"
+  },
+  "sessionPlanning": {
+    "title": "Planification de Session"
+  },
+  "operations": {
+    "title": "Panneau des Opérations",
+    "emergencyShutdown": "Arrêt d'urgence"
+  },
+  "gigsMarketplace": {
+    "title": "Place de Marché des Missions",
+    "tabs": {
+      "available": "Disponibles",
+      "enrolled": "Inscrites",
+      "favorite": "Favoris",
+      "invited": "Invitations"
+    }
+  },
+  "profile": {
+    "tabs": {
+      "profile": {
+        "title": "Identité du Représentant",
+        "subtitle": "Gérez votre profil professionnel et vos informations d'identification clés."
+      },
+      "skills": {
+        "title": "Expertise & Compétences",
+        "subtitle": "Mettez en valeur vos compétences techniques et interpersonnelles pour de futures opportunités."
+      },
+      "experience": {
+        "title": "Parcours Professionnel",
+        "subtitle": "Détaillez votre historique de carrière et vos succès passés."
+      },
+      "languages": {
+        "title": "Profil Linguistique",
+        "subtitle": "Présentez vos compétences linguistiques et vos capacités de communication."
+      },
+      "onboarding": {
+        "title": "Progression de l'Intégration",
+        "subtitle": "Suivez votre parcours à travers les étapes d'intégration."
+      },
+      "specialization": {
+        "title": "Secteurs d'Activité",
+        "subtitle": "Passez en revue vos domaines d'expertise sectorielle spécifiques."
+      }
+    }
+  },
+  "wallet": {
+    "title": "Portefeuille & Gains",
+    "downloadStatement": "Télécharger le Relevé",
+    "withdrawFunds": "Retirer des Fonds",
+    "availableBalance": "Solde Disponible",
+    "pendingEarnings": "Gains en Attente",
+    "lifetimeEarnings": "Gains Totaux",
+    "transactionHistory": "Historique des Transactions"
+  }
+}

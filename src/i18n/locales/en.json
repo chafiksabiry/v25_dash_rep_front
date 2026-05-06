@@ -1,0 +1,115 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "marketplace": "Marketplace",
+    "calls": "Calls",
+    "training": "Training",
+    "workspace": "Workspace",
+    "leads": "Leads",
+    "callHistory": "Call History",
+    "copilot": "Copilot",
+    "sessionPlanning": "Session Planning",
+    "operations": "Operations",
+    "logout": "Logout",
+    "activeGuide": "Active Guide",
+    "interactiveStep": "Interactive Step"
+  },
+  "topbar": {
+    "changeLanguage": "Change Language",
+    "userRole": "HARX Rep",
+    "defaultUser": "User"
+  },
+  "dashboard": {
+    "stats": {
+      "repsScore": "REPS Score",
+      "onboarding": "Onboarding",
+      "gigsEnrolled": "Gigs Enrolled",
+      "callsPassed": "Calls Passed",
+      "current": "Current",
+      "progress": "Progress",
+      "active": "Active",
+      "total": "Total"
+    },
+    "performance": {
+      "title": "Performance Activity",
+      "subtitle": "Your daily call volume",
+      "chartLabel": "Calls"
+    },
+    "expertise": {
+      "title": "Expertise Analysis",
+      "professionalism": "Professionalism",
+      "effectiveness": "Effectiveness",
+      "customerFocus": "Customer Focus",
+      "overallMatch": "Overall Match"
+    }
+  },
+  "calls": {
+    "title": "My Calls",
+    "subtitle": "Review your performance and interaction details",
+    "recordsTitle": "Call Records",
+    "refresh": "Refresh",
+    "noCalls": "No calls found",
+    "noCallsDetail": "Start making calls from your workspace to see your history and AI performance insights here.",
+    "transcript": "Transcript",
+    "aiInsights": "AI Insights",
+    "executiveSummary": "Executive Summary",
+    "closeDetails": "Close Details"
+  },
+  "workspace": {
+    "title": "Workspace"
+  },
+  "sessionPlanning": {
+    "title": "Session Planning"
+  },
+  "operations": {
+    "title": "Operations Panel",
+    "emergencyShutdown": "Emergency Shutdown"
+  },
+  "gigsMarketplace": {
+    "title": "Gigs Marketplace",
+    "tabs": {
+      "available": "Available",
+      "enrolled": "Enrolled",
+      "favorite": "Favorite",
+      "invited": "Invited"
+    }
+  },
+  "profile": {
+    "tabs": {
+      "profile": {
+        "title": "Representative Identity",
+        "subtitle": "Manage your professional persona and core identification properties."
+      },
+      "skills": {
+        "title": "Expertise & Competencies",
+        "subtitle": "Highlight your technical strengths and soft skills for placement opportunities."
+      },
+      "experience": {
+        "title": "Professional Milestones",
+        "subtitle": "Detail your career history and previous representative successes."
+      },
+      "languages": {
+        "title": "Linguistic Profile",
+        "subtitle": "Showcase your language proficiency and communication capabilities."
+      },
+      "onboarding": {
+        "title": "Evolution Progress",
+        "subtitle": "Track your journey through the representation onboarding phases."
+      },
+      "specialization": {
+        "title": "Industry Verticals",
+        "subtitle": "Review your specific sector focus and professional domain expertise."
+      }
+    }
+  },
+  "wallet": {
+    "title": "Wallet & Earnings",
+    "downloadStatement": "Download Statement",
+    "withdrawFunds": "Withdraw Funds",
+    "availableBalance": "Available Balance",
+    "pendingEarnings": "Pending Earnings",
+    "lifetimeEarnings": "Lifetime Earnings",
+    "transactionHistory": "Transaction History"
+  }
+}

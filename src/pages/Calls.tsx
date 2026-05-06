@@ -1,15 +1,18 @@
 import React from 'react';
 import { CallRecords } from '../components/CallRecords';
+import { useTranslation } from 'react-i18next';
 
 export function Calls() {
+  const { t } = useTranslation();
+
   return (
     <div className="animate-in fade-in duration-700">
       <div className="mb-8">
         <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase tracking-widest">
-          My Calls
+          {t('calls.title')}
         </h1>
         <p className="text-slate-500 font-medium mt-1">
-          Review your performance and interaction details
+          {t('calls.subtitle')}
         </p>
       </div>
 

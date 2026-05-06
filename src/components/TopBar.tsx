@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { getUserInfo } from '../utils/authUtils';
+import { LanguageSwitcher } from './ui/LanguageSwitcher';
 
 interface TopBarProps {
   isSidebarOpen: boolean;
@@ -104,6 +105,7 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
           <Menu className="h-5 w-5" />
         </button>
         <div className="flex items-center space-x-6 ml-auto">
+          <LanguageSwitcher />
           <div className="flex items-center space-x-3 p-2 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-white/10">
             {profileData?.personalInfo?.photo?.url ? (
               <img

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { HorizontalCalendar } from '../components/scheduler/HorizontalCalendar';
 import { TimeSlot, Gig, WeeklyStats, Rep, UserRole, Company } from '../types/scheduler';
 import { Building, Clock, Briefcase, AlertCircle, Users, Brain } from 'lucide-react';
@@ -214,6 +215,7 @@ interface EnrolledGig {
 }
 
 export function SessionPlanning() {
+    const { t } = useTranslation();
     const location = useLocation();
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [slots, setSlots] = useState<TimeSlot[]>([]);
@@ -628,7 +630,7 @@ export function SessionPlanning() {
                                 <Building className="w-10 h-10 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-5xl font-black text-gray-900 tracking-tighter leading-none mb-2">Session Planning</h1>
+                                <h1 className="text-5xl font-black text-gray-900 tracking-tighter leading-none mb-2">{t('sessionPlanning.title')}</h1>
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Strategic Time Management & Reservation</p>
                             </div>
                             {loadingGigs && (

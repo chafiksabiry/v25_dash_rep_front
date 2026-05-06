@@ -1,5 +1,6 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Phone,
   Calendar,
@@ -108,6 +109,7 @@ interface CallRecordsProps {
 }
 
 export function CallRecords({ gigId, leadId }: CallRecordsProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [callRecords, setCallRecords] = useState<CallRecord[]>([]);
   const [selectedCall, setSelectedCall] = useState<CallRecord | null>(null);
@@ -176,14 +178,14 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
   return (
     <div className="space-y-6 relative">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-black text-slate-900 uppercase tracking-widest">Call Records</h2>
+        <h2 className="text-xl font-black text-slate-900 uppercase tracking-widest">{t('calls.recordsTitle')}</h2>
         <button
           onClick={fetchCallRecords}
           disabled={loading}
           className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
+          <span>{t('calls.refresh')}</span>
         </button>
       </div>
 
@@ -193,9 +195,9 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
               <div className="w-20 h-20 rounded-3xl bg-slate-50 flex items-center justify-center mb-6">
                 <Phone className="w-10 h-10 text-slate-300" />
               </div>
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest">No calls found</h3>
+              <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest">{t('calls.noCalls')}</h3>
               <p className="text-sm text-slate-500 mt-2 max-w-sm">
-                Start making calls from your workspace to see your history and AI performance insights here.
+                {t('calls.noCallsDetail')}
               </p>
             </div>
           ) : (
@@ -317,14 +319,14 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                 className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'transcript' ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
               >
                 <MessageSquare className="w-4 h-4" />
-                Transcript
+                {t('calls.transcript')}
               </button>
               <button 
                 onClick={() => setActiveTab('insights')}
                 className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'insights' ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
               >
                 <ActivityIcon className="w-4 h-4" />
-                AI Insights
+                {t('calls.aiInsights')}
               </button>
             </div>
 
@@ -407,7 +409,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           <Star className="w-6 h-6" />
                         </div>
                         <div>
-                          <h4 className="text-lg font-black text-slate-900 uppercase tracking-widest">Executive Summary</h4>
+                          <h4 className="text-lg font-black text-slate-900 uppercase tracking-widest">{t('calls.executiveSummary')}</h4>
                           <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mt-0.5">Overall AI Evaluation</p>
                         </div>
                       </div>
@@ -427,7 +429,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                 onClick={() => setSelectedCall(null)}
                 className="px-8 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-800 transition-all shadow-lg"
               >
-                Close Details
+                {t('calls.closeDetails')}
               </button>
             </div>
           </div>
