@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { useAgent } from '../../contexts/AgentContext';
@@ -58,7 +58,32 @@ export function IframeWorkspace() {
 
   const phases = Object.keys(scriptByPhase);
   const activePhase = phases[activePhaseIndex];
-  const replicas = activePhase ? scriptByPhase[activePhase] : [];
+  const rawReplicas = activePhase ? scriptByPhase[activePhase] : [];
+
+  // Group flat replicas of the phase into Agent-Lead pairs
+  const replicas = useMemo(() => {
+    const pairs: { agent?: any; lead?: any }[] = [];
+    let i = 0;
+    while (i < rawReplicas.length) {
+      const current = rawReplicas[i];
+      const isAgent = current.actor === 'agent' || current.actor?.toLowerCase() === 'agent';
+      if (isAgent) {
+        const next = rawReplicas[i + 1];
+        const isNextLead = next && (next.actor === 'lead' || next.actor?.toLowerCase() === 'lead' || next.actor?.toLowerCase() === 'prospect');
+        if (isNextLead) {
+          pairs.push({ agent: current, lead: next });
+          i += 2;
+        } else {
+          pairs.push({ agent: current });
+          i += 1;
+        }
+      } else {
+        pairs.push({ lead: current });
+        i += 1;
+      }
+    }
+    return pairs;
+  }, [rawReplicas]);
 
   // Reset active phase and replica when script changes
   useEffect(() => {
@@ -324,50 +349,98 @@ export function IframeWorkspace() {
                     </div>
                   ) : null}
 
-                  {/* Single Replica card (Sleek fluid layout with flex gap-4 to prevent overlaps) */}
+                  {/* Combined Agent-Lead responsive pairs */}
                   {scripts.length > 0 ? (
                     replicas.length > 0 ? (
                       (() => {
-                        const currentReplica = replicas[activeReplicaIndex];
-                        if (!currentReplica) return null;
-                        const isAgent = currentReplica.actor === 'agent' || currentReplica.actor?.toLowerCase() === 'agent';
+                        const currentPair = replicas[activeReplicaIndex];
+                        if (!currentPair) return null;
                         return (
-                          <div className={`relative overflow-hidden rounded-2xl border p-4 md:p-5 pl-6 md:pl-7 flex flex-col gap-4 group transition-all duration-300 ${
-                            isAgent
-                              ? 'bg-gradient-to-br from-indigo-950/15 via-slate-900/90 to-slate-950/90 border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.05)]'
-                              : 'bg-gradient-to-br from-emerald-950/15 via-slate-900/90 to-slate-950/90 border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.05)]'
-                          }`}>
+                          <div className="flex flex-col gap-4 animate-in fade-in duration-300">
                             
-                            {/* Glowing left accent bar */}
-                            <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 ${
-                              isAgent 
-                                ? 'bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500' 
-                                : 'bg-gradient-to-b from-emerald-400 via-teal-500 to-emerald-600'
-                            }`} />
+                            {/* Combined Stacked/Side-by-side Cards */}
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                              {/* Agent Replica Card */}
+                              {currentPair.agent ? (
+                                <div className="relative overflow-hidden rounded-2xl border p-4 md:p-5 pl-6 md:pl-7 flex flex-col gap-3 group transition-all duration-300 bg-gradient-to-br from-indigo-950/15 via-slate-900/90 to-slate-950/90 border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.05)]">
+                                  {/* Glowing left accent bar */}
+                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500" />
+                                  
+                                  <div className="flex gap-4 items-start">
+                                    <div className="p-2.5 rounded-xl h-fit shrink-0 transition-transform duration-300 group-hover:scale-110 bg-indigo-500/20 text-indigo-300">
+                                      <Bot className="w-5 h-5 animate-pulse" />
+                                    </div>
+                                    <div className="space-y-1.5 flex-1 min-w-0">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">
+                                          CONSEILLER (VOUS)
+                                        </span>
+                                        <button
+                                          onClick={() => handleCopy(currentPair.agent.replica, 'agent_replica')}
+                                          className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[8px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all flex items-center gap-1 shrink-0"
+                                          title="Copier la réplique du conseiller"
+                                        >
+                                          {copiedField === 'agent_replica' ? (
+                                            <span className="text-emerald-400">Copié</span>
+                                          ) : (
+                                            <span>Copier</span>
+                                          )}
+                                        </button>
+                                      </div>
+                                      <p className="text-xs md:text-sm leading-relaxed font-bold text-indigo-100 group-hover:text-white">
+                                        {currentPair.agent.replica}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="hidden xl:flex items-center justify-center p-6 bg-slate-900/20 border border-dashed border-white/5 rounded-2xl">
+                                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Pas de réplique conseiller</p>
+                                </div>
+                              )}
 
-                            {/* Replica Content */}
-                            <div className="flex gap-4 items-start">
-                              <div className={`p-2.5 rounded-xl h-fit shrink-0 transition-transform duration-300 group-hover:scale-110 ${
-                                isAgent ? 'bg-indigo-500/20 text-indigo-300' : 'bg-emerald-500/20 text-emerald-300'
-                              }`}>
-                                {isAgent ? <Bot className="w-5 h-5 animate-pulse" /> : <User className="w-5 h-5" />}
-                              </div>
-                              <div className="space-y-1.5 flex-1 min-w-0">
-                                <span className={`text-[9px] font-black uppercase tracking-widest ${
-                                  isAgent ? 'text-indigo-400' : 'text-emerald-400'
-                                }`}>
-                                  {currentReplica.actor || 'ACTEUR'}
-                                </span>
-                                <p className={`text-xs md:text-sm leading-relaxed font-bold transition-colors ${
-                                  isAgent ? 'text-indigo-100 group-hover:text-white' : 'text-emerald-100 group-hover:text-white'
-                                }`}>
-                                  {currentReplica.replica}
-                                </p>
-                              </div>
+                              {/* Lead Replica Card */}
+                              {currentPair.lead ? (
+                                <div className="relative overflow-hidden rounded-2xl border p-4 md:p-5 pl-6 md:pl-7 flex flex-col gap-3 group transition-all duration-300 bg-gradient-to-br from-emerald-950/15 via-slate-900/90 to-slate-950/90 border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.05)]">
+                                  {/* Glowing left accent bar */}
+                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-400 via-teal-500 to-emerald-600" />
+                                  
+                                  <div className="flex gap-4 items-start">
+                                    <div className="p-2.5 rounded-xl h-fit shrink-0 transition-transform duration-300 group-hover:scale-110 bg-emerald-500/20 text-emerald-300">
+                                      <User className="w-5 h-5" />
+                                    </div>
+                                    <div className="space-y-1.5 flex-1 min-w-0">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">
+                                          PROSPECT (RÉPONSE ATTENDUE)
+                                        </span>
+                                        <button
+                                          onClick={() => handleCopy(currentPair.lead.replica, 'lead_replica')}
+                                          className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[8px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all flex items-center gap-1 shrink-0"
+                                          title="Copier la réplique attendue"
+                                        >
+                                          {copiedField === 'lead_replica' ? (
+                                            <span className="text-emerald-400">Copié</span>
+                                          ) : (
+                                            <span>Copier</span>
+                                          )}
+                                        </button>
+                                      </div>
+                                      <p className="text-xs md:text-sm leading-relaxed font-bold text-emerald-100 group-hover:text-white">
+                                        {currentPair.lead.replica}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="hidden xl:flex items-center justify-center p-6 bg-slate-900/20 border border-dashed border-white/5 rounded-2xl">
+                                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Pas de réplique prospect</p>
+                                </div>
+                              )}
                             </div>
 
-                            {/* Pager & Copy Actions */}
-                            <div className="pt-3.5 border-t border-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                            {/* Consolidated Pager & Navigation controls below the cards */}
+                            <div className="p-3 bg-slate-950/40 border border-white/5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shrink-0">
                               <div className="flex items-center gap-2">
                                 <button
                                   disabled={activeReplicaIndex === 0}
@@ -377,8 +450,8 @@ export function IframeWorkspace() {
                                   ← Précédent
                                 </button>
                                 
-                                <span className="text-[10px] text-slate-400 font-extrabold tracking-widest uppercase px-1">
-                                  MESSAGE {activeReplicaIndex + 1} / {replicas.length}
+                                <span className="text-[10px] text-slate-400 font-extrabold tracking-widest uppercase px-2">
+                                  CONVERSATION ÉTAPE ${activeReplicaIndex + 1} / ${replicas.length}
                                 </span>
 
                                 <button
@@ -389,25 +462,8 @@ export function IframeWorkspace() {
                                   Suivant →
                                 </button>
                               </div>
-
-                              <button 
-                                onClick={() => handleCopy(currentReplica.replica, 'replica')}
-                                className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5 hover:scale-103 active:scale-97 shrink-0 shadow-sm shadow-black/10"
-                                title="Copier la réplique"
-                              >
-                                {copiedField === 'replica' ? (
-                                  <>
-                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                    Copié !
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3.5 h-3.5" />
-                                    Copier
-                                  </>
-                                )}
-                              </button>
                             </div>
+
                           </div>
                         );
                       })()
