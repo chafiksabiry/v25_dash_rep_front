@@ -1,5 +1,6 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { 
   Phone,
@@ -274,7 +275,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
       </div>
 
       {/* Modal Detail View */}
-      {selectedCall && (
+      {selectedCall && createPortal(
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setSelectedCall(null)}></div>
           
@@ -433,7 +434,8 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
