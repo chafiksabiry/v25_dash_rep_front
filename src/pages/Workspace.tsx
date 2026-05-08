@@ -10,6 +10,8 @@ import {
 import { Skeleton } from '../components/ui/Skeleton';
 import { CallRecords } from '../components/CallRecords';
 import CopilotApp from '../copilot/App';
+import { AgentProvider } from '../copilot/contexts/AgentContext';
+import { IframeWorkspace } from '../copilot/components/Dashboard/IframeWorkspace';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { slotApi } from '../services/api/slotApi';
 
@@ -681,30 +683,38 @@ export function Workspace() {
         );
       case 'copilot':
         return (
-          <div className="w-full bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-gray-100 overflow-hidden" style={{ minHeight: '600px' }}>
+          <div className="w-full relative bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in duration-300" style={{ minHeight: '600px' }}>
             {copilotGuard.loading ? (
               <div className="flex flex-col items-center justify-center h-full pt-32 text-gray-400">
                 <p className="text-sm font-bold uppercase tracking-widest">Checking call permissions...</p>
               </div>
             ) : !canUseCopilot ? (
-              <div className="flex flex-col items-center justify-center h-full pt-24 text-center px-8">
-                <Phone className="w-12 h-12 mb-4 text-gray-300" />
-                <p className="text-sm font-black uppercase tracking-widest text-gray-700">Copilot Locked</p>
-                <p className="text-xs mt-2 text-gray-500 max-w-xl">
-                  {copilotGuard.reason || 'You cannot place calls right now.'}
-                </p>
-                {copilotGuard.reservationWindowLabel && (
-                  <p className="text-xs mt-2 text-emerald-600 font-bold">
-                    Active reserved window: {copilotGuard.reservationWindowLabel}
+              <AgentProvider>
+                <div className="flex flex-col items-center justify-center h-full pt-24 text-center px-8">
+                  <Phone className="w-12 h-12 mb-4 text-gray-300" />
+                  <p className="text-sm font-black uppercase tracking-widest text-gray-700">Copilot Locked</p>
+                  <p className="text-xs mt-2 text-gray-500 max-w-xl">
+                    {copilotGuard.reason || 'You cannot place calls right now.'}
                   </p>
-                )}
-              </div>
-            ) : (selectedLead || urlLeadId) ? <CopilotApp /> : (
-               <div className="flex flex-col items-center justify-center h-full pt-32 text-gray-400">
-                 <Phone className="w-16 h-16 mb-4 opacity-50" />
-                 <p className="text-sm font-bold uppercase tracking-widest">No lead selected</p>
-                 <p className="text-xs mt-2">Please select a lead from the Leads tab to start a call.</p>
-               </div>
+                  {copilotGuard.reservationWindowLabel && (
+                    <p className="text-xs mt-2 text-emerald-600 font-bold">
+                      Active reserved window: {copilotGuard.reservationWindowLabel}
+                    </p>
+                  )}
+                </div>
+                <IframeWorkspace />
+              </AgentProvider>
+            ) : (selectedLead || urlLeadId) ? (
+              <CopilotApp />
+            ) : (
+              <AgentProvider>
+                <div className="flex flex-col items-center justify-center h-full pt-32 text-gray-400 animate-in fade-in">
+                  <Phone className="w-16 h-16 mb-4 opacity-50" />
+                  <p className="text-sm font-bold uppercase tracking-widest">No lead selected</p>
+                  <p className="text-xs mt-2">Please select a lead from the Leads tab to start a call.</p>
+                </div>
+                <IframeWorkspace />
+              </AgentProvider>
             )}
           </div>
         );
