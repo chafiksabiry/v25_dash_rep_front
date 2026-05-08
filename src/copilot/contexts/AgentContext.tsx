@@ -57,6 +57,9 @@ export interface AgentState {
   // Smart warning system
   smartWarnings: SmartWarning[];
   warningSystem: WarningSystemState;
+
+  // External workspace iframe state
+  isIframeOpen: boolean;
 }
 
 // Define action types
@@ -88,7 +91,8 @@ export type AgentAction =
   | { type: 'SET_TRANSACTION_GOAL'; goal: any }
   | { type: 'ADD_SMART_WARNING'; warning: SmartWarning }
   | { type: 'RESOLVE_WARNING'; warningId: string }
-  | { type: 'UPDATE_WARNING_SYSTEM'; state: Partial<WarningSystemState> };
+  | { type: 'UPDATE_WARNING_SYSTEM'; state: Partial<WarningSystemState> }
+  | { type: 'TOGGLE_IFRAME'; payload?: boolean };
 
 // Initial state
 const initialState: AgentState = {
@@ -148,12 +152,19 @@ const initialState: AgentState = {
     lastCheck: new Date(),
     sensitivity: 'medium',
     autoResolutionEnabled: false
-  }
+  },
+  isIframeOpen: false
 };
 
 // Reducer function
 function agentReducer(state: AgentState, action: AgentAction): AgentState {
   switch (action.type) {
+    case 'TOGGLE_IFRAME':
+      return {
+        ...state,
+        isIframeOpen: action.payload !== undefined ? action.payload : !state.isIframeOpen
+      };
+
     case 'START_CALL':
       return {
         ...state,
