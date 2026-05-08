@@ -286,18 +286,18 @@ export function IframeWorkspace() {
 
           {/* Main Workspace Body Content */}
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-900">
-            
-            {/* Top Area: Script displayed with custom toggle */}
+                      {/* Top Area: Script displayed with custom toggle */}
             {showScript && (
-              <div className="w-full shrink-0 bg-slate-950/45 border-b border-white/10 flex flex-col p-4 md:p-5 overflow-hidden animate-in slide-in-from-top duration-300">
-                <div className="flex flex-col gap-3">
+              <div className="w-full shrink-0 bg-slate-950/60 backdrop-blur-md border-b border-white/10 flex flex-col p-4 md:p-5 overflow-hidden animate-in slide-in-from-top duration-300">
+                <div className="flex flex-col gap-3.5">
                   
                   {/* Script mini-header */}
                   <div className="flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
+                      <div className="w-2 h-2 rounded-full bg-indigo-500 animate-ping shrink-0" />
+                      <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse shrink-0" />
                       <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">SCRIPT DE VENTE ACTIF</span>
-                      <span className="text-[9px] text-slate-500 font-bold">• {gig?.title || 'GUIDE DE CONVERSATION'}</span>
+                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider truncate max-w-[200px] md:max-w-none">• {gig?.title || 'GUIDE DE CONVERSATION'}</span>
                     </div>
                     {scriptLoading && (
                       <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
@@ -306,18 +306,18 @@ export function IframeWorkspace() {
 
                   {/* Horizontal Phase Pagination Steps */}
                   {phases.length > 1 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 p-1 bg-slate-950 rounded-xl border border-white/5 shrink-0">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-white/5 shrink-0 shadow-inner">
                       {phases.map((phaseName, idx) => (
                         <button
                           key={phaseName}
                           onClick={() => setActivePhaseIndex(idx)}
-                          className={`px-2 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all duration-300 flex flex-col items-center gap-0.5 text-center min-w-0 ${
+                          className={`px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 flex flex-col items-center gap-0.5 text-center min-w-0 ${
                             activePhaseIndex === idx 
-                              ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20' 
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                              ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/20 scale-102 border border-white/10' 
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
                           }`}
                         >
-                          <span className="opacity-65 text-[6px] font-extrabold shrink-0">ÉTAPE {idx + 1}</span>
+                          <span className="opacity-65 text-[7px] font-extrabold shrink-0">ÉTAPE {idx + 1}</span>
                           <span className="truncate w-full font-black">{phaseName}</span>
                         </button>
                       ))}
@@ -330,23 +330,36 @@ export function IframeWorkspace() {
                       (() => {
                         const currentReplica = replicas[activeReplicaIndex];
                         if (!currentReplica) return null;
+                        const isAgent = currentReplica.actor === 'agent' || currentReplica.actor?.toLowerCase() === 'agent';
                         return (
-                          <div className="flex flex-col bg-slate-900 border border-white/5 rounded-2xl p-4 md:p-5 gap-4 relative group">
+                          <div className={`relative overflow-hidden rounded-2xl border p-4 md:p-5 pl-6 md:pl-7 flex flex-col gap-4 group transition-all duration-300 ${
+                            isAgent
+                              ? 'bg-gradient-to-br from-indigo-950/15 via-slate-900/90 to-slate-950/90 border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.05)]'
+                              : 'bg-gradient-to-br from-emerald-950/15 via-slate-900/90 to-slate-950/90 border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.05)]'
+                          }`}>
+                            
+                            {/* Glowing left accent bar */}
+                            <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 ${
+                              isAgent 
+                                ? 'bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500' 
+                                : 'bg-gradient-to-b from-emerald-400 via-teal-500 to-emerald-600'
+                            }`} />
+
                             {/* Replica Content */}
                             <div className="flex gap-4 items-start">
-                              <div className={`p-2.5 rounded-xl h-fit shrink-0 ${
-                                currentReplica.actor === 'agent' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-emerald-500/20 text-emerald-300'
+                              <div className={`p-2.5 rounded-xl h-fit shrink-0 transition-transform duration-300 group-hover:scale-110 ${
+                                isAgent ? 'bg-indigo-500/20 text-indigo-300' : 'bg-emerald-500/20 text-emerald-300'
                               }`}>
-                                {currentReplica.actor === 'agent' ? <Bot className="w-5 h-5 animate-pulse" /> : <User className="w-5 h-5" />}
+                                {isAgent ? <Bot className="w-5 h-5 animate-pulse" /> : <User className="w-5 h-5" />}
                               </div>
                               <div className="space-y-1.5 flex-1 min-w-0">
                                 <span className={`text-[9px] font-black uppercase tracking-widest ${
-                                  currentReplica.actor === 'agent' || currentReplica.actor?.toLowerCase() === 'agent' ? 'text-indigo-400' : 'text-emerald-400'
+                                  isAgent ? 'text-indigo-400' : 'text-emerald-400'
                                 }`}>
                                   {currentReplica.actor || 'ACTEUR'}
                                 </span>
-                                <p className={`text-xs md:text-sm leading-relaxed font-bold ${
-                                  currentReplica.actor === 'agent' ? 'text-indigo-100' : 'text-emerald-100'
+                                <p className={`text-xs md:text-sm leading-relaxed font-bold transition-colors ${
+                                  isAgent ? 'text-indigo-100 group-hover:text-white' : 'text-emerald-100 group-hover:text-white'
                                 }`}>
                                   {currentReplica.replica}
                                 </p>
@@ -354,24 +367,24 @@ export function IframeWorkspace() {
                             </div>
 
                             {/* Pager & Copy Actions */}
-                            <div className="pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                            <div className="pt-3.5 border-t border-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0">
                               <div className="flex items-center gap-2">
                                 <button
                                   disabled={activeReplicaIndex === 0}
                                   onClick={() => setActiveReplicaIndex(prev => Math.max(0, prev - 1))}
-                                  className="px-3 py-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-300 transition-all flex items-center gap-1"
+                                  className="px-4 py-2 bg-slate-900/80 hover:bg-slate-850 disabled:opacity-20 disabled:pointer-events-none border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5 hover:scale-103 active:scale-97 shadow-sm shadow-black/20"
                                 >
                                   ← Précédent
                                 </button>
                                 
-                                <span className="text-[10px] text-slate-400 font-extrabold tracking-widest uppercase">
+                                <span className="text-[10px] text-slate-400 font-extrabold tracking-widest uppercase px-1">
                                   MESSAGE {activeReplicaIndex + 1} / {replicas.length}
                                 </span>
 
                                 <button
                                   disabled={activeReplicaIndex === replicas.length - 1}
                                   onClick={() => setActiveReplicaIndex(prev => Math.min(replicas.length - 1, prev + 1))}
-                                  className="px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:from-slate-800 disabled:to-slate-800 disabled:opacity-30 disabled:pointer-events-none text-white border border-indigo-400/20 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1 shadow-md shadow-indigo-500/10"
+                                  className="px-4 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 disabled:from-slate-800 disabled:to-slate-800 disabled:opacity-20 disabled:pointer-events-none text-white border border-indigo-400/10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 flex items-center gap-1.5 hover:scale-103 active:scale-97 shadow-lg shadow-purple-500/15"
                                 >
                                   Suivant →
                                 </button>
@@ -379,7 +392,7 @@ export function IframeWorkspace() {
 
                               <button 
                                 onClick={() => handleCopy(currentReplica.replica, 'replica')}
-                                className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
+                                className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5 hover:scale-103 active:scale-97 shrink-0 shadow-sm shadow-black/10"
                                 title="Copier la réplique"
                               >
                                 {copiedField === 'replica' ? (
@@ -399,14 +412,14 @@ export function IframeWorkspace() {
                         );
                       })()
                     ) : (
-                      <div className="text-center py-6 bg-slate-900 rounded-xl border border-dashed border-white/5 flex flex-col items-center justify-center">
-                        <Sparkles className="w-6 h-6 text-slate-600 mx-auto mb-1 opacity-50" />
+                      <div className="text-center py-8 bg-slate-900 border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center">
+                        <Sparkles className="w-6 h-6 text-slate-600 mb-2 opacity-50" />
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Aucune réplique disponible pour cette étape</p>
                       </div>
                     )
                   ) : (
-                    <div className="text-center py-6 bg-slate-900 rounded-xl border border-dashed border-white/5 flex flex-col items-center justify-center">
-                      <Sparkles className="w-6 h-6 text-slate-600 mx-auto mb-1 opacity-50" />
+                    <div className="text-center py-8 bg-slate-900 border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-slate-600 mx-auto mb-2 opacity-50" />
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Aucun script disponible</p>
                     </div>
                   )}
