@@ -341,9 +341,9 @@ export function IframeWorkspace() {
                               </div>
                               <div className="space-y-1.5 flex-1 min-w-0">
                                 <span className={`text-[9px] font-black uppercase tracking-widest ${
-                                  currentReplica.actor === 'agent' ? 'text-indigo-400' : 'text-emerald-400'
+                                  currentReplica.actor === 'agent' || currentReplica.actor?.toLowerCase() === 'agent' ? 'text-indigo-400' : 'text-emerald-400'
                                 }`}>
-                                  {currentReplica.actor === 'agent' ? 'CONSEILLER (VOUS)' : 'PROSPECT'}
+                                  {currentReplica.actor || 'ACTEUR'}
                                 </span>
                                 <p className={`text-xs md:text-sm leading-relaxed font-bold ${
                                   currentReplica.actor === 'agent' ? 'text-indigo-100' : 'text-emerald-100'
