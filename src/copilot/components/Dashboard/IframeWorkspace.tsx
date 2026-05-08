@@ -291,17 +291,11 @@ export function IframeWorkspace() {
           {/* LEFT SPLIT PANEL: Live Copilot Script HUD in Crisp Light Mode */}
           {showScriptHUD && (
             <div className="w-[38%] border-r border-gray-100 bg-white/95 backdrop-blur-md flex flex-col overflow-hidden animate-in slide-in-from-left duration-300">
-              {/* Header */}
               <div className="px-5 py-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-indigo-500" />
                   <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">GUIDE DE VENTE AI</span>
                 </div>
-                {activeScript?.targetClient && (
-                  <span className="px-2 py-0.5 bg-indigo-50 text-[8px] font-black text-indigo-600 rounded-full border border-indigo-100 uppercase tracking-widest">
-                    DISC: {activeScript.targetClient}
-                  </span>
-                )}
               </div>
 
               {/* Scrollable Script matching normal UI style perfectly */}
