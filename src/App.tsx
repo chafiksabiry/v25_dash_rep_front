@@ -136,7 +136,7 @@ function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen }: any) {
             setIsSidebarOpen={setIsSidebarOpen}
           />
         )}
-        <main className={`flex-1 overflow-y-auto bg-white rounded-tl-[24px] ${location.pathname.includes('/profile') ? 'p-0' : 'px-8 py-6'}`}>
+        <main className={`flex-1 overflow-y-auto bg-white rounded-tl-[24px] ${location.pathname.includes('/profile') ? 'p-0' : 'px-4 py-3'}`}>
           <Routes>
             <Route path="/" element={<Dashboard profile={userProfile} />} />
             <Route path="/dashboard" element={<Dashboard profile={userProfile} />} />

@@ -407,10 +407,10 @@ export function WorkspaceContent() {
     switch (activeTab) {
       case 'voice':
         return (
-          <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-3xl p-8 flex flex-col shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center mb-8 border-b border-gray-100 pb-6">
+          <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-2xl p-5 flex flex-col shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
               <div className="flex flex-col">
-                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Leads</h2>
+                <h2 className="text-xl font-black text-gray-900 tracking-tight">Leads</h2>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
@@ -685,7 +685,7 @@ export function WorkspaceContent() {
 
       case 'calls':
         return (
-          <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-3xl p-8 overflow-y-auto shadow-sm border border-gray-100">
+          <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-2xl p-5 overflow-y-auto shadow-sm border border-gray-100">
             <CallRecords gigId={selectedGigId} leadId={urlLeadId || undefined} />
           </div>
         );
@@ -753,7 +753,7 @@ export function WorkspaceContent() {
         );
       case 'copilot':
         return (
-          <div className="w-full relative bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in duration-300" style={{ minHeight: '600px' }}>
+          <div className="w-full relative bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in duration-300" style={{ minHeight: '600px' }}>
             {copilotGuard.loading ? (
               <div className="flex flex-col items-center justify-center h-full pt-32 text-gray-400">
                 <p className="text-sm font-bold uppercase tracking-widest">Checking call permissions...</p>
@@ -812,25 +812,25 @@ export function WorkspaceContent() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="mb-8">
-        <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-6">{t('workspace.title')}</h1>
+    <div className="space-y-4">
+      <div className="mb-4">
+        <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-3">{t('workspace.title')}</h1>
         
         {enrolledGigs.length > 0 && (
-          <div className="flex flex-col items-start space-y-2 relative">
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 flex items-center gap-1.5">
-              <Filter className="w-3 h-3" />
+          <div className="flex flex-col items-start space-y-1 relative">
+            <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1 flex items-center gap-1.5">
+              <Filter className="w-2.5 h-2.5" />
               Active Gig
             </span>
             
             <div className="relative min-w-[280px]">
               <button
                 onClick={() => setIsGigDropdownOpen(!isGigDropdownOpen)}
-                className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-3.5 flex items-center justify-between text-xs font-black uppercase tracking-widest text-gray-700 hover:border-harx-200 hover:shadow-xl hover:shadow-harx-500/5 transition-all duration-300 group"
+                className="w-full bg-white border border-gray-100 rounded-xl px-5 py-2.5 flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-gray-700 hover:border-harx-200 hover:shadow-xl hover:shadow-harx-500/5 transition-all duration-300 group"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-harx flex items-center justify-center shadow-lg shadow-harx-500/20 group-hover:scale-110 transition-transform duration-300">
-                    <Layout className="w-4 h-4 text-white" />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-harx flex items-center justify-center shadow-lg shadow-harx-500/20 group-hover:scale-110 transition-transform duration-300">
+                    <Layout className="w-3.5 h-3.5 text-white" />
                   </div>
                   <span>
                     {selectedGigId 
@@ -838,7 +838,7 @@ export function WorkspaceContent() {
                       : 'All My Gigs'}
                   </span>
                 </div>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-500 ${isGigDropdownOpen ? 'rotate-180 text-harx-500' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-500 ${isGigDropdownOpen ? 'rotate-180 text-harx-500' : ''}`} />
               </button>
 
               {isGigDropdownOpen && (
@@ -894,7 +894,7 @@ export function WorkspaceContent() {
         )}
       </div>
 
-      <div className="grid grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-5 gap-3 mb-4">
         {workspaceTools.map((tool) => (
           <button
             key={tool.id}
@@ -911,13 +911,13 @@ export function WorkspaceContent() {
                 search: `?${params.toString()}`
               }, { replace: true });
             }}
-            className={`flex items-center justify-center space-x-3 px-8 py-4 rounded-2xl transition-all duration-300 border ${activeTab === tool.id
-              ? 'bg-gradient-harx text-white border-transparent shadow-xl shadow-harx-500/25 -translate-y-1'
+            className={`flex items-center justify-center space-x-2 px-6 py-2.5 rounded-xl transition-all duration-300 border ${activeTab === tool.id
+              ? 'bg-gradient-harx text-white border-transparent shadow-xl shadow-harx-500/25 -translate-y-0.5'
               : 'bg-white/50 backdrop-blur-sm text-gray-400 border-gray-100 hover:border-harx-200 hover:bg-white hover:text-harx-600 hover:shadow-lg hover:shadow-harx-500/5'
               }`}
           >
-            <tool.icon className={`w-5 h-5 transition-transform duration-500 ${activeTab === tool.id ? 'text-white scale-110' : 'text-current group-hover:scale-110'}`} />
-            <span className="text-[11px] font-black uppercase tracking-[0.2em]">{tool.label}</span>
+            <tool.icon className={`w-4 h-4 transition-transform duration-500 ${activeTab === tool.id ? 'text-white scale-110' : 'text-current group-hover:scale-110'}`} />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{tool.label}</span>
           </button>
         ))}
       </div>

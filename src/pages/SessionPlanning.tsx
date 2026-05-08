@@ -610,52 +610,52 @@ export function SessionPlanning() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50/50 font-sans p-8">
+        <div className="min-h-screen bg-gray-50/50 font-sans p-4">
             {notification && (
-                <div className={`fixed top-8 right-8 z-50 px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 ${
+                <div className={`fixed top-8 right-8 z-50 px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 ${
                     notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-100 shadow-emerald-500/5' : 'bg-harx-50 text-harx-800 border border-harx-100 shadow-harx-500/5'
                 }`}>
-                    <AlertCircle className={`w-5 h-5 shrink-0 ${notification.type === 'success' ? 'text-emerald-500' : 'text-harx-500'}`} />
-                    <p className="font-black text-sm uppercase tracking-tight">{notification.message}</p>
+                    <AlertCircle className={`w-4 h-4 shrink-0 ${notification.type === 'success' ? 'text-emerald-500' : 'text-harx-500'}`} />
+                    <p className="font-black text-xs uppercase tracking-tight">{notification.message}</p>
                 </div>
             )}
 
-            <div className="max-w-[1600px] mx-auto space-y-8">
+            <div className="max-w-[1600px] mx-auto space-y-4">
                 {/* Page title + stats */}
-                <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-10 shadow-sm border border-gray-100 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-harx-500/5 blur-[100px] -mr-32 -mt-32"></div>
-                    <div className="relative z-10 flex flex-wrap items-center justify-between gap-8">
-                        <div className="flex items-center gap-6">
-                            <div className="w-20 h-20 bg-gradient-harx rounded-3xl flex items-center justify-center shadow-lg shadow-harx-500/20">
-                                <Building className="w-10 h-10 text-white" />
+                <div className="bg-white/80 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-harx-500/5 blur-[80px] -mr-24 -mt-24"></div>
+                    <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-harx rounded-xl flex items-center justify-center shadow-lg shadow-harx-500/20">
+                                <Building className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-5xl font-black text-gray-900 tracking-tighter leading-none mb-2">{t('sessionPlanning.title')}</h1>
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Strategic Time Management & Reservation</p>
+                                <h1 className="text-3xl font-black text-gray-900 tracking-tighter leading-none mb-1">{t('sessionPlanning.title')}</h1>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Strategic Time Management & Reservation</p>
                             </div>
                             {loadingGigs && (
-                                <div className="ml-4 flex items-center gap-2">
-                                    <Skeleton className="h-6 w-32" variant="rounded" />
+                                <div className="ml-2 flex items-center gap-1.5">
+                                    <Skeleton className="h-5 w-24" variant="rounded" />
                                 </div>
                             )}
                         </div>
-                        <div className="flex items-center gap-8">
-                            <div className="flex items-center gap-4 px-8 py-5 bg-white rounded-[2rem] border border-gray-100 shadow-sm shadow-gray-200/50">
-                                <div className="w-12 h-12 bg-harx-50 rounded-2xl flex items-center justify-center">
-                                    <Clock className="w-6 h-6 text-harx-600" />
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-3 px-5 py-3 bg-white rounded-xl border border-gray-100 shadow-sm shadow-gray-200/50">
+                                <div className="w-9 h-9 bg-harx-50 rounded-lg flex items-center justify-center">
+                                    <Clock className="w-4.5 h-4.5 text-harx-600" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Weekly Commitment</p>
-                                    <p className="text-3xl font-black text-gray-900 tracking-tight">{weeklyStats.totalHours}<span className="text-lg text-gray-400 ml-1">h</span></p>
+                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Weekly Commitment</p>
+                                    <p className="text-xl font-black text-gray-900 tracking-tight">{weeklyStats.totalHours}<span className="text-sm text-gray-400 ml-1">h</span></p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4 px-8 py-5 bg-white rounded-[2rem] border border-gray-100 shadow-sm shadow-gray-200/50">
-                                <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center">
-                                    <Briefcase className="w-6 h-6 text-indigo-600" />
+                            <div className="flex items-center gap-3 px-5 py-3 bg-white rounded-xl border border-gray-100 shadow-sm shadow-gray-200/50">
+                                <div className="w-9 h-9 bg-indigo-50 rounded-lg flex items-center justify-center">
+                                    <Briefcase className="w-4.5 h-4.5 text-indigo-600" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Active Projects</p>
-                                    <p className="text-3xl font-black text-gray-900 tracking-tight">{Object.keys(weeklyStats.gigBreakdown).length}</p>
+                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Active Projects</p>
+                                    <p className="text-xl font-black text-gray-900 tracking-tight">{Object.keys(weeklyStats.gigBreakdown).length}</p>
                                 </div>
                             </div>
                         </div>
