@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import {
   Phone, Mail, User,
   Paperclip, Image, MoreHorizontal, PhoneOutgoing, XCircle,
-  ChevronLeft, ChevronRight, ChevronDown, Filter, Layout
+  ChevronLeft, ChevronRight, ChevronDown, Filter, Layout,
+  BookOpen, Clock, AlertTriangle
 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { CallRecords } from '../components/CallRecords';
@@ -341,6 +342,91 @@ export function Workspace() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
+              {/* Warnings, Exceptions and Info Banners */}
+              <div className="space-y-4 mb-6">
+                {/* Info: No Gig Selected */}
+                {!selectedGigId && (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-4 shadow-sm animate-in fade-in duration-300">
+                    <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl shrink-0">
+                      <Layout className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <h4 className="text-xs font-black text-blue-900 tracking-tight uppercase">Sélectionnez une mission / Select a Gig</h4>
+                      <p className="text-[11px] text-blue-700 font-medium leading-relaxed">
+                        Veuillez sélectionner un Gig spécifique dans le menu déroulant ci-dessus pour charger vos prospects (Leads), vérifier vos éligibilités d'appels, vos créneaux et vos formations.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedGigId && !copilotGuard.loading && (
+                  <>
+                    {/* Warning A: Training Incomplete */}
+                    {!copilotGuard.isTrainingComplete && (
+                      <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-4 shadow-sm animate-in fade-in duration-300">
+                        <div className="p-2.5 bg-amber-100 text-amber-600 rounded-xl shrink-0">
+                          <BookOpen className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <h4 className="text-xs font-black text-amber-900 tracking-tight uppercase">Formation Requise / Training Required</h4>
+                          <p className="text-[11px] text-amber-700 font-medium leading-relaxed">
+                            Vous devez terminer 100% de vos modules de formation pour ce Gig avant de pouvoir lancer des appels.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => navigate(`/training?gigId=${selectedGigId}`)}
+                          className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md shadow-amber-600/10 shrink-0 flex items-center gap-1.5"
+                        >
+                          S'entraîner <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Warning B: No Active Reservation Slot (Availability) */}
+                    {!copilotGuard.hasActiveReservationNow && (
+                      <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-4 shadow-sm animate-in fade-in duration-300">
+                        <div className="p-2.5 bg-rose-100 text-rose-600 rounded-xl shrink-0">
+                          <Clock className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <h4 className="text-xs font-black text-rose-900 tracking-tight uppercase">Planification Requise / Booking Required</h4>
+                          <p className="text-[11px] text-rose-700 font-medium leading-relaxed">
+                            Les appels ne sont autorisés que pendant votre créneau de session réservé pour ce Gig. Aucun créneau actif trouvé actuellement.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => navigate('/session-planning')}
+                          className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md shadow-rose-600/10 shrink-0 flex items-center gap-1.5"
+                        >
+                          Planifier <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Exception Handling: API down or check failure */}
+                    {copilotGuard.reason === 'Unable to validate call conditions. Please try again.' && (
+                      <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-4 shadow-sm animate-in fade-in duration-300">
+                        <div className="p-2.5 bg-red-100 text-red-600 rounded-xl shrink-0">
+                          <AlertTriangle className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <h4 className="text-xs font-black text-red-900 tracking-tight uppercase">Erreur de Connexion / Connection Error</h4>
+                          <p className="text-[11px] text-red-700 font-medium leading-relaxed">
+                            Impossible de valider vos conditions d'appel en temps réel (vérification des formations et réservations). Veuillez rafraîchir la page ou réessayer ultérieurement.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => window.location.reload()}
+                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md shadow-red-600/10 shrink-0"
+                        >
+                          Actualiser
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
               <div>
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Recent Leads</h3>
