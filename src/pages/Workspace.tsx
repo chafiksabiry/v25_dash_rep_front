@@ -5,7 +5,7 @@ import {
   Phone, Mail, User,
   Paperclip, Image, MoreHorizontal, PhoneOutgoing, XCircle,
   ChevronLeft, ChevronRight, ChevronDown, Filter, Layout,
-  BookOpen, Clock, AlertTriangle, Globe
+  BookOpen, Clock, AlertTriangle, Globe, CheckCircle2, ShieldAlert, KeyRound
 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { CallRecords } from '../components/CallRecords';
@@ -97,6 +97,7 @@ export function WorkspaceContent() {
   }, [urlTab]);
 
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [showWarningModal, setShowWarningModal] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoadingLeads, setIsLoadingLeads] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -136,6 +137,20 @@ export function WorkspaceContent() {
       copilotGuard.hasActiveReservationNow,
     [copilotGuard]
   );
+
+  // Block access to copilot tab/url if any requirement is not met
+  useEffect(() => {
+    if (!copilotGuard.loading && activeTab === 'copilot' && !canUseCopilot) {
+      setActiveTab('voice');
+      const params = new URLSearchParams(location.search);
+      params.set('tab', 'voice');
+      navigate({
+        pathname: location.pathname,
+        search: `?${params.toString()}`
+      }, { replace: true });
+      setShowWarningModal(true);
+    }
+  }, [copilotGuard.loading, activeTab, canUseCopilot, navigate, location.pathname, location.search]);
 
   useEffect(() => {
     const evaluateCopilotGuard = async () => {
@@ -719,7 +734,10 @@ export function WorkspaceContent() {
   };
 
   const handleCallClick = (lead: Lead) => {
-    if (!canUseCopilot) return;
+    if (!canUseCopilot) {
+      setShowWarningModal(true);
+      return;
+    }
     const leadIdString = lead._id || lead.id;
     const params = new URLSearchParams(location.search);
     params.set('leadId', leadIdString);
@@ -820,6 +838,10 @@ export function WorkspaceContent() {
           <button
             key={tool.id}
             onClick={() => {
+              if (tool.id === 'copilot' && !canUseCopilot) {
+                setShowWarningModal(true);
+                return;
+              }
               setActiveTab(tool.id);
               const params = new URLSearchParams(location.search);
               params.set('tab', tool.id);
@@ -845,6 +867,133 @@ export function WorkspaceContent() {
 
       {/* Renders the beautiful fullscreen portal split modal inside body */}
       <IframeWorkspace />
+
+      {/* Premium Cockpit Lock Warning Modal */}
+      {showWarningModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-[2rem] p-8 shadow-2xl shadow-black/80 overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Glowing background light */}
+            <div className="absolute -top-12 -left-12 w-40 h-40 bg-rose-500/10 blur-[60px] rounded-full pointer-events-none"></div>
+            <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-purple-500/10 blur-[60px] rounded-full pointer-events-none"></div>
+
+            {/* Header section with Shield Alert icon */}
+            <div className="flex flex-col items-center text-center mb-6 relative">
+              <div className="p-4 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-2xl mb-4 shadow-inner shadow-rose-500/5 animate-pulse">
+                <ShieldAlert className="w-8 h-8" />
+              </div>
+              <h3 className="text-lg font-black text-white tracking-wide uppercase">
+                Accès Cockpit Bloqué
+              </h3>
+              <p className="text-xs text-slate-400 font-medium mt-1">
+                Veuillez remplir toutes les conditions d'éligibilité requises pour lancer des appels.
+              </p>
+            </div>
+
+            {/* Requirements Checklist */}
+            <div className="space-y-3 mb-8 relative">
+              {/* Check 1: Enrolled in Gig */}
+              <div className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${
+                copilotGuard.isEnrolledInGig 
+                  ? 'bg-emerald-500/5 border-emerald-500/20' 
+                  : 'bg-rose-500/5 border-rose-500/10 opacity-75'
+              }`}>
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-xl shrink-0 ${
+                    copilotGuard.isEnrolledInGig ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+                  }`}>
+                    <Layout className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-200">
+                      Inscription au Projet
+                    </h4>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                      Être officiellement inscrit et affecté à la mission sélectionnée.
+                    </p>
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  {copilotGuard.isEnrolledInGig ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-rose-400" />
+                  )}
+                </div>
+              </div>
+
+              {/* Check 2: Training Complete */}
+              <div className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${
+                copilotGuard.isTrainingComplete 
+                  ? 'bg-emerald-500/5 border-emerald-500/20' 
+                  : 'bg-rose-500/5 border-rose-500/10 opacity-75'
+              }`}>
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-xl shrink-0 ${
+                    copilotGuard.isTrainingComplete ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+                  }`}>
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-200">
+                      Formations Complétées (100%)
+                    </h4>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                      Valider toutes les sessions de formation d'IA et simulateurs requis.
+                    </p>
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  {copilotGuard.isTrainingComplete ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-rose-400" />
+                  )}
+                </div>
+              </div>
+
+              {/* Check 3: Reservation Slot */}
+              <div className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${
+                copilotGuard.hasActiveReservationNow 
+                  ? 'bg-emerald-500/5 border-emerald-500/20' 
+                  : 'bg-rose-500/5 border-rose-500/10 opacity-75'
+              }`}>
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-xl shrink-0 ${
+                    copilotGuard.hasActiveReservationNow ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+                  }`}>
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-200">
+                      Créneau de Réservation Actif
+                    </h4>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                      Planifier et réserver un créneau de temps pour la mission dans l'agenda.
+                    </p>
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  {copilotGuard.hasActiveReservationNow ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-rose-400" />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer with actions */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/5 relative">
+              <button
+                onClick={() => setShowWarningModal(false)}
+                className="w-full py-3 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-extrabold uppercase tracking-widest text-[10px] rounded-2xl shadow-lg shadow-rose-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+              >
+                Compris, je finalise mes étapes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
