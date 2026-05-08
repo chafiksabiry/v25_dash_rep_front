@@ -17,15 +17,15 @@ export function IframeWorkspace() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'oggodata' | 'zoho' | 'custom'>('oggodata');
-  const [customUrl, setCustomUrl] = useState('https://oggo-data.com');
-  const [currentIframeUrl, setCurrentIframeUrl] = useState('https://oggo-data.com');
+  const [customUrl, setCustomUrl] = useState('https://www.oggodata.com/');
+  const [currentIframeUrl, setCurrentIframeUrl] = useState('https://www.oggodata.com/');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [iframeKey, setIframeKey] = useState(0);
 
   // Sync iframe source when active tab changes
   useEffect(() => {
     if (activeTab === 'oggodata') {
-      setCurrentIframeUrl('https://oggo-data.com');
+      setCurrentIframeUrl('https://www.oggodata.com/');
     } else if (activeTab === 'zoho') {
       setCurrentIframeUrl('https://crm.zoho.eu');
     } else {
