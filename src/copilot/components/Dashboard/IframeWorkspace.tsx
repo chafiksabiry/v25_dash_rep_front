@@ -5,6 +5,9 @@ import { useAgent } from '../../contexts/AgentContext';
 import TopStatusBar from './TopStatusBar';
 import { ContactInfo } from './ContactInfo';
 import DashboardGrid from './DashboardGrid';
+import { TranscriptionProvider } from '../../contexts/TranscriptionContext';
+import { TranscriptionBridge } from '../TranscriptionBridge';
+import { useDestinationZone } from '../../hooks/useDestinationZone';
 import { 
   Globe, 
   X, 
@@ -21,6 +24,7 @@ export function IframeWorkspace() {
   const { state, dispatch } = useAgent();
   const activeContact = state.callState?.contact;
   const location = useLocation();
+  const { zone: destinationZone } = useDestinationZone();
 
   const isOpen = state.isIframeOpen;
   const setIsOpen = (val: boolean) => dispatch({ type: 'TOGGLE_IFRAME', payload: val });
@@ -107,25 +111,28 @@ export function IframeWorkspace() {
           
           {/* Left Column: Copilot (Script & Conversation) */}
           <div className="w-full md:w-1/2 h-full bg-slate-900 border-r border-white/10 flex flex-col overflow-y-auto p-6 md:p-8">
-            <div className="max-w-[800px] mx-auto w-full space-y-6">
-              
-              {/* Copilot Header */}
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <Sparkles className="w-5 h-5 animate-pulse" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-white">Coach Copilot Actif</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Assistance en Temps Réel</p>
+            <TranscriptionProvider destinationZone={destinationZone || undefined}>
+              <TranscriptionBridge />
+              <div className="max-w-[800px] mx-auto w-full space-y-6">
+                
+                {/* Copilot Header */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                      <Sparkles className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-widest text-white">Coach Copilot Actif</h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Assistance en Temps Réel</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <TopStatusBar />
-              <ContactInfo />
-              <DashboardGrid />
-            </div>
+                <TopStatusBar />
+                <ContactInfo />
+                <DashboardGrid />
+              </div>
+            </TranscriptionProvider>
           </div>
 
           {/* Right Column: CRM Iframe Workspace */}
