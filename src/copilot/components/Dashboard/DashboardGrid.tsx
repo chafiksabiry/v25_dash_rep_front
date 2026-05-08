@@ -49,11 +49,6 @@ const DashboardGrid: React.FC = () => {
             <div className="flex flex-col items-start text-left">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Script</h3>
-                {hasScriptsInCollection && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-[8px] font-black text-indigo-600 rounded-full border border-indigo-100 uppercase tracking-widest">
-                    {scripts.length} {scripts.length > 1 ? 'Scripts' : 'Script'} Found
-                  </span>
-                )}
               </div>
               <p className="text-[10px] font-bold text-gray-400 upperCase tracking-widest">
                 {gig?.title || 'Real-time Talk Tracks'}
@@ -94,24 +89,6 @@ const DashboardGrid: React.FC = () => {
                     ))}
                   </div>
                 )}
-                {/* Script Info Bar */}
-                <div className="flex flex-wrap gap-3 mb-6">
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${
-                    activeScript.targetClient === 'D' ? 'bg-red-50 text-red-600 border-red-100' :
-                    activeScript.targetClient === 'I' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
-                    activeScript.targetClient === 'S' ? 'bg-green-50 text-green-600 border-green-100' :
-                    activeScript.targetClient === 'C' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                    'bg-gray-50 text-gray-600 border-gray-100'
-                  }`}>
-                    DISC: {activeScript.targetClient}
-                  </div>
-                  {activeScript.language && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-full text-[9px] font-black uppercase tracking-widest">
-                      {activeScript.language.split(',')[0]}
-                    </div>
-                  )}
-                </div>
-
                 {/* Script Context / Details */}
                 {(activeScript.details || (activeScript.language && activeScript.language.includes(','))) && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
