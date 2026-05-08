@@ -129,9 +129,17 @@ export function IframeWorkspace() {
         </div>
       )}
 
-      {/* Fullscreen Overlay Split Modal */}
+      {/* Backdrop overlay for the left 30% of screen */}
       {isOpen && (
-        <div className="fixed inset-0 bg-slate-950 z-[9999] flex flex-col overflow-hidden animate-in fade-in duration-300">
+        <div 
+          className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs z-[9998] animate-in fade-in duration-300"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Side drawer modal taking exactly 70% width on the right */}
+      {isOpen && (
+        <div className="fixed inset-y-0 right-0 w-[70vw] min-w-[320px] bg-slate-950 z-[9999] flex flex-col overflow-hidden border-l border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-right duration-500">
           
           {/* Top Half: Script with pagination */}
           <div className="w-full h-1/2 bg-slate-900 border-b border-white/10 flex flex-col p-4 md:p-6 overflow-hidden">
