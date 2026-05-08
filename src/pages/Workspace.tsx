@@ -985,8 +985,17 @@ export function WorkspaceContent() {
             {/* Footer with actions */}
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/5 relative">
               <button
-                onClick={() => setShowWarningModal(false)}
-                className="w-full py-3 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-extrabold uppercase tracking-widest text-[10px] rounded-2xl shadow-lg shadow-rose-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+                onClick={() => {
+                  setShowWarningModal(false);
+                  if (!selectedGigId || !copilotGuard.isEnrolledInGig) {
+                    navigate('/gigs-marketplace');
+                  } else if (!copilotGuard.isTrainingComplete) {
+                    navigate(`/training?gigId=${selectedGigId}`);
+                  } else if (!copilotGuard.hasActiveReservationNow) {
+                    navigate(`/session-planning?gigId=${selectedGigId}`);
+                  }
+                }}
+                className="w-full py-3 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white font-extrabold uppercase tracking-widest text-[10px] rounded-2xl shadow-lg shadow-rose-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
               >
                 Compris, je finalise mes étapes
               </button>
