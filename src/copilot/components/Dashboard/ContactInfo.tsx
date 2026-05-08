@@ -71,7 +71,7 @@ export function ContactInfo() {
 
   // Get leadId from URL
   const searchParams = new URLSearchParams(window.location.search);
-  const leadId = searchParams.get('leadId');
+  const leadId = searchParams.get('leadId') || sessionStorage.getItem('activeLeadId');
 
   // Use the hook to fetch lead data
   const { lead: apiLead, loading: leadLoading, error: leadError } = useLead(leadId);

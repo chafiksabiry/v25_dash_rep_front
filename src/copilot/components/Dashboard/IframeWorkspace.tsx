@@ -25,7 +25,7 @@ export function IframeWorkspace() {
 
   // Fetch script details dynamically based on URL lead and gig
   const searchParams = new URLSearchParams(location.search);
-  const leadId = searchParams.get('leadId');
+  const leadId = searchParams.get('leadId') || sessionStorage.getItem('activeLeadId');
   const { lead: apiLead } = useLead(leadId);
   const gig = apiLead?.gigId;
   const { scripts, loading: scriptLoading } = useGigScript(gig?._id);
@@ -99,8 +99,8 @@ export function IframeWorkspace() {
   // Sync iframe source when active tab changes, appending gigId and leadId dynamically
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
-    const leadId = searchParams.get('leadId') || '';
-    const gigId = searchParams.get('gigId') || '';
+    const leadId = searchParams.get('leadId') || sessionStorage.getItem('activeLeadId') || '';
+    const gigId = searchParams.get('gigId') || sessionStorage.getItem('activeGigId') || '';
 
     const appendParams = (url: string) => {
       try {

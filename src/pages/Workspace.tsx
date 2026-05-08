@@ -83,12 +83,14 @@ export function WorkspaceContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
-  const urlLeadId = searchParams.get('leadId');
   const urlTab = searchParams.get('tab');
-  const urlGigId = searchParams.get('gigId');
+  const urlLeadId = searchParams.get('leadId') || sessionStorage.getItem('activeLeadId') || '';
+  const urlGigId = searchParams.get('gigId') || sessionStorage.getItem('activeGigId') || '';
   const gigId = location.state?.gigId || urlGigId;
+  
   const [activeTab, setActiveTab] = useState(urlTab && ['voice', 'calls', 'copilot'].includes(urlTab) ? urlTab : 'voice');
   const [message, setMessage] = useState('');
+  
   // Sync activeTab with URL
   useEffect(() => {
     if (urlTab && ['voice', 'calls', 'copilot'].includes(urlTab)) {
@@ -105,6 +107,58 @@ export function WorkspaceContent() {
   const [enrolledGigs, setEnrolledGigs] = useState<EnrolledGig[]>([]);
   const [selectedGigId, setSelectedGigId] = useState<string>(gigId || '');
   const [isGigDropdownOpen, setIsGigDropdownOpen] = useState(false);
+
+  // Auto-save selectedGigId to sessionStorage
+  useEffect(() => {
+    if (selectedGigId) {
+      sessionStorage.setItem('activeGigId', selectedGigId);
+    } else {
+      sessionStorage.removeItem('activeGigId');
+    }
+  }, [selectedGigId]);
+
+  // Sync and Clean URL parameters to protect sensitive IDs from leaking
+  useEffect(() => {
+    let changed = false;
+    const params = new URLSearchParams(location.search);
+    
+    if (params.has('gigId')) {
+      const gId = params.get('gigId') || '';
+      if (gId) {
+        sessionStorage.setItem('activeGigId', gId);
+        setSelectedGigId(gId);
+      }
+      params.delete('gigId');
+      changed = true;
+    }
+    
+    if (params.has('leadId')) {
+      const lId = params.get('leadId') || '';
+      if (lId) {
+        sessionStorage.setItem('activeLeadId', lId);
+      }
+      params.delete('leadId');
+      changed = true;
+    }
+    
+    if (changed) {
+      navigate({
+        pathname: location.pathname,
+        search: `?${params.toString()}`
+      }, { replace: true });
+    }
+  }, [location.search, location.pathname, navigate]);
+
+  // Auto-reconstitute selectedLead from the loaded leads list using the active sessionStorage leadId
+  useEffect(() => {
+    if (!selectedLead && urlLeadId && leads.length > 0) {
+      const found = leads.find(l => (l._id || l.id) === urlLeadId);
+      if (found) {
+        setSelectedLead(found);
+      }
+    }
+  }, [leads, urlLeadId, selectedLead]);
+
   const [copilotGuard, setCopilotGuard] = useState<CopilotGuardState>({
     loading: false,
     isEnrolledInGig: false,
@@ -739,9 +793,16 @@ export function WorkspaceContent() {
       return;
     }
     const leadIdString = lead._id || lead.id;
+    sessionStorage.setItem('activeLeadId', leadIdString);
+    if (selectedGigId) {
+      sessionStorage.setItem('activeGigId', selectedGigId);
+    }
+
     const params = new URLSearchParams(location.search);
-    params.set('leadId', leadIdString);
+    params.delete('leadId');
+    params.delete('gigId');
     params.set('tab', 'copilot');
+    
     navigate({
       pathname: location.pathname,
       search: `?${params.toString()}`
