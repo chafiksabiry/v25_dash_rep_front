@@ -9,7 +9,8 @@ export const useCallStorage = () => {
     leadId: string, 
     isRecordingOverride?: boolean,
     gigId?: string,
-    companyId?: string
+    companyId?: string,
+    transactionOccurred?: boolean | null
   ) => {
     const agentId = localStorage.getItem('agentId') || ""; 
     const userId = localStorage.getItem('userId') || agentId; // Actual user ID if available
@@ -23,7 +24,8 @@ export const useCallStorage = () => {
         isRecording: isRecordingOverride !== undefined ? isRecordingOverride : state.callState.isRecording,
         transcript: state.transcript,
         gigId,
-        companyId
+        companyId,
+        transactionOccurred
       });
 
       if (callData && callData.recording_url_cloudinary) {

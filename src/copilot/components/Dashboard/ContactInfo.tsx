@@ -34,6 +34,20 @@ export function ContactInfo() {
   const [callStatus, setCallStatus] = useState<string>('idle');
   const [currentCallSid, setCurrentCallSid] = useState<string | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const [transactionOccurred, setTransactionOccurred] = useState<boolean | null>(null);
+  const transactionOccurredRef = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    transactionOccurredRef.current = transactionOccurred;
+  }, [transactionOccurred]);
+
+  const [showCallSummary, setShowCallSummary] = useState(false);
+  const [lastCallDetails, setLastCallDetails] = useState<{
+    sid: string;
+    leadName: string;
+    transactionOccurred: boolean | null;
+    recordingUrl?: string | null;
+  } | null>(null);
 
   const handleToggleMic = () => {
     dispatch({ type: 'TOGGLE_MIC' });
@@ -161,6 +175,7 @@ export function ContactInfo() {
    console.log("Call status:", callStatus); */
 
   const initiateTwilioCall = async () => {
+    setTransactionOccurred(null);
     /*  console.log("Contact phone number:", contact.phone);
      console.log("Contact object:", contact);
      console.log("Call status at start:", callStatus); */
@@ -266,8 +281,16 @@ export function ContactInfo() {
             const gigId = (apiLead as any)?.gigId?._id || (apiLead as any)?.gigId || null;
             const companyId = (apiLead as any)?.companyId || null;
 
-            await storeCall(sidToSave, contact.id, recordingStatus, gigId, companyId);
+            await storeCall(sidToSave, contact.id, recordingStatus, gigId, companyId, transactionOccurredRef.current);
             console.log('✅ Call details saved successfully via disconnect handler');
+
+            setLastCallDetails({
+              sid: sidToSave,
+              leadName: contact.name,
+              transactionOccurred: transactionOccurredRef.current,
+              recordingUrl: state.callState.recordingUrl
+            });
+            setShowCallSummary(true);
           } else {
             console.warn('⚠️ No SID available in Ref during disconnect');
           }
@@ -354,7 +377,6 @@ export function ContactInfo() {
         // Stop transcription
         await stopTranscription();
 
-        // Store call in database when it disconnects (handles both agent and lead hangup)
         if (currentCallSid && contact.id) {
           console.log(`💾 Call disconnected. Triggering storage for SID: ${currentCallSid}. Recording: ${isRecordingRef.current}`);
           
@@ -362,7 +384,15 @@ export function ContactInfo() {
           const gigId = (apiLead as any)?.gigId?._id || (apiLead as any)?.gigId || null;
           const companyId = (apiLead as any)?.companyId || null;
 
-          await storeCall(currentCallSid, contact.id, isRecordingRef.current, gigId, companyId);
+          await storeCall(currentCallSid, contact.id, isRecordingRef.current, gigId, companyId, transactionOccurredRef.current);
+
+          setLastCallDetails({
+            sid: currentCallSid,
+            leadName: contact.name,
+            transactionOccurred: transactionOccurredRef.current,
+            recordingUrl: state.callState.recordingUrl
+          });
+          setShowCallSummary(true);
         }
 
         // Ajout : dispatch END_CALL pour mettre à jour le context global
@@ -481,13 +511,42 @@ export function ContactInfo() {
         {/* Bouton Start Call + Tabs */}
           <div className="flex-1 flex flex-col items-center">
           {callStatus === 'active' ? (
-            <button
-              onClick={endCall}
-              className="w-48 flex items-center justify-center space-x-2 px-3 py-2 rounded-xl font-bold text-base transition-all duration-300 shadow-md bg-red-600 hover:bg-red-700 text-white hover:-translate-y-0.5"
-            >
-              <Phone className="w-4 h-4 mr-2" />
-              End Call
-            </button>
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={endCall}
+                className="w-48 flex items-center justify-center space-x-2 px-3 py-2 rounded-xl font-bold text-base transition-all duration-300 shadow-md bg-red-600 hover:bg-red-700 text-white hover:-translate-y-0.5"
+              >
+                <Phone className="w-4 h-4 mr-2" />
+                End Call
+              </button>
+              
+              {/* Transaction Outcome Buttons */}
+              <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100">
+                <span className="text-[8px] font-black uppercase text-gray-400 tracking-wider px-1.5">Transaction:</span>
+                <button
+                  type="button"
+                  onClick={() => setTransactionOccurred(true)}
+                  className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${
+                    transactionOccurred === true
+                      ? 'bg-emerald-500 text-white shadow-sm'
+                      : 'bg-white hover:bg-gray-100 text-emerald-600 border border-emerald-100'
+                  }`}
+                >
+                  OK
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTransactionOccurred(false)}
+                  className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${
+                    transactionOccurred === false
+                      ? 'bg-rose-500 text-white shadow-sm'
+                      : 'bg-white hover:bg-gray-100 text-rose-600 border border-rose-100'
+                  }`}
+                >
+                  Refus
+                </button>
+              </div>
+            </div>
           ) : (
             <button
               onClick={handleStartCall}
@@ -545,6 +604,72 @@ export function ContactInfo() {
           </button>
         </div>
       </div>
+
+      {showCallSummary && lastCallDetails && (
+        <div className="bg-gradient-to-r from-gray-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-2xl shadow-xl p-5 mt-3 mb-3 animate-in slide-in-from-top-2 fade-in duration-300">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-indigo-500/10 text-indigo-400 rounded-lg border border-indigo-500/20">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+              <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Journal de l'appel / Call Session Log</h3>
+            </div>
+            <button
+              onClick={() => setShowCallSummary(false)}
+              className="p-1.5 hover:bg-white/10 text-gray-400 hover:text-white rounded-lg transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+              <span className="text-[8px] font-black uppercase text-gray-400 tracking-widest block mb-1">PROSPECT (LEAD)</span>
+              <span className="text-xs font-black text-white">{lastCallDetails.leadName}</span>
+            </div>
+            
+            <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+              <span className="text-[8px] font-black uppercase text-gray-400 tracking-widest block mb-1">TWILIO SID</span>
+              <span className="text-[10px] font-mono font-bold text-indigo-300 truncate block">{lastCallDetails.sid}</span>
+            </div>
+            
+            <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+              <span className="text-[8px] font-black uppercase text-gray-400 tracking-widest block mb-1">TRANSACTION STATUS</span>
+              {lastCallDetails.transactionOccurred === true ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
+                  OK / Transaction validée
+                </span>
+              ) : lastCallDetails.transactionOccurred === false ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                  <span className="w-1.5 h-1.5 bg-rose-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(251,113,133,0.5)]"></span>
+                  Refus / Échec
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/5 text-gray-400 border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                  Non Précisé / Non renseigné
+                </span>
+              )}
+            </div>
+            
+            <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex flex-col justify-center">
+              <span className="text-[8px] font-black uppercase text-gray-400 tracking-widest block mb-1">AUDIO RECORDING</span>
+              {lastCallDetails.recordingUrl ? (
+                <a
+                  href={lastCallDetails.recordingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 mt-0.5 transition-all"
+                >
+                  <Headphones className="w-3.5 h-3.5" /> Écouter la session
+                </a>
+              ) : (
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 mt-0.5">Non sauvegardé / Indisponible</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
