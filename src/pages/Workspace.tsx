@@ -5,12 +5,12 @@ import {
   Phone, Mail, User,
   Paperclip, Image, MoreHorizontal, PhoneOutgoing, XCircle,
   ChevronLeft, ChevronRight, ChevronDown, Filter, Layout,
-  BookOpen, Clock, AlertTriangle
+  BookOpen, Clock, AlertTriangle, Globe
 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { CallRecords } from '../components/CallRecords';
 import CopilotApp from '../copilot/App';
-import { AgentProvider } from '../copilot/contexts/AgentContext';
+import { AgentProvider, useAgent } from '../copilot/contexts/AgentContext';
 import { IframeWorkspace } from '../copilot/components/Dashboard/IframeWorkspace';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { slotApi } from '../services/api/slotApi';
@@ -77,7 +77,8 @@ function isTodayReservation(rawDate: unknown, now: Date): boolean {
   return v.toLowerCase() === weekdayEnglish(now).toLowerCase();
 }
 
-export function Workspace() {
+export function WorkspaceContent() {
+  const { state, dispatch } = useAgent();
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -689,32 +690,26 @@ export function Workspace() {
                 <p className="text-sm font-bold uppercase tracking-widest">Checking call permissions...</p>
               </div>
             ) : !canUseCopilot ? (
-              <AgentProvider>
-                <div className="flex flex-col items-center justify-center h-full pt-24 text-center px-8">
-                  <Phone className="w-12 h-12 mb-4 text-gray-300" />
-                  <p className="text-sm font-black uppercase tracking-widest text-gray-700">Copilot Locked</p>
-                  <p className="text-xs mt-2 text-gray-500 max-w-xl">
-                    {copilotGuard.reason || 'You cannot place calls right now.'}
+              <div className="flex flex-col items-center justify-center h-full pt-24 text-center px-8">
+                <Phone className="w-12 h-12 mb-4 text-gray-300" />
+                <p className="text-sm font-black uppercase tracking-widest text-gray-700">Copilot Locked</p>
+                <p className="text-xs mt-2 text-gray-500 max-w-xl">
+                  {copilotGuard.reason || 'You cannot place calls right now.'}
+                </p>
+                {copilotGuard.reservationWindowLabel && (
+                  <p className="text-xs mt-2 text-emerald-600 font-bold">
+                    Active reserved window: {copilotGuard.reservationWindowLabel}
                   </p>
-                  {copilotGuard.reservationWindowLabel && (
-                    <p className="text-xs mt-2 text-emerald-600 font-bold">
-                      Active reserved window: {copilotGuard.reservationWindowLabel}
-                    </p>
-                  )}
-                </div>
-                <IframeWorkspace />
-              </AgentProvider>
+                )}
+              </div>
             ) : (selectedLead || urlLeadId) ? (
               <CopilotApp />
             ) : (
-              <AgentProvider>
-                <div className="flex flex-col items-center justify-center h-full pt-32 text-gray-400 animate-in fade-in">
-                  <Phone className="w-16 h-16 mb-4 opacity-50" />
-                  <p className="text-sm font-bold uppercase tracking-widest">No lead selected</p>
-                  <p className="text-xs mt-2">Please select a lead from the Leads tab to start a call.</p>
-                </div>
-                <IframeWorkspace />
-              </AgentProvider>
+              <div className="flex flex-col items-center justify-center h-full pt-32 text-gray-400 animate-in fade-in">
+                <Phone className="w-16 h-16 mb-4 opacity-50" />
+                <p className="text-sm font-bold uppercase tracking-widest">No lead selected</p>
+                <p className="text-xs mt-2">Please select a lead from the Leads tab to start a call.</p>
+              </div>
             )}
           </div>
         );
@@ -738,115 +733,150 @@ export function Workspace() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="mb-8">
-        <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-6">{t('workspace.title')}</h1>
+    <div className="space-y-6 relative">
+      <div className={`${state.isIframeOpen ? 'grid grid-cols-1 xl:grid-cols-2 gap-6 items-start animate-in fade-in duration-500' : 'w-full'}`}>
         
-        {enrolledGigs.length > 0 && (
-          <div className="flex flex-col items-start space-y-2 relative">
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 flex items-center gap-1.5">
-              <Filter className="w-3 h-3" />
-              Active Gig
-            </span>
+        {/* Left Column: All original workspace elements */}
+        <div className="space-y-6">
+          <div className="mb-8">
+            <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-6">{t('workspace.title')}</h1>
             
-            <div className="relative min-w-[280px]">
-              <button
-                onClick={() => setIsGigDropdownOpen(!isGigDropdownOpen)}
-                className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-3.5 flex items-center justify-between text-xs font-black uppercase tracking-widest text-gray-700 hover:border-harx-200 hover:shadow-xl hover:shadow-harx-500/5 transition-all duration-300 group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-harx flex items-center justify-center shadow-lg shadow-harx-500/20 group-hover:scale-110 transition-transform duration-300">
-                    <Layout className="w-4 h-4 text-white" />
-                  </div>
-                  <span>
-                    {selectedGigId 
-                      ? enrolledGigs.find(g => g._id === selectedGigId)?.title 
-                      : 'All My Gigs'}
-                  </span>
-                </div>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-500 ${isGigDropdownOpen ? 'rotate-180 text-harx-500' : ''}`} />
-              </button>
+            {enrolledGigs.length > 0 && (
+              <div className="flex flex-col items-start space-y-2 relative">
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 flex items-center gap-1.5">
+                  <Filter className="w-3 h-3" />
+                  Active Gig
+                </span>
+                
+                <div className="relative min-w-[280px]">
+                  <button
+                    onClick={() => setIsGigDropdownOpen(!isGigDropdownOpen)}
+                    className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-3.5 flex items-center justify-between text-xs font-black uppercase tracking-widest text-gray-700 hover:border-harx-200 hover:shadow-xl hover:shadow-harx-500/5 transition-all duration-300 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-harx flex items-center justify-center shadow-lg shadow-harx-500/20 group-hover:scale-110 transition-transform duration-300">
+                        <Layout className="w-4 h-4 text-white" />
+                      </div>
+                      <span>
+                        {selectedGigId 
+                          ? enrolledGigs.find(g => g._id === selectedGigId)?.title 
+                          : 'All My Gigs'}
+                      </span>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-500 ${isGigDropdownOpen ? 'rotate-180 text-harx-500' : ''}`} />
+                  </button>
 
-              {isGigDropdownOpen && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setIsGigDropdownOpen(false)}
-                  ></div>
-                  <div className="absolute top-full left-0 right-0 mt-3 bg-white/90 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-2xl shadow-harx-500/10 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-                    <button
-                      onClick={() => {
-                        setSelectedGigId('');
-                        setCurrentPage(1);
-                        setIsGigDropdownOpen(false);
-                        const params = new URLSearchParams(location.search);
-                        params.delete('gigId');
-                        navigate({
-                          pathname: location.pathname,
-                          search: `?${params.toString()}`
-                        }, { replace: true });
-                      }}
-                      className={`w-full px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 hover:bg-gray-50 ${!selectedGigId ? 'text-harx-600 bg-harx-50/50' : 'text-gray-500'}`}
-                    >
-                      <div className={`w-2 h-2 rounded-full ${!selectedGigId ? 'bg-harx-500' : 'bg-gray-200'}`}></div>
-                      All My Gigs
-                    </button>
-                    <div className="h-px bg-gray-100 mx-4 my-1 opacity-50"></div>
-                    {enrolledGigs.map((g) => (
-                      <button
-                        key={g._id}
-                        onClick={() => {
-                          setSelectedGigId(g._id);
-                          setCurrentPage(1);
-                          setIsGigDropdownOpen(false);
-                          const params = new URLSearchParams(location.search);
-                          params.set('gigId', g._id);
-                          navigate({
-                            pathname: location.pathname,
-                            search: `?${params.toString()}`
-                          }, { replace: true });
-                        }}
-                        className={`w-full px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 hover:bg-harx-50/50 ${selectedGigId === g._id ? 'text-harx-600 bg-harx-50/50' : 'text-gray-500 hover:text-harx-500'}`}
-                      >
-                        <div className={`w-2 h-2 rounded-full ${selectedGigId === g._id ? 'bg-harx-500 animate-pulse' : 'bg-transparent border border-gray-200'}`}></div>
-                        {g.title}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+                  {isGigDropdownOpen && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setIsGigDropdownOpen(false)}
+                      ></div>
+                      <div className="absolute top-full left-0 right-0 mt-3 bg-white/90 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-2xl shadow-harx-500/10 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                        <button
+                          onClick={() => {
+                            setSelectedGigId('');
+                            setCurrentPage(1);
+                            setIsGigDropdownOpen(false);
+                            const params = new URLSearchParams(location.search);
+                            params.delete('gigId');
+                            navigate({
+                              pathname: location.pathname,
+                              search: `?${params.toString()}`
+                            }, { replace: true });
+                          }}
+                          className={`w-full px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 hover:bg-gray-50 ${!selectedGigId ? 'text-harx-600 bg-harx-50/50' : 'text-gray-500'}`}
+                        >
+                          <div className={`w-2 h-2 rounded-full ${!selectedGigId ? 'bg-harx-500' : 'bg-gray-200'}`}></div>
+                          All My Gigs
+                        </button>
+                        <div className="h-px bg-gray-100 mx-4 my-1 opacity-50"></div>
+                        {enrolledGigs.map((g) => (
+                          <button
+                            key={g._id}
+                            onClick={() => {
+                              setSelectedGigId(g._id);
+                              setCurrentPage(1);
+                              setIsGigDropdownOpen(false);
+                              const params = new URLSearchParams(location.search);
+                              params.set('gigId', g._id);
+                              navigate({
+                                pathname: location.pathname,
+                                search: `?${params.toString()}`
+                              }, { replace: true });
+                            }}
+                            className={`w-full px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 hover:bg-harx-50/50 ${selectedGigId === g._id ? 'text-harx-600 bg-harx-50/50' : 'text-gray-500 hover:text-harx-500'}`}
+                          >
+                            <div className={`w-2 h-2 rounded-full ${selectedGigId === g._id ? 'bg-harx-500 animate-pulse' : 'bg-transparent border border-gray-200'}`}></div>
+                            {g.title}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-5 gap-4 mb-6">
+            {workspaceTools.map((tool) => (
+              <button
+                key={tool.id}
+                onClick={() => {
+                  setActiveTab(tool.id);
+                  const params = new URLSearchParams(location.search);
+                  params.set('tab', tool.id);
+                  navigate({
+                    pathname: location.pathname,
+                    search: `?${params.toString()}`
+                  }, { replace: true });
+                }}
+                className={`flex items-center justify-center space-x-3 px-8 py-4 rounded-2xl transition-all duration-300 border ${activeTab === tool.id
+                  ? 'bg-gradient-harx text-white border-transparent shadow-xl shadow-harx-500/25 -translate-y-1'
+                  : 'bg-white/50 backdrop-blur-sm text-gray-400 border-gray-100 hover:border-harx-200 hover:bg-white hover:text-harx-600 hover:shadow-lg hover:shadow-harx-500/5'
+                  }`}
+              >
+                <tool.icon className={`w-5 h-5 transition-transform duration-500 ${activeTab === tool.id ? 'text-white scale-110' : 'text-current group-hover:scale-110'}`} />
+                <span className="text-[11px] font-black uppercase tracking-[0.2em]">{tool.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="w-full">
+            {renderWorkspace()}
+          </div>
+        </div>
+
+        {/* Right Column: Full Workspace Iframe side-by-side */}
+        {state.isIframeOpen && (
+          <div className="bg-slate-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl h-[calc(100vh-200px)] min-h-[650px] flex flex-col animate-in slide-in-from-right duration-500">
+            <IframeWorkspace inline={true} />
           </div>
         )}
+
       </div>
 
-      <div className="grid grid-cols-5 gap-4 mb-6">
-        {workspaceTools.map((tool) => (
-          <button
-            key={tool.id}
-            onClick={() => {
-              setActiveTab(tool.id);
-              const params = new URLSearchParams(location.search);
-              params.set('tab', tool.id);
-              navigate({
-                pathname: location.pathname,
-                search: `?${params.toString()}`
-              }, { replace: true });
-            }}
-            className={`flex items-center justify-center space-x-3 px-8 py-4 rounded-2xl transition-all duration-300 border ${activeTab === tool.id
-              ? 'bg-gradient-harx text-white border-transparent shadow-xl shadow-harx-500/25 -translate-y-1'
-              : 'bg-white/50 backdrop-blur-sm text-gray-400 border-gray-100 hover:border-harx-200 hover:bg-white hover:text-harx-600 hover:shadow-lg hover:shadow-harx-500/5'
-              }`}
-          >
-            <tool.icon className={`w-5 h-5 transition-transform duration-500 ${activeTab === tool.id ? 'text-white scale-110' : 'text-current group-hover:scale-110'}`} />
-            <span className="text-[11px] font-black uppercase tracking-[0.2em]">{tool.label}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="w-full">
-        {renderWorkspace()}
+      {/* Floating trigger button on the center right edge of the entire page */}
+      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[160] flex items-center">
+        <button
+          onClick={() => dispatch({ type: 'TOGGLE_IFRAME' })}
+          className="bg-gradient-to-r from-orange-400 via-rose-500 to-rose-600 hover:from-orange-500 hover:to-rose-700 text-white font-black text-[10px] tracking-widest uppercase py-4 px-2.5 rounded-l-2xl shadow-[0_0_20px_rgba(244,63,94,0.3)] hover:shadow-[0_0_30px_rgba(244,63,94,0.5)] transition-all duration-300 transform hover:-translate-x-1.5 flex flex-col items-center gap-2 border-y border-l border-white/20 select-none writing-mode-vertical"
+          style={{ writingMode: 'vertical-lr', textOrientation: 'mixed' }}
+          title={state.isIframeOpen ? "Fermer l'Espace Externe" : "Ouvrir l'Espace Externe"}
+        >
+          <Globe className="w-4 h-4 animate-spin-slow rotate-90" />
+          <span className="mt-1 font-extrabold">{state.isIframeOpen ? 'FERMER' : 'EXTERNES'}</span>
+        </button>
       </div>
     </div>
+  );
+}
+
+export function Workspace() {
+  return (
+    <AgentProvider>
+      <WorkspaceContent />
+    </AgentProvider>
   );
 }
