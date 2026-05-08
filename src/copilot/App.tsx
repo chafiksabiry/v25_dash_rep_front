@@ -5,6 +5,7 @@ import TopStatusBar from './components/Dashboard/TopStatusBar';
 import { ContactInfo } from './components/Dashboard/ContactInfo';
 import DashboardGrid from './components/Dashboard/DashboardGrid';
 import { TranscriptionBridge } from './components/TranscriptionBridge';
+import { IframeWorkspace } from './components/Dashboard/IframeWorkspace';
 
 import { useDestinationZone } from './hooks/useDestinationZone';
 
@@ -26,6 +27,7 @@ function AppContent() {
         {/* Hidden audio element for Twilio call audio */}
         <audio id="call-audio" autoPlay style={{ display: 'none' }} />
       </div>
+      <IframeWorkspace />
     </TranscriptionProvider>
   );
 }
