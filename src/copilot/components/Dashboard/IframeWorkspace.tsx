@@ -2,12 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { useAgent } from '../../contexts/AgentContext';
-import TopStatusBar from './TopStatusBar';
-import { ContactInfo } from './ContactInfo';
-import DashboardGrid from './DashboardGrid';
-import { TranscriptionProvider } from '../../contexts/TranscriptionContext';
-import { TranscriptionBridge } from '../TranscriptionBridge';
-import { useDestinationZone } from '../../hooks/useDestinationZone';
+import { useLead } from '../../hooks/useLead';
+import { useGigScript } from '../../hooks/useGigScript';
 import { 
   Globe, 
   X, 
@@ -17,14 +13,22 @@ import {
   RefreshCw, 
   ShieldAlert,
   Search,
-  Sparkles
+  Sparkles,
+  Bot,
+  User
 } from 'lucide-react';
 
 export function IframeWorkspace() {
   const { state, dispatch } = useAgent();
   const activeContact = state.callState?.contact;
   const location = useLocation();
-  const { zone: destinationZone } = useDestinationZone();
+
+  // Fetch script details dynamically based on URL lead and gig
+  const searchParams = new URLSearchParams(location.search);
+  const leadId = searchParams.get('leadId');
+  const { lead: apiLead } = useLead(leadId);
+  const gig = apiLead?.gigId;
+  const { scripts, loading: scriptLoading } = useGigScript(gig?._id);
 
   const isOpen = state.isIframeOpen;
   const setIsOpen = (val: boolean) => dispatch({ type: 'TOGGLE_IFRAME', payload: val });
@@ -34,6 +38,26 @@ export function IframeWorkspace() {
   const [currentIframeUrl, setCurrentIframeUrl] = useState('https://www.oggodata.com/');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [iframeKey, setIframeKey] = useState(0);
+
+  // Phase pagination state
+  const [activePhaseIndex, setActivePhaseIndex] = useState(0);
+
+  // Group script by phase
+  const activeScript = scripts?.[0];
+  const scriptByPhase = activeScript?.script?.reduce((acc: any, item: any) => {
+    if (!acc[item.phase]) acc[item.phase] = [];
+    acc[item.phase].push(item);
+    return acc;
+  }, {} as Record<string, any[]>) || {};
+
+  const phases = Object.keys(scriptByPhase);
+  const activePhase = phases[activePhaseIndex];
+  const replicas = activePhase ? scriptByPhase[activePhase] : [];
+
+  // Reset active phase when script changes
+  useEffect(() => {
+    setActivePhaseIndex(0);
+  }, [scripts]);
 
   // Sync iframe source when active tab changes, appending gigId and leadId dynamically
   useEffect(() => {
@@ -109,30 +133,104 @@ export function IframeWorkspace() {
       {isOpen && (
         <div className="fixed inset-0 bg-slate-950 z-[9999] flex flex-col md:flex-row overflow-hidden animate-in fade-in duration-300">
           
-          {/* Left Column: Copilot (Script & Conversation) */}
-          <div className="w-full md:w-1/2 h-full bg-slate-900 border-r border-white/10 flex flex-col overflow-y-auto p-6 md:p-8">
-            <TranscriptionProvider destinationZone={destinationZone || undefined}>
-              <TranscriptionBridge />
-              <div className="max-w-[800px] mx-auto w-full space-y-6">
-                
-                {/* Copilot Header */}
-                <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                      <Sparkles className="w-5 h-5 animate-pulse" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-black uppercase tracking-widest text-white">Coach Copilot Actif</h3>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Assistance en Temps Réel</p>
-                    </div>
+          {/* Left Column: Script Only with pagination at the top */}
+          <div className="w-full md:w-1/2 h-full bg-slate-900 border-r border-white/10 flex flex-col p-6 md:p-8 overflow-hidden">
+            <div className="flex flex-col h-full space-y-6">
+              
+              {/* Script Section Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-4 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <Sparkles className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-white">SCRIPT DE VENTE</h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                      {gig?.title || 'GUIDE DE CONVERSATION'}
+                    </p>
                   </div>
                 </div>
-
-                <TopStatusBar />
-                <ContactInfo />
-                <DashboardGrid />
+                {scriptLoading && (
+                  <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                )}
               </div>
-            </TranscriptionProvider>
+
+              {/* Horizontal Phase Pagination Steps */}
+              {phases.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-1.5 bg-slate-950 rounded-2xl border border-white/5 shrink-0">
+                  {phases.map((phaseName, idx) => (
+                    <button
+                      key={phaseName}
+                      onClick={() => setActivePhaseIndex(idx)}
+                      className={`px-3 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 flex flex-col items-center gap-1 text-center min-w-0 ${
+                        activePhaseIndex === idx 
+                          ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20' 
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                      }`}
+                    >
+                      <span className="opacity-60 text-[8px] font-extrabold shrink-0">ÉTAPE {idx + 1}</span>
+                      <span className="truncate w-full font-black">{phaseName}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {/* Scrollable Active Phase Replicas list */}
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                {scripts.length > 0 ? (
+                  replicas.length > 0 ? (
+                    replicas.map((item: any, idx: number) => (
+                      <div 
+                        key={idx} 
+                        className={`group/replica relative flex gap-4 p-5 rounded-2xl border transition-all duration-300 ${
+                          item.actor === 'agent' 
+                            ? 'bg-indigo-500/10 border-indigo-500/20 ml-6' 
+                            : 'bg-emerald-500/10 border-emerald-500/20 mr-6'
+                        }`}
+                      >
+                        <div className={`mt-0.5 p-2 rounded-xl h-fit shrink-0 ${
+                          item.actor === 'agent' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-emerald-500/20 text-emerald-300'
+                        }`}>
+                          {item.actor === 'agent' ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                        </div>
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${
+                              item.actor === 'agent' ? 'text-indigo-400' : 'text-emerald-400'
+                            }`}>
+                              {item.actor === 'agent' ? 'CONSEILLER (VOUS)' : 'PROSPECT'}
+                            </span>
+                            <button 
+                              onClick={() => navigator.clipboard.writeText(item.replica)}
+                              className="opacity-0 group-hover/replica:opacity-100 transition-opacity p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white shrink-0"
+                              title="Copier la réplique"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <p className={`text-xs md:text-sm leading-relaxed font-bold ${
+                            item.actor === 'agent' ? 'text-indigo-100' : 'text-emerald-100'
+                          }`}>
+                            {item.replica}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-20 bg-slate-950/20 rounded-2xl border border-dashed border-white/5">
+                      <Sparkles className="w-10 h-10 text-slate-600 mx-auto mb-3 opacity-50" />
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Aucune réplique disponible pour cette étape</p>
+                    </div>
+                  )
+                ) : (
+                  <div className="text-center py-20 bg-slate-950/20 rounded-2xl border border-dashed border-white/5">
+                    <Sparkles className="w-10 h-10 text-slate-600 mx-auto mb-3 opacity-50" />
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Aucun script disponible pour cette mission</p>
+                    <p className="text-[9px] text-slate-500 mt-2 uppercase tracking-widest">Veuillez configurer un script dans la base de connaissances</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Right Column: CRM Iframe Workspace */}
