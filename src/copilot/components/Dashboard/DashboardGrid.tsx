@@ -47,7 +47,17 @@ const DashboardGrid: React.FC = () => {
               <Sparkles className="w-5 h-5 text-indigo-500" />
             </div>
             <div className="flex flex-col items-start text-left">
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Script</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Script</h3>
+                {hasScriptsInCollection && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-[8px] font-black text-indigo-600 rounded-full border border-indigo-100 uppercase tracking-widest">
+                    {scripts.length} {scripts.length > 1 ? 'Scripts' : 'Script'} Found
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] font-bold text-gray-400 upperCase tracking-widest">
+                {gig?.title || 'Real-time Talk Tracks'}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -82,6 +92,51 @@ const DashboardGrid: React.FC = () => {
                         Profile {s.targetClient} {s.isActive ? '(Active)' : ''}
                       </button>
                     ))}
+                  </div>
+                )}
+                {/* Script Info Bar */}
+                <div className="flex flex-wrap gap-3 mb-6">
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${
+                    activeScript.targetClient === 'D' ? 'bg-red-50 text-red-600 border-red-100' :
+                    activeScript.targetClient === 'I' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+                    activeScript.targetClient === 'S' ? 'bg-green-50 text-green-600 border-green-100' :
+                    activeScript.targetClient === 'C' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                    'bg-gray-50 text-gray-600 border-gray-100'
+                  }`}>
+                    DISC: {activeScript.targetClient}
+                  </div>
+                  {activeScript.language && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-full text-[9px] font-black uppercase tracking-widest">
+                      {activeScript.language.split(',')[0]}
+                    </div>
+                  )}
+                </div>
+
+                {/* Script Context / Details */}
+                {(activeScript.details || (activeScript.language && activeScript.language.includes(','))) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {activeScript.details && (
+                      <div className="bg-amber-50/30 border border-amber-100/50 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Bot className="w-3.5 h-3.5 text-amber-600" />
+                          <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Generation Context</span>
+                        </div>
+                        <p className="text-xs text-amber-900/70 font-medium italic leading-relaxed line-clamp-4">
+                          {activeScript.details}
+                        </p>
+                      </div>
+                    )}
+                    {activeScript.language && (
+                      <div className="bg-blue-50/30 border border-blue-100/50 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                          <span className="text-[10px] font-black text-blue-700 uppercase tracking-widest">Tone & Guidelines</span>
+                        </div>
+                        <p className="text-xs text-blue-900/70 font-medium leading-relaxed">
+                          {activeScript.language}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
