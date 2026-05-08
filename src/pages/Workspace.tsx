@@ -116,40 +116,6 @@ export function Workspace() {
     fetchEnrolledGigs();
   }, []);
 
-  // Synchronize selected gig and lead to the URL search parameters
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    let changed = false;
-
-    if (selectedGigId) {
-      if (params.get('gigId') !== selectedGigId) {
-        params.set('gigId', selectedGigId);
-        changed = true;
-      }
-    } else {
-      if (params.has('gigId')) {
-        params.delete('gigId');
-        changed = true;
-      }
-    }
-
-    const currentLeadId = selectedLead?._id || selectedLead?.id || urlLeadId;
-    if (currentLeadId) {
-      if (params.get('leadId') !== currentLeadId) {
-        params.set('leadId', currentLeadId);
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      const newSearch = params.toString();
-      navigate({
-        pathname: location.pathname,
-        search: newSearch ? `?${newSearch}` : ''
-      }, { replace: true });
-    }
-  }, [selectedGigId, selectedLead, urlLeadId, navigate, location.pathname]);
-
   useEffect(() => {
     if (gigId && gigId !== selectedGigId) {
       setSelectedGigId(gigId);
@@ -760,7 +726,13 @@ export function Workspace() {
   const handleCallClick = (lead: Lead) => {
     if (!canUseCopilot) return;
     const leadIdString = lead._id || lead.id;
-    window.history.pushState({}, '', `${window.location.pathname}?leadId=${leadIdString}`);
+    const params = new URLSearchParams(location.search);
+    params.set('leadId', leadIdString);
+    params.set('tab', 'copilot');
+    navigate({
+      pathname: location.pathname,
+      search: `?${params.toString()}`
+    }, { replace: true });
     setSelectedLead(lead);
     setActiveTab('copilot');
   };
@@ -807,6 +779,12 @@ export function Workspace() {
                         setSelectedGigId('');
                         setCurrentPage(1);
                         setIsGigDropdownOpen(false);
+                        const params = new URLSearchParams(location.search);
+                        params.delete('gigId');
+                        navigate({
+                          pathname: location.pathname,
+                          search: `?${params.toString()}`
+                        }, { replace: true });
                       }}
                       className={`w-full px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 hover:bg-gray-50 ${!selectedGigId ? 'text-harx-600 bg-harx-50/50' : 'text-gray-500'}`}
                     >
@@ -821,6 +799,12 @@ export function Workspace() {
                           setSelectedGigId(g._id);
                           setCurrentPage(1);
                           setIsGigDropdownOpen(false);
+                          const params = new URLSearchParams(location.search);
+                          params.set('gigId', g._id);
+                          navigate({
+                            pathname: location.pathname,
+                            search: `?${params.toString()}`
+                          }, { replace: true });
                         }}
                         className={`w-full px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 hover:bg-harx-50/50 ${selectedGigId === g._id ? 'text-harx-600 bg-harx-50/50' : 'text-gray-500 hover:text-harx-500'}`}
                       >
@@ -842,8 +826,12 @@ export function Workspace() {
             key={tool.id}
             onClick={() => {
               setActiveTab(tool.id);
-              // Use relative navigation to only update the query param
-              navigate(`?tab=${tool.id}`, { replace: true });
+              const params = new URLSearchParams(location.search);
+              params.set('tab', tool.id);
+              navigate({
+                pathname: location.pathname,
+                search: `?${params.toString()}`
+              }, { replace: true });
             }}
             className={`flex items-center justify-center space-x-3 px-8 py-4 rounded-2xl transition-all duration-300 border ${activeTab === tool.id
               ? 'bg-gradient-harx text-white border-transparent shadow-xl shadow-harx-500/25 -translate-y-1'
