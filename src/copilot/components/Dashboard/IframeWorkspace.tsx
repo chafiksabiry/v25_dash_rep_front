@@ -176,7 +176,7 @@ export function IframeWorkspace() {
               </div>
 
               {/* Horizontal Phase Pagination Steps */}
-              {phases.length > 0 ? (
+              {phases.length > 1 ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-1 bg-slate-950 rounded-2xl border border-white/5 shrink-0">
                   {phases.map((phaseName, idx) => (
                     <button
