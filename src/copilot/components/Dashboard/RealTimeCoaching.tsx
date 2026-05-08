@@ -6,17 +6,7 @@ export const RealTimeCoaching: React.FC = () => {
     const { currentPhase, nextStepSuggestion, analysisConfidence, isActive } = useTranscription();
 
     if (!isActive && !nextStepSuggestion) {
-        return (
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-100 p-8 text-center shadow-sm">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-100">
-                    <Brain className="w-8 h-8 text-gray-200" />
-                </div>
-                <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight mb-1">Vertex AI Analysis</h3>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
-                    Live call coaching will appear here<br/>as the conversation progresses
-                </p>
-            </div>
-        );
+        return null;
     }
 
     return (
