@@ -116,6 +116,40 @@ export function Workspace() {
     fetchEnrolledGigs();
   }, []);
 
+  // Synchronize selected gig and lead to the URL search parameters
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    let changed = false;
+
+    if (selectedGigId) {
+      if (params.get('gigId') !== selectedGigId) {
+        params.set('gigId', selectedGigId);
+        changed = true;
+      }
+    } else {
+      if (params.has('gigId')) {
+        params.delete('gigId');
+        changed = true;
+      }
+    }
+
+    const currentLeadId = selectedLead?._id || selectedLead?.id || urlLeadId;
+    if (currentLeadId) {
+      if (params.get('leadId') !== currentLeadId) {
+        params.set('leadId', currentLeadId);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      const newSearch = params.toString();
+      navigate({
+        pathname: location.pathname,
+        search: newSearch ? `?${newSearch}` : ''
+      }, { replace: true });
+    }
+  }, [selectedGigId, selectedLead, urlLeadId, navigate, location.pathname]);
+
   useEffect(() => {
     if (gigId && gigId !== selectedGigId) {
       setSelectedGigId(gigId);

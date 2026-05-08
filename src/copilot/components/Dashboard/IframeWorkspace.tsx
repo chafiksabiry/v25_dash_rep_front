@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocation } from 'react-router-dom';
 import { useAgent } from '../../contexts/AgentContext';
 import { 
   Globe, 
@@ -15,6 +16,7 @@ import {
 export function IframeWorkspace() {
   const { state } = useAgent();
   const activeContact = state.callState?.contact;
+  const location = useLocation();
 
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'oggodata' | 'zoho' | 'custom'>('oggodata');
@@ -23,16 +25,39 @@ export function IframeWorkspace() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [iframeKey, setIframeKey] = useState(0);
 
-  // Sync iframe source when active tab changes
+  // Sync iframe source when active tab changes, appending gigId and leadId dynamically
   useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const leadId = searchParams.get('leadId') || '';
+    const gigId = searchParams.get('gigId') || '';
+
+    const appendParams = (url: string) => {
+      try {
+        const u = new URL(url);
+        if (gigId) u.searchParams.set('gigId', gigId);
+        if (leadId) u.searchParams.set('leadId', leadId);
+        return u.toString();
+      } catch (e) {
+        const separator = url.includes('?') ? '&' : '?';
+        let res = url;
+        if (gigId) {
+          res += `${separator}gigId=${encodeURIComponent(gigId)}`;
+        }
+        if (leadId) {
+          res += `${res.includes('?') ? '&' : '?'}leadId=${encodeURIComponent(leadId)}`;
+        }
+        return res;
+      }
+    };
+
     if (activeTab === 'oggodata') {
-      setCurrentIframeUrl('https://www.oggodata.com/');
+      setCurrentIframeUrl(appendParams('https://www.oggodata.com/'));
     } else if (activeTab === 'zoho') {
-      setCurrentIframeUrl('https://crm.zoho.eu');
+      setCurrentIframeUrl(appendParams('https://crm.zoho.eu'));
     } else {
-      setCurrentIframeUrl(customUrl);
+      setCurrentIframeUrl(appendParams(customUrl));
     }
-  }, [activeTab]);
+  }, [activeTab, customUrl, location.search]);
 
   const handleCustomUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +66,6 @@ export function IframeWorkspace() {
       formattedUrl = `https://${formattedUrl}`;
     }
     setCustomUrl(formattedUrl);
-    setCurrentIframeUrl(formattedUrl);
   };
 
   const handleCopy = (text: string, field: string) => {
