@@ -289,8 +289,8 @@ export function IframeWorkspace() {
             
             {/* Top Area: Script displayed with custom toggle */}
             {showScript && (
-              <div className="w-full h-[40%] min-h-[180px] max-h-[50%] bg-slate-950/40 border-b border-white/10 flex flex-col p-4 overflow-hidden shrink-0 animate-in slide-in-from-top duration-300">
-                <div className="flex flex-col h-full space-y-3">
+              <div className="w-full shrink-0 bg-slate-950/45 border-b border-white/10 flex flex-col p-4 md:p-5 overflow-hidden animate-in slide-in-from-top duration-300">
+                <div className="flex flex-col gap-3">
                   
                   {/* Script mini-header */}
                   <div className="flex items-center justify-between shrink-0">
@@ -324,28 +324,28 @@ export function IframeWorkspace() {
                     </div>
                   ) : null}
 
-                  {/* Single Replica card (No scrolling!) */}
+                  {/* Single Replica card (Sleek fluid layout with flex gap-4 to prevent overlaps) */}
                   {scripts.length > 0 ? (
                     replicas.length > 0 ? (
                       (() => {
                         const currentReplica = replicas[activeReplicaIndex];
                         if (!currentReplica) return null;
                         return (
-                          <div className="flex-1 flex flex-col justify-between bg-slate-950/60 border border-white/5 rounded-2xl p-4 md:p-5 relative overflow-hidden group">
+                          <div className="flex flex-col bg-slate-900 border border-white/5 rounded-2xl p-4 md:p-5 gap-4 relative group">
                             {/* Replica Content */}
-                            <div className="flex gap-4 items-start flex-1 min-h-0">
+                            <div className="flex gap-4 items-start">
                               <div className={`p-2.5 rounded-xl h-fit shrink-0 ${
                                 currentReplica.actor === 'agent' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-emerald-500/20 text-emerald-300'
                               }`}>
                                 {currentReplica.actor === 'agent' ? <Bot className="w-5 h-5 animate-pulse" /> : <User className="w-5 h-5" />}
                               </div>
-                              <div className="space-y-1.5 flex-1 min-w-0 overflow-y-auto max-h-[140px] scrollbar-thin scrollbar-thumb-white/10 pr-1">
+                              <div className="space-y-1.5 flex-1 min-w-0">
                                 <span className={`text-[9px] font-black uppercase tracking-widest ${
                                   currentReplica.actor === 'agent' ? 'text-indigo-400' : 'text-emerald-400'
                                 }`}>
                                   {currentReplica.actor === 'agent' ? 'CONSEILLER (VOUS)' : 'PROSPECT'}
                                 </span>
-                                <p className={`text-sm md:text-base leading-relaxed font-black ${
+                                <p className={`text-xs md:text-sm leading-relaxed font-bold ${
                                   currentReplica.actor === 'agent' ? 'text-indigo-100' : 'text-emerald-100'
                                 }`}>
                                   {currentReplica.replica}
@@ -354,7 +354,7 @@ export function IframeWorkspace() {
                             </div>
 
                             {/* Pager & Copy Actions */}
-                            <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between shrink-0">
+                            <div className="pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0">
                               <div className="flex items-center gap-2">
                                 <button
                                   disabled={activeReplicaIndex === 0}
@@ -399,13 +399,13 @@ export function IframeWorkspace() {
                         );
                       })()
                     ) : (
-                      <div className="text-center py-6 bg-slate-950/20 rounded-xl border border-dashed border-white/5 flex-1 flex flex-col items-center justify-center">
+                      <div className="text-center py-6 bg-slate-900 rounded-xl border border-dashed border-white/5 flex flex-col items-center justify-center">
                         <Sparkles className="w-6 h-6 text-slate-600 mx-auto mb-1 opacity-50" />
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Aucune réplique disponible pour cette étape</p>
                       </div>
                     )
                   ) : (
-                    <div className="text-center py-6 bg-slate-950/20 rounded-xl border border-dashed border-white/5 flex-1 flex flex-col items-center justify-center">
+                    <div className="text-center py-6 bg-slate-900 rounded-xl border border-dashed border-white/5 flex flex-col items-center justify-center">
                       <Sparkles className="w-6 h-6 text-slate-600 mx-auto mb-1 opacity-50" />
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Aucun script disponible</p>
                     </div>
