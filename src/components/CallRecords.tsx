@@ -40,6 +40,7 @@ export interface CallRecord {
   recording_url?: string;
   recording_url_cloudinary?: string;
   quality_score?: number;
+  transactionOccurred?: boolean | null;
   ai_call_score?: {
     'Agent fluency': {
       score: number;
@@ -249,6 +250,16 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           {record.status}
                         </span>
 
+                        {record.transactionOccurred === true ? (
+                          <span className="px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                            Transaction OK
+                          </span>
+                        ) : record.transactionOccurred === false ? (
+                          <span className="px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                            Transaction Refus
+                          </span>
+                        ) : null}
+
                         <div className="flex items-center gap-2 ml-2">
                           <button 
                             onClick={() => openCallDetails(record, 'transcript')}
@@ -293,6 +304,23 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
                     {new Date(selectedCall.startTime || selectedCall.createdAt).toLocaleString()} • {selectedCall.duration ? `${Math.floor(selectedCall.duration/60)}m ${selectedCall.duration%60}s` : '0s'}
                   </p>
+                  <div className="mt-2.5">
+                    {selectedCall.transactionOccurred === true ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
+                        Transaction OK
+                      </span>
+                    ) : selectedCall.transactionOccurred === false ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-500/10 text-rose-600 border border-rose-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                        <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(251,113,133,0.5)]"></span>
+                        Transaction Refusée
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                        Pas de Transaction
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
