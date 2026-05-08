@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAgent } from '../../contexts/AgentContext';
 import { 
   Globe, 
@@ -53,10 +54,10 @@ export function IframeWorkspace() {
     setIframeKey(prev => prev + 1);
   };
 
-  return (
+  return createPortal(
     <>
       {/* Floating Button on the Center of the Right Side */}
-      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[90] flex items-center">
+      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[160] flex items-center">
         <button
           onClick={() => setIsOpen(true)}
           className="bg-gradient-to-r from-orange-400 via-rose-500 to-rose-600 hover:from-orange-500 hover:to-rose-700 text-white font-black text-[10px] tracking-widest uppercase py-4 px-2.5 rounded-l-2xl shadow-[0_0_20px_rgba(244,63,94,0.3)] hover:shadow-[0_0_30px_rgba(244,63,94,0.5)] transition-all duration-300 transform hover:-translate-x-1.5 flex flex-col items-center gap-2 border-y border-l border-white/20 select-none writing-mode-vertical"
@@ -71,13 +72,13 @@ export function IframeWorkspace() {
       {/* Backdrop Overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] transition-opacity duration-300 animate-in fade-in"
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[170] transition-opacity duration-300 animate-in fade-in"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sliding Work Drawer Panel */}
-      <div className={`fixed right-0 top-0 h-screen w-full md:w-[75%] lg:w-[65%] xl:w-[55%] bg-slate-900 border-l border-white/10 z-[110] shadow-2xl flex flex-col transition-transform duration-500 ease-out transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed right-0 top-0 h-screen w-full md:w-[75%] lg:w-[65%] xl:w-[55%] bg-slate-900 border-l border-white/10 z-[180] shadow-2xl flex flex-col transition-transform duration-500 ease-out transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         
         {/* Drawer Header */}
         <div className="p-6 border-b border-white/10 bg-slate-950/80 backdrop-blur-md flex flex-col gap-4">
@@ -234,7 +235,8 @@ export function IframeWorkspace() {
         </div>
 
       </div>
-    </>
+    </>,
+    document.body
   );
 }
 
