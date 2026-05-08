@@ -57,7 +57,7 @@ export function Header() {
           <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shadow-md">
             <span className="text-white font-bold text-lg">{agentInitials}</span>
           </div>
-          <h1 className="text-2xl font-extrabold text-white tracking-wide">REPS AI COPILOT</h1>
+          <h1 className="text-2xl font-extrabold text-white tracking-wide">REPS AI COCKPIT</h1>
         </div>
 
         <div className="flex items-center space-x-4">

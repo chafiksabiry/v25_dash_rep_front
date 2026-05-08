@@ -331,7 +331,7 @@ export function WorkspaceContent() {
   const workspaceTools = [
     { id: 'voice', label: 'Leads', icon: User },
     { id: 'calls', label: 'Call History', icon: PhoneOutgoing },
-    { id: 'copilot', label: 'Copilot', icon: Phone },
+    { id: 'copilot', label: 'COCKPIT', icon: Phone },
   ];
 
   const renderWorkspace = () => {
@@ -692,7 +692,7 @@ export function WorkspaceContent() {
             ) : !canUseCopilot ? (
               <div className="flex flex-col items-center justify-center h-full pt-24 text-center px-8">
                 <Phone className="w-12 h-12 mb-4 text-gray-300" />
-                <p className="text-sm font-black uppercase tracking-widest text-gray-700">Copilot Locked</p>
+                <p className="text-sm font-black uppercase tracking-widest text-gray-700">COCKPIT Locked</p>
                 <p className="text-xs mt-2 text-gray-500 max-w-xl">
                   {copilotGuard.reason || 'You cannot place calls right now.'}
                 </p>
