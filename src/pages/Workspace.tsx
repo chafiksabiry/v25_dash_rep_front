@@ -823,22 +823,22 @@ export function WorkspaceContent() {
               Active Gig
             </span>
             
-            <div className="relative min-w-[280px]">
+            <div className="relative w-full md:w-[480px]">
               <button
                 onClick={() => setIsGigDropdownOpen(!isGigDropdownOpen)}
-                className="w-full bg-white border border-gray-100 rounded-xl px-5 py-2.5 flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-gray-700 hover:border-harx-200 hover:shadow-xl hover:shadow-harx-500/5 transition-all duration-300 group"
+                className="w-full bg-white border border-gray-100 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-bold text-gray-800 hover:border-harx-200 hover:shadow-md transition-all duration-300 group"
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-harx flex items-center justify-center shadow-lg shadow-harx-500/20 group-hover:scale-110 transition-transform duration-300">
-                    <Layout className="w-3.5 h-3.5 text-white" />
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <div className="w-7 h-7 rounded-lg bg-rose-500/10 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <Layout className="w-3.5 h-3.5 text-rose-500" />
                   </div>
-                  <span>
+                  <span className="truncate text-left font-bold text-slate-700 text-xs">
                     {selectedGigId 
                       ? enrolledGigs.find(g => g._id === selectedGigId)?.title 
                       : 'All My Gigs'}
                   </span>
                 </div>
-                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-500 ${isGigDropdownOpen ? 'rotate-180 text-harx-500' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-500 ${isGigDropdownOpen ? 'rotate-180 text-rose-500' : ''}`} />
               </button>
 
               {isGigDropdownOpen && (
@@ -847,7 +847,7 @@ export function WorkspaceContent() {
                     className="fixed inset-0 z-40" 
                     onClick={() => setIsGigDropdownOpen(false)}
                   ></div>
-                  <div className="absolute top-full left-0 right-0 mt-3 bg-white/90 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-2xl shadow-harx-500/10 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="absolute top-full left-0 mt-2 w-full bg-white border border-gray-100/90 rounded-xl shadow-2xl shadow-slate-200/80 py-1.5 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
                     <button
                       onClick={() => {
                         setSelectedGigId('');
@@ -860,12 +860,12 @@ export function WorkspaceContent() {
                           search: `?${params.toString()}`
                         }, { replace: true });
                       }}
-                      className={`w-full px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 hover:bg-gray-50 ${!selectedGigId ? 'text-harx-600 bg-harx-50/50' : 'text-gray-500'}`}
+                      className={`w-full px-5 py-3 text-left text-xs font-black uppercase tracking-wider transition-all flex items-center gap-3 hover:bg-slate-50/80 ${!selectedGigId ? 'text-rose-600 bg-rose-50/30' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                      <div className={`w-2 h-2 rounded-full ${!selectedGigId ? 'bg-harx-500' : 'bg-gray-200'}`}></div>
+                      <div className={`w-2 h-2 rounded-full ${!selectedGigId ? 'bg-rose-500 ring-4 ring-rose-500/20' : 'bg-slate-300'}`}></div>
                       All My Gigs
                     </button>
-                    <div className="h-px bg-gray-100 mx-4 my-1 opacity-50"></div>
+                    <div className="h-px bg-slate-100 mx-4 my-1 opacity-60"></div>
                     {enrolledGigs.map((g) => (
                       <button
                         key={g._id}
@@ -880,10 +880,10 @@ export function WorkspaceContent() {
                             search: `?${params.toString()}`
                           }, { replace: true });
                         }}
-                        className={`w-full px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 hover:bg-harx-50/50 ${selectedGigId === g._id ? 'text-harx-600 bg-harx-50/50' : 'text-gray-500 hover:text-harx-500'}`}
+                        className={`w-full px-5 py-3 text-left text-xs font-bold transition-all flex items-start gap-3 hover:bg-slate-50/80 ${selectedGigId === g._id ? 'text-rose-600 bg-rose-50/30 font-extrabold' : 'text-slate-600 hover:text-slate-900'}`}
                       >
-                        <div className={`w-2 h-2 rounded-full ${selectedGigId === g._id ? 'bg-harx-500 animate-pulse' : 'bg-transparent border border-gray-200'}`}></div>
-                        {g.title}
+                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${selectedGigId === g._id ? 'bg-rose-500 ring-4 ring-rose-500/20' : 'bg-slate-300'}`}></div>
+                        <span className="leading-tight">{g.title}</span>
                       </button>
                     ))}
                   </div>
