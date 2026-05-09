@@ -423,9 +423,9 @@ export function WorkspaceContent() {
                       <Layout className="w-5 h-5" />
                     </div>
                     <div className="flex-1 space-y-1">
-                      <h4 className="text-xs font-black text-blue-900 tracking-tight uppercase">Sélectionnez une mission / Select a Gig</h4>
+                      <h4 className="text-xs font-black text-blue-900 tracking-tight uppercase">{t('workspaceGuard.selectGigTitle')}</h4>
                       <p className="text-[11px] text-blue-700 font-medium leading-relaxed">
-                        Veuillez sélectionner un Gig spécifique dans le menu déroulant ci-dessus pour charger vos prospects (Leads), vérifier vos éligibilités d'appels, vos créneaux et vos formations.
+                        {t('workspaceGuard.selectGigDesc')}
                       </p>
                     </div>
                   </div>
@@ -440,16 +440,16 @@ export function WorkspaceContent() {
                           <BookOpen className="w-5 h-5" />
                         </div>
                         <div className="flex-1 space-y-1">
-                          <h4 className="text-xs font-black text-amber-900 tracking-tight uppercase">Formation Requise / Training Required</h4>
+                          <h4 className="text-xs font-black text-amber-900 tracking-tight uppercase">{t('workspaceGuard.trainingRequiredTitle')}</h4>
                           <p className="text-[11px] text-amber-700 font-medium leading-relaxed">
-                            Vous devez terminer 100% de vos modules de formation pour ce Gig avant de pouvoir lancer des appels.
+                            {t('workspaceGuard.trainingRequiredDesc')}
                           </p>
                         </div>
                         <button
                           onClick={() => navigate(`/training?gigId=${selectedGigId}`)}
                           className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md shadow-amber-600/10 shrink-0 flex items-center gap-1.5"
                         >
-                          S'entraîner <ChevronRight className="w-3 h-3" />
+                          {t('workspaceGuard.trainingButton')} <ChevronRight className="w-3 h-3" />
                         </button>
                       </div>
                     )}
@@ -461,16 +461,16 @@ export function WorkspaceContent() {
                           <Clock className="w-5 h-5" />
                         </div>
                         <div className="flex-1 space-y-1">
-                          <h4 className="text-xs font-black text-rose-900 tracking-tight uppercase">Planification Requise / Booking Required</h4>
+                          <h4 className="text-xs font-black text-rose-900 tracking-tight uppercase">{t('workspaceGuard.sessionRequiredTitle')}</h4>
                           <p className="text-[11px] text-rose-700 font-medium leading-relaxed">
-                            Les appels ne sont autorisés que pendant votre créneau de session réservé pour ce Gig. Aucun créneau actif trouvé actuellement.
+                            {t('workspaceGuard.sessionRequiredDesc')}
                           </p>
                         </div>
                         <button
                           onClick={() => navigate('/session-planning')}
                           className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md shadow-rose-600/10 shrink-0 flex items-center gap-1.5"
                         >
-                          Planifier <ChevronRight className="w-3 h-3" />
+                          {t('workspaceGuard.sessionButton')} <ChevronRight className="w-3 h-3" />
                         </button>
                       </div>
                     )}
@@ -482,16 +482,16 @@ export function WorkspaceContent() {
                           <AlertTriangle className="w-5 h-5" />
                         </div>
                         <div className="flex-1 space-y-1">
-                          <h4 className="text-xs font-black text-red-900 tracking-tight uppercase">Erreur de Connexion / Connection Error</h4>
+                          <h4 className="text-xs font-black text-red-900 tracking-tight uppercase">{t('workspaceGuard.connectionErrorTitle')}</h4>
                           <p className="text-[11px] text-red-700 font-medium leading-relaxed">
-                            Impossible de valider vos conditions d'appel en temps réel (vérification des formations et réservations). Veuillez rafraîchir la page ou réessayer ultérieurement.
+                            {t('workspaceGuard.connectionErrorDesc')}
                           </p>
                         </div>
                         <button
                           onClick={() => window.location.reload()}
                           className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md shadow-red-600/10 shrink-0"
                         >
-                          Actualiser
+                          {t('workspaceGuard.refreshButton')}
                         </button>
                       </div>
                     )}
@@ -501,9 +501,9 @@ export function WorkspaceContent() {
 
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Recent Leads</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">{t('workspaceGuard.recentLeads')}</h3>
                   <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-100">
-                    {leads.length} Leads
+                    {leads.length} {t('sidebar.leads')}
                   </span>
                 </div>
                 {isLoadingLeads ? (
@@ -943,10 +943,10 @@ export function WorkspaceContent() {
                 <ShieldAlert className="w-8 h-8" />
               </div>
               <h3 className="text-lg font-black text-white tracking-wide uppercase">
-                Accès Cockpit Bloqué
+                {t('workspaceGuard.modalTitle')}
               </h3>
               <p className="text-xs text-slate-400 font-medium mt-1">
-                Veuillez remplir toutes les conditions d'éligibilité requises pour lancer des appels.
+                {t('workspaceGuard.modalSubtitle')}
               </p>
             </div>
 
@@ -966,10 +966,10 @@ export function WorkspaceContent() {
                   </div>
                   <div>
                     <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-200">
-                      Inscription au Projet
+                      {t('workspaceGuard.checkGigTitle')}
                     </h4>
                     <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                      Être officiellement inscrit et affecté à la mission sélectionnée.
+                      {t('workspaceGuard.checkGigDesc')}
                     </p>
                   </div>
                 </div>
@@ -996,10 +996,10 @@ export function WorkspaceContent() {
                   </div>
                   <div>
                     <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-200">
-                      Formations Complétées (100%)
+                      {t('workspaceGuard.checkTrainingTitle')}
                     </h4>
                     <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                      Valider toutes les sessions de formation d'IA et simulateurs requis.
+                      {t('workspaceGuard.checkTrainingDesc')}
                     </p>
                   </div>
                 </div>
@@ -1026,10 +1026,10 @@ export function WorkspaceContent() {
                   </div>
                   <div>
                     <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-200">
-                      Créneau de Réservation Actif
+                      {t('workspaceGuard.checkSessionTitle')}
                     </h4>
                     <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                      Planifier et réserver un créneau de temps pour la mission dans l'agenda.
+                      {t('workspaceGuard.checkSessionDesc')}
                     </p>
                   </div>
                 </div>
@@ -1058,7 +1058,7 @@ export function WorkspaceContent() {
                 }}
                 className="w-full py-3 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:from-rose-600 hover:to-pink-700 text-white font-extrabold uppercase tracking-widest text-[10px] rounded-2xl shadow-lg shadow-rose-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
               >
-                Compris, je finalise mes étapes
+                {t('workspaceGuard.understandButton')}
               </button>
             </div>
           </div>

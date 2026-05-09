@@ -111,5 +111,28 @@
     "pendingEarnings": "Gains en Attente",
     "lifetimeEarnings": "Gains Totaux",
     "transactionHistory": "Historique des Transactions"
+  },
+  "workspaceGuard": {
+    "selectGigTitle": "Sélectionnez une mission",
+    "selectGigDesc": "Veuillez sélectionner un Gig spécifique dans le menu déroulant ci-dessus pour charger vos prospects (Leads), vérifier vos éligibilités d'appels, vos créneaux et vos formations.",
+    "trainingRequiredTitle": "Formation Requise",
+    "trainingRequiredDesc": "Vous devez terminer 100% de vos modules de formation pour ce Gig avant de pouvoir lancer des appels.",
+    "trainingButton": "S'entraîner",
+    "sessionRequiredTitle": "Réservation Requise",
+    "sessionRequiredDesc": "Vous devez avoir un créneau de temps planifié et réservé en cours pour lancer des appels.",
+    "sessionButton": "Réserver",
+    "connectionErrorTitle": "Erreur de Connexion",
+    "connectionErrorDesc": "Impossible de valider vos conditions d'appel en temps réel (vérification des formations et réservations). Veuillez rafraîchir la page ou réessayer ultérieurement.",
+    "refreshButton": "Actualiser",
+    "modalTitle": "Accès Cockpit Bloqué",
+    "modalSubtitle": "Veuillez remplir toutes les conditions d'éligibilité requises pour lancer des appels.",
+    "checkGigTitle": "Inscription au Projet",
+    "checkGigDesc": "Être officiellement inscrit et affecté à la mission sélectionnée.",
+    "checkTrainingTitle": "Formations Complétées (100%)",
+    "checkTrainingDesc": "Valider toutes les sessions de formation d'IA et simulateurs requis.",
+    "checkSessionTitle": "Créneau de Réservation Actif",
+    "checkSessionDesc": "Planifier et réserver un créneau de temps pour la mission dans l'agenda.",
+    "understandButton": "Compris, je finalise mes étapes",
+    "recentLeads": "Prospects Récents"
   }
 }

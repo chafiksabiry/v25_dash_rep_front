@@ -111,5 +111,28 @@
     "pendingEarnings": "Pending Earnings",
     "lifetimeEarnings": "Lifetime Earnings",
     "transactionHistory": "Transaction History"
+  },
+  "workspaceGuard": {
+    "selectGigTitle": "Select a Gig",
+    "selectGigDesc": "Please select a specific Gig from the dropdown menu above to load your Leads, verify call eligibility, slots, and training progress.",
+    "trainingRequiredTitle": "Training Required",
+    "trainingRequiredDesc": "You must complete 100% of your training modules for this Gig before placing calls.",
+    "trainingButton": "Train Now",
+    "sessionRequiredTitle": "Reservation Required",
+    "sessionRequiredDesc": "You must have a scheduled active slot reserved to start placing calls.",
+    "sessionButton": "Reserve Slot",
+    "connectionErrorTitle": "Connection Error",
+    "connectionErrorDesc": "Unable to validate call conditions. Please check your network or refresh the page to try again.",
+    "refreshButton": "Refresh",
+    "modalTitle": "COCKPIT Access Locked",
+    "modalSubtitle": "Please fulfill all required eligibility conditions to start placing calls.",
+    "checkGigTitle": "Project Enrollment",
+    "checkGigDesc": "Be officially enrolled and assigned to the selected gig.",
+    "checkTrainingTitle": "Trainings Completed (100%)",
+    "checkTrainingDesc": "Validate all required AI training sessions and simulator steps.",
+    "checkSessionTitle": "Active Reservation Slot",
+    "checkSessionDesc": "Plan and reserve a time slot for the gig in the schedule.",
+    "understandButton": "Understood, I'll complete my steps",
+    "recentLeads": "Recent Leads"
   }
 }
