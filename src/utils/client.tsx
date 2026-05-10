@@ -145,6 +145,12 @@ export interface Call {
     };
   };
   childCalls?: string[];
+  transactionOccurred?: boolean | null;
+  transaction?: {
+    validByReps: boolean | null;
+    validByCompany: boolean | null;
+    valid: boolean | null;
+  } | null;
   createdAt: Date;
   updatedAt: Date;
 }
