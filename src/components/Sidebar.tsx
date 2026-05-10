@@ -414,6 +414,15 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       {showWarningModal && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
           <div className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-[2rem] p-8 shadow-2xl shadow-black/80 overflow-hidden animate-in zoom-in-95 duration-300 text-white">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowWarningModal(false)}
+              className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-all duration-200 z-50"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
             {/* Glowing background light */}
             <div className="absolute -top-12 -left-12 w-40 h-40 bg-amber-500/10 blur-[60px] rounded-full pointer-events-none"></div>
             <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-orange-500/10 blur-[60px] rounded-full pointer-events-none"></div>
