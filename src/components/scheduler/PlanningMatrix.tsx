@@ -13,7 +13,6 @@ interface PlanningMatrixProps {
     gigs: Gig[];
 }
 
-const HOURS = Array.from({ length: 11 }, (_, i) => i + 9); // 9:00 to 19:00
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export function PlanningMatrix({ selectedDate, gigId, slots, onRefresh, gigs }: PlanningMatrixProps) {
@@ -22,6 +21,26 @@ export function PlanningMatrix({ selectedDate, gigId, slots, onRefresh, gigs }: 
     const agentId = getAgentId();
 
     const selectedGig = useMemo(() => gigs.find(g => g.id === gigId), [gigs, gigId]);
+
+    const hoursList = useMemo(() => {
+        let minH = 9;
+        let maxH = 19;
+        const schedule = selectedGig?.availability?.schedule || [];
+        if (schedule && schedule.length > 0) {
+            schedule.forEach((entry: any) => {
+                const startHour = Number.parseInt(String(entry.hours?.start || '').slice(0, 2), 10);
+                const endHour = Number.parseInt(String(entry.hours?.end || '').slice(0, 2), 10);
+                if (!Number.isNaN(startHour) && startHour < minH) {
+                    minH = startHour;
+                }
+                if (!Number.isNaN(endHour) && endHour > maxH) {
+                    maxH = endHour;
+                }
+            });
+        }
+        const length = maxH - minH + 1;
+        return Array.from({ length: length > 0 ? length : 11 }, (_, i) => i + minH);
+    }, [selectedGig]);
 
     const weekStart = useMemo(() => {
         try {
@@ -44,7 +63,7 @@ export function PlanningMatrix({ selectedDate, gigId, slots, onRefresh, gigs }: 
         weekDates.forEach(date => {
             const dateStr = format(date, 'yyyy-MM-dd');
             matrix[dateStr] = {};
-            HOURS.forEach(hour => {
+            hoursList.forEach(hour => {
                 const timeStr = `${hour.toString().padStart(2, '0')}:00`;
                 const slot = slots.find(s =>
                     s.date === dateStr &&
@@ -58,7 +77,7 @@ export function PlanningMatrix({ selectedDate, gigId, slots, onRefresh, gigs }: 
         });
 
         setLocalMatrix(matrix);
-    }, [slots, weekDates, gigId, agentId]);
+    }, [slots, weekDates, gigId, agentId, hoursList]);
 
     const handleToggleCell = (dateStr: string, hour: number) => {
         setLocalMatrix(prev => ({
@@ -77,7 +96,7 @@ export function PlanningMatrix({ selectedDate, gigId, slots, onRefresh, gigs }: 
             const slotsToUpdate: Partial<TimeSlot>[] = [];
 
             for (const dateStr of Object.keys(localMatrix)) {
-                for (const hour of HOURS) {
+                for (const hour of hoursList) {
                     const isReserved = localMatrix[dateStr][hour];
                     const timeStr = `${hour.toString().padStart(2, '0')}:00`;
                     const endTimeStr = `${(hour + 1).toString().padStart(2, '0')}:00`;
@@ -127,9 +146,9 @@ export function PlanningMatrix({ selectedDate, gigId, slots, onRefresh, gigs }: 
         return weekDates.map(date => {
             const dateStr = format(date, 'yyyy-MM-dd');
             const dayData = localMatrix[dateStr] || {};
-            return HOURS.reduce((sum, hour) => sum + (dayData[hour] ? 1 : 0), 0);
+            return hoursList.reduce((sum, hour) => sum + (dayData[hour] ? 1 : 0), 0);
         });
-    }, [localMatrix, weekDates]);
+    }, [localMatrix, weekDates, hoursList]);
 
     const totalHours = useMemo(() => dayTotals.reduce((sum, val) => sum + val, 0), [dayTotals]);
 
@@ -178,7 +197,7 @@ export function PlanningMatrix({ selectedDate, gigId, slots, onRefresh, gigs }: 
                         </tr>
                     </thead>
                     <tbody>
-                        {HOURS.map(hour => (
+                        {hoursList.map(hour => (
                             <tr key={hour} className="group hover:bg-gray-50/50 transition-colors">
                                 <td className="p-4 border-b border-gray-50 text-gray-500 font-bold text-sm">
                                     <div className="flex items-center gap-2">
