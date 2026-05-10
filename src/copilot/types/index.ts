@@ -33,6 +33,7 @@ export interface Contact {
 }
 
 export interface Lead extends Contact {
+  Last_Name: string;
   First_Name: any;
   Telephony: any;
   leadScore: number;

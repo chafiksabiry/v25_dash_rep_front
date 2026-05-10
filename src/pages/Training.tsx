@@ -88,35 +88,35 @@ type RepSlideProgressSummary = {
 
 type ViewerSlide =
   | {
-      key: string;
-      kind: 'overview';
-      modules: Array<{ title: string; moduleIndex: number; sections: Array<{ title: string; sectionIndex: number }> }>;
-    }
+    key: string;
+    kind: 'overview';
+    modules: Array<{ title: string; moduleIndex: number; sections: Array<{ title: string; sectionIndex: number }> }>;
+  }
   | { key: string; kind: 'module_intro'; moduleIndex: number; totalModules: number; mod: any }
   | {
-      key: string;
-      kind: 'section';
-      moduleIndex: number;
-      sectionIndex: number;
-      totalModules: number;
-      section: any;
-      modTitle: string;
-    }
+    key: string;
+    kind: 'section';
+    moduleIndex: number;
+    sectionIndex: number;
+    totalModules: number;
+    section: any;
+    modTitle: string;
+  }
   | {
-      key: string;
-      kind: 'quiz_group';
-      moduleIndex: number;
-      totalModules: number;
-      questions: Array<{
-        quizTitle: string;
-        quizKey: string;
-        quizId?: string;
-        /** Plafond de soumissions complètes (journey `maxAttempts`, défaut 3). */
-        maxAttempts?: number;
-        question: any;
-        correctAnswer: number;
-      }>;
-    };
+    key: string;
+    kind: 'quiz_group';
+    moduleIndex: number;
+    totalModules: number;
+    questions: Array<{
+      quizTitle: string;
+      quizKey: string;
+      quizId?: string;
+      /** Plafond de soumissions complètes (journey `maxAttempts`, défaut 3). */
+      maxAttempts?: number;
+      question: any;
+      correctAnswer: number;
+    }>;
+  };
 
 type ModulePlanItem = { durationMinutes?: unknown };
 
@@ -132,10 +132,10 @@ function normalizeStructuredProgress(raw: any): StructuredProgressRow | null {
   if (!raw || typeof raw !== 'object') return null;
   const modules = Array.isArray(raw.modules)
     ? raw.modules.map((m: any) => ({
-        moduleId: normalizeMongoId(m?.moduleId),
-        status: String(m?.status || 'pending') as StructuredModuleProgress['status'],
-        progressPercentage: Number(m?.progressPercentage || 0),
-      }))
+      moduleId: normalizeMongoId(m?.moduleId),
+      status: String(m?.status || 'pending') as StructuredModuleProgress['status'],
+      progressPercentage: Number(m?.progressPercentage || 0),
+    }))
     : [];
   return {
     repId: normalizeMongoId(raw.repId),
@@ -299,12 +299,12 @@ function initialSlideForContinue(
   slideCount: number,
   slideRow:
     | {
-        currentSlideIndex?: number;
-        slidesSeen?: number;
-        slidesTotal?: number;
-        completedUnits?: number;
-        totalUnits?: number;
-      }
+      currentSlideIndex?: number;
+      slidesSeen?: number;
+      slidesTotal?: number;
+      completedUnits?: number;
+      totalUnits?: number;
+    }
     | undefined,
   engagementPercent: number
 ): number {
@@ -804,10 +804,10 @@ export function Training() {
         const msg =
           axios.isAxiosError(e) && e.response?.data && typeof e.response.data === 'object'
             ? String(
-                (e.response.data as { error?: string; message?: string }).error ||
-                  (e.response.data as { message?: string }).message ||
-                  ''
-              )
+              (e.response.data as { error?: string; message?: string }).error ||
+              (e.response.data as { message?: string }).message ||
+              ''
+            )
             : e instanceof Error
               ? e.message
               : '';
@@ -1265,14 +1265,14 @@ export function Training() {
     const modules = extractModules(selectedJourney).map((m, i) => {
       const sections = Array.isArray(m.sections)
         ? m.sections
-            .map((s, si) => {
-              if (typeof s === 'string') return s;
-              if (typeof s === 'object' && s !== null && 'title' in (s as Record<string, unknown>)) {
-                return String((s as { title?: unknown }).title || `Section ${si + 1}`);
-              }
-              return `Section ${si + 1}`;
-            })
-            .filter(Boolean)
+          .map((s, si) => {
+            if (typeof s === 'string') return s;
+            if (typeof s === 'object' && s !== null && 'title' in (s as Record<string, unknown>)) {
+              return String((s as { title?: unknown }).title || `Section ${si + 1}`);
+            }
+            return `Section ${si + 1}`;
+          })
+          .filter(Boolean)
         : [];
       return {
         title: String(m.title || `Module ${i + 1}`),
@@ -1322,9 +1322,9 @@ export function Training() {
     const activeModuleIndex =
       modules.length > 0 && slides.length > 0
         ? Math.min(
-            modules.length - 1,
-            Math.max(0, Math.floor((activeSlide / Math.max(slides.length - 1, 1)) * modules.length))
-          )
+          modules.length - 1,
+          Math.max(0, Math.floor((activeSlide / Math.max(slides.length - 1, 1)) * modules.length))
+        )
         : 0;
     setTrainingNav({
       // Hide training module dropdowns from the sidebar:
@@ -1671,12 +1671,12 @@ export function Training() {
           durationMs: quizMeta ? 0 : 40000,
           quizUpdate: quizMeta
             ? {
-                quizKey: quizMeta.quizKey,
-                quizMongoId:
-                  quizMeta.quizId && /^[a-f\d]{24}$/i.test(quizMeta.quizId) ? quizMeta.quizId : undefined,
-                status: 'in_progress',
-                durationMs: 40000,
-              }
+              quizKey: quizMeta.quizKey,
+              quizMongoId:
+                quizMeta.quizId && /^[a-f\d]{24}$/i.test(quizMeta.quizId) ? quizMeta.quizId : undefined,
+              status: 'in_progress',
+              durationMs: 40000,
+            }
             : undefined,
         });
         await Promise.all([fetchTrainingProgressRows(), fetchSlideProgressSummary()]);
@@ -1986,275 +1986,264 @@ export function Training() {
     <div className={selectedJourney ? 'w-full h-[calc(100vh-120px)]' : 'space-y-6 w-full'}>
       {!selectedJourney && (
         <>
-      <div className="space-y-4 pb-6 border-b border-gray-100">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Training</h1>
-          <p className="text-sm text-gray-500 mt-1 font-medium leading-relaxed max-w-3xl">
-            Trainings linked to gigs you are enrolled in, plus journeys your company assigned to you
-            directly.
-          </p>
-        </div>
-        
-        {/* Dropdown repositioned directly below title/subtitle */}
-        <div className="w-full max-w-md">
-          <label
-            htmlFor="training-gig-filter"
-            className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-gray-400"
-          >
-            Enrolled gig (Marketplace)
-          </label>
-          <div className="relative">
-            <select
-              id="training-gig-filter"
-              value={gigFilter}
-              onChange={(e) => setGigFilter(e.target.value)}
-              disabled={loading}
-              className="w-full appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-xs font-bold text-gray-800 shadow-sm transition-colors focus:border-harx-500 focus:outline-none focus:ring-2 focus:ring-harx-500/20 disabled:cursor-wait disabled:opacity-70"
-            >
-              <option value="__all__">
-                {enrolledGigs.length === 0 && !loading
-                  ? 'No enrolled gigs'
-                  : 'All enrolled gigs'}
-              </option>
-              {enrolledGigs.map((g) => (
-                <option key={g.gigId} value={g.gigId}>
-                  {g.title}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <div className="space-y-4 pb-6 border-b border-gray-100">
+            <div>
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight">Training</h1>
+              <p className="text-sm text-gray-500 mt-1 font-medium leading-relaxed max-w-3xl">
+                Trainings linked to gigs you are enrolled in, plus journeys your company assigned to you
+                directly.
+              </p>
+            </div>
+
+            {/* Dropdown repositioned directly below title/subtitle */}
+            <div className="w-full max-w-md">
+              <div className="relative">
+                <select
+                  id="training-gig-filter"
+                  value={gigFilter}
+                  onChange={(e) => setGigFilter(e.target.value)}
+                  disabled={loading}
+                  className="w-full appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-xs font-bold text-gray-800 shadow-sm transition-colors focus:border-harx-500 focus:outline-none focus:ring-2 focus:ring-harx-500/20 disabled:cursor-wait disabled:opacity-70"
+                >
+                  <option value="__all__">
+                    {enrolledGigs.length === 0 && !loading
+                      ? 'No enrolled gigs'
+                      : 'All enrolled gigs'}
+                  </option>
+                  {enrolledGigs.map((g) => (
+                    <option key={g.gigId} value={g.gigId}>
+                      {g.title}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              </div>
+              {enrolledGigs.length === 0 && !loading && !error && (
+                <p className="mt-2 text-xs text-amber-700 font-medium">
+                  No enrolled gigs from the matching API — check the Marketplace or your connection.
+                </p>
+              )}
+            </div>
           </div>
-          {gigFilter !== '__all__' && selectedGigTitle && !listLoading && (
-            <p className="mt-2 text-xs font-semibold text-harx-700">
-              Showing trainings for: <span className="text-gray-900">{selectedGigTitle}</span>
-            </p>
+
+          {!selectedJourney &&
+            gigFilter !== '__all__' &&
+            slideProgressSummary &&
+            slideProgressSummary.trainingCount > 0 && (
+              <div className="rounded-2xl border border-harx-200 bg-gradient-to-br from-harx-50/90 to-white p-5 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-widest text-harx-600">
+                  Progression (formations du gig)
+                </p>
+                {selectedGigTitle ? (
+                  <p className="mt-1 text-xs font-semibold text-gray-600 truncate">{selectedGigTitle}</p>
+                ) : null}
+                <p className="mt-2 text-2xl font-black text-gray-900 tabular-nums">
+                  {slideProgressSummary.overallPercent} %
+                </p>
+              </div>
+            )}
+
+          {listLoading && (
+            <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-gray-600">
+              <Loader2 className="w-6 h-6 animate-spin text-harx-500" />
+              <span className="font-medium">
+                {gigFilter !== '__all__' && gigFetchLoading
+                  ? 'Loading trainings for this gig…'
+                  : 'Loading trainings…'}
+              </span>
+            </div>
           )}
-          {enrolledGigs.length === 0 && !loading && !error && (
-            <p className="mt-2 text-xs text-amber-700 font-medium">
-              No enrolled gigs from the matching API — check the Marketplace or your connection.
-            </p>
+
+          {!listLoading && error && (
+            <div className="flex gap-3 rounded-2xl border border-red-100 bg-red-50/80 p-4 text-red-800">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+              <p className="text-sm font-medium">{error}</p>
+            </div>
           )}
-        </div>
-      </div>
 
-      {!selectedJourney &&
-        gigFilter !== '__all__' &&
-        slideProgressSummary &&
-        slideProgressSummary.trainingCount > 0 && (
-          <div className="rounded-2xl border border-harx-200 bg-gradient-to-br from-harx-50/90 to-white p-5 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-widest text-harx-600">
-              Progression (formations du gig)
-            </p>
-            {selectedGigTitle ? (
-              <p className="mt-1 text-xs font-semibold text-gray-600 truncate">{selectedGigTitle}</p>
-            ) : null}
-            <p className="mt-2 text-2xl font-black text-gray-900 tabular-nums">
-              {slideProgressSummary.overallPercent} %
-            </p>
-          </div>
-        )}
-
-      {listLoading && (
-        <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-gray-600">
-          <Loader2 className="w-6 h-6 animate-spin text-harx-500" />
-          <span className="font-medium">
-            {gigFilter !== '__all__' && gigFetchLoading
-              ? 'Loading trainings for this gig…'
-              : 'Loading trainings…'}
-          </span>
-        </div>
-      )}
-
-      {!listLoading && error && (
-        <div className="flex gap-3 rounded-2xl border border-red-100 bg-red-50/80 p-4 text-red-800">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <p className="text-sm font-medium">{error}</p>
-        </div>
-      )}
-
-      {!listLoading && !error && gigFilter === '__all__' && journeys.length === 0 && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-center text-gray-500">
-          <p className="font-medium">No trainings found for your enrolled gigs.</p>
-          <p className="text-sm mt-2">
-            Enrolling in a gig does not create a training by itself: the company must publish a
-            training for that gig (status active, rehearsal, or completed). The list can stay empty
-            even if the Marketplace shows “Enrolled”.
-          </p>
-        </div>
-      )}
-
-      {!listLoading && !error && gigFilter !== '__all__' && displayJourneys.length === 0 && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-center text-gray-500">
-          <p className="font-medium">No trainings for this gig yet.</p>
-          {gigFetchOutcome?.gigId === gigFilter && gigFetchOutcome.kind === 'ok' ? (
-            <p className="text-sm mt-2">
-              The training service responded successfully but has no published journeys for this
-              gig. Your org may still be preparing content, the journey may still be in draft, or
-              the journey may be linked to a different gig id than the one in the Marketplace.
-              All journeys linked to this gig are shown, including draft/not published.
-            </p>
-          ) : gigFetchOutcome?.gigId === gigFilter && gigFetchOutcome.kind === 'not_found' ? (
-            <p className="text-sm mt-2">
-              The training API returned 404 for{' '}
-              <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">
-                GET /training_journeys/gig/:gigId
-              </code>
-              . Deploy the latest training backend or verify API routing and the base URL in{' '}
-              <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">VITE_TRAINING_*</code>.
-            </p>
-          ) : gigFetchOutcome?.gigId === gigFilter && gigFetchOutcome.kind === 'error' ? (
-            <p className="text-sm mt-2">
-              Could not reach the training API for this gig (network error, CORS, or missing auth).
-              Check your connection, sign in again, and confirm{' '}
-              <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">VITE_TRAINING_*</code>{' '}
-              points at the training service.
-            </p>
-          ) : (
-            <p className="text-sm mt-2">
-              Select the gig again or refresh the page. If this persists, verify the training API URL
-              and that you are signed in.
-            </p>
+          {!listLoading && !error && gigFilter === '__all__' && journeys.length === 0 && (
+            <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-center text-gray-500">
+              <p className="font-medium">No trainings found for your enrolled gigs.</p>
+              <p className="text-sm mt-2">
+                Enrolling in a gig does not create a training by itself: the company must publish a
+                training for that gig (status active, rehearsal, or completed). The list can stay empty
+                even if the Marketplace shows “Enrolled”.
+              </p>
+            </div>
           )}
-        </div>
-      )}
 
-      {!listLoading && !error && displayJourneys.length > 0 && (
-        <ul className="space-y-4">
-          {displayJourneys.map((j) => {
-            const id = journeyKey(j);
-            const gig = gigLabel(j);
-            const status = String(j.status || '—');
-            const slides = extractSlides(j);
-            const progress = id ? progressByJourney[id] : undefined;
-            const engagement = Number(progress?.engagementScore);
-            const storedCoursePct = Number(progress?.progressPercentage);
-            const engagementPercent =
-              Number.isFinite(storedCoursePct) && storedCoursePct > 0
-                ? Math.min(100, Math.round(storedCoursePct))
-                : Number.isFinite(engagement)
-                  ? Math.min(100, Math.round(engagement))
-                  : 0;
-            const slideRow =
-              id && slideProgressSummary?.journeys
-                ? slideProgressSummary.journeys.find((x) => x.journeyId === id)
-                : undefined;
-            const progressTotal =
-              slideRow && Number(slideRow.totalUnits) > 0
-                ? Number(slideRow.totalUnits)
-                : slideRow && slideRow.slidesTotal > 0
-                  ? slideRow.slidesTotal
-                  : Number(progress?.moduleTotal) > 0
-                    ? Number(progress?.moduleTotal)
-                    : slides.length;
-            let useCoursePercentForBar = false;
-            let progressDone =
-              slideRow && Number(slideRow.completedUnits) >= 0
-                ? Number(slideRow.completedUnits)
-                : slideRow?.slidesSeen ?? 0;
-            if (!slideRow && progressTotal > 0) {
-              const modulesDone = Number(progress?.moduleFinished ?? 0);
-              if (modulesDone > 0) {
-                progressDone = Math.min(progressTotal, modulesDone);
-              } else if (engagementPercent > 0) {
-                /** `progressTotal` est souvent le nombre de modules (ex. 7) : (7/100)*7 arrondit à 0 — le % formation est déjà 0–100. */
-                useCoursePercentForBar = true;
-              } else {
-                progressDone = 0;
-              }
-            }
-            let slidePercent = useCoursePercentForBar
-              ? engagementPercent
-              : progressTotal > 0
-                ? Math.min(100, Math.round((progressDone / progressTotal) * 100))
-                : engagementPercent > 0
+          {!listLoading && !error && gigFilter !== '__all__' && displayJourneys.length === 0 && (
+            <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm text-center text-gray-500">
+              <p className="font-medium">No trainings for this gig yet.</p>
+              {gigFetchOutcome?.gigId === gigFilter && gigFetchOutcome.kind === 'ok' ? (
+                <p className="text-sm mt-2">
+                  The training service responded successfully but has no published journeys for this
+                  gig. Your org may still be preparing content, the journey may still be in draft, or
+                  the journey may be linked to a different gig id than the one in the Marketplace.
+                  All journeys linked to this gig are shown, including draft/not published.
+                </p>
+              ) : gigFetchOutcome?.gigId === gigFilter && gigFetchOutcome.kind === 'not_found' ? (
+                <p className="text-sm mt-2">
+                  The training API returned 404 for{' '}
+                  <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">
+                    GET /training_journeys/gig/:gigId
+                  </code>
+                  . Deploy the latest training backend or verify API routing and the base URL in{' '}
+                  <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">VITE_TRAINING_*</code>.
+                </p>
+              ) : gigFetchOutcome?.gigId === gigFilter && gigFetchOutcome.kind === 'error' ? (
+                <p className="text-sm mt-2">
+                  Could not reach the training API for this gig (network error, CORS, or missing auth).
+                  Check your connection, sign in again, and confirm{' '}
+                  <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">VITE_TRAINING_*</code>{' '}
+                  points at the training service.
+                </p>
+              ) : (
+                <p className="text-sm mt-2">
+                  Select the gig again or refresh the page. If this persists, verify the training API URL
+                  and that you are signed in.
+                </p>
+              )}
+            </div>
+          )}
+
+          {!listLoading && !error && displayJourneys.length > 0 && (
+            <ul className="space-y-4">
+              {displayJourneys.map((j) => {
+                const id = journeyKey(j);
+                const gig = gigLabel(j);
+                const status = String(j.status || '—');
+                const slides = extractSlides(j);
+                const progress = id ? progressByJourney[id] : undefined;
+                const engagement = Number(progress?.engagementScore);
+                const storedCoursePct = Number(progress?.progressPercentage);
+                const engagementPercent =
+                  Number.isFinite(storedCoursePct) && storedCoursePct > 0
+                    ? Math.min(100, Math.round(storedCoursePct))
+                    : Number.isFinite(engagement)
+                      ? Math.min(100, Math.round(engagement))
+                      : 0;
+                const slideRow =
+                  id && slideProgressSummary?.journeys
+                    ? slideProgressSummary.journeys.find((x) => x.journeyId === id)
+                    : undefined;
+                const progressTotal =
+                  slideRow && Number(slideRow.totalUnits) > 0
+                    ? Number(slideRow.totalUnits)
+                    : slideRow && slideRow.slidesTotal > 0
+                      ? slideRow.slidesTotal
+                      : Number(progress?.moduleTotal) > 0
+                        ? Number(progress?.moduleTotal)
+                        : slides.length;
+                let useCoursePercentForBar = false;
+                let progressDone =
+                  slideRow && Number(slideRow.completedUnits) >= 0
+                    ? Number(slideRow.completedUnits)
+                    : slideRow?.slidesSeen ?? 0;
+                if (!slideRow && progressTotal > 0) {
+                  const modulesDone = Number(progress?.moduleFinished ?? 0);
+                  if (modulesDone > 0) {
+                    progressDone = Math.min(progressTotal, modulesDone);
+                  } else if (engagementPercent > 0) {
+                    /** `progressTotal` est souvent le nombre de modules (ex. 7) : (7/100)*7 arrondit à 0 — le % formation est déjà 0–100. */
+                    useCoursePercentForBar = true;
+                  } else {
+                    progressDone = 0;
+                  }
+                }
+                let slidePercent = useCoursePercentForBar
                   ? engagementPercent
-                  : 0;
-            if (!useCoursePercentForBar && slidePercent === 0 && engagementPercent > 0) {
-              slidePercent = engagementPercent;
-            }
-            const showProgressFigure = progressTotal > 0 || slidePercent > 0 || engagementPercent > 0;
-            return (
-              <li
-                key={id || journeyTitle(j)}
-                className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-              >
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-black text-gray-900 truncate">{journeyTitle(j)}</h2>
-                  {j.description ? (
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-1">{String(j.description)}</p>
-                  ) : null}
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg bg-gray-100 text-gray-600">
-                      {status}
-                    </span>
-                    {gig ? (
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg bg-harx-500/10 text-harx-700 flex items-center gap-1 max-w-full">
-                        <Briefcase className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{gig}</span>
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="mt-3">
-                    <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-gray-500">
-                      <span>Progress</span>
-                      <span className="tabular-nums">
-                        {showProgressFigure ? `${slidePercent}%` : '—'}
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-gray-100">
-                      <div
-                        className="h-2 rounded-full bg-harx-500 transition-[width]"
-                        style={{ width: `${showProgressFigure ? slidePercent : 0}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="shrink-0 flex gap-2">
-                  <button
-                    type="button"
-                    disabled={!id}
-                    onClick={() => {
-                      if (!id) return;
-                      const slideCount = viewerSlideCountFromJourney(j);
-                      const fromSummary =
-                        slideRow != null &&
-                        typeof slideRow.currentSlideIndex === 'number' &&
-                        Number.isFinite(slideRow.currentSlideIndex)
-                          ? slideRow.currentSlideIndex
-                          : undefined;
-                      const fromProgress =
-                        progress != null &&
-                        typeof progress.currentSlideIndex === 'number' &&
-                        Number.isFinite(progress.currentSlideIndex)
-                          ? progress.currentSlideIndex
-                          : undefined;
-                      const persisted =
-                        typeof fromSummary === 'number'
-                          ? fromSummary
-                          : typeof fromProgress === 'number'
-                            ? fromProgress
-                            : undefined;
-                      const resumeAt = mergeFormationResumeWithPersisted(
-                        j,
-                        progress,
-                        slideCount,
-                        persisted,
-                        engagementPercent
-                      );
-                      setFormationViewerSlideIndex(resumeAt);
-                      setSelectedJourneyId(id);
-                      setActiveSlide(resumeAt);
-                    }}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-harx-600 text-white px-4 py-3 text-xs font-black uppercase tracking-widest hover:bg-harx-700 transition-colors disabled:opacity-40"
+                  : progressTotal > 0
+                    ? Math.min(100, Math.round((progressDone / progressTotal) * 100))
+                    : engagementPercent > 0
+                      ? engagementPercent
+                      : 0;
+                if (!useCoursePercentForBar && slidePercent === 0 && engagementPercent > 0) {
+                  slidePercent = engagementPercent;
+                }
+                const showProgressFigure = progressTotal > 0 || slidePercent > 0 || engagementPercent > 0;
+                return (
+                  <li
+                    key={id || journeyTitle(j)}
+                    className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
                   >
-                    Continue
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                    <div className="min-w-0 flex-1">
+                      <h2 className="font-black text-gray-900 truncate">{journeyTitle(j)}</h2>
+                      {j.description ? (
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-1">{String(j.description)}</p>
+                      ) : null}
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg bg-gray-100 text-gray-600">
+                          {status}
+                        </span>
+                        {gig ? (
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg bg-harx-500/10 text-harx-700 flex items-center gap-1 max-w-full">
+                            <Briefcase className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{gig}</span>
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-3">
+                        <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-gray-500">
+                          <span>Progress</span>
+                          <span className="tabular-nums">
+                            {showProgressFigure ? `${slidePercent}%` : '—'}
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full bg-gray-100">
+                          <div
+                            className="h-2 rounded-full bg-harx-500 transition-[width]"
+                            style={{ width: `${showProgressFigure ? slidePercent : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="shrink-0 flex gap-2">
+                      <button
+                        type="button"
+                        disabled={!id}
+                        onClick={() => {
+                          if (!id) return;
+                          const slideCount = viewerSlideCountFromJourney(j);
+                          const fromSummary =
+                            slideRow != null &&
+                              typeof slideRow.currentSlideIndex === 'number' &&
+                              Number.isFinite(slideRow.currentSlideIndex)
+                              ? slideRow.currentSlideIndex
+                              : undefined;
+                          const fromProgress =
+                            progress != null &&
+                              typeof progress.currentSlideIndex === 'number' &&
+                              Number.isFinite(progress.currentSlideIndex)
+                              ? progress.currentSlideIndex
+                              : undefined;
+                          const persisted =
+                            typeof fromSummary === 'number'
+                              ? fromSummary
+                              : typeof fromProgress === 'number'
+                                ? fromProgress
+                                : undefined;
+                          const resumeAt = mergeFormationResumeWithPersisted(
+                            j,
+                            progress,
+                            slideCount,
+                            persisted,
+                            engagementPercent
+                          );
+                          setFormationViewerSlideIndex(resumeAt);
+                          setSelectedJourneyId(id);
+                          setActiveSlide(resumeAt);
+                        }}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-harx-600 text-white px-4 py-3 text-xs font-black uppercase tracking-widest hover:bg-harx-700 transition-colors disabled:opacity-40"
+                      >
+                        Continue
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </>
       )}
 
@@ -2269,113 +2258,113 @@ export function Training() {
                   'linear-gradient(180deg, rgba(7,10,30,0.96) 0%, rgba(10,15,45,0.88) 100%)',
               }}
             >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedJourneyId(null);
-                    void fetchSlideProgressSummary();
-                  }}
-                  className="rounded-xl border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-100 transition hover:-translate-y-0.5"
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedJourneyId(null);
+                  void fetchSlideProgressSummary();
+                }}
+                className="rounded-xl border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-100 transition hover:-translate-y-0.5"
+                style={{
+                  borderColor: viewerThemeTokens.accentBorder,
+                  background: viewerThemeTokens.cardBg,
+                  boxShadow: viewerThemeTokens.accentShadow,
+                }}
+              >
+                Back to list
+              </button>
+              <h3 className="min-w-0 flex-1 truncate text-sm font-black text-white">
+                {journeyTitle(selectedJourney)}
+              </h3>
+              <div className="ml-auto grid w-full grid-cols-2 gap-2 sm:w-auto">
+                <div
+                  className="rounded-xl border px-2.5 py-1.5 sm:px-3"
                   style={{
                     borderColor: viewerThemeTokens.accentBorder,
                     background: viewerThemeTokens.cardBg,
                     boxShadow: viewerThemeTokens.accentShadow,
                   }}
                 >
-                  Back to list
-                </button>
-                <h3 className="min-w-0 flex-1 truncate text-sm font-black text-white">
-                  {journeyTitle(selectedJourney)}
-                </h3>
-                <div className="ml-auto grid w-full grid-cols-2 gap-2 sm:w-auto">
-                  <div
-                    className="rounded-xl border px-2.5 py-1.5 sm:px-3"
-                    style={{
-                      borderColor: viewerThemeTokens.accentBorder,
-                      background: viewerThemeTokens.cardBg,
-                      boxShadow: viewerThemeTokens.accentShadow,
-                    }}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Clock3 className="h-3.5 w-3.5 text-slate-200" />
-                      <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-300">
-                        Timer total
-                      </p>
-                    </div>
-                    <p className="mt-0.5 text-xs font-extrabold text-white">{formationTimerLabel}</p>
+                  <div className="flex items-center gap-1.5">
+                    <Clock3 className="h-3.5 w-3.5 text-slate-200" />
+                    <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-300">
+                      Timer total
+                    </p>
                   </div>
-                  <div
-                    className="rounded-xl border px-2.5 py-1.5 sm:px-3"
-                    style={{
-                      borderColor: viewerThemeTokens.accentBorder,
-                      background: viewerThemeTokens.cardBg,
-                      boxShadow: viewerThemeTokens.accentShadow,
-                    }}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <BookOpen className="h-3.5 w-3.5 text-slate-200" />
-                      <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-300">
-                        Timer module
-                      </p>
-                    </div>
-                    <p className="mt-0.5 text-xs font-extrabold text-white">{moduleTimerLabel}</p>
+                  <p className="mt-0.5 text-xs font-extrabold text-white">{formationTimerLabel}</p>
+                </div>
+                <div
+                  className="rounded-xl border px-2.5 py-1.5 sm:px-3"
+                  style={{
+                    borderColor: viewerThemeTokens.accentBorder,
+                    background: viewerThemeTokens.cardBg,
+                    boxShadow: viewerThemeTokens.accentShadow,
+                  }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <BookOpen className="h-3.5 w-3.5 text-slate-200" />
+                    <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-300">
+                      Timer module
+                    </p>
                   </div>
+                  <p className="mt-0.5 text-xs font-extrabold text-white">{moduleTimerLabel}</p>
                 </div>
               </div>
-              <div
-                className="relative flex-1 overflow-y-auto p-4 md:p-5"
-                style={{ background: viewerThemeTokens.contentBg }}
-              >
-                {(() => {
-                  if (!currentFormationViewerSlide) return <p className="text-sm text-slate-300">Aucun module.</p>;
-                  return (
-                    <div className="mx-auto w-full max-w-5xl">
-                      {currentFormationViewerSlide.kind === 'overview' ? (
+            </div>
+            <div
+              className="relative flex-1 overflow-y-auto p-4 md:p-5"
+              style={{ background: viewerThemeTokens.contentBg }}
+            >
+              {(() => {
+                if (!currentFormationViewerSlide) return <p className="text-sm text-slate-300">Aucun module.</p>;
+                return (
+                  <div className="mx-auto w-full max-w-5xl">
+                    {currentFormationViewerSlide.kind === 'overview' ? (
+                      <div
+                        className="rounded-3xl border p-4 sm:p-6"
+                        style={{
+                          borderColor: viewerThemeTokens.accentBorder,
+                          background: viewerThemeTokens.panelBg,
+                          boxShadow: viewerThemeTokens.accentShadow,
+                        }}
+                      >
                         <div
-                          className="rounded-3xl border p-4 sm:p-6"
+                          className="rounded-2xl border p-4 backdrop-blur-sm sm:p-5"
                           style={{
                             borderColor: viewerThemeTokens.accentBorder,
-                            background: viewerThemeTokens.panelBg,
-                            boxShadow: viewerThemeTokens.accentShadow,
+                            background: 'linear-gradient(90deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))',
                           }}
                         >
-                          <div
-                            className="rounded-2xl border p-4 backdrop-blur-sm sm:p-5"
-                            style={{
-                              borderColor: viewerThemeTokens.accentBorder,
-                              background: 'linear-gradient(90deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))',
-                            }}
-                          >
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                              <div>
-                                <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-harx-300">
-                                  HARX Training
-                                </p>
-                                <h3 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
-                                  {journeyTitle(selectedJourney)}
-                                </h3>
-                              </div>
-                              <span
-                                className="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold text-white"
-                                style={{
-                                  borderColor: moduleColorStyles[0].chipBorder,
-                                  background: moduleColorStyles[0].chipBg,
-                                }}
-                              >
-                                {currentFormationViewerSlide.modules.length} modules
-                              </span>
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                              <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-harx-300">
+                                HARX Training
+                              </p>
+                              <h3 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
+                                {journeyTitle(selectedJourney)}
+                              </h3>
                             </div>
-                            <p className="mt-2 text-sm text-slate-300">
-                              Choisissez un module pour afficher son contenu organise par sections.
-                            </p>
+                            <span
+                              className="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold text-white"
+                              style={{
+                                borderColor: moduleColorStyles[0].chipBorder,
+                                background: moduleColorStyles[0].chipBg,
+                              }}
+                            >
+                              {currentFormationViewerSlide.modules.length} modules
+                            </span>
                           </div>
-                          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                            {(() => {
-                              const ovStructured = selectedJourneyId
-                                ? structuredProgressByJourney[selectedJourneyId]
-                                : undefined;
-                              const ovRow = selectedJourneyId ? progressByJourney[selectedJourneyId] : undefined;
-                              return currentFormationViewerSlide.modules.map((mod) => {
+                          <p className="mt-2 text-sm text-slate-300">
+                            Choisissez un module pour afficher son contenu organise par sections.
+                          </p>
+                        </div>
+                        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                          {(() => {
+                            const ovStructured = selectedJourneyId
+                              ? structuredProgressByJourney[selectedJourneyId]
+                              : undefined;
+                            const ovRow = selectedJourneyId ? progressByJourney[selectedJourneyId] : undefined;
+                            return currentFormationViewerSlide.modules.map((mod) => {
                               const moduleTheme =
                                 moduleColorStyles[mod.moduleIndex % moduleColorStyles.length];
                               const modLocked =
@@ -2389,9 +2378,8 @@ export function Training() {
                               return (
                                 <div
                                   key={`overview-mod-${mod.moduleIndex}`}
-                                  className={`rounded-2xl border p-3 shadow-[0_10px_35px_-20px_rgba(236,72,153,0.35)] transition-all duration-300 ${
-                                    modLocked ? 'opacity-45 saturate-0' : 'hover:-translate-y-0.5'
-                                  }`}
+                                  className={`rounded-2xl border p-3 shadow-[0_10px_35px_-20px_rgba(236,72,153,0.35)] transition-all duration-300 ${modLocked ? 'opacity-45 saturate-0' : 'hover:-translate-y-0.5'
+                                    }`}
                                   style={{
                                     borderColor: moduleTheme.border,
                                     background: viewerThemeTokens.cardBg,
@@ -2402,9 +2390,8 @@ export function Training() {
                                     type="button"
                                     disabled={!!modLocked}
                                     onClick={() => jumpToFormationSlide(`m${mod.moduleIndex}-intro`)}
-                                    className={`group flex w-full items-start justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-white shadow-sm transition ${
-                                      modLocked ? 'cursor-not-allowed' : 'hover:brightness-105'
-                                    }`}
+                                    className={`group flex w-full items-start justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-white shadow-sm transition ${modLocked ? 'cursor-not-allowed' : 'hover:brightness-105'
+                                      }`}
                                     style={{ background: moduleTheme.accentBg }}
                                   >
                                     <span className="min-w-0">
@@ -2429,578 +2416,575 @@ export function Training() {
                                 </div>
                               );
                             });
-                            })()}
-                          </div>
+                          })()}
                         </div>
-                      ) : currentFormationViewerSlide.kind === 'module_intro' ? (
-                        (() => {
-                          const mod = currentFormationViewerSlide.mod;
-                          const moduleTheme =
-                            moduleColorStyles[
-                              currentFormationViewerSlide.moduleIndex % moduleColorStyles.length
-                            ];
-                          const sections = Array.isArray(mod?.sections) ? mod.sections : [];
-                          const sectionCount = sections.length;
-                          const desc = String(mod?.description || '').trim();
-                          const showFullDescription = sectionCount === 0 && !!desc;
-                          const introStructured = selectedJourneyId
-                            ? structuredProgressByJourney[selectedJourneyId]
-                            : undefined;
-                          const introRow = selectedJourneyId ? progressByJourney[selectedJourneyId] : undefined;
-                          return (
-                            <div
-                              className="rounded-3xl border bg-[#0b1025]/90 p-5 sm:p-7"
-                              style={{ borderColor: moduleTheme.border, boxShadow: moduleTheme.glow }}
+                      </div>
+                    ) : currentFormationViewerSlide.kind === 'module_intro' ? (
+                      (() => {
+                        const mod = currentFormationViewerSlide.mod;
+                        const moduleTheme =
+                          moduleColorStyles[
+                          currentFormationViewerSlide.moduleIndex % moduleColorStyles.length
+                          ];
+                        const sections = Array.isArray(mod?.sections) ? mod.sections : [];
+                        const sectionCount = sections.length;
+                        const desc = String(mod?.description || '').trim();
+                        const showFullDescription = sectionCount === 0 && !!desc;
+                        const introStructured = selectedJourneyId
+                          ? structuredProgressByJourney[selectedJourneyId]
+                          : undefined;
+                        const introRow = selectedJourneyId ? progressByJourney[selectedJourneyId] : undefined;
+                        return (
+                          <div
+                            className="rounded-3xl border bg-[#0b1025]/90 p-5 sm:p-7"
+                            style={{ borderColor: moduleTheme.border, boxShadow: moduleTheme.glow }}
+                          >
+                            <p
+                              className="mb-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold text-white"
+                              style={{ borderColor: moduleTheme.chipBorder, background: moduleTheme.chipBg }}
                             >
-                              <p
-                                className="mb-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold text-white"
-                                style={{ borderColor: moduleTheme.chipBorder, background: moduleTheme.chipBg }}
-                              >
-                                Module {currentFormationViewerSlide.moduleIndex + 1} /{' '}
-                                {currentFormationViewerSlide.totalModules}
-                              </p>
-                              <h3 className="mb-3 text-xl font-extrabold tracking-tight text-white sm:text-2xl">
-                                {String(mod?.title || 'Module')}
-                              </h3>
-                              {showFullDescription ? (
-                                <div className="prose prose-sm max-w-none text-slate-200">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{desc}</ReactMarkdown>
-                                </div>
-                              ) : sectionCount > 0 ? (
-                                <>
-                                  <p className="text-sm leading-relaxed text-slate-300">
-                                    Contenu du module par sections.
-                                  </p>
-                                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                    {sections.map((sec: any, si: number) => {
-                                      const sectionTitle = String(sec?.title || `Section ${si + 1}`).trim();
-                                      const rawContent = String(sec?.content || '').trim();
-                                      const preview = rawContent
+                              Module {currentFormationViewerSlide.moduleIndex + 1} /{' '}
+                              {currentFormationViewerSlide.totalModules}
+                            </p>
+                            <h3 className="mb-3 text-xl font-extrabold tracking-tight text-white sm:text-2xl">
+                              {String(mod?.title || 'Module')}
+                            </h3>
+                            {showFullDescription ? (
+                              <div className="prose prose-sm max-w-none text-slate-200">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{desc}</ReactMarkdown>
+                              </div>
+                            ) : sectionCount > 0 ? (
+                              <>
+                                <p className="text-sm leading-relaxed text-slate-300">
+                                  Contenu du module par sections.
+                                </p>
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                  {sections.map((sec: any, si: number) => {
+                                    const sectionTitle = String(sec?.title || `Section ${si + 1}`).trim();
+                                    const rawContent = String(sec?.content || '').trim();
+                                    const preview = rawContent
+                                      .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
+                                      .replace(/[*_`#>-]/g, '')
+                                      ? rawContent
                                         .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
                                         .replace(/[*_`#>-]/g, '')
-                                        ? rawContent
-                                            .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
-                                            .replace(/[*_`#>-]/g, '')
-                                            .replace(/\s+/g, ' ')
-                                            .slice(0, 170)
-                                            .trim()
-                                        : '';
-                                      const secLocked =
-                                        !!selectedJourney &&
-                                        isModuleIntroSectionNavigationLocked(
-                                          currentFormationViewerSlide.moduleIndex,
-                                          si,
-                                          selectedJourney,
-                                          introStructured,
-                                          introRow
-                                        );
-                                      return (
-                                        <button
-                                          key={`module-intro-sec-${currentFormationViewerSlide.moduleIndex}-${si}`}
-                                          type="button"
-                                          disabled={secLocked}
-                                          onClick={() =>
-                                            jumpToFormationSlide(`m${currentFormationViewerSlide.moduleIndex}-s${si}`)
-                                          }
-                                          className={`w-full rounded-2xl border p-3 text-left transition-all duration-300 ${
-                                            secLocked
-                                              ? 'cursor-not-allowed opacity-45 saturate-0'
-                                              : 'hover:-translate-y-0.5'
-                                          }`}
-                                          style={{
-                                            borderColor: moduleTheme.border,
-                                            background: viewerThemeTokens.cardBg,
-                                            boxShadow: moduleTheme.glow,
-                                          }}
-                                        >
-                                          <div className="flex items-start gap-2">
-                                            <span
-                                              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold text-white ring-1"
-                                              style={{
-                                                background: moduleTheme.chipBg,
-                                                borderColor: moduleTheme.chipBorder,
-                                              }}
-                                            >
-                                              {si + 1}
-                                            </span>
-                                            <div className="min-w-0 flex-1">
-                                              <p className="truncate text-sm font-semibold text-white">{sectionTitle}</p>
-                                              {preview ? (
-                                                <p className="mt-1 text-xs leading-relaxed text-slate-300">
-                                                  {preview}
-                                                  {rawContent.length > 170 ? '…' : ''}
-                                                </p>
-                                              ) : (
-                                                <p className="mt-1 text-xs text-slate-400">
-                                                  Aucun contenu texte pour cette section.
-                                                </p>
-                                              )}
-                                            </div>
-                                          </div>
-                                        </button>
+                                        .replace(/\s+/g, ' ')
+                                        .slice(0, 170)
+                                        .trim()
+                                      : '';
+                                    const secLocked =
+                                      !!selectedJourney &&
+                                      isModuleIntroSectionNavigationLocked(
+                                        currentFormationViewerSlide.moduleIndex,
+                                        si,
+                                        selectedJourney,
+                                        introStructured,
+                                        introRow
                                       );
-                                    })}
-                                  </div>
-                                </>
-                              ) : (
-                                <p className="text-sm text-slate-300">Pas de description pour ce module.</p>
-                              )}
-                            </div>
-                          );
-                        })()
-                      ) : currentFormationViewerSlide.kind === 'section' ? (
-                        (() => {
-                          const cfs = currentFormationViewerSlide;
-                          const moduleTheme =
-                            moduleColorStyles[cfs.moduleIndex % moduleColorStyles.length];
-                          const sectionMdComponents: Components = {
-                            p: ({ children }) => (
-                              <p className="mb-3 text-[15px] leading-7 text-slate-200 last:mb-0">{children}</p>
-                            ),
-                            ul: ({ children }) => (
-                              <ul
-                                className="mb-3 space-y-2 rounded-xl border p-3 last:mb-0"
-                                style={{ borderColor: moduleTheme.border, background: moduleTheme.softBg }}
-                              >
-                                {children}
-                              </ul>
-                            ),
-                            li: ({ children }) => (
-                              <li className="flex items-start gap-2 text-[14px] leading-6 text-slate-200">
-                                <span
-                                  className="mt-2 inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-                                  style={{ background: moduleTheme.chipBorder }}
-                                />
-                                <span className="flex-1">{children}</span>
-                              </li>
-                            ),
-                            strong: ({ children }) => (
-                              <strong className="font-semibold text-white">{children}</strong>
-                            ),
-                            h1: ({ children }) => (
-                              <h4 className="mb-2 mt-4 text-xl font-bold text-white first:mt-0">{children}</h4>
-                            ),
-                            h2: ({ children }) => (
-                              <h5 className="mb-2 mt-4 text-lg font-bold text-white first:mt-0">{children}</h5>
-                            ),
-                            h3: ({ children }) => (
-                              <h6 className="mb-2 mt-4 text-base font-bold text-white first:mt-0">{children}</h6>
-                            ),
-                            table: ({ children }) => (
-                              <div
-                                className="my-3 overflow-x-auto rounded-xl border"
-                                style={{ borderColor: moduleTheme.border, background: viewerThemeTokens.cardBg }}
-                              >
-                                <table className="min-w-full border-collapse text-sm">{children}</table>
-                              </div>
-                            ),
-                            thead: ({ children }) => (
-                              <thead style={{ background: moduleTheme.softBg }}>{children}</thead>
-                            ),
-                            tbody: ({ children }) => <tbody>{children}</tbody>,
-                            tr: ({ children }) => (
-                              <tr className="align-top even:bg-white/5">{children}</tr>
-                            ),
-                            th: ({ children }) => (
-                              <th
-                                className="border-b px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-white"
-                                style={{ borderColor: moduleTheme.border }}
-                              >
-                                {children}
-                              </th>
-                            ),
-                            td: ({ children }) => (
-                              <td
-                                className="border-b px-3 py-2 text-[13px] leading-6 text-slate-200"
-                                style={{ borderColor: moduleTheme.border }}
-                              >
-                                {children}
-                              </td>
-                            ),
-                          };
-                          return (
+                                    return (
+                                      <button
+                                        key={`module-intro-sec-${currentFormationViewerSlide.moduleIndex}-${si}`}
+                                        type="button"
+                                        disabled={secLocked}
+                                        onClick={() =>
+                                          jumpToFormationSlide(`m${currentFormationViewerSlide.moduleIndex}-s${si}`)
+                                        }
+                                        className={`w-full rounded-2xl border p-3 text-left transition-all duration-300 ${secLocked
+                                            ? 'cursor-not-allowed opacity-45 saturate-0'
+                                            : 'hover:-translate-y-0.5'
+                                          }`}
+                                        style={{
+                                          borderColor: moduleTheme.border,
+                                          background: viewerThemeTokens.cardBg,
+                                          boxShadow: moduleTheme.glow,
+                                        }}
+                                      >
+                                        <div className="flex items-start gap-2">
+                                          <span
+                                            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold text-white ring-1"
+                                            style={{
+                                              background: moduleTheme.chipBg,
+                                              borderColor: moduleTheme.chipBorder,
+                                            }}
+                                          >
+                                            {si + 1}
+                                          </span>
+                                          <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-semibold text-white">{sectionTitle}</p>
+                                            {preview ? (
+                                              <p className="mt-1 text-xs leading-relaxed text-slate-300">
+                                                {preview}
+                                                {rawContent.length > 170 ? '…' : ''}
+                                              </p>
+                                            ) : (
+                                              <p className="mt-1 text-xs text-slate-400">
+                                                Aucun contenu texte pour cette section.
+                                              </p>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </>
+                            ) : (
+                              <p className="text-sm text-slate-300">Pas de description pour ce module.</p>
+                            )}
+                          </div>
+                        );
+                      })()
+                    ) : currentFormationViewerSlide.kind === 'section' ? (
+                      (() => {
+                        const cfs = currentFormationViewerSlide;
+                        const moduleTheme =
+                          moduleColorStyles[cfs.moduleIndex % moduleColorStyles.length];
+                        const sectionMdComponents: Components = {
+                          p: ({ children }) => (
+                            <p className="mb-3 text-[15px] leading-7 text-slate-200 last:mb-0">{children}</p>
+                          ),
+                          ul: ({ children }) => (
+                            <ul
+                              className="mb-3 space-y-2 rounded-xl border p-3 last:mb-0"
+                              style={{ borderColor: moduleTheme.border, background: moduleTheme.softBg }}
+                            >
+                              {children}
+                            </ul>
+                          ),
+                          li: ({ children }) => (
+                            <li className="flex items-start gap-2 text-[14px] leading-6 text-slate-200">
+                              <span
+                                className="mt-2 inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                                style={{ background: moduleTheme.chipBorder }}
+                              />
+                              <span className="flex-1">{children}</span>
+                            </li>
+                          ),
+                          strong: ({ children }) => (
+                            <strong className="font-semibold text-white">{children}</strong>
+                          ),
+                          h1: ({ children }) => (
+                            <h4 className="mb-2 mt-4 text-xl font-bold text-white first:mt-0">{children}</h4>
+                          ),
+                          h2: ({ children }) => (
+                            <h5 className="mb-2 mt-4 text-lg font-bold text-white first:mt-0">{children}</h5>
+                          ),
+                          h3: ({ children }) => (
+                            <h6 className="mb-2 mt-4 text-base font-bold text-white first:mt-0">{children}</h6>
+                          ),
+                          table: ({ children }) => (
                             <div
-                              className="rounded-3xl border bg-[#0b1025]/90 p-5 sm:p-7"
+                              className="my-3 overflow-x-auto rounded-xl border"
+                              style={{ borderColor: moduleTheme.border, background: viewerThemeTokens.cardBg }}
+                            >
+                              <table className="min-w-full border-collapse text-sm">{children}</table>
+                            </div>
+                          ),
+                          thead: ({ children }) => (
+                            <thead style={{ background: moduleTheme.softBg }}>{children}</thead>
+                          ),
+                          tbody: ({ children }) => <tbody>{children}</tbody>,
+                          tr: ({ children }) => (
+                            <tr className="align-top even:bg-white/5">{children}</tr>
+                          ),
+                          th: ({ children }) => (
+                            <th
+                              className="border-b px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-white"
+                              style={{ borderColor: moduleTheme.border }}
+                            >
+                              {children}
+                            </th>
+                          ),
+                          td: ({ children }) => (
+                            <td
+                              className="border-b px-3 py-2 text-[13px] leading-6 text-slate-200"
+                              style={{ borderColor: moduleTheme.border }}
+                            >
+                              {children}
+                            </td>
+                          ),
+                        };
+                        return (
+                          <div
+                            className="rounded-3xl border bg-[#0b1025]/90 p-5 sm:p-7"
+                            style={{
+                              borderColor: moduleTheme.border,
+                              boxShadow: moduleTheme.glow,
+                            }}
+                          >
+                            <p
+                              className="mb-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold text-white"
                               style={{
-                                borderColor: moduleTheme.border,
-                                boxShadow: moduleTheme.glow,
+                                borderColor: moduleTheme.chipBorder,
+                                background: moduleTheme.chipBg,
                               }}
                             >
-                              <p
-                                className="mb-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold text-white"
+                              {cfs.modTitle}
+                            </p>
+                            <h3 className="mb-3 text-lg font-bold text-white sm:text-xl">
+                              {String(cfs.section?.title || 'Section')}
+                            </h3>
+                            {String(cfs.section?.content || '').trim() ? (
+                              <div
+                                className="rounded-2xl border p-4"
                                 style={{
-                                  borderColor: moduleTheme.chipBorder,
-                                  background: moduleTheme.chipBg,
+                                  borderColor: moduleTheme.border,
+                                  background: viewerThemeTokens.cardBg,
+                                  boxShadow: moduleTheme.glow,
                                 }}
                               >
-                                {cfs.modTitle}
-                              </p>
-                              <h3 className="mb-3 text-lg font-bold text-white sm:text-xl">
-                                {String(cfs.section?.title || 'Section')}
-                              </h3>
-                              {String(cfs.section?.content || '').trim() ? (
-                                <div
-                                  className="rounded-2xl border p-4"
-                                  style={{
-                                    borderColor: moduleTheme.border,
-                                    background: viewerThemeTokens.cardBg,
-                                    boxShadow: moduleTheme.glow,
-                                  }}
+                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={sectionMdComponents}>
+                                  {String(cfs.section.content)}
+                                </ReactMarkdown>
+                              </div>
+                            ) : (
+                              <p className="text-sm text-slate-300">Contenu vide.</p>
+                            )}
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      (() => {
+                        const slide = currentFormationViewerSlide;
+                        const totalQuestions = slide.questions.length;
+                        const page = Math.min(
+                          Math.max(formationViewerQuizPage[slide.key] ?? 0, 0),
+                          Math.max(0, totalQuestions - 1)
+                        );
+                        const currentQuestion = slide.questions[page];
+                        const q = currentQuestion?.question;
+                        const opts = Array.isArray(q?.options) ? q.options : [];
+                        const qKey = `${slide.key}-q${page}`;
+                        const qState = formationViewerQuizState[qKey] || {
+                          selected: null as number | null,
+                          revealed: false,
+                          locked: false,
+                        };
+                        const modules = extractModules(selectedJourney || ({} as JourneyRow));
+                        const mod = modules[slide.moduleIndex];
+                        const moduleId =
+                          normalizeMongoId((mod as any)?._id) ||
+                          normalizeMongoId((mod as any)?.id) ||
+                          String(slide.moduleIndex);
+                        const journeyProgress = selectedJourneyId ? progressByJourney[selectedJourneyId] : undefined;
+                        const moduleProgressAny =
+                          moduleId && journeyProgress?.modules && typeof journeyProgress.modules === 'object'
+                            ? (journeyProgress.modules as Record<string, any>)[moduleId]
+                            : undefined;
+                        const quizProgressRows = Array.isArray(moduleProgressAny?.quizProgress)
+                          ? moduleProgressAny.quizProgress
+                          : [];
+                        const activeQuizKeys = new Set(
+                          (Array.isArray(slide.questions) ? slide.questions : [])
+                            .map((qq: any) => String(qq?.quizKey || '').trim())
+                            .filter(Boolean)
+                        );
+                        const backendAttempts = quizProgressRows.reduce((acc: number, row: any) => {
+                          if (!activeQuizKeys.has(String(row?.quizKey || '').trim())) return acc;
+                          return Math.max(acc, Number(row?.attempts || 0));
+                        }, 0);
+                        const maxAttemptsFromApi = quizProgressRows.reduce((acc: number, row: any) => {
+                          if (!activeQuizKeys.has(String(row?.quizKey || '').trim())) return acc;
+                          return Math.max(acc, Number(row?.maxAttempts || 0));
+                        }, 0);
+                        const quizMaxCap = Math.max(
+                          1,
+                          maxAttemptsFromApi || maxQuizAttemptsForFormationSlide(slide)
+                        );
+                        const lockedUntilTs = quizProgressRows.reduce((acc: number, row: any) => {
+                          if (!activeQuizKeys.has(String(row?.quizKey || '').trim())) return acc;
+                          const ts = Date.parse(String(row?.lockedUntil || ''));
+                          return Number.isFinite(ts) ? Math.max(acc, ts) : acc;
+                        }, 0);
+                        const moduleLockRemainingMs = Math.max(0, lockedUntilTs - Date.now());
+                        const moduleLockedByCooldown = moduleLockRemainingMs > 0;
+                        const quizAttemptsBlocked =
+                          !isCurrentQuizPassed &&
+                          (moduleLockedByCooldown || backendAttempts >= quizMaxCap);
+                        const moduleStrikes = Math.min(
+                          quizMaxCap,
+                          Math.max(quizSlideWrongStrikes[slide.key] ?? 0, backendAttempts)
+                        );
+                        const countdown =
+                          qState.locked || qState.revealed
+                            ? 0
+                            : Math.max(0, quizQuestionCountdownSec[qKey] ?? 40);
+                        const correctIdx =
+                          typeof currentQuestion?.correctAnswer === 'number'
+                            ? currentQuestion.correctAnswer
+                            : 0;
+                        const isCorrect =
+                          qState.revealed &&
+                          !qState.timedOut &&
+                          qState.selected !== null &&
+                          qState.selected === correctIdx;
+                        const isWrong =
+                          qState.revealed &&
+                          !qState.timedOut &&
+                          qState.selected !== null &&
+                          qState.selected !== correctIdx;
+                        return (
+                          <div className="rounded-3xl border border-harx-500/30 bg-[#0b1025]/90 p-5 shadow-[0_20px_70px_-25px_rgba(236,72,153,0.4)] sm:p-7">
+                            <p className="mb-2 inline-flex rounded-full border border-harx-400/40 bg-harx-500/20 px-2.5 py-1 text-xs font-semibold text-harx-100">
+                              {currentQuestion?.quizTitle || `Quiz module ${slide.moduleIndex + 1}`}
+                            </p>
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                              <span className="rounded-full border border-harx-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-harx-100">
+                                Question {page + 1} / {totalQuestions}
+                              </span>
+                              <span className="rounded-full border border-harx-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-harx-100">
+                                Essais (soumissions): {moduleStrikes} / {quizMaxCap}
+                              </span>
+                              <span className="rounded-full border border-amber-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-amber-100">
+                                {moduleLockedByCooldown
+                                  ? `Cooldown ${Math.ceil(moduleLockRemainingMs / 60000)}m`
+                                  : qState.locked
+                                    ? '—'
+                                    : `${countdown}s`}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => restartQuizSlide(slide)}
+                                  disabled={quizAttemptsBlocked}
+                                  className="rounded-lg border border-amber-400/40 bg-[#12172f] px-2.5 py-1 font-semibold text-amber-100 transition hover:border-amber-300/70"
                                 >
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={sectionMdComponents}>
-                                    {String(cfs.section.content)}
-                                  </ReactMarkdown>
-                                </div>
-                              ) : (
-                                <p className="text-sm text-slate-300">Contenu vide.</p>
-                              )}
+                                  Refaire quiz
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={page <= 0}
+                                  onClick={() =>
+                                    setFormationViewerQuizPage((prev) => ({
+                                      ...prev,
+                                      [slide.key]: Math.max(0, (prev[slide.key] ?? 0) - 1),
+                                    }))
+                                  }
+                                  className="rounded-lg border border-harx-500/30 bg-[#12172f] px-2.5 py-1 font-semibold text-slate-200 transition hover:border-harx-400/60 disabled:opacity-40"
+                                >
+                                  Précédente
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={
+                                    page >= totalQuestions - 1 ||
+                                    !formationViewerQuizState[`${slide.key}-q${page}`]?.locked
+                                  }
+                                  onClick={() =>
+                                    setFormationViewerQuizPage((prev) => ({
+                                      ...prev,
+                                      [slide.key]: Math.min(
+                                        totalQuestions - 1,
+                                        (prev[slide.key] ?? 0) + 1
+                                      ),
+                                    }))
+                                  }
+                                  className="rounded-lg border border-harx-400/40 bg-gradient-to-r from-harx-600/85 to-harx-alt-500/85 px-2.5 py-1 font-semibold text-white transition hover:brightness-110 disabled:opacity-40"
+                                >
+                                  Suivante
+                                </button>
+                              </div>
                             </div>
-                          );
-                        })()
-                      ) : (
-                        (() => {
-                          const slide = currentFormationViewerSlide;
-                          const totalQuestions = slide.questions.length;
-                          const page = Math.min(
-                            Math.max(formationViewerQuizPage[slide.key] ?? 0, 0),
-                            Math.max(0, totalQuestions - 1)
-                          );
-                          const currentQuestion = slide.questions[page];
-                          const q = currentQuestion?.question;
-                          const opts = Array.isArray(q?.options) ? q.options : [];
-                          const qKey = `${slide.key}-q${page}`;
-                          const qState = formationViewerQuizState[qKey] || {
-                            selected: null as number | null,
-                            revealed: false,
-                            locked: false,
-                          };
-                          const modules = extractModules(selectedJourney || ({} as JourneyRow));
-                          const mod = modules[slide.moduleIndex];
-                          const moduleId =
-                            normalizeMongoId((mod as any)?._id) ||
-                            normalizeMongoId((mod as any)?.id) ||
-                            String(slide.moduleIndex);
-                          const journeyProgress = selectedJourneyId ? progressByJourney[selectedJourneyId] : undefined;
-                          const moduleProgressAny =
-                            moduleId && journeyProgress?.modules && typeof journeyProgress.modules === 'object'
-                              ? (journeyProgress.modules as Record<string, any>)[moduleId]
-                              : undefined;
-                          const quizProgressRows = Array.isArray(moduleProgressAny?.quizProgress)
-                            ? moduleProgressAny.quizProgress
-                            : [];
-                          const activeQuizKeys = new Set(
-                            (Array.isArray(slide.questions) ? slide.questions : [])
-                              .map((qq: any) => String(qq?.quizKey || '').trim())
-                              .filter(Boolean)
-                          );
-                          const backendAttempts = quizProgressRows.reduce((acc: number, row: any) => {
-                            if (!activeQuizKeys.has(String(row?.quizKey || '').trim())) return acc;
-                            return Math.max(acc, Number(row?.attempts || 0));
-                          }, 0);
-                          const maxAttemptsFromApi = quizProgressRows.reduce((acc: number, row: any) => {
-                            if (!activeQuizKeys.has(String(row?.quizKey || '').trim())) return acc;
-                            return Math.max(acc, Number(row?.maxAttempts || 0));
-                          }, 0);
-                          const quizMaxCap = Math.max(
-                            1,
-                            maxAttemptsFromApi || maxQuizAttemptsForFormationSlide(slide)
-                          );
-                          const lockedUntilTs = quizProgressRows.reduce((acc: number, row: any) => {
-                            if (!activeQuizKeys.has(String(row?.quizKey || '').trim())) return acc;
-                            const ts = Date.parse(String(row?.lockedUntil || ''));
-                            return Number.isFinite(ts) ? Math.max(acc, ts) : acc;
-                          }, 0);
-                          const moduleLockRemainingMs = Math.max(0, lockedUntilTs - Date.now());
-                          const moduleLockedByCooldown = moduleLockRemainingMs > 0;
-                          const quizAttemptsBlocked =
-                            !isCurrentQuizPassed &&
-                            (moduleLockedByCooldown || backendAttempts >= quizMaxCap);
-                          const moduleStrikes = Math.min(
-                            quizMaxCap,
-                            Math.max(quizSlideWrongStrikes[slide.key] ?? 0, backendAttempts)
-                          );
-                          const countdown =
-                            qState.locked || qState.revealed
-                              ? 0
-                              : Math.max(0, quizQuestionCountdownSec[qKey] ?? 40);
-                          const correctIdx =
-                            typeof currentQuestion?.correctAnswer === 'number'
-                              ? currentQuestion.correctAnswer
-                              : 0;
-                          const isCorrect =
-                            qState.revealed &&
-                            !qState.timedOut &&
-                            qState.selected !== null &&
-                            qState.selected === correctIdx;
-                          const isWrong =
-                            qState.revealed &&
-                            !qState.timedOut &&
-                            qState.selected !== null &&
-                            qState.selected !== correctIdx;
-                          return (
-                            <div className="rounded-3xl border border-harx-500/30 bg-[#0b1025]/90 p-5 shadow-[0_20px_70px_-25px_rgba(236,72,153,0.4)] sm:p-7">
-                              <p className="mb-2 inline-flex rounded-full border border-harx-400/40 bg-harx-500/20 px-2.5 py-1 text-xs font-semibold text-harx-100">
-                                {currentQuestion?.quizTitle || `Quiz module ${slide.moduleIndex + 1}`}
-                              </p>
-                              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-                                <span className="rounded-full border border-harx-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-harx-100">
-                                  Question {page + 1} / {totalQuestions}
-                                </span>
-                                <span className="rounded-full border border-harx-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-harx-100">
-                                  Essais (soumissions): {moduleStrikes} / {quizMaxCap}
-                                </span>
-                                <span className="rounded-full border border-amber-400/35 bg-[#12172f] px-2.5 py-1 font-semibold text-amber-100">
-                                  {moduleLockedByCooldown
-                                    ? `Cooldown ${Math.ceil(moduleLockRemainingMs / 60000)}m`
-                                    : qState.locked
-                                      ? '—'
-                                      : `${countdown}s`}
-                                </span>
-                                <div className="flex items-center gap-1.5">
+                            <p className="mb-4 text-base font-semibold text-white sm:text-lg">
+                              {String(q?.question || '')}
+                            </p>
+                            <div className="space-y-2" role="radiogroup" aria-label="Réponses">
+                              {opts.map((op: string, oi: number) => {
+                                const selected = qState.selected === oi;
+                                const showAsCorrect = qState.revealed && oi === correctIdx;
+                                const wrongSelected =
+                                  qState.revealed &&
+                                  !qState.timedOut &&
+                                  qState.selected === oi &&
+                                  oi !== correctIdx;
+                                return (
                                   <button
-                                    type="button"
-                                    onClick={() => restartQuizSlide(slide)}
-                                    disabled={quizAttemptsBlocked}
-                                    className="rounded-lg border border-amber-400/40 bg-[#12172f] px-2.5 py-1 font-semibold text-amber-100 transition hover:border-amber-300/70"
-                                  >
-                                    Refaire quiz
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={page <= 0}
-                                    onClick={() =>
-                                      setFormationViewerQuizPage((prev) => ({
-                                        ...prev,
-                                        [slide.key]: Math.max(0, (prev[slide.key] ?? 0) - 1),
-                                      }))
-                                    }
-                                    className="rounded-lg border border-harx-500/30 bg-[#12172f] px-2.5 py-1 font-semibold text-slate-200 transition hover:border-harx-400/60 disabled:opacity-40"
-                                  >
-                                    Précédente
-                                  </button>
-                                  <button
+                                    key={oi}
                                     type="button"
                                     disabled={
-                                      page >= totalQuestions - 1 ||
-                                      !formationViewerQuizState[`${slide.key}-q${page}`]?.locked
+                                      qState.revealed || qState.locked || moduleLockedByCooldown || quizAttemptsBlocked
                                     }
-                                    onClick={() =>
-                                      setFormationViewerQuizPage((prev) => ({
-                                        ...prev,
-                                        [slide.key]: Math.min(
-                                          totalQuestions - 1,
-                                          (prev[slide.key] ?? 0) + 1
-                                        ),
-                                      }))
-                                    }
-                                    className="rounded-lg border border-harx-400/40 bg-gradient-to-r from-harx-600/85 to-harx-alt-500/85 px-2.5 py-1 font-semibold text-white transition hover:brightness-110 disabled:opacity-40"
-                                  >
-                                    Suivante
-                                  </button>
-                                </div>
-                              </div>
-                              <p className="mb-4 text-base font-semibold text-white sm:text-lg">
-                                {String(q?.question || '')}
-                              </p>
-                              <div className="space-y-2" role="radiogroup" aria-label="Réponses">
-                                {opts.map((op: string, oi: number) => {
-                                  const selected = qState.selected === oi;
-                                  const showAsCorrect = qState.revealed && oi === correctIdx;
-                                  const wrongSelected =
-                                    qState.revealed &&
-                                    !qState.timedOut &&
-                                    qState.selected === oi &&
-                                    oi !== correctIdx;
-                                  return (
-                                    <button
-                                      key={oi}
-                                      type="button"
-                                      disabled={
-                                        qState.revealed || qState.locked || moduleLockedByCooldown || quizAttemptsBlocked
-                                      }
-                                      aria-disabled={moduleLockedByCooldown || quizAttemptsBlocked}
-                                      onClick={() => {
-                                        if (
-                                          qState.revealed ||
-                                          qState.locked ||
-                                          moduleLockedByCooldown ||
-                                          quizAttemptsBlocked
-                                        )
-                                          return;
-                                        const wrong = oi !== correctIdx;
-                                        if (wrong) {
-                                          setQuizSlideWrongStrikes((prev) => ({
-                                            ...prev,
-                                            [slide.key]: Math.min(quizMaxCap, (prev[slide.key] ?? 0) + 1),
-                                          }));
-                                        }
-                                        setFormationViewerQuizState((prev) => ({
+                                    aria-disabled={moduleLockedByCooldown || quizAttemptsBlocked}
+                                    onClick={() => {
+                                      if (
+                                        qState.revealed ||
+                                        qState.locked ||
+                                        moduleLockedByCooldown ||
+                                        quizAttemptsBlocked
+                                      )
+                                        return;
+                                      const wrong = oi !== correctIdx;
+                                      if (wrong) {
+                                        setQuizSlideWrongStrikes((prev) => ({
                                           ...prev,
-                                          [qKey]: {
-                                            selected: oi,
-                                            revealed: true,
-                                            locked: true,
-                                          },
+                                          [slide.key]: Math.min(quizMaxCap, (prev[slide.key] ?? 0) + 1),
                                         }));
-                                        void syncQuizDuration(slide.moduleIndex, {
-                                          quizKey: currentQuestion.quizKey,
-                                          quizId: currentQuestion.quizId,
+                                      }
+                                      setFormationViewerQuizState((prev) => ({
+                                        ...prev,
+                                        [qKey]: {
+                                          selected: oi,
+                                          revealed: true,
+                                          locked: true,
+                                        },
+                                      }));
+                                      void syncQuizDuration(slide.moduleIndex, {
+                                        quizKey: currentQuestion.quizKey,
+                                        quizId: currentQuestion.quizId,
+                                      });
+                                      const delay = wrong ? 850 : 450;
+                                      window.setTimeout(() => {
+                                        setFormationViewerQuizPage((prev) => {
+                                          const cur = Math.min(
+                                            Math.max(0, prev[slide.key] ?? 0),
+                                            Math.max(0, totalQuestions - 1)
+                                          );
+                                          if (cur < totalQuestions - 1) {
+                                            return { ...prev, [slide.key]: cur + 1 };
+                                          }
+                                          return prev;
                                         });
-                                        const delay = wrong ? 850 : 450;
-                                        window.setTimeout(() => {
-                                          setFormationViewerQuizPage((prev) => {
-                                            const cur = Math.min(
-                                              Math.max(0, prev[slide.key] ?? 0),
-                                              Math.max(0, totalQuestions - 1)
-                                            );
-                                            if (cur < totalQuestions - 1) {
-                                              return { ...prev, [slide.key]: cur + 1 };
-                                            }
-                                            return prev;
-                                          });
-                                        }, delay);
-                                      }}
-                                      className={`flex w-full rounded-xl border px-3 py-2.5 text-left text-sm transition ${
-                                        showAsCorrect
-                                          ? 'border-emerald-400 bg-emerald-500/20 font-semibold text-emerald-100'
-                                          : wrongSelected
-                                            ? 'border-rose-400 bg-rose-500/20 text-rose-100'
-                                            : selected && !qState.revealed
-                                              ? 'border-harx-400 bg-harx-500/25 text-white'
-                                              : 'border-harx-500/20 bg-[#12172f] text-slate-100 hover:border-harx-400/40'
+                                      }, delay);
+                                    }}
+                                    className={`flex w-full rounded-xl border px-3 py-2.5 text-left text-sm transition ${showAsCorrect
+                                        ? 'border-emerald-400 bg-emerald-500/20 font-semibold text-emerald-100'
+                                        : wrongSelected
+                                          ? 'border-rose-400 bg-rose-500/20 text-rose-100'
+                                          : selected && !qState.revealed
+                                            ? 'border-harx-400 bg-harx-500/25 text-white'
+                                            : 'border-harx-500/20 bg-[#12172f] text-slate-100 hover:border-harx-400/40'
                                       }`}
-                                    >
-                                      <span className="mr-2 font-mono text-xs text-slate-400">{oi + 1}.</span>
-                                      <span className="flex-1">{String(op)}</span>
-                                      {showAsCorrect ? (
-                                        <CheckCircle className="ml-2 h-4 w-4 shrink-0 text-emerald-600" />
-                                      ) : null}
-                                      {wrongSelected ? <X className="ml-2 h-4 w-4 shrink-0 text-rose-600" /> : null}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                              {qState.revealed ? (
-                                <div className="mt-4 rounded-xl border border-harx-500/20 bg-[#12172f] px-3 py-3">
-                                  <p
-                                    className={`text-sm font-semibold ${
-                                      qState.timedOut
-                                        ? 'text-amber-200'
-                                        : isCorrect
-                                          ? 'text-emerald-300'
-                                          : isWrong
-                                            ? 'text-rose-300'
-                                            : 'text-slate-200'
-                                    }`}
                                   >
-                                    {qState.timedOut
-                                      ? 'Temps écoulé (40 s). Réponse enregistrée comme incorrecte.'
-                                      : isCorrect
-                                        ? 'Bonne réponse !'
-                                        : isWrong
-                                          ? 'Ce n’était pas la bonne réponse.'
-                                          : ''}
-                                  </p>
-                                  {String(q?.explanation || '').trim() ? (
-                                    <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                                      {String(q.explanation)}
-                                    </p>
-                                  ) : null}
-                                </div>
-                              ) : null}
+                                    <span className="mr-2 font-mono text-xs text-slate-400">{oi + 1}.</span>
+                                    <span className="flex-1">{String(op)}</span>
+                                    {showAsCorrect ? (
+                                      <CheckCircle className="ml-2 h-4 w-4 shrink-0 text-emerald-600" />
+                                    ) : null}
+                                    {wrongSelected ? <X className="ml-2 h-4 w-4 shrink-0 text-rose-600" /> : null}
+                                  </button>
+                                );
+                              })}
                             </div>
-                          );
-                        })()
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-              {formationViewerSlides.length > 0 && (
+                            {qState.revealed ? (
+                              <div className="mt-4 rounded-xl border border-harx-500/20 bg-[#12172f] px-3 py-3">
+                                <p
+                                  className={`text-sm font-semibold ${qState.timedOut
+                                      ? 'text-amber-200'
+                                      : isCorrect
+                                        ? 'text-emerald-300'
+                                        : isWrong
+                                          ? 'text-rose-300'
+                                          : 'text-slate-200'
+                                    }`}
+                                >
+                                  {qState.timedOut
+                                    ? 'Temps écoulé (40 s). Réponse enregistrée comme incorrecte.'
+                                    : isCorrect
+                                      ? 'Bonne réponse !'
+                                      : isWrong
+                                        ? 'Ce n’était pas la bonne réponse.'
+                                        : ''}
+                                </p>
+                                {String(q?.explanation || '').trim() ? (
+                                  <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                                    {String(q.explanation)}
+                                  </p>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })()
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+            {formationViewerSlides.length > 0 && (
+              <div
+                className="shrink-0 border-t px-4 py-3 sm:px-6"
+                style={{ borderColor: viewerThemeTokens.accentBorder, background: viewerThemeTokens.panelBg }}
+              >
                 <div
-                  className="shrink-0 border-t px-4 py-3 sm:px-6"
-                  style={{ borderColor: viewerThemeTokens.accentBorder, background: viewerThemeTokens.panelBg }}
+                  className="mb-3 h-2 w-full overflow-hidden rounded-full border"
+                  style={{ borderColor: viewerThemeTokens.accentBorder, background: viewerThemeTokens.cardBg }}
                 >
                   <div
-                    className="mb-3 h-2 w-full overflow-hidden rounded-full border"
+                    className="h-full rounded-full transition-[width] duration-300 ease-out"
+                    style={{
+                      background: viewerThemeTokens.accentBg,
+                      boxShadow: viewerThemeTokens.accentShadow,
+                      width: `${((formationViewerSlideIndex + 1) / formationViewerSlides.length) * 100}%`,
+                    }}
+                  />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormationViewerSlideIndex((i) => Math.max(0, i - 1))}
+                    disabled={formationViewerSlideIndex <= 0}
+                    className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold text-slate-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
+                    style={{
+                      borderColor: viewerThemeTokens.accentBorder,
+                      background: viewerThemeTokens.cardBg,
+                      boxShadow: viewerThemeTokens.accentShadow,
+                    }}
+                  >
+                    <ChevronLeft className="h-4 w-4" /> Précédent
+                  </button>
+                  <span
+                    className="rounded-full border px-3 py-1 text-xs font-medium text-white"
                     style={{ borderColor: viewerThemeTokens.accentBorder, background: viewerThemeTokens.cardBg }}
                   >
-                    <div
-                      className="h-full rounded-full transition-[width] duration-300 ease-out"
-                      style={{
-                        background: viewerThemeTokens.accentBg,
-                        boxShadow: viewerThemeTokens.accentShadow,
-                        width: `${((formationViewerSlideIndex + 1) / formationViewerSlides.length) * 100}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setFormationViewerSlideIndex((i) => Math.max(0, i - 1))}
-                      disabled={formationViewerSlideIndex <= 0}
-                      className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold text-slate-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
-                      style={{
-                        borderColor: viewerThemeTokens.accentBorder,
-                        background: viewerThemeTokens.cardBg,
-                        boxShadow: viewerThemeTokens.accentShadow,
-                      }}
-                    >
-                      <ChevronLeft className="h-4 w-4" /> Précédent
-                    </button>
-                    <span
-                      className="rounded-full border px-3 py-1 text-xs font-medium text-white"
-                      style={{ borderColor: viewerThemeTokens.accentBorder, background: viewerThemeTokens.cardBg }}
-                    >
-                      {formationViewerSlideIndex + 1} / {formationViewerSlides.length}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (
-                          atLastFormationSlideSection &&
-                          currentFormationViewerSlide?.kind === 'section'
-                        ) {
-                          void completeSectionProgressAtLeave({
-                            moduleIndex: currentFormationViewerSlide.moduleIndex,
-                            section: currentFormationViewerSlide.section,
-                          });
-                          return;
-                        }
-                        setFormationViewerSlideIndex((i) =>
-                          Math.min(formationViewerSlides.length - 1, i + 1)
-                        );
-                      }}
-                      disabled={
-                        blockFormationNextByEndPosition ||
-                        !isCurrentQuizPassed ||
-                        isNextModuleLocked
+                    {formationViewerSlideIndex + 1} / {formationViewerSlides.length}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        atLastFormationSlideSection &&
+                        currentFormationViewerSlide?.kind === 'section'
+                      ) {
+                        void completeSectionProgressAtLeave({
+                          moduleIndex: currentFormationViewerSlide.moduleIndex,
+                          section: currentFormationViewerSlide.section,
+                        });
+                        return;
                       }
-                      className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
-                      style={{
-                        borderColor: viewerThemeTokens.accentBorder,
-                        background: viewerThemeTokens.accentBg,
-                        boxShadow: viewerThemeTokens.accentShadow,
-                      }}
-                    >
-                      {atLastFormationSlideSection ? 'Terminer la section' : 'Suivant'}{' '}
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                  {currentFormationViewerSlide?.kind === 'quiz_group' && !isCurrentQuizPassed ? (
-                    <p className="mt-2 text-center text-[11px] font-semibold text-amber-300">
-                      {quizModuleTimeFrozen
-                        ? 'Nombre maximum de tentatives atteint. Le chrono « module » est en pause ; en cas de blocage temporaire, le délai restant s’affiche sur le bandeau du quiz.'
-                        : 'Répondez à toutes les questions (40 s max par question). Le bouton Suivant s’active dès une note ≥ 70 %.'}
-                    </p>
-                  ) : null}
-                  {isNextModuleLocked ? (
-                    <p className="mt-2 text-center text-[11px] font-semibold text-amber-300">
-                      Le module suivant est verrouille. Completez le module courant (sections + quiz &gt;= 70%).
-                    </p>
-                  ) : null}
+                      setFormationViewerSlideIndex((i) =>
+                        Math.min(formationViewerSlides.length - 1, i + 1)
+                      );
+                    }}
+                    disabled={
+                      blockFormationNextByEndPosition ||
+                      !isCurrentQuizPassed ||
+                      isNextModuleLocked
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+                    style={{
+                      borderColor: viewerThemeTokens.accentBorder,
+                      background: viewerThemeTokens.accentBg,
+                      boxShadow: viewerThemeTokens.accentShadow,
+                    }}
+                  >
+                    {atLastFormationSlideSection ? 'Terminer la section' : 'Suivant'}{' '}
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
                 </div>
-              )}
+                {currentFormationViewerSlide?.kind === 'quiz_group' && !isCurrentQuizPassed ? (
+                  <p className="mt-2 text-center text-[11px] font-semibold text-amber-300">
+                    {quizModuleTimeFrozen
+                      ? 'Nombre maximum de tentatives atteint. Le chrono « module » est en pause ; en cas de blocage temporaire, le délai restant s’affiche sur le bandeau du quiz.'
+                      : 'Répondez à toutes les questions (40 s max par question). Le bouton Suivant s’active dès une note ≥ 70 %.'}
+                  </p>
+                ) : null}
+                {isNextModuleLocked ? (
+                  <p className="mt-2 text-center text-[11px] font-semibold text-amber-300">
+                    Le module suivant est verrouille. Completez le module courant (sections + quiz &gt;= 70%).
+                  </p>
+                ) : null}
+              </div>
+            )}
           </div>
         </div>
       )}

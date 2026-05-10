@@ -4,13 +4,13 @@ import { useLocation } from 'react-router-dom';
 import { useAgent } from '../../contexts/AgentContext';
 import { useLead } from '../../hooks/useLead';
 import { useGigScript } from '../../hooks/useGigScript';
-import { 
-  Globe, 
-  X, 
-  ExternalLink, 
-  Copy, 
-  Check, 
-  RefreshCw, 
+import {
+  Globe,
+  X,
+  ExternalLink,
+  Copy,
+  Check,
+  RefreshCw,
   ShieldAlert,
   Search,
   Sparkles,
@@ -173,7 +173,7 @@ export function IframeWorkspace() {
 
       {/* Backdrop overlay for the left 30% of screen */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs z-[9998] animate-in fade-in duration-300"
           onClick={() => setIsOpen(false)}
         />
@@ -182,7 +182,7 @@ export function IframeWorkspace() {
       {/* Side drawer modal taking exactly 70% width on the right */}
       {isOpen && (
         <div className="fixed inset-y-0 right-0 w-[70vw] min-w-[320px] bg-slate-950 z-[9999] flex flex-col overflow-hidden border-l border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-right duration-500">
-          
+
           {/* CRM Header & Toolbar at the very top of the drawer */}
           <div className="p-4 md:p-6 border-b border-white/10 bg-slate-950/80 backdrop-blur-md flex flex-col gap-3 shrink-0">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -227,11 +227,10 @@ export function IframeWorkspace() {
                 {/* Toggle Script Display Button */}
                 <button
                   onClick={() => setShowScript(!showScript)}
-                  className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1 border shrink-0 ${
-                    showScript 
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 border-indigo-400/50 text-white shadow-lg shadow-indigo-500/20' 
+                  className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1 border shrink-0 ${showScript
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 border-indigo-400/50 text-white shadow-lg shadow-indigo-500/20'
                       : 'bg-indigo-950/40 hover:bg-indigo-900/40 border-indigo-500/30 text-indigo-300'
-                  }`}
+                    }`}
                 >
                   <Sparkles className={`w-3 h-3 ${showScript ? 'animate-pulse' : ''}`} />
                   {showScript ? 'Masquer le Script' : 'Afficher le Script'}
@@ -274,7 +273,7 @@ export function IframeWorkspace() {
 
               {/* Premium Browser-like Address Bar */}
               <div className="flex-1 flex items-center gap-2">
-                <button 
+                <button
                   onClick={handleRefresh}
                   className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg border border-white/10 transition-all shrink-0"
                   title="Actualiser l'iframe"
@@ -316,11 +315,11 @@ export function IframeWorkspace() {
 
           {/* Main Workspace Body Content */}
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-900">
-                      {/* Top Area: Script displayed with custom toggle */}
+            {/* Top Area: Script displayed with custom toggle */}
             {showScript && (
               <div className="w-full shrink-0 bg-slate-950/60 backdrop-blur-md border-b border-white/10 flex flex-col p-4 md:p-5 overflow-hidden animate-in slide-in-from-top duration-300">
                 <div className="flex flex-col gap-3.5">
-                  
+
                   {/* Script mini-header */}
                   <div className="flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
@@ -341,11 +340,10 @@ export function IframeWorkspace() {
                         <button
                           key={phaseName}
                           onClick={() => setActivePhaseIndex(idx)}
-                          className={`px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 flex flex-col items-center gap-0.5 text-center min-w-0 ${
-                            activePhaseIndex === idx 
-                              ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/20 scale-102 border border-white/10' 
+                          className={`px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 flex flex-col items-center gap-0.5 text-center min-w-0 ${activePhaseIndex === idx
+                              ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/20 scale-102 border border-white/10'
                               : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
-                          }`}
+                            }`}
                         >
                           <span className="opacity-65 text-[7px] font-extrabold shrink-0">ÉTAPE {idx + 1}</span>
                           <span className="truncate w-full font-black">{phaseName}</span>
@@ -362,7 +360,7 @@ export function IframeWorkspace() {
                         if (!currentPair) return null;
                         return (
                           <div className="flex flex-col gap-4 animate-in fade-in duration-300">
-                            
+
                             {/* Combined Stacked/Side-by-side Cards */}
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                               {/* Agent Replica Card */}
@@ -370,7 +368,7 @@ export function IframeWorkspace() {
                                 <div className="relative overflow-hidden rounded-2xl border p-4 md:p-5 pl-6 md:pl-7 flex flex-col gap-3 group transition-all duration-300 bg-gradient-to-br from-indigo-950/15 via-slate-900/90 to-slate-950/90 border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.05)]">
                                   {/* Glowing left accent bar */}
                                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500" />
-                                  
+
                                   <div className="flex gap-4 items-start">
                                     <div className="p-2.5 rounded-xl h-fit shrink-0 transition-transform duration-300 group-hover:scale-110 bg-indigo-500/20 text-indigo-300">
                                       <Bot className="w-5 h-5 animate-pulse" />
@@ -409,7 +407,7 @@ export function IframeWorkspace() {
                                 <div className="relative overflow-hidden rounded-2xl border p-4 md:p-5 pl-6 md:pl-7 flex flex-col gap-3 group transition-all duration-300 bg-gradient-to-br from-emerald-950/15 via-slate-900/90 to-slate-950/90 border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.05)]">
                                   {/* Glowing left accent bar */}
                                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-400 via-teal-500 to-emerald-600" />
-                                  
+
                                   <div className="flex gap-4 items-start">
                                     <div className="p-2.5 rounded-xl h-fit shrink-0 transition-transform duration-300 group-hover:scale-110 bg-emerald-500/20 text-emerald-300">
                                       <User className="w-5 h-5" />
@@ -454,7 +452,7 @@ export function IframeWorkspace() {
                                 >
                                   ← Précédent
                                 </button>
-                                
+
                                 <span className="text-[10px] text-slate-400 font-extrabold tracking-widest uppercase px-2">
                                   CONVERSATION ÉTAPE ${activeReplicaIndex + 1} / ${replicas.length}
                                 </span>
