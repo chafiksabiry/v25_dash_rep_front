@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing, GraduationCap, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRepTrainingNav } from '../contexts/RepTrainingNavContext';
 import { useTranslation } from 'react-i18next';
@@ -57,6 +57,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
 
   const [isWorkspaceOpen, setIsWorkspaceOpen] = React.useState(location.pathname.includes('/workspace'));
   const [isTrainingOpen, setIsTrainingOpen] = React.useState(location.pathname.includes('/training'));
+  const [showWarningModal, setShowWarningModal] = React.useState(false);
   const [openTrainingModuleIndexes, setOpenTrainingModuleIndexes] = React.useState<number[]>([]);
   const {
     trainingModules,
@@ -331,6 +332,14 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                           to={sub.path}
                           onClick={(e) => {
                             e.preventDefault();
+                            if (
+                              sub.path.includes('tab=copilot') &&
+                              location.pathname.includes('/training') &&
+                              (sessionStorage.getItem('training_gig_filter') === '__all__' || !sessionStorage.getItem('training_gig_filter'))
+                            ) {
+                              setShowWarningModal(true);
+                              return;
+                            }
                             navigate(sub.path);
                           }}
                           className={`flex w-full items-center rounded-xl transition-all duration-300 group relative space-x-3 py-2.5 px-4 ${
@@ -399,6 +408,51 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
           {!isCollapsed && <span>{t('sidebar.logout')}</span>}
         </button>
       </div>
+
+      {/* Warning Modal */}
+      {showWarningModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-[2rem] p-8 shadow-2xl shadow-black/80 overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Glowing background light */}
+            <div className="absolute -top-12 -left-12 w-40 h-40 bg-amber-500/10 blur-[60px] rounded-full pointer-events-none"></div>
+            <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-orange-500/10 blur-[60px] rounded-full pointer-events-none"></div>
+
+            {/* Header with Warning icon */}
+            <div className="flex flex-col items-center text-center mb-6 relative">
+              <div className="p-4 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-2xl mb-4 shadow-inner shadow-amber-500/5 animate-bounce">
+                <AlertTriangle className="w-8 h-8" />
+              </div>
+              <h3 className="text-lg font-black text-white tracking-wide uppercase">
+                Project Selection Required
+              </h3>
+              <p className="text-xs text-amber-400 font-bold uppercase tracking-wider mt-1">
+                Sélection de projet requise
+              </p>
+            </div>
+
+            {/* Detailed Instructions */}
+            <div className="space-y-4 text-center mb-8 relative px-4">
+              <p className="text-sm text-slate-300 leading-relaxed">
+                To access the <strong>COCKPIT</strong>, you must select a specific gig from the dropdown on the Training page instead of <em>"All enrolled gigs"</em>.
+              </p>
+              <div className="h-px bg-white/5 my-2"></div>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Pour accéder au <strong>COCKPIT</strong>, vous devez sélectionner un projet spécifique dans la liste déroulante de la page de Formation au lieu de <em>"Tous les projets"</em>.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/5 relative">
+              <button
+                onClick={() => setShowWarningModal(false)}
+                className="w-full py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold uppercase tracking-widest text-[10px] rounded-2xl shadow-lg shadow-amber-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+              >
+                Understood / Compris
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

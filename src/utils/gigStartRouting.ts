@@ -128,8 +128,8 @@ export async function resolveGigStartRoute(gigId: string): Promise<StartRouteDec
     const start = parseHHMMToMinutes(r?.startTime);
     const end = parseHHMMToMinutes(r?.endTime);
     if (start == null || end == null || end <= start) return false;
-    // Allow starting up to 60 minutes early and finishing up to 30 minutes late
-    return nowMinutes >= (start - 60) && nowMinutes < (end + 30);
+    // Check if current time matches the active slot strictly
+    return nowMinutes >= start && nowMinutes < end;
   });
 
   if (!hasActiveReservation) {

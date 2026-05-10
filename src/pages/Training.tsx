@@ -917,6 +917,10 @@ export function Training() {
       : enrolledGigs.find((g) => g.gigId === gigFilter)?.title || null;
 
   useEffect(() => {
+    sessionStorage.setItem('training_gig_filter', gigFilter);
+  }, [gigFilter]);
+
+  useEffect(() => {
     if (routeGigApplied) return;
     if (!routeGigId) {
       setRouteGigApplied(true);
