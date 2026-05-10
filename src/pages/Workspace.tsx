@@ -72,7 +72,8 @@ function isTodayReservation(rawDate: unknown, now: Date): boolean {
   if (!v) return false;
   if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
     const todayIso = now.toISOString().slice(0, 10);
-    return v === todayIso;
+    const localIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    return v === todayIso || v === localIso;
   }
   return v.toLowerCase() === weekdayEnglish(now).toLowerCase();
 }
@@ -277,7 +278,8 @@ export function WorkspaceContent() {
           const start = parseTimeToMinutes(r?.startTime);
           const end = parseTimeToMinutes(r?.endTime);
           if (start == null || end == null || end <= start) return false;
-          return nowMinutes >= start && nowMinutes < end;
+          // Allow starting up to 60 minutes early and finishing up to 30 minutes late
+          return nowMinutes >= (start - 60) && nowMinutes < (end + 30);
         });
 
         const hasActiveReservationNow = !!activeReservation;

@@ -232,11 +232,13 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                                 }
                             })();
 
-                            return (
+                             return (
                                 <div
                                     key={slot._id}
                                     className={`p-5 transition-all ${isReserved
-                                        ? 'bg-harx-50/60'
+                                        ? isSlotPast
+                                            ? 'bg-emerald-50/15 border-l-4 border-emerald-500'
+                                            : 'bg-harx-50/60'
                                         : isAvailable && !isSlotPast
                                             ? 'bg-white'
                                             : 'bg-gray-50'
@@ -262,27 +264,37 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                                                     </div>
                                                 </div>
                                                 {isReserved && (
-                                                    <div className="flex items-center gap-2 text-sm text-harx-700">
+                                                    <div className={`flex items-center gap-2 text-sm ${
+                                                        isSlotPast ? 'text-emerald-700' : 'text-harx-700'
+                                                    }`}>
                                                         <CheckCircle className="w-4 h-4" />
-                                                        <span className="font-medium">You have reserved this slot</span>
+                                                        <span className="font-medium">
+                                                            {isSlotPast ? 'You reserved and completed this slot' : 'You have reserved this slot'}
+                                                        </span>
                                                     </div>
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {isReserved ? (
                                                     <>
-                                                        {!isSlotPast && (
-                                                            <button
-                                                                onClick={() => handleCancel(reservation!)}
-                                                                disabled={cancellingReservationId === reservation?._id}
-                                                                className="px-4 py-2 text-xs font-black uppercase tracking-widest text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                                            >
-                                                                {cancellingReservationId === reservation?._id ? 'Cancelling...' : 'Cancel'}
-                                                            </button>
+                                                        {!isSlotPast ? (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => handleCancel(reservation!)}
+                                                                    disabled={cancellingReservationId === reservation?._id}
+                                                                    className="px-4 py-2 text-xs font-black uppercase tracking-widest text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                                >
+                                                                    {cancellingReservationId === reservation?._id ? 'Cancelling...' : 'Cancel'}
+                                                                </button>
+                                                                <span className="px-4 py-2 text-xs font-black uppercase tracking-widest text-harx-700 bg-harx-50 rounded-xl border border-harx-100">
+                                                                    Reserved
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="px-4 py-2 text-xs font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 rounded-xl border border-emerald-100">
+                                                                Completed
+                                                            </span>
                                                         )}
-                                                        <span className="px-4 py-2 text-xs font-black uppercase tracking-widest text-harx-700 bg-harx-50 rounded-xl border border-harx-100">
-                                                            Reserved
-                                                        </span>
                                                     </>
                                                 ) : isAvailable && !isSlotPast ? (
                                                     <button

@@ -26,7 +26,8 @@ function isReservationForToday(rawDate: unknown, now: Date): boolean {
     const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
       now.getDate()
     ).padStart(2, '0')}`;
-    return v === iso;
+    const todayIso = now.toISOString().slice(0, 10);
+    return v === iso || v === todayIso;
   }
   const todayName = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
   return v.toLowerCase() === todayName;
@@ -127,7 +128,8 @@ export async function resolveGigStartRoute(gigId: string): Promise<StartRouteDec
     const start = parseHHMMToMinutes(r?.startTime);
     const end = parseHHMMToMinutes(r?.endTime);
     if (start == null || end == null || end <= start) return false;
-    return nowMinutes >= start && nowMinutes < end;
+    // Allow starting up to 60 minutes early and finishing up to 30 minutes late
+    return nowMinutes >= (start - 60) && nowMinutes < (end + 30);
   });
 
   if (!hasActiveReservation) {
