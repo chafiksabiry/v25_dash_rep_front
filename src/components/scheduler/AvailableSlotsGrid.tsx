@@ -206,17 +206,38 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                     daySlots
                         .sort((a, b) => a.startTime.localeCompare(b.startTime))
                         .map((slot) => {
-                            const reservation = reservations.find(r => r.slotId === slot._id);
+                            const reservation = reservations.find(r => {
+                                const isSlotMatch = r.slotId === slot._id;
+                                const rDate = r.reservationDate || r.date;
+                                const isDateMatch = rDate === dateStr;
+                                return isSlotMatch && isDateMatch;
+                            });
                             const isReserved = !!reservation;
                             const isAvailable = slot.status === 'available' && slot.reservedCount < slot.capacity;
                             const remaining = slot.capacity - slot.reservedCount;
+
+                            const isSlotPast = (() => {
+                                try {
+                                    const now = new Date();
+                                    const todayStr = format(now, 'yyyy-MM-dd');
+                                    
+                                    if (dateStr < todayStr) return true;
+                                    if (dateStr > todayStr) return false;
+                                    
+                                    const currentHHmm = format(now, 'HH:mm');
+                                    return slot.startTime < currentHHmm;
+                                } catch (err) {
+                                    console.error('Error checking isSlotPast:', err);
+                                    return false;
+                                }
+                            })();
 
                             return (
                                 <div
                                     key={slot._id}
                                     className={`p-5 transition-all ${isReserved
                                         ? 'bg-harx-50/60'
-                                        : isAvailable
+                                        : isAvailable && !isSlotPast
                                             ? 'bg-white'
                                             : 'bg-gray-50'
                                         }`}
@@ -250,18 +271,20 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                                             <div className="flex items-center gap-2">
                                                 {isReserved ? (
                                                     <>
-                                                        <button
-                                                            onClick={() => handleCancel(reservation!)}
-                                                            disabled={cancellingReservationId === reservation?._id}
-                                                            className="px-4 py-2 text-xs font-black uppercase tracking-widest text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                                        >
-                                                            {cancellingReservationId === reservation?._id ? 'Cancelling...' : 'Cancel'}
-                                                        </button>
+                                                        {!isSlotPast && (
+                                                            <button
+                                                                onClick={() => handleCancel(reservation!)}
+                                                                disabled={cancellingReservationId === reservation?._id}
+                                                                className="px-4 py-2 text-xs font-black uppercase tracking-widest text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                            >
+                                                                {cancellingReservationId === reservation?._id ? 'Cancelling...' : 'Cancel'}
+                                                            </button>
+                                                        )}
                                                         <span className="px-4 py-2 text-xs font-black uppercase tracking-widest text-harx-700 bg-harx-50 rounded-xl border border-harx-100">
                                                             Reserved
                                                         </span>
                                                     </>
-                                                ) : isAvailable && !isPastDate ? (
+                                                ) : isAvailable && !isSlotPast ? (
                                                     <button
                                                         onClick={() => handleReserve(slot)}
                                                         disabled={reservingSlotId === slot._id}
@@ -271,13 +294,13 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                                                     </button>
                                                 ) : (
                                                     <span className="px-4 py-2 text-xs font-black uppercase tracking-widest text-gray-400 bg-gray-100 rounded-xl">
-                                                        {slot.status === 'full' ? 'Full' : 'Unavailable'}
+                                                        {isSlotPast ? 'Expired' : slot.status === 'full' ? 'Full' : 'Unavailable'}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
 
-                                        {isAvailable && !isPastDate && !isReserved && (
+                                        {isAvailable && !isSlotPast && !isReserved && (
                                             <div className="flex items-center gap-3">
                                                 <input
                                                     type="text"
