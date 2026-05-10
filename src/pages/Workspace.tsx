@@ -265,7 +265,9 @@ export function WorkspaceContent() {
             const summary = await summaryRes.json();
             const overall = Number(summary?.overallPercent ?? 0);
             const trainingCount = Number(summary?.trainingCount ?? 0);
-            isTrainingComplete = trainingCount === 0 ? true : overall >= 100;
+            // If trainingCount === 0: no training found for this gig → NOT complete (false)
+            // Only mark complete when trainingCount > 0 AND overall >= 100
+            isTrainingComplete = trainingCount > 0 && overall >= 100;
           }
         }
 
