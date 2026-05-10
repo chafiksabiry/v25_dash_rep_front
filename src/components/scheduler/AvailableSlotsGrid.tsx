@@ -225,7 +225,8 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
                                     if (dateStr > todayStr) return false;
                                     
                                     const currentHHmm = format(now, 'HH:mm');
-                                    return slot.startTime < currentHHmm;
+                                    // A slot is past/expired only when its end time has passed, not its start time!
+                                    return slot.endTime < currentHHmm;
                                 } catch (err) {
                                     console.error('Error checking isSlotPast:', err);
                                     return false;
