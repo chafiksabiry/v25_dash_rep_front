@@ -1986,58 +1986,54 @@ export function Training() {
     <div className={selectedJourney ? 'w-full h-[calc(100vh-120px)]' : 'space-y-6 w-full'}>
       {!selectedJourney && (
         <>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
+      <div className="space-y-4 pb-6 border-b border-gray-100">
+        <div>
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Training</h1>
-          <p className="text-sm text-gray-500 mt-1 font-medium">
+          <p className="text-sm text-gray-500 mt-1 font-medium leading-relaxed max-w-3xl">
             Trainings linked to gigs you are enrolled in, plus journeys your company assigned to you
             directly.
           </p>
         </div>
-        <div className="flex w-full flex-col gap-3 sm:w-auto sm:min-w-[280px] sm:items-end">
-          <div className="flex items-center gap-2 rounded-xl bg-harx-500/10 border border-harx-500/20 px-4 py-2 text-harx-700 self-start sm:self-end">
-            <BookOpen className="w-5 h-5 shrink-0" />
-            <span className="text-xs font-black uppercase tracking-widest">My gigs & paths</span>
-          </div>
-          <div className="w-full sm:w-auto">
-            <label
-              htmlFor="training-gig-filter"
-              className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-gray-400"
+        
+        {/* Dropdown repositioned directly below title/subtitle */}
+        <div className="w-full max-w-md">
+          <label
+            htmlFor="training-gig-filter"
+            className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-gray-400"
+          >
+            Enrolled gig (Marketplace)
+          </label>
+          <div className="relative">
+            <select
+              id="training-gig-filter"
+              value={gigFilter}
+              onChange={(e) => setGigFilter(e.target.value)}
+              disabled={loading}
+              className="w-full appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-xs font-bold text-gray-800 shadow-sm transition-colors focus:border-harx-500 focus:outline-none focus:ring-2 focus:ring-harx-500/20 disabled:cursor-wait disabled:opacity-70"
             >
-              Enrolled gig (Marketplace)
-            </label>
-            <div className="relative">
-              <select
-                id="training-gig-filter"
-                value={gigFilter}
-                onChange={(e) => setGigFilter(e.target.value)}
-                disabled={loading}
-                className="w-full min-w-[260px] appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm font-bold text-gray-800 shadow-sm transition-colors focus:border-harx-500 focus:outline-none focus:ring-2 focus:ring-harx-500/20 disabled:cursor-wait disabled:opacity-70"
-              >
-                <option value="__all__">
-                  {enrolledGigs.length === 0 && !loading
-                    ? 'No enrolled gigs'
-                    : 'All enrolled gigs'}
+              <option value="__all__">
+                {enrolledGigs.length === 0 && !loading
+                  ? 'No enrolled gigs'
+                  : 'All enrolled gigs'}
+              </option>
+              {enrolledGigs.map((g) => (
+                <option key={g.gigId} value={g.gigId}>
+                  {g.title}
                 </option>
-                {enrolledGigs.map((g) => (
-                  <option key={g.gigId} value={g.gigId}>
-                    {g.title}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            </div>
-            {gigFilter !== '__all__' && selectedGigTitle && !listLoading && (
-              <p className="mt-2 text-xs font-semibold text-harx-700">
-                Showing trainings for: <span className="text-gray-900">{selectedGigTitle}</span>
-              </p>
-            )}
-            {enrolledGigs.length === 0 && !loading && !error && (
-              <p className="mt-2 text-xs text-amber-700 font-medium">
-                No enrolled gigs from the matching API — check the Marketplace or your connection.
-              </p>
-            )}
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           </div>
+          {gigFilter !== '__all__' && selectedGigTitle && !listLoading && (
+            <p className="mt-2 text-xs font-semibold text-harx-700">
+              Showing trainings for: <span className="text-gray-900">{selectedGigTitle}</span>
+            </p>
+          )}
+          {enrolledGigs.length === 0 && !loading && !error && (
+            <p className="mt-2 text-xs text-amber-700 font-medium">
+              No enrolled gigs from the matching API — check the Marketplace or your connection.
+            </p>
+          )}
         </div>
       </div>
 
