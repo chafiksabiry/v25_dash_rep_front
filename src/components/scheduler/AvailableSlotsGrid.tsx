@@ -97,16 +97,9 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
 
             await loadSlots();
             await loadReservations();
-            if (onReservationMade) {
-                setTimeout(() => {
-                    try {
-                        onReservationMade();
-                    } catch (err) {
-                        console.error('Error in onReservationMade callback:', err);
-                    }
-                    setMessage(null);
-                }, 2000);
-            }
+            setTimeout(() => {
+                setMessage(null);
+            }, 3000);
         } catch (error: any) {
             console.error('Error reserving slot:', error);
             const errorMsg = error.response?.data?.message || error.message || 'Failed to reserve slot';
@@ -125,12 +118,9 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
             setMessage({ text: 'Reservation cancelled successfully.', type: 'success' });
             await loadSlots();
             await loadReservations();
-            if (onReservationMade) {
-                setTimeout(() => {
-                    try { onReservationMade(); } catch (err) { console.error(err); }
-                    setMessage(null);
-                }, 2000);
-            }
+            setTimeout(() => {
+                setMessage(null);
+            }, 3000);
         } catch (error: any) {
             console.error('Error cancelling reservation:', error);
             setMessage({ text: error.response?.data?.message || error.message || 'Failed to cancel reservation', type: 'error' });
