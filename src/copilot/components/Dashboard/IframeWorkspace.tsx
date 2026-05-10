@@ -149,6 +149,11 @@ export function IframeWorkspace() {
     setIframeKey(prev => prev + 1);
   };
 
+  const currentTab = searchParams.get('tab') || 'voice';
+  if (currentTab !== 'copilot') {
+    return null;
+  }
+
   return createPortal(
     <>
       {/* Floating Button on the Center of the Right Side */}
