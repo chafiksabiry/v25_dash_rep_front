@@ -193,7 +193,19 @@ export function WorkspaceContent() {
     [copilotGuard]
   );
 
-
+  // Block access to copilot tab/url if any requirement is not met
+  useEffect(() => {
+    if (!copilotGuard.loading && activeTab === 'copilot' && !canUseCopilot) {
+      setActiveTab('voice');
+      const params = new URLSearchParams(location.search);
+      params.set('tab', 'voice');
+      navigate({
+        pathname: location.pathname,
+        search: `?${params.toString()}`
+      }, { replace: true });
+      setShowWarningModal(true);
+    }
+  }, [copilotGuard.loading, activeTab, canUseCopilot, navigate, location.pathname, location.search]);
 
   useEffect(() => {
     const evaluateCopilotGuard = async () => {
@@ -425,6 +437,48 @@ export function WorkspaceContent() {
 
                 {selectedGigId && !copilotGuard.loading && (
                   <>
+                    {/* Warning A: Training Incomplete */}
+                    {!copilotGuard.isTrainingComplete && (
+                      <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-4 shadow-sm animate-in fade-in duration-300">
+                        <div className="p-2.5 bg-amber-100 text-amber-600 rounded-xl shrink-0">
+                          <BookOpen className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <h4 className="text-xs font-black text-amber-900 tracking-tight uppercase">{t('workspaceGuard.trainingRequiredTitle')}</h4>
+                          <p className="text-[11px] text-amber-700 font-medium leading-relaxed">
+                            {t('workspaceGuard.trainingRequiredDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => navigate(`/training?gigId=${selectedGigId}`)}
+                          className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md shadow-amber-600/10 shrink-0 flex items-center gap-1.5"
+                        >
+                          {t('workspaceGuard.trainingButton')} <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Warning B: No Active Reservation Slot (Availability) */}
+                    {!copilotGuard.hasActiveReservationNow && (
+                      <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-4 shadow-sm animate-in fade-in duration-300">
+                        <div className="p-2.5 bg-rose-100 text-rose-600 rounded-xl shrink-0">
+                          <Clock className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <h4 className="text-xs font-black text-rose-900 tracking-tight uppercase">{t('workspaceGuard.sessionRequiredTitle')}</h4>
+                          <p className="text-[11px] text-rose-700 font-medium leading-relaxed">
+                            {t('workspaceGuard.sessionRequiredDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => navigate('/session-planning')}
+                          className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md shadow-rose-600/10 shrink-0 flex items-center gap-1.5"
+                        >
+                          {t('workspaceGuard.sessionButton')} <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
                     {/* Exception Handling: API down or check failure */}
                     {copilotGuard.reason === 'Unable to validate call conditions. Please try again.' && (
                       <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-4 shadow-sm animate-in fade-in duration-300">
@@ -709,126 +763,17 @@ export function WorkspaceContent() {
                 <p className="text-sm font-bold uppercase tracking-widest">Checking call permissions...</p>
               </div>
             ) : !canUseCopilot ? (
-              <div className="flex flex-col items-center justify-center min-h-[500px] text-center px-6 py-10 max-w-xl mx-auto space-y-6">
-                {/* Glowing Icon Header */}
-                <div className="relative">
-                  <div className="p-4 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl shadow-inner animate-pulse">
-                    <ShieldAlert className="w-8 h-8" />
-                  </div>
-                  <div className="absolute -inset-1 bg-rose-500/10 blur-[15px] rounded-2xl -z-10"></div>
-                </div>
-
-                <div>
-                  <h3 className="text-base font-black text-slate-800 tracking-wide uppercase">
-                    {t('workspaceGuard.modalTitle') || 'COCKPIT ACCESS LOCKED'}
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 font-medium">
-                    {t('workspaceGuard.modalSubtitle') || 'Fulfill the checklist below to activate your outbound calling line.'}
+              <div className="flex flex-col items-center justify-center h-full pt-24 text-center px-8">
+                <Phone className="w-12 h-12 mb-4 text-gray-300" />
+                <p className="text-sm font-black uppercase tracking-widest text-gray-700">COCKPIT Locked</p>
+                <p className="text-xs mt-2 text-gray-500 max-w-xl">
+                  {copilotGuard.reason || 'You cannot place calls right now.'}
+                </p>
+                {copilotGuard.reservationWindowLabel && (
+                  <p className="text-xs mt-2 text-emerald-600 font-bold">
+                    Active reserved window: {copilotGuard.reservationWindowLabel}
                   </p>
-                </div>
-
-                {/* Requirements Checklist */}
-                <div className="w-full space-y-3.5">
-                  {/* Step 1: Enrolled in Gig */}
-                  <div className={`p-4 rounded-xl border transition-all duration-300 flex items-center justify-between gap-4 ${
-                    copilotGuard.isEnrolledInGig 
-                      ? 'bg-emerald-500/5 border-emerald-500/15' 
-                      : 'bg-rose-500/5 border-rose-500/15 opacity-80'
-                  }`}>
-                    <div className="flex items-start gap-3 text-left">
-                      <div className={`p-2 rounded-lg shrink-0 ${
-                        copilotGuard.isEnrolledInGig ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
-                      }`}>
-                        <Layout className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-                          {t('workspaceGuard.checkGigTitle') || 'PROJECT ENROLLMENT'}
-                        </h4>
-                        <p className="text-[10px] text-slate-400 font-semibold mt-0.5 leading-relaxed">
-                          {t('workspaceGuard.checkGigDesc') || 'Ensure you are fully enrolled in the active campaign.'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="shrink-0">
-                      {copilotGuard.isEnrolledInGig ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-rose-500" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Step 2: Training Complete */}
-                  <div className={`p-4 rounded-xl border transition-all duration-300 flex items-center justify-between gap-4 ${
-                    copilotGuard.isTrainingComplete 
-                      ? 'bg-emerald-500/5 border-emerald-500/15' 
-                      : 'bg-amber-500/5 border-amber-500/20'
-                  }`}>
-                    <div className="flex items-start gap-3 text-left">
-                      <div className={`p-2 rounded-lg shrink-0 ${
-                        copilotGuard.isTrainingComplete ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
-                      }`}>
-                        <BookOpen className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-                          {t('workspaceGuard.checkTrainingTitle') || 'TRAINING VALIDATION'}
-                        </h4>
-                        <p className="text-[10px] text-slate-400 font-semibold mt-0.5 leading-relaxed">
-                          {t('workspaceGuard.checkTrainingDesc') || 'Complete the training module to at least 100% completion.'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="shrink-0 flex items-center gap-2">
-                      {copilotGuard.isTrainingComplete ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500 animate-bounce" />
-                      ) : (
-                        <button
-                          onClick={() => navigate(`/training?gigId=${selectedGigId}`)}
-                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shadow-md shadow-amber-500/10 shrink-0 flex items-center gap-1.5 hover:scale-[1.03] active:scale-[0.97]"
-                        >
-                          {t('workspaceGuard.trainingButton') || 'Train Now'} <ChevronRight className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Step 3: Reservation Slot */}
-                  <div className={`p-4 rounded-xl border transition-all duration-300 flex items-center justify-between gap-4 ${
-                    copilotGuard.hasActiveReservationNow 
-                      ? 'bg-emerald-500/5 border-emerald-500/15' 
-                      : 'bg-rose-500/5 border-rose-500/20'
-                  }`}>
-                    <div className="flex items-start gap-3 text-left">
-                      <div className={`p-2 rounded-lg shrink-0 ${
-                        copilotGuard.hasActiveReservationNow ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
-                      }`}>
-                        <Clock className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-                          {t('workspaceGuard.checkSessionTitle') || 'CALL SESSION SLOT'}
-                        </h4>
-                        <p className="text-[10px] text-slate-400 font-semibold mt-0.5 leading-relaxed">
-                          {t('workspaceGuard.checkSessionDesc') || 'Book an ongoing call session slot in your session planner.'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="shrink-0 flex items-center gap-2">
-                      {copilotGuard.hasActiveReservationNow ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                      ) : (
-                        <button
-                          onClick={() => navigate(`/session-planning?gigId=${selectedGigId}`)}
-                          className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shadow-md shadow-rose-500/10 shrink-0 flex items-center gap-1.5 hover:scale-[1.03] active:scale-[0.97]"
-                        >
-                          {t('workspaceGuard.sessionButton') || 'Reserve Slot'} <ChevronRight className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             ) : (selectedLead || urlLeadId) ? (
               <CopilotApp />
