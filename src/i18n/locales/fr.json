@@ -134,5 +134,10 @@
     "checkSessionDesc": "Planifier et réserver un créneau de temps pour la mission dans l'agenda.",
     "understandButton": "Compris, je finalise mes étapes",
     "recentLeads": "Prospects Récents"
+  },
+  "trainingAllGigsGuard": {
+    "modalTitle": "Sélection de projet requise",
+    "modalSubtitle": "Pour accéder au COCKPIT, vous devez sélectionner un projet spécifique dans la liste déroulante de la page de Formation au lieu de \"Tous les projets\".",
+    "understandButton": "Compris"
   }
 }
