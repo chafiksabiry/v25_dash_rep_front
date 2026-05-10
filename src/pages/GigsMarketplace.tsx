@@ -337,22 +337,8 @@ export function GigsMarketplace() {
   const [expandedActivities, setExpandedActivities] = useState<Record<string, boolean>>({});
   const [expandedIndustries, setExpandedIndustries] = useState<Record<string, boolean>>({});
 
-  const handleSmartStart = async (gigId: string) => {
-    try {
-      const decision = await resolveGigStartRoute(gigId);
-      if (decision.target === 'training') {
-        navigate(`/training?gigId=${encodeURIComponent(gigId)}`);
-        return;
-      }
-      if (decision.target === 'session-planning') {
-        navigate(`/session-planning?gigId=${encodeURIComponent(gigId)}`);
-        return;
-      }
-      navigate(`/workspace?tab=copilot&gigId=${encodeURIComponent(gigId)}`, { state: { gigId } });
-    } catch (error) {
-      console.error('Error during smart start routing:', error);
-      navigate(`/training?gigId=${encodeURIComponent(gigId)}`);
-    }
+  const handleSmartStart = (gigId: string) => {
+    navigate(`/workspace?tab=copilot&gigId=${encodeURIComponent(gigId)}`, { state: { gigId } });
   };
 
   // Fonction pour obtenir le statut d'un gig pour l'agent connecté
