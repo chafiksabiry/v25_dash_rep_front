@@ -326,7 +326,7 @@ export function IframeWorkspace() {
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-900">
                       {/* Top Area: Script displayed with custom toggle */}
             {showScript && (
-              <div className="w-full shrink-0 bg-slate-950/60 backdrop-blur-md border-b border-white/10 flex flex-col p-4 md:p-5 overflow-hidden animate-in slide-in-from-top duration-300">
+              <div className="w-full shrink-0 max-h-[48vh] overflow-y-auto custom-scrollbar bg-slate-950/60 backdrop-blur-md border-b border-white/10 flex flex-col p-4 md:p-5 animate-in slide-in-from-top duration-300">
                 <div className="flex flex-col gap-3.5">
                   
                   {/* Script mini-header */}
