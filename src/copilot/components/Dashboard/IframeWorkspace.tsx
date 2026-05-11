@@ -49,6 +49,7 @@ export function IframeWorkspace() {
   const [activeReplicaIndex, setActiveReplicaIndex] = useState(0);
 
   // Support for interactive cockpit stages schema
+  const activeScript = scripts?.[0];
   const interactiveStages = activeScript?.playbook?.stages || [];
   const hasInteractiveStages = Array.isArray(interactiveStages) && interactiveStages.length > 0;
 
@@ -62,7 +63,6 @@ export function IframeWorkspace() {
   }, [activePhaseIndex]);
 
   // Group script by phase
-  const activeScript = scripts?.[0];
   const scriptByPhase = activeScript?.script?.reduce((acc: any, item: any) => {
     if (!acc[item.phase]) acc[item.phase] = [];
     acc[item.phase].push(item);
