@@ -79,7 +79,7 @@ function isTodayReservation(rawDate: unknown, now: Date): boolean {
 }
 
 export function WorkspaceContent() {
-  const { state, dispatch } = useAgent();
+  useAgent();
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -88,10 +88,10 @@ export function WorkspaceContent() {
   const urlLeadId = searchParams.get('leadId') || sessionStorage.getItem('activeLeadId') || '';
   const urlGigId = searchParams.get('gigId') || sessionStorage.getItem('activeGigId') || '';
   const gigId = location.state?.gigId || urlGigId;
-  
+
   const [activeTab, setActiveTab] = useState(urlTab && ['voice', 'calls', 'copilot'].includes(urlTab) ? urlTab : 'voice');
   const [message, setMessage] = useState('');
-  
+
   // Sync activeTab with URL
   useEffect(() => {
     if (urlTab && ['voice', 'calls', 'copilot'].includes(urlTab)) {
@@ -122,7 +122,7 @@ export function WorkspaceContent() {
   useEffect(() => {
     let changed = false;
     const params = new URLSearchParams(location.search);
-    
+
     if (params.has('gigId')) {
       const gId = params.get('gigId') || '';
       if (gId) {
@@ -132,7 +132,7 @@ export function WorkspaceContent() {
       params.delete('gigId');
       changed = true;
     }
-    
+
     if (params.has('leadId')) {
       const lId = params.get('leadId') || '';
       if (lId) {
@@ -141,7 +141,7 @@ export function WorkspaceContent() {
       params.delete('leadId');
       changed = true;
     }
-    
+
     if (changed) {
       navigate({
         pathname: location.pathname,
@@ -262,7 +262,10 @@ export function WorkspaceContent() {
             }
           );
           if (summaryRes.ok) {
-            const summary = await summaryRes.json();
+            const summaryPayload = await summaryRes.json();
+            const summary = summaryPayload?.data && typeof summaryPayload.data === 'object'
+              ? summaryPayload.data
+              : summaryPayload;
             const overall = Number(summary?.overallPercent ?? 0);
             const trainingCount = Number(summary?.trainingCount ?? 0);
             // If trainingCount === 0: no training found for this gig → NOT complete (false)
@@ -564,11 +567,10 @@ export function WorkspaceContent() {
                                 </span>
                               )}
                               <button
-                                className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${
-                                  canUseCopilot
+                                className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${canUseCopilot
                                     ? 'bg-gradient-harx text-white hover:shadow-lg hover:shadow-harx-500/20 hover:-translate-y-0.5'
                                     : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                }`}
+                                  }`}
                                 disabled={!canUseCopilot || copilotGuard.loading}
                                 onClick={() => handleCallClick(lead)}
                                 title={!canUseCopilot && copilotGuard.reason ? copilotGuard.reason : ''}
@@ -636,9 +638,9 @@ export function WorkspaceContent() {
                   </div>
                 </div>
               </div>
-                <button className="p-4 bg-red-500/20 backdrop-blur-md rounded-2xl hover:bg-red-500/40 text-red-500 transition-all border border-red-500/20">
-                  <XCircle className="w-5 h-5" />
-                </button>
+              <button className="p-4 bg-red-500/20 backdrop-blur-md rounded-2xl hover:bg-red-500/40 text-red-500 transition-all border border-red-500/20">
+                <XCircle className="w-5 h-5" />
+              </button>
             </div>
             <div className="flex-1 flex items-center justify-center relative z-10">
               <div className="text-center group">
@@ -719,7 +721,7 @@ export function WorkspaceContent() {
                 <div className="border border-gray-100 rounded-3xl p-6 bg-white hover:bg-harx-50/20 transition-all group hover:shadow-lg hover:shadow-harx-500/5">
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="w-12 h-12 bg-gradient-harx rounded-2xl flex items-center justify-center shadow-lg shadow-harx-500/10">
-                       <User className="w-6 h-6 text-white" />
+                      <User className="w-6 h-6 text-white" />
                     </div>
                     <div>
                       <p className="font-black text-gray-900 group-hover:text-harx-600 transition-colors uppercase text-sm tracking-tight">@customer123</p>
@@ -806,7 +808,7 @@ export function WorkspaceContent() {
     params.delete('leadId');
     params.delete('gigId');
     params.set('tab', 'copilot');
-    
+
     navigate({
       pathname: location.pathname,
       search: `?${params.toString()}`
@@ -819,14 +821,14 @@ export function WorkspaceContent() {
     <div className="space-y-4">
       <div className="mb-4">
         <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-3">{t('workspace.title')}</h1>
-        
+
         {enrolledGigs.length > 0 && (
           <div className="flex flex-col items-start space-y-1 relative">
             <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1 flex items-center gap-1.5">
               <Filter className="w-2.5 h-2.5" />
               Active Gig
             </span>
-            
+
             <div className="relative w-full md:w-[480px]">
               <button
                 onClick={() => setIsGigDropdownOpen(!isGigDropdownOpen)}
@@ -837,8 +839,8 @@ export function WorkspaceContent() {
                     <Layout className="w-3.5 h-3.5 text-rose-500" />
                   </div>
                   <span className="truncate text-left font-bold text-slate-700 text-xs">
-                    {selectedGigId 
-                      ? enrolledGigs.find(g => g._id === selectedGigId)?.title 
+                    {selectedGigId
+                      ? enrolledGigs.find(g => g._id === selectedGigId)?.title
                       : 'All My Gigs'}
                   </span>
                 </div>
@@ -847,8 +849,8 @@ export function WorkspaceContent() {
 
               {isGigDropdownOpen && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-40" 
+                  <div
+                    className="fixed inset-0 z-40"
                     onClick={() => setIsGigDropdownOpen(false)}
                   ></div>
                   <div className="absolute top-full left-0 mt-2 w-full bg-white border border-gray-100/90 rounded-xl shadow-2xl shadow-slate-200/80 py-1.5 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
@@ -957,15 +959,13 @@ export function WorkspaceContent() {
             {/* Requirements Checklist */}
             <div className="space-y-3 mb-8 relative">
               {/* Check 1: Enrolled in Gig */}
-              <div className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${
-                copilotGuard.isEnrolledInGig 
-                  ? 'bg-emerald-500/5 border-emerald-500/20' 
+              <div className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${copilotGuard.isEnrolledInGig
+                  ? 'bg-emerald-500/5 border-emerald-500/20'
                   : 'bg-rose-500/5 border-rose-500/10 opacity-75'
-              }`}>
+                }`}>
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-xl shrink-0 ${
-                    copilotGuard.isEnrolledInGig ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
-                  }`}>
+                  <div className={`p-2 rounded-xl shrink-0 ${copilotGuard.isEnrolledInGig ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+                    }`}>
                     <Layout className="w-4 h-4" />
                   </div>
                   <div>
@@ -987,15 +987,13 @@ export function WorkspaceContent() {
               </div>
 
               {/* Check 2: Training Complete */}
-              <div className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${
-                copilotGuard.isTrainingComplete 
-                  ? 'bg-emerald-500/5 border-emerald-500/20' 
+              <div className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${copilotGuard.isTrainingComplete
+                  ? 'bg-emerald-500/5 border-emerald-500/20'
                   : 'bg-rose-500/5 border-rose-500/10 opacity-75'
-              }`}>
+                }`}>
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-xl shrink-0 ${
-                    copilotGuard.isTrainingComplete ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
-                  }`}>
+                  <div className={`p-2 rounded-xl shrink-0 ${copilotGuard.isTrainingComplete ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+                    }`}>
                     <BookOpen className="w-4 h-4" />
                   </div>
                   <div>
@@ -1017,15 +1015,13 @@ export function WorkspaceContent() {
               </div>
 
               {/* Check 3: Reservation Slot */}
-              <div className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${
-                copilotGuard.hasActiveReservationNow 
-                  ? 'bg-emerald-500/5 border-emerald-500/20' 
+              <div className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${copilotGuard.hasActiveReservationNow
+                  ? 'bg-emerald-500/5 border-emerald-500/20'
                   : 'bg-rose-500/5 border-rose-500/10 opacity-75'
-              }`}>
+                }`}>
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-xl shrink-0 ${
-                    copilotGuard.hasActiveReservationNow ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
-                  }`}>
+                  <div className={`p-2 rounded-xl shrink-0 ${copilotGuard.hasActiveReservationNow ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+                    }`}>
                     <Clock className="w-4 h-4" />
                   </div>
                   <div>
