@@ -258,27 +258,38 @@ export function WorkspaceContent() {
         const now = new Date();
         const trainingBase = String(import.meta.env.VITE_TRAINING_API_URL || '').replace(/\/$/, '');
         let isTrainingComplete = false;
-        if (trainingBase) {
-          const summaryRes = await fetch(
-            `${trainingBase}/training_journeys/rep/${encodeURIComponent(repId)}/slide-progress-summary?gigId=${encodeURIComponent(selectedGigId)}`,
-            {
-              headers: token ? { Authorization: `Bearer ${token}` } : undefined
-            }
-          );
-          if (summaryRes.ok) {
-            const summaryPayload = await summaryRes.json();
-            const summary = summaryPayload?.data && typeof summaryPayload.data === 'object'
-              ? summaryPayload.data
-              : summaryPayload;
-            const overall = Number(summary?.overallPercent ?? 0);
-            const trainingCount = Number(summary?.trainingCount ?? 0);
-            // If trainingCount === 0: no training found for this gig → NOT complete (false)
-            // Only mark complete when trainingCount > 0 AND overall >= 100
-            isTrainingComplete = trainingCount > 0 && overall >= 100;
-          }
+
+        // Fetch both training progress summary and reservations in parallel to optimize speed
+        const [summaryRes, reservations] = await Promise.all([
+          trainingBase
+            ? fetch(
+                `${trainingBase}/training_journeys/rep/${encodeURIComponent(repId)}/slide-progress-summary?gigId=${encodeURIComponent(selectedGigId)}`,
+                {
+                  headers: token ? { Authorization: `Bearer ${token}` } : undefined
+                }
+              ).catch((err) => {
+                console.error('Failed to fetch slide progress:', err);
+                return null;
+              })
+            : Promise.resolve(null),
+          slotApi.getReservations(repId, selectedGigId).catch((err) => {
+            console.error('Failed to fetch reservations:', err);
+            return [];
+          })
+        ]);
+
+        if (summaryRes && summaryRes.ok) {
+          const summaryPayload = await summaryRes.json();
+          const summary = summaryPayload?.data && typeof summaryPayload.data === 'object'
+            ? summaryPayload.data
+            : summaryPayload;
+          const overall = Number(summary?.overallPercent ?? 0);
+          const trainingCount = Number(summary?.trainingCount ?? 0);
+          // If trainingCount === 0: no training found for this gig → NOT complete (false)
+          // Only mark complete when trainingCount > 0 AND overall >= 100
+          isTrainingComplete = trainingCount > 0 && overall >= 100;
         }
 
-        const reservations = await slotApi.getReservations(repId, selectedGigId);
         const nowMinutes = now.getHours() * 60 + now.getMinutes();
         const activeReservation = (Array.isArray(reservations) ? reservations : []).find((r: any) => {
           if (String(r?.status || '').toLowerCase() !== 'reserved') return false;
