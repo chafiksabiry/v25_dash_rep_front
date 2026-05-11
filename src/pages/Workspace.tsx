@@ -161,7 +161,7 @@ export function WorkspaceContent() {
   }, [leads, urlLeadId, selectedLead]);
 
   const [copilotGuard, setCopilotGuard] = useState<CopilotGuardState>({
-    loading: false,
+    loading: true,
     isEnrolledInGig: false,
     isTrainingComplete: false,
     hasActiveReservationNow: false,
@@ -195,15 +195,19 @@ export function WorkspaceContent() {
 
   // Block access to copilot tab/url if any requirement is not met
   useEffect(() => {
-    if (!copilotGuard.loading && activeTab === 'copilot' && !canUseCopilot) {
-      setActiveTab('voice');
-      const params = new URLSearchParams(location.search);
-      params.set('tab', 'voice');
-      navigate({
-        pathname: location.pathname,
-        search: `?${params.toString()}`
-      }, { replace: true });
-      setShowWarningModal(true);
+    if (!copilotGuard.loading) {
+      if (activeTab === 'copilot' && !canUseCopilot) {
+        setActiveTab('voice');
+        const params = new URLSearchParams(location.search);
+        params.set('tab', 'voice');
+        navigate({
+          pathname: location.pathname,
+          search: `?${params.toString()}`
+        }, { replace: true });
+        setShowWarningModal(true);
+      } else if (canUseCopilot) {
+        setShowWarningModal(false);
+      }
     }
   }, [copilotGuard.loading, activeTab, canUseCopilot, navigate, location.pathname, location.search]);
 
