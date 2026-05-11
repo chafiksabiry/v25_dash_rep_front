@@ -40,7 +40,7 @@ export function IframeWorkspace() {
   const [iframeKey, setIframeKey] = useState(0);
 
   // Script visibility state
-  const [showScript, setShowScript] = useState(false);
+  const [showScript, setShowScript] = useState(true);
 
   // Phase pagination state
   const [activePhaseIndex, setActivePhaseIndex] = useState(0);
@@ -256,70 +256,6 @@ export function IframeWorkspace() {
                 </button>
               </div>
             </div>
-
-            {/* Tab Navigation & URL Address Bar */}
-            <div className="flex flex-col md:flex-row md:items-center gap-3">
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  onClick={() => setActiveTab('oggodata')}
-                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'oggodata' ? 'bg-gradient-to-r from-orange-400 to-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
-                >
-                  OGGODATA
-                </button>
-                <button
-                  onClick={() => setActiveTab('zoho')}
-                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'zoho' ? 'bg-gradient-to-r from-orange-400 to-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
-                >
-                  ZOHO CRM
-                </button>
-                <button
-                  onClick={() => setActiveTab('custom')}
-                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'custom' ? 'bg-gradient-to-r from-orange-400 to-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
-                >
-                  URL Perso
-                </button>
-              </div>
-
-              {/* Premium Browser-like Address Bar */}
-              <div className="flex-1 flex items-center gap-2">
-                <button 
-                  onClick={handleRefresh}
-                  className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg border border-white/10 transition-all shrink-0"
-                  title="Actualiser l'iframe"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </button>
-
-                <form onSubmit={handleCustomUrlSubmit} className="flex-1 flex items-center gap-2 bg-slate-900 border border-white/10 rounded-lg px-2.5 py-0.5">
-                  <Globe className="w-3.5 h-3.5 text-slate-500" />
-                  <input
-                    type="text"
-                    value={activeTab === 'custom' ? customUrl : currentIframeUrl}
-                    onChange={(e) => {
-                      if (activeTab === 'custom') setCustomUrl(e.target.value);
-                    }}
-                    disabled={activeTab !== 'custom'}
-                    className="flex-1 bg-transparent border-none text-[11px] text-slate-300 focus:outline-none focus:ring-0 select-all font-mono py-1 disabled:text-slate-500"
-                    placeholder="https://example.com"
-                  />
-                  {activeTab === 'custom' && (
-                    <button type="submit" className="p-0.5 bg-white/5 hover:bg-white/10 rounded text-slate-300">
-                      <Search className="w-3 h-3" />
-                    </button>
-                  )}
-                </form>
-
-                <a
-                  href={currentIframeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-lg hover:shadow-lg hover:shadow-rose-500/20 transition-all flex items-center gap-1 shrink-0"
-                  title="Ouvrir dans un nouvel onglet"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            </div>
           </div>
 
           {/* Main Workspace Body Content */}
@@ -342,42 +278,7 @@ export function IframeWorkspace() {
                     )}
                   </div>
 
-                  {/* Horizontal Phase Pagination Steps */}
-                  {hasInteractiveStages ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-white/5 shrink-0 shadow-inner">
-                      {interactiveStages.map((stage: any, idx: number) => (
-                        <button
-                          key={stage.id || idx}
-                          onClick={() => setActivePhaseIndex(idx)}
-                          className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 flex flex-col items-center gap-0.5 text-center min-w-0 ${
-                            activePhaseIndex === idx 
-                              ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/20 scale-102 border border-white/10' 
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
-                          }`}
-                        >
-                          <span className="opacity-65 text-[7px] font-extrabold shrink-0">ÉTAPE {idx + 1}</span>
-                          <span className="truncate w-full font-black">{stage.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : phases.length > 1 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-white/5 shrink-0 shadow-inner">
-                      {phases.map((phaseName, idx) => (
-                        <button
-                          key={phaseName}
-                          onClick={() => setActivePhaseIndex(idx)}
-                          className={`px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 flex flex-col items-center gap-0.5 text-center min-w-0 ${
-                            activePhaseIndex === idx 
-                              ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/20 scale-102 border border-white/10' 
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
-                          }`}
-                        >
-                          <span className="opacity-65 text-[7px] font-extrabold shrink-0">ÉTAPE {idx + 1}</span>
-                          <span className="truncate w-full font-black">{phaseName}</span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
+
 
                   {/* Combined Agent-Lead responsive pairs or Premium Interactive Cockpit */}
                   {scripts.length > 0 ? (
@@ -692,11 +593,6 @@ export function IframeWorkspace() {
 
             {/* Bottom Area: CRM Iframe Workspace */}
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-950 relative">
-              {/* Security Banner */}
-              <div className="bg-slate-900/60 border-b border-white/5 px-4 py-1.5 flex items-center gap-2 text-[9px] text-amber-500 font-semibold uppercase tracking-tight select-none shrink-0">
-                <ShieldAlert className="w-3 h-3 shrink-0" />
-                <span className="truncate">Note : Zoho ou certaines extensions peuvent bloquer l'intégration iframe directe.</span>
-              </div>
 
               <div className="flex-1 relative bg-white min-h-0">
                 <iframe
