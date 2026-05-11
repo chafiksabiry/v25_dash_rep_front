@@ -48,6 +48,19 @@ export function IframeWorkspace() {
   // Active replica index inside the active phase
   const [activeReplicaIndex, setActiveReplicaIndex] = useState(0);
 
+  // Support for interactive cockpit stages schema
+  const interactiveStages = activeScript?.playbook?.stages || [];
+  const hasInteractiveStages = Array.isArray(interactiveStages) && interactiveStages.length > 0;
+
+  // Interactive UI States for objection options & checklist
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+
+  // Reset interactive states when changing phase
+  useEffect(() => {
+    setSelectedOptionId(null);
+  }, [activePhaseIndex]);
+
   // Group script by phase
   const activeScript = scripts?.[0];
   const scriptByPhase = activeScript?.script?.reduce((acc: any, item: any) => {
@@ -330,7 +343,24 @@ export function IframeWorkspace() {
                   </div>
 
                   {/* Horizontal Phase Pagination Steps */}
-                  {phases.length > 1 ? (
+                  {hasInteractiveStages ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-white/5 shrink-0 shadow-inner">
+                      {interactiveStages.map((stage: any, idx: number) => (
+                        <button
+                          key={stage.id || idx}
+                          onClick={() => setActivePhaseIndex(idx)}
+                          className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 flex flex-col items-center gap-0.5 text-center min-w-0 ${
+                            activePhaseIndex === idx 
+                              ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/20 scale-102 border border-white/10' 
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
+                          }`}
+                        >
+                          <span className="opacity-65 text-[7px] font-extrabold shrink-0">ÉTAPE {idx + 1}</span>
+                          <span className="truncate w-full font-black">{stage.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : phases.length > 1 ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-white/5 shrink-0 shadow-inner">
                       {phases.map((phaseName, idx) => (
                         <button
@@ -349,9 +379,186 @@ export function IframeWorkspace() {
                     </div>
                   ) : null}
 
-                  {/* Combined Agent-Lead responsive pairs */}
+                  {/* Combined Agent-Lead responsive pairs or Premium Interactive Cockpit */}
                   {scripts.length > 0 ? (
-                    replicas.length > 0 ? (
+                    hasInteractiveStages ? (
+                      (() => {
+                        const currentStage = interactiveStages[activePhaseIndex];
+                        if (!currentStage) return null;
+                        return (
+                          <div className="flex flex-col gap-4 animate-in fade-in duration-300">
+                            {/* Side-by-side grid of agent speech and compliance/checks/objections */}
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                              {/* Left Column: Agent Replica Card */}
+                              <div className="relative overflow-hidden rounded-2xl border p-4 md:p-5 pl-6 md:pl-7 flex flex-col gap-3 group transition-all duration-300 bg-gradient-to-br from-indigo-950/15 via-slate-900/90 to-slate-950/90 border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.05)]">
+                                {/* Glowing left accent bar */}
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500" />
+                                
+                                <div className="flex gap-4 items-start">
+                                  <div className="p-2.5 rounded-xl h-fit shrink-0 bg-indigo-500/20 text-indigo-300">
+                                    <Bot className="w-5 h-5 animate-pulse" />
+                                  </div>
+                                  <div className="space-y-1.5 flex-1 min-w-0 text-left">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">
+                                        {currentStage.introTitle || "CONSEILLER (VOUS)"}
+                                      </span>
+                                      <button
+                                        onClick={() => handleCopy(currentStage.introReplica, 'agent_replica')}
+                                        className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[8px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all flex items-center gap-1 shrink-0 cursor-pointer"
+                                        title="Copier la réplique du conseiller"
+                                      >
+                                        {copiedField === 'agent_replica' ? (
+                                          <span className="text-emerald-400">Copié</span>
+                                        ) : (
+                                          <span>Copier</span>
+                                        )}
+                                      </button>
+                                    </div>
+                                    <p className="text-xs md:text-sm leading-relaxed font-bold text-indigo-100 italic">
+                                      {currentStage.introReplica}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Reminders / Warnings list */}
+                                {currentStage.reminders && currentStage.reminders.length > 0 && (
+                                  <div className="space-y-1.5 pt-2 border-t border-white/5">
+                                    {currentStage.reminders.map((rem: any, idx: number) => (
+                                      <div 
+                                        key={idx} 
+                                        className={`p-2.5 rounded-xl border flex items-start gap-2.5 text-left ${
+                                          rem.type === 'warning' 
+                                            ? 'bg-red-500/10 border-red-500/20 text-red-200' 
+                                            : rem.type === 'clock' 
+                                              ? 'bg-orange-500/10 border-orange-500/20 text-orange-200' 
+                                              : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'
+                                        }`}
+                                      >
+                                        <span className="text-[10px] font-black mt-0.5">•</span>
+                                        <p className="text-[10px] font-bold leading-normal">{rem.text}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Right Column: Objection options, Checklist, or general guidance */}
+                              <div className="space-y-4 text-left">
+                                {currentStage.options && currentStage.options.length > 0 ? (
+                                  <div className="space-y-2.5">
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block border-b border-white/5 pb-1">
+                                      {currentStage.optionsTitle || "GÉRER LA RÉACTION DU PROSPECT"}
+                                    </span>
+                                    
+                                    <div className="grid grid-cols-1 gap-1.5">
+                                      {currentStage.options.map((opt: any) => (
+                                        <button
+                                          key={opt.id}
+                                          onClick={() => setSelectedOptionId(opt.id)}
+                                          className={`p-2.5 rounded-xl border text-left transition-all duration-200 outline-none flex flex-col justify-between cursor-pointer ${
+                                            selectedOptionId === opt.id
+                                              ? 'bg-indigo-500/15 border-indigo-500/50 shadow-lg shadow-indigo-500/10'
+                                              : 'bg-slate-900/60 border-white/5 hover:bg-slate-850'
+                                          }`}
+                                        >
+                                          <span className="text-[10px] font-black text-slate-100 flex items-center gap-1">
+                                            {opt.id === 'prospect_confirms' ? '✓' : '↻'} {opt.label}
+                                          </span>
+                                          <span className="text-[9px] text-slate-400 font-bold mt-0.5 leading-snug">
+                                            {opt.subtext}
+                                          </span>
+                                        </button>
+                                      ))}
+                                    </div>
+
+                                    {/* Reveal recommended response box if selected */}
+                                    {selectedOptionId && (
+                                      <div className="p-3 bg-emerald-500/10 border border-emerald-500/25 rounded-xl space-y-1.5 animate-in fade-in duration-200">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[8.5px] font-extrabold text-emerald-400 uppercase tracking-widest block">
+                                            Réponse Recommandée
+                                          </span>
+                                          <button
+                                            onClick={() => handleCopy(currentStage.options.find((o: any) => o.id === selectedOptionId)?.recommendedResponse || '', 'recommended')}
+                                            className="text-[8px] font-bold text-emerald-400 hover:text-emerald-300 uppercase tracking-wider cursor-pointer"
+                                          >
+                                            {copiedField === 'recommended' ? 'Copié' : 'Copier'}
+                                          </button>
+                                        </div>
+                                        <p className="text-[10px] font-black text-emerald-100 leading-normal italic">
+                                          {currentStage.options.find((o: any) => o.id === selectedOptionId)?.recommendedResponse}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : currentStage.checklist && currentStage.checklist.length > 0 ? (
+                                  <div className="space-y-2.5">
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block border-b border-white/5 pb-1">
+                                      {currentStage.checklistTitle || "DONNÉES À COLLECTER"}
+                                    </span>
+
+                                    <div className="bg-slate-900/60 rounded-xl border border-white/5 overflow-hidden divide-y divide-white/5 shadow-inner">
+                                      {currentStage.checklist.map((item: string, idx: number) => {
+                                        const key = `rep-check-${currentStage.id}-${idx}`;
+                                        const isChecked = !!checkedItems[key];
+                                        return (
+                                          <label 
+                                            key={idx}
+                                            className="flex items-center gap-2.5 px-3 py-2.5 hover:bg-slate-850/60 cursor-pointer transition-all"
+                                          >
+                                            <input 
+                                              type="checkbox"
+                                              checked={isChecked}
+                                              onChange={() => setCheckedItems(prev => ({ ...prev, [key]: !prev[key] }))}
+                                              className="rounded border-white/10 bg-slate-950 text-indigo-500 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+                                            />
+                                            <span className={`text-[10px] font-bold ${isChecked ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
+                                              {item}
+                                            </span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="h-full min-h-[140px] border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center p-5 text-center bg-slate-900/20">
+                                    <Bot className="w-5 h-5 text-indigo-400/30 mb-2 animate-bounce" />
+                                    <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest block">GUIDANCE ACTIVE HARX</span>
+                                    <p className="text-[9px] text-slate-500 font-bold leading-normal max-w-xs mt-1">
+                                      Écoutez attentivement le prospect et formulez votre réplique avec conviction et chaleur.
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Back/Next Step Navigation bar */}
+                            <div className="p-2.5 bg-slate-950/40 border border-white/5 rounded-2xl flex items-center justify-between gap-3 shrink-0">
+                              <button
+                                disabled={activePhaseIndex === 0}
+                                onClick={() => setActivePhaseIndex(prev => Math.max(0, prev - 1))}
+                                className="px-3.5 py-1.5 bg-slate-900/80 hover:bg-slate-850 disabled:opacity-20 disabled:pointer-events-none border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
+                              >
+                                ← Précédent
+                              </button>
+                              
+                              <span className="text-[9.5px] text-slate-400 font-extrabold tracking-widest uppercase">
+                                ÉTAPE INTERACTIVE {activePhaseIndex + 1} SUR {interactiveStages.length}
+                              </span>
+
+                              <button
+                                disabled={activePhaseIndex === interactiveStages.length - 1}
+                                onClick={() => setActivePhaseIndex(prev => Math.min(interactiveStages.length - 1, prev + 1))}
+                                className="px-3.5 py-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 disabled:from-slate-800 disabled:to-slate-800 disabled:opacity-20 disabled:pointer-events-none text-white border border-indigo-400/10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-lg shadow-purple-500/15"
+                              >
+                                Suivant →
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()
+                    ) : replicas.length > 0 ? (
                       (() => {
                         const currentPair = replicas[activeReplicaIndex];
                         if (!currentPair) return null;
@@ -377,7 +584,7 @@ export function IframeWorkspace() {
                                         </span>
                                         <button
                                           onClick={() => handleCopy(currentPair.agent.replica, 'agent_replica')}
-                                          className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[8px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all flex items-center gap-1 shrink-0"
+                                          className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[8px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all flex items-center gap-1 shrink-0 cursor-pointer"
                                           title="Copier la réplique du conseiller"
                                         >
                                           {copiedField === 'agent_replica' ? (
@@ -416,7 +623,7 @@ export function IframeWorkspace() {
                                         </span>
                                         <button
                                           onClick={() => handleCopy(currentPair.lead.replica, 'lead_replica')}
-                                          className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[8px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all flex items-center gap-1 shrink-0"
+                                          className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[8px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all flex items-center gap-1 shrink-0 cursor-pointer"
                                           title="Copier la réplique attendue"
                                         >
                                           {copiedField === 'lead_replica' ? (
@@ -445,19 +652,19 @@ export function IframeWorkspace() {
                                 <button
                                   disabled={activeReplicaIndex === 0}
                                   onClick={() => setActiveReplicaIndex(prev => Math.max(0, prev - 1))}
-                                  className="px-4 py-2 bg-slate-900/80 hover:bg-slate-850 disabled:opacity-20 disabled:pointer-events-none border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5 hover:scale-103 active:scale-97 shadow-sm shadow-black/20"
+                                  className="px-4 py-2 bg-slate-900/80 hover:bg-slate-850 disabled:opacity-20 disabled:pointer-events-none border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5 hover:scale-103 active:scale-97 shadow-sm shadow-black/20 cursor-pointer"
                                 >
                                   ← Précédent
                                 </button>
                                 
                                 <span className="text-[10px] text-slate-400 font-extrabold tracking-widest uppercase px-2">
-                                  CONVERSATION ÉTAPE ${activeReplicaIndex + 1} / ${replicas.length}
+                                  CONVERSATION ÉTAPE {activeReplicaIndex + 1} / {replicas.length}
                                 </span>
 
                                 <button
                                   disabled={activeReplicaIndex === replicas.length - 1}
                                   onClick={() => setActiveReplicaIndex(prev => Math.min(replicas.length - 1, prev + 1))}
-                                  className="px-4 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 disabled:from-slate-800 disabled:to-slate-800 disabled:opacity-20 disabled:pointer-events-none text-white border border-indigo-400/10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 flex items-center gap-1.5 hover:scale-103 active:scale-97 shadow-lg shadow-purple-500/15"
+                                  className="px-4 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 disabled:from-slate-800 disabled:to-slate-800 disabled:opacity-20 disabled:pointer-events-none text-white border border-indigo-400/10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 flex items-center gap-1.5 hover:scale-103 active:scale-97 shadow-lg shadow-purple-500/15 cursor-pointer"
                                 >
                                   Suivant →
                                 </button>
