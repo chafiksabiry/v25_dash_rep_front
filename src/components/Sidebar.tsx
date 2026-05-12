@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing, GraduationCap, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing, GraduationCap, AlertTriangle, Wallet } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRepTrainingNav } from '../contexts/RepTrainingNavContext';
 import { useTranslation } from 'react-i18next';
@@ -105,6 +105,12 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       icon: Phone,
       label: t('sidebar.calls'),
       path: '/calls',
+      isAccessible: () => true
+    },
+    {
+      icon: Wallet,
+      label: t('sidebar.wallet'),
+      path: '/wallet',
       isAccessible: () => true
     },
     {

@@ -177,11 +177,7 @@ function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen }: any) {
                 <CallReportCard />
               </PhaseProtectedRoute>
             } />
-            <Route path="/wallet" element={
-              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={5}>
-                <WalletPage />
-              </PhaseProtectedRoute>
-            } />
+            <Route path="/wallet" element={<WalletPage />} />
             <Route path="*" element={<Navigate to="/profile" replace />} />
           </Routes>
         </main>
