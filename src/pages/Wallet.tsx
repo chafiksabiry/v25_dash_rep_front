@@ -19,7 +19,8 @@ import {
   X,
   ShieldCheck,
   KeyRound,
-  Sparkles
+  Sparkles,
+  Phone
 } from 'lucide-react';
 
 export function WalletPage() {
@@ -37,6 +38,78 @@ export function WalletPage() {
     return saved ? parseFloat(saved) : 325.00;
   });
   const [lifetimeEarnings, setLifetimeEarnings] = useState(12450.00);
+
+  // Filter and Call Records for "Liste des Appels"
+  const [selectedGigFilter, setSelectedGigFilter] = useState('all');
+
+  const gigsFilterOptions = [
+    { id: 'all', title: 'Tous les Gigs' },
+    { id: 'insurance-premium', title: 'Assurance Santé Premium' },
+    { id: 'cpf-booster', title: 'Formation CPF Booster' },
+    { id: 'telecom-pro', title: 'Télécom Fibre Pro' }
+  ];
+
+  const callEarnings = [
+    {
+      id: 'C1',
+      gigId: 'insurance-premium',
+      gigTitle: 'Assurance Santé Premium',
+      customerName: 'Jean Dupont',
+      phone: '+33 6 12 34 56 78',
+      duration: '08:45',
+      date: '2024-03-15 14:32',
+      status: 'Validé',
+      earnings: 17.50
+    },
+    {
+      id: 'C2',
+      gigId: 'cpf-booster',
+      gigTitle: 'Formation CPF Booster',
+      customerName: 'Marie Curie',
+      phone: '+33 6 98 76 54 32',
+      duration: '12:10',
+      date: '2024-03-15 11:15',
+      status: 'Validé',
+      earnings: 24.20
+    },
+    {
+      id: 'C3',
+      gigId: 'telecom-pro',
+      gigTitle: 'Télécom Fibre Pro',
+      customerName: 'Pierre Menès',
+      phone: '+33 7 45 89 12 36',
+      duration: '04:15',
+      date: '2024-03-14 16:45',
+      status: 'En attente',
+      earnings: 8.50
+    },
+    {
+      id: 'C4',
+      gigId: 'insurance-premium',
+      gigTitle: 'Assurance Santé Premium',
+      customerName: 'Sophie Lambert',
+      phone: '+33 6 55 44 33 22',
+      duration: '15:30',
+      date: '2024-03-13 09:20',
+      status: 'Validé',
+      earnings: 31.00
+    },
+    {
+      id: 'C5',
+      gigId: 'cpf-booster',
+      gigTitle: 'Formation CPF Booster',
+      customerName: 'Lucas Bernard',
+      phone: '+33 6 11 22 33 44',
+      duration: '02:05',
+      date: '2024-03-12 18:10',
+      status: 'Refusé',
+      earnings: 0.00
+    }
+  ];
+
+  const filteredCalls = selectedGigFilter === 'all' 
+    ? callEarnings 
+    : callEarnings.filter(call => call.gigId === selectedGigFilter);
 
   // Sync state changes with localStorage and emit sync event
   useEffect(() => {
@@ -246,71 +319,168 @@ export function WalletPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-100">
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">{t('wallet.transactionHistory')}</h2>
-                <div className="flex items-center space-x-3">
-                  <select
-                    value={selectedDateRange}
-                    onChange={(e) => setSelectedDateRange(e.target.value)}
-                    className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 bg-white"
-                  >
-                    <option value="today">Today</option>
-                    <option value="this-week">This Week</option>
-                    <option value="this-month">This Month</option>
-                    <option value="last-month">Last Month</option>
-                  </select>
-                  <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
-                    <Filter className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+            {/* Header Tabs */}
+            <div className="flex border-b border-slate-100 bg-slate-50/50">
+              <button
+                type="button"
+                onClick={() => setActiveTab('transactions')}
+                className={`flex-1 py-4 text-center text-xs font-black uppercase tracking-widest border-b-2 transition-all ${
+                  activeTab === 'transactions' 
+                    ? 'border-blue-600 text-blue-600 bg-white' 
+                    : 'border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50/50'
+                }`}
+              >
+                {t('wallet.transactionHistory')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('calls')}
+                className={`flex-1 py-4 text-center text-xs font-black uppercase tracking-widest border-b-2 transition-all ${
+                  activeTab === 'calls' 
+                    ? 'border-blue-600 text-blue-600 bg-white' 
+                    : 'border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50/50'
+                }`}
+              >
+                Liste des Appels & Gains
+              </button>
             </div>
 
-            <div className="divide-y divide-slate-100">
-              {transactions.map((transaction) => (
-                <div key={transaction.id} className="p-6 hover:bg-slate-50/50 transition-colors">
+            {activeTab === 'transactions' ? (
+              <>
+                <div className="p-6 border-b border-gray-100">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className={`p-2.5 rounded-xl ${
-                        transaction.type === 'Payout' ? 'bg-orange-50 text-orange-600' :
-                        transaction.type === 'Bonus' ? 'bg-blue-50 text-blue-600' :
-                        'bg-emerald-50 text-emerald-600'
-                      }`}>
-                        {transaction.type === 'Payout' ? (
-                          <ArrowUpRight className="w-5 h-5" />
-                        ) : (
-                          <ArrowDownRight className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-extrabold text-slate-800 text-sm">{transaction.type === 'Payout' ? 'Retrait Demandé' : transaction.type}</p>
-                        <p className="text-xs text-slate-400 font-semibold mt-0.5">{transaction.description}</p>
-                      </div>
+                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Historique de Retraits</h2>
+                    <div className="flex items-center space-x-3">
+                      <select
+                        value={selectedDateRange}
+                        onChange={(e) => setSelectedDateRange(e.target.value)}
+                        className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 bg-white"
+                      >
+                        <option value="today">Today</option>
+                        <option value="this-week">This Week</option>
+                        <option value="this-month">This Month</option>
+                        <option value="last-month">Last Month</option>
+                      </select>
+                      <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
+                        <Filter className="w-4 h-4" />
+                      </button>
                     </div>
-                    <div className="text-right">
-                      <p className="font-black text-slate-900 text-sm">${transaction.amount.toFixed(2)}</p>
-                      <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
-                        transaction.status === 'Completed' 
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                          : 'bg-amber-50 text-amber-600 border border-amber-100'
-                      }`}>
-                        {transaction.status === 'Completed' ? 'Complété' : 'En cours'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between text-[11px] text-slate-400 font-bold">
-                    <div className="flex items-center space-x-4">
-                      <span>Ref: {transaction.reference}</span>
-                      <span>•</span>
-                      <span>Via: {transaction.method}</span>
-                    </div>
-                    <span>{new Date(transaction.date).toLocaleDateString()}</span>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="divide-y divide-slate-100">
+                  {transactions.map((transaction) => (
+                    <div key={transaction.id} className="p-6 hover:bg-slate-50/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className={`p-2.5 rounded-xl ${
+                            transaction.type === 'Payout' ? 'bg-orange-50 text-orange-600' :
+                            transaction.type === 'Bonus' ? 'bg-blue-50 text-blue-600' :
+                            'bg-emerald-50 text-emerald-600'
+                          }`}>
+                            {transaction.type === 'Payout' ? (
+                              <ArrowUpRight className="w-5 h-5" />
+                            ) : (
+                              <ArrowDownRight className="w-5 h-5" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-slate-800 text-sm">{transaction.type === 'Payout' ? 'Retrait Demandé' : transaction.type}</p>
+                            <p className="text-xs text-slate-400 font-semibold mt-0.5">{transaction.description}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-black text-slate-900 text-sm">${transaction.amount.toFixed(2)}</p>
+                          <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
+                            transaction.status === 'Completed' 
+                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                              : 'bg-amber-50 text-amber-600 border border-amber-100'
+                          }`}>
+                            {transaction.status === 'Completed' ? 'Complété' : 'En cours'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex items-center justify-between text-[11px] text-slate-400 font-bold">
+                        <div className="flex items-center space-x-4">
+                          <span>Ref: {transaction.reference}</span>
+                          <span>•</span>
+                          <span>Via: {transaction.method}</span>
+                        </div>
+                        <span>{new Date(transaction.date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="p-6 border-b border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+                      Suivi des Appels éligibles aux commissions
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5 uppercase">
+                      Chaque appel validé par l'entreprise crédite votre solde de gains.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase text-slate-400">Filtrer par Gig :</span>
+                    <select
+                      value={selectedGigFilter}
+                      onChange={(e) => setSelectedGigFilter(e.target.value)}
+                      className="border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-black text-slate-700 bg-white shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    >
+                      {gigsFilterOptions.map(opt => (
+                        <option key={opt.id} value={opt.id}>{opt.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="divide-y divide-slate-100">
+                  {filteredCalls.length === 0 ? (
+                    <div className="p-12 text-center text-slate-400 text-xs font-bold uppercase">
+                      Aucun appel trouvé pour ce filtre de Gig.
+                    </div>
+                  ) : (
+                    filteredCalls.map((call) => (
+                      <div key={call.id} className="p-6 hover:bg-slate-50/50 transition-all">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className={`p-3 rounded-xl bg-blue-50 text-blue-600`}>
+                              <Phone className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-extrabold text-slate-800 text-sm">{call.customerName}</p>
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">
+                                  {call.duration}
+                                </span>
+                              </div>
+                              <p className="text-xs text-blue-600 font-bold mt-1 uppercase tracking-wider">{call.gigTitle}</p>
+                              <p className="text-[10px] text-slate-400 font-bold mt-0.5">{call.phone} • {call.date}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-black text-emerald-600 text-base">+{call.earnings > 0 ? `$${call.earnings.toFixed(2)}` : '--'}</p>
+                            <span className={`inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide ${
+                              call.status === 'Validé' 
+                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                : call.status === 'En attente'
+                                ? 'bg-amber-50 text-amber-600 border border-amber-100'
+                                : 'bg-rose-50 text-rose-600 border border-rose-100'
+                            }`}>
+                              {call.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
