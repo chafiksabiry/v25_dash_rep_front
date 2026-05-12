@@ -230,13 +230,6 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
     fetchCallRecords();
   }, [gigId, leadId]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-harx-600"></div>
-      </div>
-    );
-  }
 
   const openCallDetails = (call: CallRecord, tab: 'transcript' | 'insights') => {
     setSelectedCall(call);
@@ -270,7 +263,30 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
       </div>
 
       <div className="bg-white rounded-[32px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-        {filteredRecords.length === 0 ? (
+        {loading ? (
+          <div className="p-6 space-y-4">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-pulse pb-6 border-b border-slate-50 last:border-none last:pb-0">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-100 shrink-0"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-slate-100 rounded-md w-36"></div>
+                    <div className="flex gap-2">
+                      <div className="h-4 bg-slate-100 rounded-full w-14"></div>
+                      <div className="h-4 bg-slate-100 rounded-full w-14"></div>
+                    </div>
+                    <div className="h-3 bg-slate-100 rounded-md w-28 mt-1"></div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-4 md:gap-6">
+                  <div className="h-8 bg-slate-100 rounded-full w-24"></div>
+                  <div className="h-8 bg-slate-100 rounded-full w-24"></div>
+                  <div className="h-10 w-10 bg-slate-100 rounded-xl"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredRecords.length === 0 ? (
           <div className="flex flex-col justify-center items-center p-20 text-center">
             <div className="w-20 h-20 rounded-3xl bg-slate-50 flex items-center justify-center mb-6">
               <Phone className="w-10 h-10 text-slate-300" />
@@ -300,12 +316,9 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           {record.lead?.First_Name ? `${record.lead.First_Name} ${record.lead.Last_Name || ''}`.trim() :
                             record.lead?.name || record.to || record.from || 'Unknown Customer'}
                         </h3>
-                        <div className="flex items-center gap-3 mt-1">
+                        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border ${record.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50' : 'bg-rose-50 text-rose-600 border-rose-100/50'}`}>
                             {record.status}
-                          </span>
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            {new Date(record.startTime || record.createdAt).toLocaleString()}
                           </span>
                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${record.direction === 'inbound' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'
                             }`}>
@@ -314,6 +327,10 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 text-slate-500 border border-slate-100 px-2 py-0.5 rounded-full">
                             Durée: {Math.floor((record.duration || 0) / 60)}m {(record.duration || 0) % 60}s
                           </span>
+                        </div>
+                        <div className="text-[10px] font-bold text-slate-400/90 mt-2 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-slate-300" />
+                          <span>{new Date(record.startTime || record.createdAt).toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
