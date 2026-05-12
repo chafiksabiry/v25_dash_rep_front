@@ -41,19 +41,59 @@ export function WalletPage() {
 
   // Filter and Call Records for "Liste des Appels"
   const [selectedGigFilter, setSelectedGigFilter] = useState('all');
+  const [enrolledGigs, setEnrolledGigs] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchGigs = async () => {
+      const agentId = localStorage.getItem('agentId');
+      const token = localStorage.getItem('token');
+      if (!agentId || !token) return;
+
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/agents/${agentId}/gigs?status=enrolled`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data.gigs && Array.isArray(data.gigs)) {
+            const processed = data.gigs
+              .filter((eg: any) => eg.gig)
+              .map((eg: any) => ({
+                _id: eg.gig._id,
+                title: eg.gig.title,
+                commission: eg.gig.commission
+              }));
+            setEnrolledGigs(processed);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching enrolled gigs for wallet:', err);
+      }
+    };
+
+    fetchGigs();
+  }, []);
 
   const gigsFilterOptions = [
     { id: 'all', title: 'Tous les Gigs' },
-    { id: 'insurance-premium', title: 'Assurance Santé Premium' },
-    { id: 'cpf-booster', title: 'Formation CPF Booster' },
-    { id: 'telecom-pro', title: 'Télécom Fibre Pro' }
+    ...enrolledGigs.map(eg => ({ id: eg._id, title: eg.title })),
+    ...(enrolledGigs.length === 0 ? [
+      { id: 'insurance-premium', title: 'Assurance Santé Premium' },
+      { id: 'cpf-booster', title: 'Formation CPF Booster' },
+      { id: 'telecom-pro', title: 'Télécom Fibre Pro' }
+    ] : [])
   ];
 
   const callEarnings = [
     {
       id: 'C1',
-      gigId: 'insurance-premium',
-      gigTitle: 'Assurance Santé Premium',
+      gigId: enrolledGigs[0]?._id || 'insurance-premium',
+      gigTitle: enrolledGigs[0]?.title || 'Assurance Santé Premium',
       customerName: 'Jean Dupont',
       phone: '+33 6 12 34 56 78',
       duration: '08:45',
@@ -63,8 +103,8 @@ export function WalletPage() {
     },
     {
       id: 'C2',
-      gigId: 'cpf-booster',
-      gigTitle: 'Formation CPF Booster',
+      gigId: enrolledGigs[1]?._id || 'cpf-booster',
+      gigTitle: enrolledGigs[1]?.title || 'Formation CPF Booster',
       customerName: 'Marie Curie',
       phone: '+33 6 98 76 54 32',
       duration: '12:10',
@@ -74,8 +114,8 @@ export function WalletPage() {
     },
     {
       id: 'C3',
-      gigId: 'telecom-pro',
-      gigTitle: 'Télécom Fibre Pro',
+      gigId: enrolledGigs[2]?._id || 'telecom-pro',
+      gigTitle: enrolledGigs[2]?.title || 'Télécom Fibre Pro',
       customerName: 'Pierre Menès',
       phone: '+33 7 45 89 12 36',
       duration: '04:15',
@@ -85,8 +125,8 @@ export function WalletPage() {
     },
     {
       id: 'C4',
-      gigId: 'insurance-premium',
-      gigTitle: 'Assurance Santé Premium',
+      gigId: enrolledGigs[0]?._id || 'insurance-premium',
+      gigTitle: enrolledGigs[0]?.title || 'Assurance Santé Premium',
       customerName: 'Sophie Lambert',
       phone: '+33 6 55 44 33 22',
       duration: '15:30',
@@ -96,8 +136,8 @@ export function WalletPage() {
     },
     {
       id: 'C5',
-      gigId: 'cpf-booster',
-      gigTitle: 'Formation CPF Booster',
+      gigId: enrolledGigs[1]?._id || 'cpf-booster',
+      gigTitle: enrolledGigs[1]?.title || 'Formation CPF Booster',
       customerName: 'Lucas Bernard',
       phone: '+33 6 11 22 33 44',
       duration: '02:05',
@@ -111,12 +151,7 @@ export function WalletPage() {
     ? callEarnings 
     : callEarnings.filter(call => call.gigId === selectedGigFilter);
 
-  const gigCommissions: Record<string, { rate: string; rules: string; bonus: string }> = {
-    all: {
-      rate: 'Taux Variable',
-      rules: 'Sélectionnez un Gig spécifique pour consulter son barème de commission exact.',
-      bonus: 'Bonus actifs'
-    },
+  const gigCommissionsFallback: Record<string, { rate: string; rules: string; bonus: string }> = {
     'insurance-premium': {
       rate: '$2.00 / min d\'appel',
       rules: 'Commissions calculées sur la durée totale des appels validés par la compagnie.',
@@ -132,6 +167,48 @@ export function WalletPage() {
       rules: 'Taux standard appliqué sur tous les appels professionnels validés.',
       bonus: 'Aucun bonus'
     }
+  };
+
+  const getSelectedGigCommission = () => {
+    if (selectedGigFilter === 'all') {
+      return {
+        rate: 'Taux Variable',
+        rules: 'Sélectionnez un Gig spécifique pour consulter son barème de commission exact.',
+        bonus: 'Bonus actifs'
+      };
+    }
+
+    const selectedGigObj = enrolledGigs.find(g => g._id === selectedGigFilter);
+    if (!selectedGigObj) {
+      const mockFallback = gigCommissionsFallback[selectedGigFilter];
+      if (mockFallback) return mockFallback;
+      return {
+        rate: 'Non spécifié',
+        rules: 'Aucune donnée de commission disponible pour ce projet.',
+        bonus: 'Aucun'
+      };
+    }
+
+    const comm = selectedGigObj.commission || {};
+    const currencySymbol = comm.currency === 'EUR' || (comm.currency && comm.currency.symbol === '€') ? '€' : '$';
+
+    const parts = [];
+    if (comm.commission_per_call !== undefined && comm.commission_per_call !== null) {
+      parts.push(`${comm.commission_per_call}${currencySymbol} par appel`);
+    }
+    if (comm.transactionCommission !== undefined && comm.transactionCommission !== null) {
+      parts.push(`${comm.transactionCommission}${currencySymbol} par transaction`);
+    }
+
+    const rateStr = parts.length > 0 ? parts.join(' + ') : 'Taux variable';
+    const rulesStr = comm.additionalDetails || 'Pas de conditions additionnelles fournies pour ce projet.';
+    const bonusStr = comm.bonusAmount ? `+${comm.bonusAmount}${currencySymbol} de prime` : 'Aucun bonus';
+
+    return {
+      rate: rateStr,
+      rules: rulesStr,
+      bonus: bonusStr
+    };
   };
 
   // Sync state changes with localStorage and emit sync event
@@ -470,18 +547,18 @@ export function WalletPage() {
                     <div>
                       <span className="text-[9px] text-blue-600 font-extrabold uppercase tracking-widest block">Barème de Commission</span>
                       <p className="text-xs text-slate-500 font-medium leading-relaxed mt-0.5">
-                        {gigCommissions[selectedGigFilter]?.rules}
+                        {getSelectedGigCommission().rules}
                       </p>
                     </div>
                   </div>
                   <div className="text-left sm:text-right shrink-0">
                     <span className="text-[9px] font-black text-slate-400 block uppercase tracking-wider">Commission</span>
                     <span className="text-sm font-black text-blue-600 block mt-0.5">
-                      {gigCommissions[selectedGigFilter]?.rate}
+                      {getSelectedGigCommission().rate}
                     </span>
-                    {gigCommissions[selectedGigFilter]?.bonus !== 'Aucun bonus' && (
+                    {getSelectedGigCommission().bonus !== 'Aucun bonus' && (
                       <span className="inline-block text-[8px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-md mt-1.5">
-                        {gigCommissions[selectedGigFilter]?.bonus}
+                        {getSelectedGigCommission().bonus}
                       </span>
                     )}
                   </div>
