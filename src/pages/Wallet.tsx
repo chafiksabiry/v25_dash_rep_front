@@ -158,23 +158,7 @@ export function WalletPage() {
     }
   ]);
 
-  // Payment methods
-  const paymentMethods = [
-    {
-      id: 'bank',
-      name: 'Bank Account',
-      type: 'Primary',
-      last4: '4567',
-      icon: Bank
-    },
-    {
-      id: 'paypal',
-      name: 'PayPal',
-      type: 'Secondary',
-      email: 'john.doe@example.com',
-      icon: CreditCard
-    }
-  ];
+
 
   // Withdrawal Modal States
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -489,79 +473,7 @@ export function WalletPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Methods</h2>
-            <div className="space-y-4">
-              {paymentMethods.map((method) => (
-                <div key={method.id} className="flex items-center justify-between p-4 border border-slate-100 rounded-xl bg-slate-50/50">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-white rounded-lg shadow-sm">
-                      <method.icon className="w-5 h-5 text-gray-600" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-800 text-xs">{method.name}</p>
-                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-                        {method.last4 ? `****${method.last4}` : method.email}
-                      </p>
-                    </div>
-                  </div>
-                  <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                    method.type === 'Primary'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}>
-                    {method.type}
-                  </span>
-                </div>
-              ))}
-              <button className="w-full py-2.5 border border-dashed border-slate-200 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-50 font-extrabold text-xs transition-colors">
-                + Add Payment Method
-              </button>
-            </div>
-          </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Security Settings</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Shield className="w-5 h-5 text-slate-400" />
-                  <div>
-                    <p className="font-bold text-slate-800 text-xs">Two-Factor Auth</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">Extra security for withdrawals</p>
-                  </div>
-                </div>
-                <div className="relative inline-block w-10 h-5">
-                  <input type="checkbox" className="peer sr-only" id="tfa" defaultChecked />
-                  <label
-                    htmlFor="tfa"
-                    className="absolute inset-0 rounded-full bg-gray-200 peer-checked:bg-blue-600 cursor-pointer transition-colors"
-                  >
-                    <span className="absolute inset-y-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transform peer-checked:translate-x-5 transition-transform" />
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Bell className="w-5 h-5 text-slate-400" />
-                  <div>
-                    <p className="font-bold text-slate-800 text-xs">Payment Alerts</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">Get notified about transactions</p>
-                  </div>
-                </div>
-                <div className="relative inline-block w-10 h-5">
-                  <input type="checkbox" className="peer sr-only" id="alerts" defaultChecked />
-                  <label
-                    htmlFor="alerts"
-                    className="absolute inset-0 rounded-full bg-gray-200 peer-checked:bg-blue-600 cursor-pointer transition-colors"
-                  >
-                    <span className="absolute inset-y-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transform peer-checked:translate-x-5 transition-transform" />
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
             <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 blur-xl rounded-full" />
