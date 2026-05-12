@@ -323,32 +323,36 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                         {/* Validation de la Transaction par l'Agent */}
                         <div className="flex flex-col items-center gap-1 min-w-[96px]">
                           <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Agent)</span>
-                          <div className="flex flex-col gap-1.5">
-                            <button
-                              onClick={() => handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, true)}
-                              className={`w-24 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1.5 shadow-sm ${
-                                record.transaction?.validByReps === true
-                                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-transparent shadow-md shadow-blue-500/10'
-                                  : 'bg-blue-50/50 text-blue-600 border-blue-100/40 hover:bg-blue-100/60'
-                              }`}
-                              title="Valider ma transaction"
-                            >
-                              <Check className="w-3 h-3" />
-                              Valider
-                            </button>
-                            <button
-                              onClick={() => handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, false)}
-                              className={`w-24 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1.5 shadow-sm ${
-                                record.transaction?.validByReps === false
-                                  ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white border-transparent shadow-md shadow-rose-500/10'
-                                  : 'bg-rose-50/50 text-rose-600 border-rose-100/40 hover:bg-rose-100/60'
-                              }`}
-                              title="Refuser la transaction"
-                            >
-                              <X className="w-3 h-3" />
-                              Refuser
-                            </button>
-                          </div>
+                          {record.transaction?.validByReps === true ? (
+                            <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-24">
+                              <Check className="w-3.5 h-3.5" />
+                              Validé
+                            </span>
+                          ) : record.transaction?.validByReps === false ? (
+                            <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-24">
+                              <X className="w-3.5 h-3.5" />
+                              Refusé
+                            </span>
+                          ) : (
+                            <div className="flex flex-col gap-1.5">
+                              <button
+                                onClick={() => handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, true)}
+                                className="w-24 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1.5 shadow-sm bg-blue-50/50 text-blue-600 border-blue-100/40 hover:bg-blue-100/60"
+                                title="Valider ma transaction"
+                              >
+                                <Check className="w-3 h-3" />
+                                Valider
+                              </button>
+                              <button
+                                onClick={() => handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, false)}
+                                className="w-24 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1.5 shadow-sm bg-rose-50/50 text-rose-600 border-rose-100/40 hover:bg-rose-100/60"
+                                title="Refuser la transaction"
+                              >
+                                <X className="w-3 h-3" />
+                                Refuser
+                              </button>
+                            </div>
+                          )}
                         </div>
 
                         <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
