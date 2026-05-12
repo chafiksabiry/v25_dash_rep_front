@@ -19,7 +19,8 @@ import {
   Globe,
   Download,
   TrendingUp,
-  Activity as ActivityIcon
+  Activity as ActivityIcon,
+  ChevronDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
@@ -125,6 +126,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [analyzingCallId, setAnalyzingCallId] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<{ callId: string; type: 'transaction' } | null>(null);
 
   const fetchCallRecords = async () => {
     try {
@@ -334,22 +336,52 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                               Refusé
                             </span>
                           ) : (
-                            <select
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === 'approved') {
-                                  handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, true);
-                                } else if (val === 'rejected') {
-                                  handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, false);
-                                }
-                              }}
-                              defaultValue=""
-                              className="w-24 px-2.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200 bg-white text-slate-600 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none text-center cursor-pointer appearance-none"
-                            >
-                              <option value="" disabled hidden>Action</option>
-                              <option value="approved">Valider</option>
-                              <option value="rejected">Refuser</option>
-                            </select>
+                            <div className="relative">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdownId(
+                                    openDropdownId?.callId === record._id && openDropdownId?.type === 'transaction'
+                                      ? null
+                                      : { callId: record._id, type: 'transaction' }
+                                  );
+                                }}
+                                className="w-24 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 shadow-sm bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                              >
+                                <span>Action</span>
+                                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                                  openDropdownId?.callId === record._id && openDropdownId?.type === 'transaction' ? 'rotate-180' : ''
+                                }`} />
+                              </button>
+
+                              {openDropdownId?.callId === record._id && openDropdownId?.type === 'transaction' && (
+                                <>
+                                  <div className="fixed inset-0 z-30" onClick={() => setOpenDropdownId(null)} />
+                                  <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-32 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-xl py-1.5 z-40 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <button
+                                      onClick={() => {
+                                        handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, true);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50/60 flex items-center gap-2 transition-colors"
+                                    >
+                                      <Check className="w-3.5 h-3.5 shrink-0" />
+                                      <span>Valider</span>
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, false);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50/60 flex items-center gap-2 transition-colors"
+                                    >
+                                      <X className="w-3.5 h-3.5 shrink-0" />
+                                      <span>Refuser</span>
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           )}
                         </div>
 
@@ -440,22 +472,52 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                             Refusé
                           </span>
                         ) : (
-                          <select
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val === 'approved') {
-                                handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, true);
-                              } else if (val === 'rejected') {
-                                handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, false);
-                              }
-                            }}
-                            defaultValue=""
-                            className="w-24 px-2.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200 bg-white text-slate-600 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none text-center cursor-pointer appearance-none"
-                          >
-                            <option value="" disabled hidden>Action</option>
-                            <option value="approved">Valider</option>
-                            <option value="rejected">Refuser</option>
-                          </select>
+                          <div className="relative">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenDropdownId(
+                                  openDropdownId?.callId === selectedCall._id && openDropdownId?.type === 'transaction'
+                                    ? null
+                                    : { callId: selectedCall._id, type: 'transaction' }
+                                );
+                              }}
+                              className="w-24 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 shadow-sm bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                            >
+                              <span>Action</span>
+                              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                                openDropdownId?.callId === selectedCall._id && openDropdownId?.type === 'transaction' ? 'rotate-180' : ''
+                              }`} />
+                            </button>
+
+                            {openDropdownId?.callId === selectedCall._id && openDropdownId?.type === 'transaction' && (
+                              <>
+                                <div className="fixed inset-0 z-30" onClick={() => setOpenDropdownId(null)} />
+                                <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-32 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-xl py-1.5 z-40 animate-in fade-in slide-in-from-top-1 duration-200">
+                                  <button
+                                    onClick={() => {
+                                      handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, true);
+                                      setOpenDropdownId(null);
+                                    }}
+                                    className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50/60 flex items-center gap-2 transition-colors"
+                                  >
+                                    <Check className="w-3.5 h-3.5 shrink-0" />
+                                    <span>Valider</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, false);
+                                      setOpenDropdownId(null);
+                                    }}
+                                    className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50/60 flex items-center gap-2 transition-colors"
+                                  >
+                                    <X className="w-3.5 h-3.5 shrink-0" />
+                                    <span>Refuser</span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         )}
                       </div>
 
