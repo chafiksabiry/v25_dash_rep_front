@@ -250,13 +250,6 @@ export function WalletPage() {
       icon: Clock,
       change: `${transactions.filter(t => t.status === 'Processing').length} transactions en attente`,
       status: 'neutral'
-    },
-    {
-      title: t('wallet.lifetimeEarnings'),
-      amount: `$${lifetimeEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      icon: DollarSign,
-      change: 'Since joining',
-      status: 'positive'
     }
   ];
 
@@ -288,7 +281,7 @@ export function WalletPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {balanceStats.map((stat, index) => (
           <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
             <div className="flex items-center justify-between">
@@ -307,8 +300,8 @@ export function WalletPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <div>
+        <div className="space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
             {/* Header Tabs */}
             <div className="flex border-b border-slate-100 bg-slate-50/50">
@@ -469,27 +462,6 @@ export function WalletPage() {
                 </div>
               </>
             )}
-          </div>
-        </div>
-
-        <div className="space-y-6">
-
-
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
-            <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 blur-xl rounded-full" />
-            <div className="flex items-center space-x-3 mb-3">
-              <Lock className="w-5 h-5" />
-              <h2 className="text-sm font-black uppercase tracking-wider">KYC Status</h2>
-            </div>
-            <p className="text-xs text-blue-100 mb-4 leading-relaxed font-medium">
-              Your account is fully verified. You have access to all payment features.
-            </p>
-            <div className="flex items-center justify-between text-[10px] font-black uppercase">
-              <span className="bg-green-500/35 border border-green-400/30 px-2.5 py-1 rounded-full text-green-100">Verified</span>
-              <button className="text-blue-100 hover:text-white transition-all">
-                View Details
-              </button>
-            </div>
           </div>
         </div>
       </div>
