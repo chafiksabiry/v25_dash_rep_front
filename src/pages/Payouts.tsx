@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Wallet, 
   ArrowUpRight, 
@@ -18,9 +18,22 @@ import {
 
 export function Payouts() {
   // Dynamic state metrics for simulating real-time payouts
-  const [availableBalance, setAvailableBalance] = useState(1250.00);
-  const [pendingEarnings, setPendingEarnings] = useState(325.00);
+  const [availableBalance, setAvailableBalance] = useState(() => {
+    const saved = localStorage.getItem('rep_available_balance');
+    return saved ? parseFloat(saved) : 1250.00;
+  });
+  const [pendingEarnings, setPendingEarnings] = useState(() => {
+    const saved = localStorage.getItem('rep_pending_balance');
+    return saved ? parseFloat(saved) : 325.00;
+  });
   const [lifetimeEarnings, setLifetimeEarnings] = useState(12450.00);
+
+  // Sync state changes with localStorage and emit sync event
+  useEffect(() => {
+    localStorage.setItem('rep_available_balance', availableBalance.toString());
+    localStorage.setItem('rep_pending_balance', pendingEarnings.toString());
+    window.dispatchEvent(new Event('WALLET_BALANCE_UPDATED'));
+  }, [availableBalance, pendingEarnings]);
 
   const [transactions, setTransactions] = useState([
     {

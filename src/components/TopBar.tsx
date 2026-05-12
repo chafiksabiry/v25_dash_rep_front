@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, Wallet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { getUserInfo } from '../utils/authUtils';
 import { LanguageSwitcher } from './ui/LanguageSwitcher';
 
@@ -31,6 +32,24 @@ const PROFILE_UPDATE_EVENT = 'PROFILE_UPDATED';
 
 export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const navigate = useNavigate();
+  const [balance, setBalance] = useState(() => {
+    const saved = localStorage.getItem('rep_available_balance');
+    return saved ? parseFloat(saved) : 1250.00;
+  });
+
+  useEffect(() => {
+    const handleBalanceUpdate = () => {
+      const saved = localStorage.getItem('rep_available_balance');
+      if (saved) {
+        setBalance(parseFloat(saved));
+      }
+    };
+    window.addEventListener('WALLET_BALANCE_UPDATED', handleBalanceUpdate);
+    return () => {
+      window.removeEventListener('WALLET_BALANCE_UPDATED', handleBalanceUpdate);
+    };
+  }, []);
 
   const loadProfileData = () => {
     console.log('🔄 TopBar component: Loading profile data');
@@ -105,6 +124,22 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
           <Menu className="h-5 w-5" />
         </button>
         <div className="flex items-center space-x-6 ml-auto">
+          {/* Live Syncing Wallet Balance Badge */}
+          <div 
+            onClick={() => navigate('/wallet')}
+            className="flex items-center space-x-2.5 bg-white/5 border border-white/10 hover:border-white/25 hover:bg-white/10 px-4 py-2 rounded-2xl cursor-pointer text-white transition-all shadow-md group active:scale-95"
+            title="Mon Portefeuille"
+          >
+            <div className="p-1 bg-blue-500/15 text-blue-400 rounded-lg group-hover:bg-blue-500 group-hover:text-white transition-all">
+              <Wallet className="w-4 h-4" />
+            </div>
+            <div className="text-left leading-none">
+              <span className="text-[8px] text-slate-400 font-black uppercase tracking-wider block">Solde</span>
+              <span className="text-xs font-black text-white tracking-wide mt-0.5 block">
+                ${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
           <LanguageSwitcher />
           <div className="flex items-center space-x-3 p-2 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-white/10">
             {profileData?.personalInfo?.photo?.url ? (
