@@ -288,42 +288,48 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-4 md:gap-6">
                         {record.ai_call_score?.overall?.score !== undefined && (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 rounded-xl border border-amber-100">
-                            <Star className="w-3.5 h-3.5 fill-amber-500" />
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100/50 shadow-sm">
+                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                             <span className="text-xs font-black">{record.ai_call_score.overall.score}%</span>
                           </div>
                         )}
                         
-                        <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${
-                          record.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                        <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${
+                          record.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100/50' : 'bg-rose-50 text-rose-600 border border-rose-100/50'
                         }`}>
                           {record.status}
                         </span>
 
+                        <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
+
                         {/* Validation de l'Appel par la Compagnie */}
-                        <div className="flex flex-col items-start gap-1">
+                        <div className="flex flex-col items-center gap-1 min-w-[90px]">
                           <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appel (Compagnie)</span>
-                          <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
-                            record.companyValidation === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                            record.companyValidation === 'rejected' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                            'bg-amber-50 text-amber-600 border-amber-200'
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm ${
+                            record.companyValidation === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100/40' :
+                            record.companyValidation === 'rejected' ? 'bg-rose-50 text-rose-600 border-rose-100/40' :
+                            'bg-amber-50 text-amber-600 border-amber-200/40'
                           }`}>
                             {record.companyValidation === 'approved' ? 'Validé' :
                              record.companyValidation === 'rejected' ? 'Refusé' :
                              'En attente'}
                           </span>
-                        </div>                        {/* Validation de la Transaction par l'Agent */}
-                        <div className="flex flex-col items-start gap-1">
+                        </div>
+
+                        <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
+
+                        {/* Validation de la Transaction par l'Agent */}
+                        <div className="flex flex-col items-center gap-1 min-w-[96px]">
                           <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Agent)</span>
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col gap-1.5">
                             <button
                               onClick={() => handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, true)}
-                              className={`w-[88px] py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 ${
+                              className={`w-24 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1.5 shadow-sm ${
                                 record.transaction?.validByReps === true
-                                  ? 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-500/10'
-                                  : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-transparent shadow-md shadow-blue-500/10'
+                                  : 'bg-blue-50/50 text-blue-600 border-blue-100/40 hover:bg-blue-100/60'
                               }`}
                               title="Valider ma transaction"
                             >
@@ -332,10 +338,10 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                             </button>
                             <button
                               onClick={() => handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, false)}
-                              className={`w-[88px] py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 ${
+                              className={`w-24 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1.5 shadow-sm ${
                                 record.transaction?.validByReps === false
-                                  ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/10'
-                                  : 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'
+                                  ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white border-transparent shadow-md shadow-rose-500/10'
+                                  : 'bg-rose-50/50 text-rose-600 border-rose-100/40 hover:bg-rose-100/60'
                               }`}
                               title="Refuser la transaction"
                             >
@@ -345,13 +351,15 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           </div>
                         </div>
 
+                        <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
+
                         {/* Validation de la Transaction par la Compagnie */}
-                        <div className="flex flex-col items-start gap-1">
+                        <div className="flex flex-col items-center gap-1 min-w-[110px]">
                           <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Compagnie)</span>
-                          <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
-                            record.transaction?.validByCompany === true ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                            record.transaction?.validByCompany === false ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                            'bg-amber-50 text-amber-600 border-amber-200'
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm ${
+                            record.transaction?.validByCompany === true ? 'bg-emerald-50 text-emerald-600 border-emerald-100/40' :
+                            record.transaction?.validByCompany === false ? 'bg-rose-50 text-rose-600 border-rose-100/40' :
+                            'bg-amber-50 text-amber-600 border-amber-200/40'
                           }`}>
                             {record.transaction?.validByCompany === true ? 'Validé' :
                              record.transaction?.validByCompany === false ? 'Refusé' :
