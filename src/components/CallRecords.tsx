@@ -314,15 +314,13 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                              record.companyValidation === 'rejected' ? 'Refusé' :
                              'En attente'}
                           </span>
-                        </div>
-
-                        {/* Validation de la Transaction par l'Agent */}
+                        </div>                        {/* Validation de la Transaction par l'Agent */}
                         <div className="flex flex-col items-start gap-1">
                           <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Agent)</span>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex flex-col gap-1">
                             <button
                               onClick={() => handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, true)}
-                              className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-1 ${
+                              className={`w-[88px] py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 ${
                                 record.transaction?.validByReps === true
                                   ? 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-500/10'
                                   : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
@@ -334,9 +332,9 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                             </button>
                             <button
                               onClick={() => handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, false)}
-                              className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-1 ${
+                              className={`w-[88px] py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 ${
                                 record.transaction?.validByReps === false
-                                  ? 'bg-rose-50 text-white border-rose-500 shadow-md shadow-rose-500/10'
+                                  ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/10'
                                   : 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'
                               }`}
                               title="Refuser la transaction"
