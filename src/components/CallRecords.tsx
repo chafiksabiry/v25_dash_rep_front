@@ -42,6 +42,7 @@ export interface CallRecord {
   endTime?: Date | null;
   status: string;
   duration: number;
+  price?: number;
   recording_url?: string;
   recording_url_cloudinary?: string;
   quality_score?: number;
@@ -309,6 +310,9 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${record.direction === 'inbound' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'
                             }`}>
                             {record.direction}
+                          </span>
+                          <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full shadow-sm">
+                            {(record.price ?? 0).toFixed(2)} €
                           </span>
                         </div>
                       </div>
