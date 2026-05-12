@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { 
+import {
   Phone,
   Calendar,
   Brain,
@@ -28,6 +28,8 @@ import api from '../utils/client';
 import { PremiumAudioPlayer } from './PremiumAudioPlayer';
 
 export interface CallRecord {
+  agentValidation: string;
+  companyValidation: string;
   _id: string;
   call_id?: string;
   agent: string;
@@ -135,7 +137,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
       if (!agentId) throw new Error('Agent ID not found');
 
       const response = await api.calls.getByAgentId(agentId);
-      
+
       if (response && response.success && Array.isArray(response.data)) {
         setCallRecords(response.data);
       } else {
@@ -154,10 +156,10 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
       const response = await api.calls.analyze(callId);
       if (response.success) {
         if (selectedCall && (selectedCall._id === callId || (selectedCall as any).$oid === callId)) {
-          setSelectedCall({ 
-            ...selectedCall, 
+          setSelectedCall({
+            ...selectedCall,
             ai_call_score: response.data,
-            transcript: response.transcript || selectedCall.transcript 
+            transcript: response.transcript || selectedCall.transcript
           });
         }
         fetchCallRecords();
@@ -173,22 +175,22 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
     try {
       const status = currentStatus === clickedStatus ? null : clickedStatus;
       const response = await api.calls.update(callId, { 'transaction.validByReps': status } as any);
-      
+
       if (response && response.success) {
         setCallRecords(prev => prev.map(c => {
           if (c._id === callId) {
-            const updatedTx = c.transaction 
-              ? { ...c.transaction, validByReps: status } 
+            const updatedTx = c.transaction
+              ? { ...c.transaction, validByReps: status }
               : { validByReps: status, validByCompany: null, valid: null };
             return { ...c, transaction: updatedTx };
           }
           return c;
         }));
-        
+
         setSelectedCall((prev: any) => {
           if (prev && prev._id === callId) {
-            const updatedTx = prev.transaction 
-              ? { ...prev.transaction, validByReps: status } 
+            const updatedTx = prev.transaction
+              ? { ...prev.transaction, validByReps: status }
               : { validByReps: status, validByCompany: null, valid: null };
             return { ...prev, transaction: updatedTx };
           }
@@ -207,10 +209,10 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
     try {
       const status = currentStatus === clickedStatus ? 'pending' : clickedStatus;
       const response = await api.calls.update(callId, { agentValidation: status } as any);
-      
+
       if (response && response.success) {
         setCallRecords(prev => prev.map(c => c._id === callId ? { ...c, agentValidation: status } : c));
-        
+
         setSelectedCall((prev: any) => {
           if (prev && prev._id === callId) {
             return { ...prev, agentValidation: status };
@@ -244,8 +246,8 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
     if (leadId && record.lead?._id !== leadId) return false;
     if (gigId) {
       const recordGig = record.lead?.gigId;
-      const idStr = typeof recordGig === 'object' 
-        ? (recordGig?._id || (recordGig as any)?.$oid) 
+      const idStr = typeof recordGig === 'object'
+        ? (recordGig?._id || (recordGig as any)?.$oid)
         : recordGig;
       if (idStr !== gigId) return false;
     }
@@ -267,251 +269,244 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
       </div>
 
       <div className="bg-white rounded-[32px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-          {filteredRecords.length === 0 ? (
-            <div className="flex flex-col justify-center items-center p-20 text-center">
-              <div className="w-20 h-20 rounded-3xl bg-slate-50 flex items-center justify-center mb-6">
-                <Phone className="w-10 h-10 text-slate-300" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest">{t('calls.noCalls')}</h3>
-              <p className="text-sm text-slate-500 mt-2 max-w-sm">
-                {t('calls.noCallsDetail')}
-              </p>
+        {filteredRecords.length === 0 ? (
+          <div className="flex flex-col justify-center items-center p-20 text-center">
+            <div className="w-20 h-20 rounded-3xl bg-slate-50 flex items-center justify-center mb-6">
+              <Phone className="w-10 h-10 text-slate-300" />
             </div>
-          ) : (
-            <div className="divide-y divide-slate-50">
-              {filteredRecords.map((record: CallRecord) => {
-                const callId = typeof record._id === 'object' ? (record._id as any).$oid : record._id;
-                return (
-                  <div 
-                    key={callId} 
-                    className="p-6 hover:bg-slate-50/50 transition-all duration-300 group"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
-                          record.direction === 'inbound' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'
+            <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest">{t('calls.noCalls')}</h3>
+            <p className="text-sm text-slate-500 mt-2 max-w-sm">
+              {t('calls.noCallsDetail')}
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-50">
+            {filteredRecords.map((record: CallRecord) => {
+              const callId = typeof record._id === 'object' ? (record._id as any).$oid : record._id;
+              return (
+                <div
+                  key={callId}
+                  className="p-6 hover:bg-slate-50/50 transition-all duration-300 group"
+                >
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${record.direction === 'inbound' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'
                         }`}>
-                          <Phone className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h3 className="font-black text-slate-900 text-sm tracking-tight">
-                            {record.lead?.First_Name ? `${record.lead.First_Name} ${record.lead.Last_Name || ''}`.trim() : 
-                             record.lead?.name || record.to || record.from || 'Unknown Customer'}
-                          </h3>
-                          <div className="flex items-center gap-3 mt-1">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                              {new Date(record.startTime || record.createdAt).toLocaleString()}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                              record.direction === 'inbound' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'
-                            }`}>
-                              {record.direction}
-                            </span>
-                          </div>
-                        </div>
+                        <Phone className="w-6 h-6" />
                       </div>
-
-                      <div className="flex flex-wrap items-center gap-4 md:gap-6">
-                        {record.ai_call_score?.overall?.score !== undefined && (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100/50 shadow-sm">
-                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                            <span className="text-xs font-black">{record.ai_call_score.overall.score}%</span>
-                          </div>
-                        )}
-                        
-                        <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${
-                          record.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100/50' : 'bg-rose-50 text-rose-600 border border-rose-100/50'
-                        }`}>
-                          {record.status}
-                        </span>
-
-                        {record.status?.toLowerCase() === 'completed' ? (
-                          <>
-                            <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
-
-                            {/* Validation de l'Appel */}
-                            <div className="flex flex-col items-center gap-1 min-w-[110px]">
-                              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Appel (Validation)</span>
-                              {record.companyValidation === 'approved' && record.agentValidation === 'approved' ? (
-                                <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-28">
-                                  <Check className="w-3.5 h-3.5" />
-                                  Validé
-                                </span>
-                              ) : record.companyValidation === 'rejected' || record.agentValidation === 'rejected' ? (
-                                <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-28">
-                                  <X className="w-3.5 h-3.5" />
-                                  Refusé
-                                </span>
-                              ) : record.agentValidation === 'approved' && record.companyValidation !== 'approved' ? (
-                                <span 
-                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200/40 shadow-sm w-28 text-center cursor-help"
-                                  title="En attente de la confirmation de la compagnie"
-                                >
-                                  <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-                                  Attente Cie
-                                </span>
-                              ) : (
-                                <div className="relative">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setOpenDropdownId(
-                                        openDropdownId?.callId === record._id && openDropdownId?.type === 'validation'
-                                          ? null
-                                          : { callId: record._id, type: 'validation' }
-                                      );
-                                    }}
-                                    className="w-24 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 shadow-sm bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                                  >
-                                    <span>Action</span>
-                                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-                                      openDropdownId?.callId === record._id && openDropdownId?.type === 'validation' ? 'rotate-180' : ''
-                                    }`} />
-                                  </button>
-
-                                  {openDropdownId?.callId === record._id && openDropdownId?.type === 'validation' && (
-                                    <>
-                                      <div className="fixed inset-0 z-30" onClick={() => setOpenDropdownId(null)} />
-                                      <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-32 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-xl py-1.5 z-40 animate-in fade-in slide-in-from-top-1 duration-200">
-                                        <button
-                                          onClick={() => {
-                                            handleUpdateCallValidationReps(record._id, record.agentValidation || 'pending', 'approved');
-                                            setOpenDropdownId(null);
-                                          }}
-                                          className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50/60 flex items-center gap-2 transition-colors"
-                                        >
-                                          <Check className="w-3.5 h-3.5 shrink-0" />
-                                          <span>Valider</span>
-                                        </button>
-                                        <button
-                                          onClick={() => {
-                                            handleUpdateCallValidationReps(record._id, record.agentValidation || 'pending', 'rejected');
-                                            setOpenDropdownId(null);
-                                          }}
-                                          className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50/60 flex items-center gap-2 transition-colors"
-                                        >
-                                          <X className="w-3.5 h-3.5 shrink-0" />
-                                          <span>Refuser</span>
-                                        </button>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
-
-                            {/* Validation de la Transaction */}
-                            <div className="flex flex-col items-center gap-1 min-w-[110px]">
-                              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Transaction</span>
-                              {record.transaction?.validByCompany === true && record.transaction?.validByReps === true ? (
-                                <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100/40 shadow-sm w-28">
-                                  <Check className="w-3.5 h-3.5" />
-                                  Signé
-                                </span>
-                              ) : record.transaction?.validByCompany === false || record.transaction?.validByReps === false ? (
-                                <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-28">
-                                  <X className="w-3.5 h-3.5" />
-                                  Refusé
-                                </span>
-                              ) : record.transaction?.validByReps === true && record.transaction?.validByCompany !== true ? (
-                                <span 
-                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200/40 shadow-sm w-28 text-center cursor-help"
-                                  title="En attente de la confirmation de la compagnie"
-                                >
-                                  <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-                                  Attente Cie
-                                </span>
-                              ) : (
-                                <div className="relative">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setOpenDropdownId(
-                                        openDropdownId?.callId === record._id && openDropdownId?.type === 'transaction'
-                                          ? null
-                                          : { callId: record._id, type: 'transaction' }
-                                      );
-                                    }}
-                                    className="w-24 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 shadow-sm bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                                  >
-                                    <span>Action</span>
-                                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-                                      openDropdownId?.callId === record._id && openDropdownId?.type === 'transaction' ? 'rotate-180' : ''
-                                    }`} />
-                                  </button>
-
-                                  {openDropdownId?.callId === record._id && openDropdownId?.type === 'transaction' && (
-                                    <>
-                                      <div className="fixed inset-0 z-30" onClick={() => setOpenDropdownId(null)} />
-                                      <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-32 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-xl py-1.5 z-40 animate-in fade-in slide-in-from-top-1 duration-200">
-                                        <button
-                                          onClick={() => {
-                                            handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, true);
-                                            setOpenDropdownId(null);
-                                          }}
-                                          className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50/60 flex items-center gap-2 transition-colors"
-                                        >
-                                          <Check className="w-3.5 h-3.5 shrink-0" />
-                                          <span>Signer</span>
-                                        </button>
-                                        <button
-                                          onClick={() => {
-                                            handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, false);
-                                            setOpenDropdownId(null);
-                                          }}
-                                          className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50/60 flex items-center gap-2 transition-colors"
-                                        >
-                                          <X className="w-3.5 h-3.5 shrink-0" />
-                                          <span>Refuser</span>
-                                        </button>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
-                            <div className="flex flex-col items-center justify-center min-w-[80px]">
-                              <span className="text-slate-300 font-bold text-sm tracking-widest">-</span>
-                            </div>
-                          </>
-                        )}
-
-                        <div className="flex items-center gap-2 ml-2">
-                          <button 
-                            onClick={() => openCallDetails(record, 'transcript')}
-                            className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 transition-all"
-                            title="Transcript"
-                          >
-                            <MessageSquare className="w-5 h-5" />
-                          </button>
-                          <button 
-                            onClick={() => openCallDetails(record, 'insights')}
-                            className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100 transition-all"
-                            title="AI Insights"
-                          >
-                            <ActivityIcon className="w-5 h-5" />
-                          </button>
+                      <div>
+                        <h3 className="font-black text-slate-900 text-sm tracking-tight">
+                          {record.lead?.First_Name ? `${record.lead.First_Name} ${record.lead.Last_Name || ''}`.trim() :
+                            record.lead?.name || record.to || record.from || 'Unknown Customer'}
+                        </h3>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border ${record.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50' : 'bg-rose-50 text-rose-600 border-rose-100/50'}`}>
+                            {record.status}
+                          </span>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            {new Date(record.startTime || record.createdAt).toLocaleString()}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${record.direction === 'inbound' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'
+                            }`}>
+                            {record.direction}
+                          </span>
                         </div>
                       </div>
                     </div>
+
+                    <div className="flex flex-wrap items-center gap-4 md:gap-6">
+                      {record.ai_call_score?.overall?.score !== undefined && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100/50 shadow-sm">
+                          <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                          <span className="text-xs font-black">{record.ai_call_score.overall.score}%</span>
+                        </div>
+                      )}
+
+                      {record.status?.toLowerCase() === 'completed' ? (
+                        <>
+                          <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
+
+                          {/* Validation de l'Appel */}
+                          <div className="flex flex-col items-center gap-1 min-w-[110px]">
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Appel (Validation)</span>
+                            {record.companyValidation === 'approved' && record.agentValidation === 'approved' ? (
+                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-28">
+                                <Check className="w-3.5 h-3.5" />
+                                Validé
+                              </span>
+                            ) : record.companyValidation === 'rejected' || record.agentValidation === 'rejected' ? (
+                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-28">
+                                <X className="w-3.5 h-3.5" />
+                                Refusé
+                              </span>
+                            ) : record.agentValidation === 'approved' && record.companyValidation !== 'approved' ? (
+                              <span
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200/40 shadow-sm w-28 text-center cursor-help"
+                                title="En attente de la confirmation de la compagnie"
+                              >
+                                <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                                Attente Cie
+                              </span>
+                            ) : (
+                              <div className="relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenDropdownId(
+                                      openDropdownId?.callId === record._id && openDropdownId?.type === 'validation'
+                                        ? null
+                                        : { callId: record._id, type: 'validation' }
+                                    );
+                                  }}
+                                  className="w-24 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 shadow-sm bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                                >
+                                  <span>Action</span>
+                                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${openDropdownId?.callId === record._id && openDropdownId?.type === 'validation' ? 'rotate-180' : ''
+                                    }`} />
+                                </button>
+
+                                {openDropdownId?.callId === record._id && openDropdownId?.type === 'validation' && (
+                                  <>
+                                    <div className="fixed inset-0 z-30" onClick={() => setOpenDropdownId(null)} />
+                                    <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-32 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-xl py-1.5 z-40 animate-in fade-in slide-in-from-top-1 duration-200">
+                                      <button
+                                        onClick={() => {
+                                          handleUpdateCallValidationReps(record._id, record.agentValidation || 'pending', 'approved');
+                                          setOpenDropdownId(null);
+                                        }}
+                                        className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50/60 flex items-center gap-2 transition-colors"
+                                      >
+                                        <Check className="w-3.5 h-3.5 shrink-0" />
+                                        <span>Valider</span>
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          handleUpdateCallValidationReps(record._id, record.agentValidation || 'pending', 'rejected');
+                                          setOpenDropdownId(null);
+                                        }}
+                                        className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50/60 flex items-center gap-2 transition-colors"
+                                      >
+                                        <X className="w-3.5 h-3.5 shrink-0" />
+                                        <span>Refuser</span>
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
+
+                          {/* Validation de la Transaction */}
+                          <div className="flex flex-col items-center gap-1 min-w-[110px]">
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Transaction</span>
+                            {record.transaction?.validByCompany === true && record.transaction?.validByReps === true ? (
+                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100/40 shadow-sm w-28">
+                                <Check className="w-3.5 h-3.5" />
+                                Signé
+                              </span>
+                            ) : record.transaction?.validByCompany === false || record.transaction?.validByReps === false ? (
+                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-28">
+                                <X className="w-3.5 h-3.5" />
+                                Refusé
+                              </span>
+                            ) : record.transaction?.validByReps === true && record.transaction?.validByCompany !== true ? (
+                              <span
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200/40 shadow-sm w-28 text-center cursor-help"
+                                title="En attente de la confirmation de la compagnie"
+                              >
+                                <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                                Attente Cie
+                              </span>
+                            ) : (
+                              <div className="relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenDropdownId(
+                                      openDropdownId?.callId === record._id && openDropdownId?.type === 'transaction'
+                                        ? null
+                                        : { callId: record._id, type: 'transaction' }
+                                    );
+                                  }}
+                                  className="w-24 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 shadow-sm bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                                >
+                                  <span>Action</span>
+                                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${openDropdownId?.callId === record._id && openDropdownId?.type === 'transaction' ? 'rotate-180' : ''
+                                    }`} />
+                                </button>
+
+                                {openDropdownId?.callId === record._id && openDropdownId?.type === 'transaction' && (
+                                  <>
+                                    <div className="fixed inset-0 z-30" onClick={() => setOpenDropdownId(null)} />
+                                    <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-32 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-xl py-1.5 z-40 animate-in fade-in slide-in-from-top-1 duration-200">
+                                      <button
+                                        onClick={() => {
+                                          handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, true);
+                                          setOpenDropdownId(null);
+                                        }}
+                                        className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50/60 flex items-center gap-2 transition-colors"
+                                      >
+                                        <Check className="w-3.5 h-3.5 shrink-0" />
+                                        <span>Signer</span>
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, false);
+                                          setOpenDropdownId(null);
+                                        }}
+                                        className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50/60 flex items-center gap-2 transition-colors"
+                                      >
+                                        <X className="w-3.5 h-3.5 shrink-0" />
+                                        <span>Refuser</span>
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
+                          <div className="flex flex-col items-center justify-center min-w-[80px]">
+                            <span className="text-slate-300 font-bold text-sm tracking-widest">-</span>
+                          </div>
+                        </>
+                      )}
+
+                      <div className="flex items-center gap-2 ml-2">
+                        <button
+                          onClick={() => openCallDetails(record, 'transcript')}
+                          className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 transition-all"
+                          title="Transcript"
+                        >
+                          <MessageSquare className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => openCallDetails(record, 'insights')}
+                          className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100 transition-all"
+                          title="AI Insights"
+                        >
+                          <ActivityIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Modal Detail View */}
       {selectedCall && createPortal(
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setSelectedCall(null)}></div>
-          
+
           <div className="relative bg-white w-full max-w-4xl max-h-[85vh] rounded-[48px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-white/20">
             {/* Modal Header */}
             <div className="px-8 py-8 border-b border-slate-100 bg-slate-50/40 flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
@@ -524,97 +519,94 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                     {selectedCall.lead?.First_Name ? `${selectedCall.lead.First_Name} ${selectedCall.lead.Last_Name || ''}`.trim() : 'Call Details'}
                   </h2>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-                    {new Date(selectedCall.startTime || selectedCall.createdAt).toLocaleString()} • {selectedCall.duration ? `${Math.floor(selectedCall.duration/60)}m ${selectedCall.duration%60}s` : '0s'}
+                    {new Date(selectedCall.startTime || selectedCall.createdAt).toLocaleString()} • {selectedCall.duration ? `${Math.floor(selectedCall.duration / 60)}m ${selectedCall.duration % 60}s` : '0s'}
                   </p>
-                    <div className="flex flex-wrap items-center gap-4 mt-3">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appel (Compagnie)</span>
-                        <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
-                          selectedCall.companyValidation === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                  <div className="flex flex-wrap items-center gap-4 mt-3">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appel (Compagnie)</span>
+                      <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${selectedCall.companyValidation === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
                           selectedCall.companyValidation === 'rejected' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
-                          'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                            'bg-amber-500/10 text-amber-600 border-amber-500/20'
                         }`}>
-                          {selectedCall.companyValidation === 'approved' ? 'Validé' :
-                           selectedCall.companyValidation === 'rejected' ? 'Refusé' :
-                           'En attente'}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Agent)</span>
-                        {selectedCall.transaction?.validByReps === true ? (
-                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-24">
-                            <Check className="w-3.5 h-3.5" />
-                            Validé
-                          </span>
-                        ) : selectedCall.transaction?.validByReps === false ? (
-                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-24">
-                            <X className="w-3.5 h-3.5" />
-                            Refusé
-                          </span>
-                        ) : (
-                          <div className="relative">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenDropdownId(
-                                  openDropdownId?.callId === selectedCall._id && openDropdownId?.type === 'transaction'
-                                    ? null
-                                    : { callId: selectedCall._id, type: 'transaction' }
-                                );
-                              }}
-                              className="w-24 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 shadow-sm bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                            >
-                              <span>Action</span>
-                              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-                                openDropdownId?.callId === selectedCall._id && openDropdownId?.type === 'transaction' ? 'rotate-180' : ''
-                              }`} />
-                            </button>
-
-                            {openDropdownId?.callId === selectedCall._id && openDropdownId?.type === 'transaction' && (
-                              <>
-                                <div className="fixed inset-0 z-30" onClick={() => setOpenDropdownId(null)} />
-                                <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-32 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-xl py-1.5 z-40 animate-in fade-in slide-in-from-top-1 duration-200">
-                                  <button
-                                    onClick={() => {
-                                      handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, true);
-                                      setOpenDropdownId(null);
-                                    }}
-                                    className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50/60 flex items-center gap-2 transition-colors"
-                                  >
-                                    <Check className="w-3.5 h-3.5 shrink-0" />
-                                    <span>Valider</span>
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, false);
-                                      setOpenDropdownId(null);
-                                    }}
-                                    className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50/60 flex items-center gap-2 transition-colors"
-                                  >
-                                    <X className="w-3.5 h-3.5 shrink-0" />
-                                    <span>Refuser</span>
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Compagnie)</span>
-                        <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
-                          selectedCall.transaction?.validByCompany === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
-                          selectedCall.transaction?.validByCompany === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
-                          'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                        }`}>
-                          {selectedCall.transaction?.validByCompany === true ? 'Validé' :
-                           selectedCall.transaction?.validByCompany === false ? 'Refusé' :
-                           'En attente'}
-                        </span>
-                      </div>
+                        {selectedCall.companyValidation === 'approved' ? 'Validé' :
+                          selectedCall.companyValidation === 'rejected' ? 'Refusé' :
+                            'En attente'}
+                      </span>
                     </div>
+
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Agent)</span>
+                      {selectedCall.transaction?.validByReps === true ? (
+                        <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-24">
+                          <Check className="w-3.5 h-3.5" />
+                          Validé
+                        </span>
+                      ) : selectedCall.transaction?.validByReps === false ? (
+                        <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-24">
+                          <X className="w-3.5 h-3.5" />
+                          Refusé
+                        </span>
+                      ) : (
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenDropdownId(
+                                openDropdownId?.callId === selectedCall._id && openDropdownId?.type === 'transaction'
+                                  ? null
+                                  : { callId: selectedCall._id, type: 'transaction' }
+                              );
+                            }}
+                            className="w-24 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 shadow-sm bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                          >
+                            <span>Action</span>
+                            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${openDropdownId?.callId === selectedCall._id && openDropdownId?.type === 'transaction' ? 'rotate-180' : ''
+                              }`} />
+                          </button>
+
+                          {openDropdownId?.callId === selectedCall._id && openDropdownId?.type === 'transaction' && (
+                            <>
+                              <div className="fixed inset-0 z-30" onClick={() => setOpenDropdownId(null)} />
+                              <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-32 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-xl py-1.5 z-40 animate-in fade-in slide-in-from-top-1 duration-200">
+                                <button
+                                  onClick={() => {
+                                    handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, true);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50/60 flex items-center gap-2 transition-colors"
+                                >
+                                  <Check className="w-3.5 h-3.5 shrink-0" />
+                                  <span>Valider</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, false);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50/60 flex items-center gap-2 transition-colors"
+                                >
+                                  <X className="w-3.5 h-3.5 shrink-0" />
+                                  <span>Refuser</span>
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Compagnie)</span>
+                      <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${selectedCall.transaction?.validByCompany === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                          selectedCall.transaction?.validByCompany === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
+                            'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                        }`}>
+                        {selectedCall.transaction?.validByCompany === true ? 'Validé' :
+                          selectedCall.transaction?.validByCompany === false ? 'Refusé' :
+                            'En attente'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -627,7 +619,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                 })()}
               </div>
 
-              <button 
+              <button
                 onClick={() => setSelectedCall(null)}
                 className="p-3 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-900 rounded-2xl border border-slate-100 transition-all shadow-sm"
               >
@@ -637,14 +629,14 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
 
             {/* Tabs */}
             <div className="px-8 py-4 bg-white border-b border-slate-100 flex items-center gap-4">
-              <button 
+              <button
                 onClick={() => setActiveTab('transcript')}
                 className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'transcript' ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
               >
                 <MessageSquare className="w-4 h-4" />
                 {t('calls.transcript')}
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab('insights')}
                 className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'insights' ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
               >
@@ -665,11 +657,10 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.speaker}</span>
                             <span className="text-[9px] font-bold text-slate-300">{t.timestamp}</span>
                           </div>
-                          <div className={`px-5 py-4 rounded-3xl text-sm font-medium leading-relaxed ${
-                            t.speaker?.toLowerCase().includes('agent') 
-                              ? 'bg-white text-slate-700 rounded-tl-none border border-slate-100 shadow-sm' 
+                          <div className={`px-5 py-4 rounded-3xl text-sm font-medium leading-relaxed ${t.speaker?.toLowerCase().includes('agent')
+                              ? 'bg-white text-slate-700 rounded-tl-none border border-slate-100 shadow-sm'
                               : 'bg-gradient-harx text-white rounded-tr-none shadow-lg shadow-harx-500/20'
-                          }`}>
+                            }`}>
                             {t.text}
                           </div>
                         </div>
@@ -679,33 +670,33 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                     <div className="py-20 text-center flex flex-col items-center gap-4">
                       <p className="text-slate-400 font-bold uppercase tracking-widest text-xs italic">Transcript not available</p>
                       {!selectedCall.ai_call_score && selectedCall.recording_url_cloudinary && (
-                         <button 
-                            onClick={() => handleAnalyzeCall(selectedCall._id)}
-                            className="flex items-center gap-2 px-6 py-3 bg-harx-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-harx-600 transition-all shadow-lg"
-                         >
-                            <Brain className={`w-4 h-4 ${analyzingCallId === selectedCall._id ? 'animate-spin' : ''}`} />
-                            Analyze & Transcribe
-                         </button>
+                        <button
+                          onClick={() => handleAnalyzeCall(selectedCall._id)}
+                          className="flex items-center gap-2 px-6 py-3 bg-harx-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-harx-600 transition-all shadow-lg"
+                        >
+                          <Brain className={`w-4 h-4 ${analyzingCallId === selectedCall._id ? 'animate-spin' : ''}`} />
+                          Analyze & Transcribe
+                        </button>
                       )}
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="max-w-5xl mx-auto space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                      {[
-                        { label: 'Agent Fluency', data: selectedCall.ai_call_score?.["Agent fluency"], icon: Globe },
-                        { label: 'Sentiment Analysis', data: selectedCall.ai_call_score?.["Sentiment analysis"], icon: ActivityIcon },
-                        { label: 'Fraud Detection', data: selectedCall.ai_call_score?.["Fraud detection"], icon: Shield },
-                        { 
-                          label: 'Conversion Potential', 
-                          data: { 
-                            score: Math.round(((selectedCall.ai_call_score?.["Agent fluency"]?.score || 0) * 0.4) + ((selectedCall.ai_call_score?.["Sentiment analysis"]?.score || 0) * 0.6)),
-                            feedback: "Probabilité de conversion basée sur l'élocution et le sentiment du client."
-                          }, 
-                          icon: TrendingUp 
-                        }
-                      ].map((metric, mIdx) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[
+                      { label: 'Agent Fluency', data: selectedCall.ai_call_score?.["Agent fluency"], icon: Globe },
+                      { label: 'Sentiment Analysis', data: selectedCall.ai_call_score?.["Sentiment analysis"], icon: ActivityIcon },
+                      { label: 'Fraud Detection', data: selectedCall.ai_call_score?.["Fraud detection"], icon: Shield },
+                      {
+                        label: 'Conversion Potential',
+                        data: {
+                          score: Math.round(((selectedCall.ai_call_score?.["Agent fluency"]?.score || 0) * 0.4) + ((selectedCall.ai_call_score?.["Sentiment analysis"]?.score || 0) * 0.6)),
+                          feedback: "Probabilité de conversion basée sur l'élocution et le sentiment du client."
+                        },
+                        icon: TrendingUp
+                      }
+                    ].map((metric, mIdx) => (
                       <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl">
                         <div className="flex justify-between items-start mb-6">
                           <div className={`w-12 h-12 rounded-2xl bg-harx-50 text-harx-600 flex items-center justify-center`}>
@@ -723,7 +714,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="bg-white rounded-[32px] border border-emerald-100 shadow-xl p-10 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
                     <div className="relative z-10">
@@ -748,7 +739,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
             </div>
 
             <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
-              <button 
+              <button
                 onClick={() => setSelectedCall(null)}
                 className="px-8 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-800 transition-all shadow-lg"
               >
