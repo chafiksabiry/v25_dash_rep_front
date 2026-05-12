@@ -23,6 +23,8 @@ import {
   Phone
 } from 'lucide-react';
 
+import { CallRecords } from '../components/CallRecords';
+
 export function WalletPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('transactions');
@@ -501,46 +503,8 @@ export function WalletPage() {
                   </div>
                 </div>
 
-                <div className="divide-y divide-slate-100">
-                  {filteredCalls.length === 0 ? (
-                    <div className="p-12 text-center text-slate-400 text-xs font-bold uppercase">
-                      Aucun appel trouvé pour ce filtre de Gig.
-                    </div>
-                  ) : (
-                    filteredCalls.map((call) => (
-                      <div key={call.id} className="p-6 hover:bg-slate-50/50 transition-all">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className={`p-3 rounded-xl bg-blue-50 text-blue-600`}>
-                              <Phone className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className="font-extrabold text-slate-800 text-sm">{call.customerName}</p>
-                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">
-                                  {call.duration}
-                                </span>
-                              </div>
-                              <p className="text-xs text-blue-600 font-bold mt-1 uppercase tracking-wider">{call.gigTitle}</p>
-                              <p className="text-[10px] text-slate-400 font-bold mt-0.5">{call.phone} • {call.date}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-black text-emerald-600 text-base">+{call.earnings > 0 ? `$${call.earnings.toFixed(2)}` : '--'}</p>
-                            <span className={`inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide ${
-                              call.status === 'Validé' 
-                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                                : call.status === 'En attente'
-                                ? 'bg-amber-50 text-amber-600 border border-amber-100'
-                                : 'bg-rose-50 text-rose-600 border border-rose-100'
-                            }`}>
-                              {call.status}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
+                <div className="p-6">
+                  <CallRecords gigId={selectedGigFilter === 'all' ? undefined : selectedGigFilter} />
                 </div>
               </>
             )}

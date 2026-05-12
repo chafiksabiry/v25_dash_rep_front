@@ -182,6 +182,18 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
     setActiveTab(tab);
   };
 
+  const filteredRecords = callRecords.filter(record => {
+    if (leadId && record.lead?._id !== leadId) return false;
+    if (gigId) {
+      const recordGig = record.lead?.gigId;
+      const idStr = typeof recordGig === 'object' 
+        ? (recordGig?._id || (recordGig as any)?.$oid) 
+        : recordGig;
+      if (idStr !== gigId) return false;
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-6 relative">
       <div className="flex justify-between items-center">
@@ -197,7 +209,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
       </div>
 
       <div className="bg-white rounded-[32px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-          {callRecords.length === 0 ? (
+          {filteredRecords.length === 0 ? (
             <div className="flex flex-col justify-center items-center p-20 text-center">
               <div className="w-20 h-20 rounded-3xl bg-slate-50 flex items-center justify-center mb-6">
                 <Phone className="w-10 h-10 text-slate-300" />
@@ -209,7 +221,7 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
             </div>
           ) : (
             <div className="divide-y divide-slate-50">
-              {callRecords.map((record: CallRecord) => {
+              {filteredRecords.map((record: CallRecord) => {
                 const callId = typeof record._id === 'object' ? (record._id as any).$oid : record._id;
                 return (
                   <div 
