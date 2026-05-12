@@ -41,70 +41,31 @@ export function WalletPage() {
 
   // Filter and Call Records for "Liste des Appels"
   const [selectedGigFilter, setSelectedGigFilter] = useState('all');
-  const [enrolledGigs, setEnrolledGigs] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchGigs = async () => {
-      const agentId = localStorage.getItem('agentId');
-      const token = localStorage.getItem('token');
-      if (!agentId || !token) return;
-
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_MATCHING_API_URL}/gig-agents/agents/${agentId}/gigs?status=enrolled`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          }
-        );
-        if (response.ok) {
-          const data = await response.json();
-          if (data.gigs && Array.isArray(data.gigs)) {
-            const processed = data.gigs
-              .filter((eg: any) => eg.gig)
-              .map((eg: any) => ({
-                _id: eg.gig._id,
-                title: eg.gig.title,
-                commission: eg.gig.commission
-              }));
-            setEnrolledGigs(processed);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching enrolled gigs for wallet:', err);
-      }
-    };
-
-    fetchGigs();
-  }, []);
 
   const gigsFilterOptions = [
     { id: 'all', title: 'Tous les Gigs' },
-    ...enrolledGigs.map(eg => ({ id: eg._id, title: eg.title })),
-    ...(enrolledGigs.length === 0 ? [
-      { id: 'insurance-premium', title: 'Assurance Santé Premium' },
-      { id: 'cpf-booster', title: 'Formation CPF Booster' },
-      { id: 'telecom-pro', title: 'Télécom Fibre Pro' }
-    ] : [])
+    { id: '69df585b6cad0fd23cffc2ae', title: 'Force de vente de complémentaire santé / mutuelle' },
+    { id: 'insurance-premium', title: 'Assurance Santé Premium' },
+    { id: 'cpf-booster', title: 'Formation CPF Booster' },
+    { id: 'telecom-pro', title: 'Télécom Fibre Pro' }
   ];
 
   const callEarnings = [
     {
       id: 'C1',
-      gigId: enrolledGigs[0]?._id || 'insurance-premium',
-      gigTitle: enrolledGigs[0]?.title || 'Assurance Santé Premium',
+      gigId: '69df585b6cad0fd23cffc2ae',
+      gigTitle: 'Force de vente de complémentaire santé / mutuelle',
       customerName: 'Jean Dupont',
       phone: '+33 6 12 34 56 78',
       duration: '08:45',
       date: '2024-03-15 14:32',
       status: 'Validé',
-      earnings: 17.50
+      earnings: 34.00
     },
     {
       id: 'C2',
-      gigId: enrolledGigs[1]?._id || 'cpf-booster',
-      gigTitle: enrolledGigs[1]?.title || 'Formation CPF Booster',
+      gigId: 'cpf-booster',
+      gigTitle: 'Formation CPF Booster',
       customerName: 'Marie Curie',
       phone: '+33 6 98 76 54 32',
       duration: '12:10',
@@ -114,8 +75,8 @@ export function WalletPage() {
     },
     {
       id: 'C3',
-      gigId: enrolledGigs[2]?._id || 'telecom-pro',
-      gigTitle: enrolledGigs[2]?.title || 'Télécom Fibre Pro',
+      gigId: 'telecom-pro',
+      gigTitle: 'Télécom Fibre Pro',
       customerName: 'Pierre Menès',
       phone: '+33 7 45 89 12 36',
       duration: '04:15',
@@ -125,19 +86,19 @@ export function WalletPage() {
     },
     {
       id: 'C4',
-      gigId: enrolledGigs[0]?._id || 'insurance-premium',
-      gigTitle: enrolledGigs[0]?.title || 'Assurance Santé Premium',
+      gigId: '69df585b6cad0fd23cffc2ae',
+      gigTitle: 'Force de vente de complémentaire santé / mutuelle',
       customerName: 'Sophie Lambert',
       phone: '+33 6 55 44 33 22',
       duration: '15:30',
       date: '2024-03-13 09:20',
       status: 'Validé',
-      earnings: 31.00
+      earnings: 34.00
     },
     {
       id: 'C5',
-      gigId: enrolledGigs[1]?._id || 'cpf-booster',
-      gigTitle: enrolledGigs[1]?.title || 'Formation CPF Booster',
+      gigId: 'cpf-booster',
+      gigTitle: 'Formation CPF Booster',
       customerName: 'Lucas Bernard',
       phone: '+33 6 11 22 33 44',
       duration: '02:05',
@@ -151,63 +112,39 @@ export function WalletPage() {
     ? callEarnings 
     : callEarnings.filter(call => call.gigId === selectedGigFilter);
 
-  const gigCommissionsFallback: Record<string, { rate: string; rules: string; bonus: string }> = {
+  const gigCommissions: Record<string, { rate: string; rules: string; bonus: string }> = {
+    all: {
+      rate: 'Taux Variable',
+      rules: 'Sélectionnez un Gig spécifique pour consulter son barème de commission exact.',
+      bonus: 'Bonus actifs'
+    },
+    '69df585b6cad0fd23cffc2ae': {
+      rate: '4.00 € / appel + 30.00 € / transaction',
+      rules: "Une transaction est comptabilisée uniquement si le contrat est signé et non rétracté dans les 14 jours. Les résiliations dans les 3 mois suivant la signature entraînent l'annulation et le remboursement de la commission correspondante.",
+      bonus: '+100.00 € prime performance (25 transactions/mois)'
+    },
     'insurance-premium': {
-      rate: '$2.00 / min d\'appel',
+      rate: '2.00 € / min d\'appel',
       rules: 'Commissions calculées sur la durée totale des appels validés par la compagnie.',
-      bonus: '+$5.00 bonus validation'
+      bonus: '+5.00 € bonus validation'
     },
     'cpf-booster': {
-      rate: '$2.00 / min d\'appel',
+      rate: '2.00 € / min d\'appel',
       rules: 'Applicable sur les appels d\'une durée supérieure à 1 minute avec CPF valide.',
-      bonus: '+$10.00 bonus conversion'
+      bonus: '+10.00 € bonus conversion'
     },
     'telecom-pro': {
-      rate: '$2.00 / min d\'appel',
+      rate: '2.00 € / min d\'appel',
       rules: 'Taux standard appliqué sur tous les appels professionnels validés.',
       bonus: 'Aucun bonus'
     }
   };
 
   const getSelectedGigCommission = () => {
-    if (selectedGigFilter === 'all') {
-      return {
-        rate: 'Taux Variable',
-        rules: 'Sélectionnez un Gig spécifique pour consulter son barème de commission exact.',
-        bonus: 'Bonus actifs'
-      };
-    }
-
-    const selectedGigObj = enrolledGigs.find(g => g._id === selectedGigFilter);
-    if (!selectedGigObj) {
-      const mockFallback = gigCommissionsFallback[selectedGigFilter];
-      if (mockFallback) return mockFallback;
-      return {
-        rate: 'Non spécifié',
-        rules: 'Aucune donnée de commission disponible pour ce projet.',
-        bonus: 'Aucun'
-      };
-    }
-
-    const comm = selectedGigObj.commission || {};
-    const currencySymbol = comm.currency === 'EUR' || (comm.currency && comm.currency.symbol === '€') ? '€' : '$';
-
-    const parts = [];
-    if (comm.commission_per_call !== undefined && comm.commission_per_call !== null) {
-      parts.push(`${comm.commission_per_call}${currencySymbol} par appel`);
-    }
-    if (comm.transactionCommission !== undefined && comm.transactionCommission !== null) {
-      parts.push(`${comm.transactionCommission}${currencySymbol} par transaction`);
-    }
-
-    const rateStr = parts.length > 0 ? parts.join(' + ') : 'Taux variable';
-    const rulesStr = comm.additionalDetails || 'Pas de conditions additionnelles fournies pour ce projet.';
-    const bonusStr = comm.bonusAmount ? `+${comm.bonusAmount}${currencySymbol} de prime` : 'Aucun bonus';
-
-    return {
-      rate: rateStr,
-      rules: rulesStr,
-      bonus: bonusStr
+    return gigCommissions[selectedGigFilter] || {
+      rate: 'Non spécifié',
+      rules: 'Aucune donnée de commission disponible pour ce projet.',
+      bonus: 'Aucun'
     };
   };
 
