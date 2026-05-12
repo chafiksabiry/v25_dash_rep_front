@@ -5,7 +5,7 @@ import {
   Phone, Mail, User,
   Paperclip, Image, MoreHorizontal, PhoneOutgoing, XCircle,
   ChevronLeft, ChevronRight, ChevronDown, Filter, Layout,
-  BookOpen, Clock, AlertTriangle, Globe, CheckCircle2, ShieldAlert, KeyRound
+  BookOpen, Clock, AlertTriangle, CheckCircle2, ShieldAlert
 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { CallRecords } from '../components/CallRecords';
@@ -263,14 +263,14 @@ export function WorkspaceContent() {
         const [summaryRes, reservations] = await Promise.all([
           trainingBase
             ? fetch(
-                `${trainingBase}/training_journeys/rep/${encodeURIComponent(repId)}/slide-progress-summary?gigId=${encodeURIComponent(selectedGigId)}`,
-                {
-                  headers: token ? { Authorization: `Bearer ${token}` } : undefined
-                }
-              ).catch((err) => {
-                console.error('Failed to fetch slide progress:', err);
-                return null;
-              })
+              `${trainingBase}/training_journeys/rep/${encodeURIComponent(repId)}/slide-progress-summary?gigId=${encodeURIComponent(selectedGigId)}`,
+              {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined
+              }
+            ).catch((err) => {
+              console.error('Failed to fetch slide progress:', err);
+              return null;
+            })
             : Promise.resolve(null),
           slotApi.getReservations(repId, selectedGigId).catch((err) => {
             console.error('Failed to fetch reservations:', err);
@@ -285,8 +285,6 @@ export function WorkspaceContent() {
             : summaryPayload;
           const overall = Number(summary?.overallPercent ?? 0);
           const trainingCount = Number(summary?.trainingCount ?? 0);
-          // If trainingCount === 0: no training found for this gig → NOT complete (false)
-          // Only mark complete when trainingCount > 0 AND overall >= 100
           isTrainingComplete = trainingCount > 0 && overall >= 100;
         }
 
@@ -583,8 +581,8 @@ export function WorkspaceContent() {
                               )}
                               <button
                                 className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${canUseCopilot
-                                    ? 'bg-gradient-harx text-white hover:shadow-lg hover:shadow-harx-500/20 hover:-translate-y-0.5'
-                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                  ? 'bg-gradient-harx text-white hover:shadow-lg hover:shadow-harx-500/20 hover:-translate-y-0.5'
+                                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                   }`}
                                 disabled={!canUseCopilot || copilotGuard.loading}
                                 onClick={() => handleCallClick(lead)}
@@ -975,8 +973,8 @@ export function WorkspaceContent() {
             <div className="space-y-3 mb-8 relative">
               {/* Check 1: Enrolled in Gig */}
               <div className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${copilotGuard.isEnrolledInGig
-                  ? 'bg-emerald-500/5 border-emerald-500/20'
-                  : 'bg-rose-500/5 border-rose-500/10 opacity-75'
+                ? 'bg-emerald-500/5 border-emerald-500/20'
+                : 'bg-rose-500/5 border-rose-500/10 opacity-75'
                 }`}>
                 <div className="flex items-start gap-3">
                   <div className={`p-2 rounded-xl shrink-0 ${copilotGuard.isEnrolledInGig ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
@@ -1003,8 +1001,8 @@ export function WorkspaceContent() {
 
               {/* Check 2: Training Complete */}
               <div className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${copilotGuard.isTrainingComplete
-                  ? 'bg-emerald-500/5 border-emerald-500/20'
-                  : 'bg-rose-500/5 border-rose-500/10 opacity-75'
+                ? 'bg-emerald-500/5 border-emerald-500/20'
+                : 'bg-rose-500/5 border-rose-500/10 opacity-75'
                 }`}>
                 <div className="flex items-start gap-3">
                   <div className={`p-2 rounded-xl shrink-0 ${copilotGuard.isTrainingComplete ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
@@ -1031,8 +1029,8 @@ export function WorkspaceContent() {
 
               {/* Check 3: Reservation Slot */}
               <div className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 ${copilotGuard.hasActiveReservationNow
-                  ? 'bg-emerald-500/5 border-emerald-500/20'
-                  : 'bg-rose-500/5 border-rose-500/10 opacity-75'
+                ? 'bg-emerald-500/5 border-emerald-500/20'
+                : 'bg-rose-500/5 border-rose-500/10 opacity-75'
                 }`}>
                 <div className="flex items-start gap-3">
                   <div className={`p-2 rounded-xl shrink-0 ${copilotGuard.hasActiveReservationNow ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'

@@ -13,6 +13,7 @@ import {
   PlayCircle,
   RefreshCw,
   X,
+  Check,
   MessageSquare,
   Star,
   Globe,
@@ -165,6 +166,40 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
     }
   };
 
+  const handleUpdateTransactionValidationReps = async (callId: string, currentStatus: boolean | null, clickedStatus: boolean) => {
+    try {
+      const status = currentStatus === clickedStatus ? null : clickedStatus;
+      const response = await api.calls.update(callId, { 'transaction.validByReps': status } as any);
+      
+      if (response && response.success) {
+        setCallRecords(prev => prev.map(c => {
+          if (c._id === callId) {
+            const updatedTx = c.transaction 
+              ? { ...c.transaction, validByReps: status } 
+              : { validByReps: status, validByCompany: null, valid: null };
+            return { ...c, transaction: updatedTx };
+          }
+          return c;
+        }));
+        
+        setSelectedCall((prev: any) => {
+          if (prev && prev._id === callId) {
+            const updatedTx = prev.transaction 
+              ? { ...prev.transaction, validByReps: status } 
+              : { validByReps: status, validByCompany: null, valid: null };
+            return { ...prev, transaction: updatedTx };
+          }
+          return prev;
+        });
+
+        // Dispatch state updated event to synchronize other views like Wallet instantly
+        window.dispatchEvent(new Event('CALLS_STATE_UPDATED'));
+      }
+    } catch (error) {
+      console.error('Error updating reps transaction validation:', error);
+    }
+  };
+
   useEffect(() => {
     fetchCallRecords();
   }, [gigId, leadId]);
@@ -267,48 +302,64 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           {record.status}
                         </span>
 
-                        {record.transaction ? (
-                          record.transaction.valid ? (
-                            <span className="px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-sm shadow-emerald-500/20">
-                              <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
-                              Validation Globale OK
-                            </span>
-                          ) : (
-                            <div className="flex gap-1.5">
-                              {record.transaction.validByReps === true ? (
-                                <span className="px-2.5 py-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-[9px] font-black uppercase tracking-widest">
-                                  Validé Reps
-                                </span>
-                              ) : record.transaction.validByReps === false ? (
-                                <span className="px-2.5 py-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[9px] font-black uppercase tracking-widest">
-                                  Refusé Reps
-                                </span>
-                              ) : null}
+                        {/* Validation de l'Appel par la Compagnie */}
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appel (Compagnie)</span>
+                          <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                            record.companyValidation === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                            record.companyValidation === 'rejected' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                            'bg-amber-50 text-amber-600 border-amber-200'
+                          }`}>
+                            {record.companyValidation === 'approved' ? 'Validé' :
+                             record.companyValidation === 'rejected' ? 'Refusé' :
+                             'En attente'}
+                          </span>
+                        </div>
 
-                              {record.transaction.validByCompany === true ? (
-                                <span className="px-2.5 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl text-[9px] font-black uppercase tracking-widest">
-                                  Validé Company
-                                </span>
-                              ) : record.transaction.validByCompany === false ? (
-                                <span className="px-2.5 py-1.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-xl text-[9px] font-black uppercase tracking-widest">
-                                  Refusé Company
-                                </span>
-                              ) : (
-                                <span className="px-2.5 py-1.5 bg-slate-50 text-slate-400 border border-slate-100 rounded-xl text-[9px] font-black uppercase tracking-widest italic">
-                                  En attente Company
-                                </span>
-                              )}
-                            </div>
-                          )
-                        ) : record.transactionOccurred === true ? (
-                          <span className="px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                            Transaction OK
+                        {/* Validation de la Transaction par l'Agent */}
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Agent)</span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, true)}
+                              className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-1 ${
+                                record.transaction?.validByReps === true
+                                  ? 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-500/10'
+                                  : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                              }`}
+                              title="Valider ma transaction"
+                            >
+                              <Check className="w-3 h-3" />
+                              Valider
+                            </button>
+                            <button
+                              onClick={() => handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, false)}
+                              className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-1 ${
+                                record.transaction?.validByReps === false
+                                  ? 'bg-rose-50 text-white border-rose-500 shadow-md shadow-rose-500/10'
+                                  : 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'
+                              }`}
+                              title="Refuser la transaction"
+                            >
+                              <X className="w-3 h-3" />
+                              Refuser
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Validation de la Transaction par la Compagnie */}
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Compagnie)</span>
+                          <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                            record.transaction?.validByCompany === true ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                            record.transaction?.validByCompany === false ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                            'bg-amber-50 text-amber-600 border-amber-200'
+                          }`}>
+                            {record.transaction?.validByCompany === true ? 'Validé' :
+                             record.transaction?.validByCompany === false ? 'Refusé' :
+                             'En attente'}
                           </span>
-                        ) : record.transactionOccurred === false ? (
-                          <span className="px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                            Transaction Refus
-                          </span>
-                        ) : null}
+                        </div>
 
                         <div className="flex items-center gap-2 ml-2">
                           <button 
@@ -354,56 +405,61 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
                     {new Date(selectedCall.startTime || selectedCall.createdAt).toLocaleString()} • {selectedCall.duration ? `${Math.floor(selectedCall.duration/60)}m ${selectedCall.duration%60}s` : '0s'}
                   </p>
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    {selectedCall.transaction ? (
-                      selectedCall.transaction.valid ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm shadow-emerald-500/20">
-                          <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
-                          Validation Globale OK
+                    <div className="flex flex-wrap items-center gap-4 mt-3">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appel (Compagnie)</span>
+                        <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                          selectedCall.companyValidation === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                          selectedCall.companyValidation === 'rejected' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
+                          'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                        }`}>
+                          {selectedCall.companyValidation === 'approved' ? 'Validé' :
+                           selectedCall.companyValidation === 'rejected' ? 'Refusé' :
+                           'En attente'}
                         </span>
-                      ) : (
-                        <>
-                          {selectedCall.transaction.validByReps === true ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 text-blue-600 border border-blue-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                              Validé Reps
-                            </span>
-                          ) : selectedCall.transaction.validByReps === false ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-500/10 text-rose-600 border border-rose-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                              Refusé Reps
-                            </span>
-                          ) : null}
+                      </div>
 
-                          {selectedCall.transaction.validByCompany === true ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                              Validé Company
-                            </span>
-                          ) : selectedCall.transaction.validByCompany === false ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                              Refusé Company
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[9px] font-black uppercase tracking-widest italic">
-                              En attente Company
-                            </span>
-                          )}
-                        </>
-                      )
-                    ) : selectedCall.transactionOccurred === true ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
-                        Transaction OK
-                      </span>
-                    ) : selectedCall.transactionOccurred === false ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-500/10 text-rose-600 border border-rose-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                        <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(251,113,133,0.5)]"></span>
-                        Transaction Refusée
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                        Pas de Transaction
-                      </span>
-                    )}
-                  </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Agent)</span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, true)}
+                            className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-1 ${
+                              selectedCall.transaction?.validByReps === true
+                                ? 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-500/10'
+                                : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                            }`}
+                          >
+                            <Check className="w-3 h-3" />
+                            Valider
+                          </button>
+                          <button
+                            onClick={() => handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, false)}
+                            className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-1 ${
+                              selectedCall.transaction?.validByReps === false
+                                ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/10'
+                                : 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'
+                            }`}
+                          >
+                            <X className="w-3 h-3" />
+                            Refuser
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Compagnie)</span>
+                        <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                          selectedCall.transaction?.validByCompany === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                          selectedCall.transaction?.validByCompany === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
+                          'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                        }`}>
+                          {selectedCall.transaction?.validByCompany === true ? 'Validé' :
+                           selectedCall.transaction?.validByCompany === false ? 'Refusé' :
+                           'En attente'}
+                        </span>
+                      </div>
+                    </div>
                 </div>
               </div>
 

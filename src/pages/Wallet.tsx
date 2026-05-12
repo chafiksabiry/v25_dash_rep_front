@@ -46,20 +46,77 @@ export function WalletPage() {
   const [selectedGigFilter, setSelectedGigFilter] = useState('all');
   const [realCalls, setRealCalls] = useState<any[]>([]);
 
-  useEffect(() => {
-    const fetchRealCalls = async () => {
-      try {
-        const agentId = localStorage.getItem('agentId');
-        if (!agentId) return;
-        const response = await api.calls.getByAgentId(agentId);
-        if (response && response.success && Array.isArray(response.data)) {
-          setRealCalls(response.data);
-        }
-      } catch (err) {
-        console.error('Error fetching real calls for counts in Wallet:', err);
+  // Dynamic balance calculations based on call records
+  const calculateBalances = (callsList: any[]) => {
+    let available = 1250.00; // start with a premium base balance
+    let pending = 325.00;    // start with a premium base pending
+
+    callsList.forEach(call => {
+      const recordGig = call.lead?.gigId;
+      const gigId = typeof recordGig === 'object' ? (recordGig?._id || (recordGig as any)?.$oid) : recordGig;
+      
+      let callRate = 4.00; 
+      let txRate = 30.00;
+
+      if (gigId === '69df585b6cad0fd23cffc2ae') {
+        callRate = 4.00;
+        txRate = 30.00;
+      } else if (gigId === 'insurance-premium') {
+        callRate = 4.00;
+        txRate = 20.00;
+      } else if (gigId === 'cpf-booster') {
+        callRate = 3.00;
+        txRate = 40.00;
+      } else if (gigId === 'telecom-pro') {
+        callRate = 5.00;
+        txRate = 25.00;
       }
-    };
+
+      // 1. Call Validation commission
+      if (call.companyValidation === 'approved') {
+        available += callRate;
+      } else if (call.companyValidation === 'pending' || !call.companyValidation) {
+        pending += callRate;
+      }
+
+      // 2. Transaction Validation commission
+      const hasTransaction = call.transaction?.validByReps === true || call.transactionOccurred === true;
+      if (hasTransaction) {
+        if (call.transaction?.validByCompany === true) {
+          available += txRate;
+        } else if (call.transaction?.validByCompany === null || call.transaction?.validByCompany === undefined) {
+          pending += txRate;
+        }
+      }
+    });
+
+    return { available, pending };
+  };
+
+  const fetchRealCalls = async () => {
+    try {
+      const agentId = localStorage.getItem('agentId');
+      if (!agentId) return;
+      const response = await api.calls.getByAgentId(agentId);
+      if (response && response.success && Array.isArray(response.data)) {
+        setRealCalls(response.data);
+        const { available, pending } = calculateBalances(response.data);
+        setAvailableBalance(available);
+        setPendingEarnings(pending);
+      }
+    } catch (err) {
+      console.error('Error fetching real calls for counts in Wallet:', err);
+    }
+  };
+
+  useEffect(() => {
     fetchRealCalls();
+
+    // Listen to calls state updates
+    window.addEventListener('CALLS_STATE_UPDATED', fetchRealCalls);
+    return () => {
+      window.removeEventListener('CALLS_STATE_UPDATED', fetchRealCalls);
+    };
   }, []);
 
   const getCallCountForGig = (gigId: string) => {
