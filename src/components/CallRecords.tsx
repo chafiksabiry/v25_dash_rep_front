@@ -348,21 +348,21 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
 
                           {/* Validation de l'Appel */}
-                          <div className="flex flex-col items-center gap-1 min-w-[110px]">
+                          <div className="flex flex-col items-center gap-1 min-w-[120px]">
                             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Appel (Validation)</span>
                             {record.companyValidation === 'approved' && record.agentValidation === 'approved' ? (
-                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-28">
+                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-32 whitespace-nowrap">
                                 <Check className="w-3.5 h-3.5" />
                                 Validé
                               </span>
                             ) : record.companyValidation === 'rejected' || record.agentValidation === 'rejected' ? (
-                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-28">
+                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32 whitespace-nowrap">
                                 <X className="w-3.5 h-3.5" />
                                 Refusé
                               </span>
                             ) : record.agentValidation === 'approved' && record.companyValidation !== 'approved' ? (
                               <span
-                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200/40 shadow-sm w-28 text-center cursor-help"
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200/40 shadow-sm w-32 whitespace-nowrap text-center cursor-help"
                                 title="En attente de la confirmation de la compagnie"
                               >
                                 <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
@@ -420,21 +420,21 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
 
                           {/* Validation de la Transaction */}
-                          <div className="flex flex-col items-center gap-1 min-w-[110px]">
+                          <div className="flex flex-col items-center gap-1 min-w-[120px]">
                             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Transaction</span>
                             {record.transaction?.validByCompany === true && record.transaction?.validByReps === true ? (
-                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100/40 shadow-sm w-28">
+                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100/40 shadow-sm w-32 whitespace-nowrap">
                                 <Check className="w-3.5 h-3.5" />
                                 Signé
                               </span>
                             ) : record.transaction?.validByCompany === false || record.transaction?.validByReps === false ? (
-                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-28">
+                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32 whitespace-nowrap">
                                 <X className="w-3.5 h-3.5" />
                                 Refusé
                               </span>
                             ) : record.transaction?.validByReps === true && record.transaction?.validByCompany !== true ? (
                               <span
-                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200/40 shadow-sm w-28 text-center cursor-help"
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200/40 shadow-sm w-32 whitespace-nowrap text-center cursor-help"
                                 title="En attente de la confirmation de la compagnie"
                               >
                                 <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
