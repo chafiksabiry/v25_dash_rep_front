@@ -334,24 +334,22 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                               Refusé
                             </span>
                           ) : (
-                            <div className="flex flex-col gap-1.5">
-                              <button
-                                onClick={() => handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, true)}
-                                className="w-24 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1.5 shadow-sm bg-blue-50/50 text-blue-600 border-blue-100/40 hover:bg-blue-100/60"
-                                title="Valider ma transaction"
-                              >
-                                <Check className="w-3 h-3" />
-                                Valider
-                              </button>
-                              <button
-                                onClick={() => handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, false)}
-                                className="w-24 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1.5 shadow-sm bg-rose-50/50 text-rose-600 border-rose-100/40 hover:bg-rose-100/60"
-                                title="Refuser la transaction"
-                              >
-                                <X className="w-3 h-3" />
-                                Refuser
-                              </button>
-                            </div>
+                            <select
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === 'approved') {
+                                  handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, true);
+                                } else if (val === 'rejected') {
+                                  handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, false);
+                                }
+                              }}
+                              defaultValue=""
+                              className="w-24 px-2.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200 bg-white text-slate-600 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none text-center cursor-pointer appearance-none"
+                            >
+                              <option value="" disabled hidden>Action</option>
+                              <option value="approved">Valider</option>
+                              <option value="rejected">Refuser</option>
+                            </select>
                           )}
                         </div>
 
@@ -431,30 +429,34 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
 
                       <div className="flex flex-col gap-1">
                         <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Transaction (Agent)</span>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, true)}
-                            className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-1 ${
-                              selectedCall.transaction?.validByReps === true
-                                ? 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-500/10'
-                                : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
-                            }`}
+                        {selectedCall.transaction?.validByReps === true ? (
+                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-24">
+                            <Check className="w-3.5 h-3.5" />
+                            Validé
+                          </span>
+                        ) : selectedCall.transaction?.validByReps === false ? (
+                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-24">
+                            <X className="w-3.5 h-3.5" />
+                            Refusé
+                          </span>
+                        ) : (
+                          <select
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === 'approved') {
+                                handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, true);
+                              } else if (val === 'rejected') {
+                                handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, false);
+                              }
+                            }}
+                            defaultValue=""
+                            className="w-24 px-2.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200 bg-white text-slate-600 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none text-center cursor-pointer appearance-none"
                           >
-                            <Check className="w-3 h-3" />
-                            Valider
-                          </button>
-                          <button
-                            onClick={() => handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, false)}
-                            className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-1 ${
-                              selectedCall.transaction?.validByReps === false
-                                ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/10'
-                                : 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'
-                            }`}
-                          >
-                            <X className="w-3 h-3" />
-                            Refuser
-                          </button>
-                        </div>
+                            <option value="" disabled hidden>Action</option>
+                            <option value="approved">Valider</option>
+                            <option value="rejected">Refuser</option>
+                          </select>
+                        )}
                       </div>
 
                       <div className="flex flex-col gap-1">
