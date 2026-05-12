@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 
 import { CallRecords } from '../components/CallRecords';
+import api from '../utils/client';
 
 export function WalletPage() {
   const { t } = useTranslation();
@@ -43,76 +44,42 @@ export function WalletPage() {
 
   // Filter and Call Records for "Liste des Appels"
   const [selectedGigFilter, setSelectedGigFilter] = useState('all');
+  const [realCalls, setRealCalls] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchRealCalls = async () => {
+      try {
+        const agentId = localStorage.getItem('agentId');
+        if (!agentId) return;
+        const response = await api.calls.getByAgentId(agentId);
+        if (response && response.success && Array.isArray(response.data)) {
+          setRealCalls(response.data);
+        }
+      } catch (err) {
+        console.error('Error fetching real calls for counts in Wallet:', err);
+      }
+    };
+    fetchRealCalls();
+  }, []);
+
+  const getCallCountForGig = (gigId: string) => {
+    if (gigId === 'all') return realCalls.length;
+    return realCalls.filter(record => {
+      const recordGig = record.lead?.gigId;
+      const idStr = typeof recordGig === 'object' 
+        ? (recordGig?._id || (recordGig as any)?.$oid) 
+        : recordGig;
+      return idStr === gigId;
+    }).length;
+  };
 
   const gigsFilterOptions = [
-    { id: 'all', title: 'Tous les Gigs' },
-    { id: '69df585b6cad0fd23cffc2ae', title: 'Force de vente de complémentaire santé / mutuelle' },
-    { id: 'insurance-premium', title: 'Assurance Santé Premium' },
-    { id: 'cpf-booster', title: 'Formation CPF Booster' },
-    { id: 'telecom-pro', title: 'Télécom Fibre Pro' }
+    { id: 'all', title: `Tous les Gigs (${getCallCountForGig('all')})` },
+    { id: '69df585b6cad0fd23cffc2ae', title: `Force de vente de complémentaire santé / mutuelle (${getCallCountForGig('69df585b6cad0fd23cffc2ae')})` },
+    { id: 'insurance-premium', title: `Assurance Santé Premium (${getCallCountForGig('insurance-premium')})` },
+    { id: 'cpf-booster', title: `Formation CPF Booster (${getCallCountForGig('cpf-booster')})` },
+    { id: 'telecom-pro', title: `Télécom Fibre Pro (${getCallCountForGig('telecom-pro')})` }
   ];
-
-  const callEarnings = [
-    {
-      id: 'C1',
-      gigId: '69df585b6cad0fd23cffc2ae',
-      gigTitle: 'Force de vente de complémentaire santé / mutuelle',
-      customerName: 'Jean Dupont',
-      phone: '+33 6 12 34 56 78',
-      duration: '08:45',
-      date: '2024-03-15 14:32',
-      status: 'Validé',
-      earnings: 34.00
-    },
-    {
-      id: 'C2',
-      gigId: 'cpf-booster',
-      gigTitle: 'Formation CPF Booster',
-      customerName: 'Marie Curie',
-      phone: '+33 6 98 76 54 32',
-      duration: '12:10',
-      date: '2024-03-15 11:15',
-      status: 'Validé',
-      earnings: 24.20
-    },
-    {
-      id: 'C3',
-      gigId: 'telecom-pro',
-      gigTitle: 'Télécom Fibre Pro',
-      customerName: 'Pierre Menès',
-      phone: '+33 7 45 89 12 36',
-      duration: '04:15',
-      date: '2024-03-14 16:45',
-      status: 'En attente',
-      earnings: 8.50
-    },
-    {
-      id: 'C4',
-      gigId: '69df585b6cad0fd23cffc2ae',
-      gigTitle: 'Force de vente de complémentaire santé / mutuelle',
-      customerName: 'Sophie Lambert',
-      phone: '+33 6 55 44 33 22',
-      duration: '15:30',
-      date: '2024-03-13 09:20',
-      status: 'Validé',
-      earnings: 34.00
-    },
-    {
-      id: 'C5',
-      gigId: 'cpf-booster',
-      gigTitle: 'Formation CPF Booster',
-      customerName: 'Lucas Bernard',
-      phone: '+33 6 11 22 33 44',
-      duration: '02:05',
-      date: '2024-03-12 18:10',
-      status: 'Refusé',
-      earnings: 0.00
-    }
-  ];
-
-  const filteredCalls = selectedGigFilter === 'all' 
-    ? callEarnings 
-    : callEarnings.filter(call => call.gigId === selectedGigFilter);
 
   const gigCommissions: Record<string, { rate: string; rules: string; bonus: string }> = {
     all: {
@@ -456,10 +423,20 @@ export function WalletPage() {
               <>
                 <div className="p-6 border-b border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
-                      Suivi des Appels éligibles aux commissions
-                    </h3>
-                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5 uppercase">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+                        Suivi des Appels éligibles aux commissions
+                      </h3>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                        Total : {getCallCountForGig('all')} appels
+                      </span>
+                      {selectedGigFilter !== 'all' && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 border border-blue-100">
+                          Ce Gig : {getCallCountForGig(selectedGigFilter)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 font-semibold mt-1 uppercase">
                       Chaque appel validé par l'entreprise crédite votre solde de gains.
                     </p>
                   </div>
