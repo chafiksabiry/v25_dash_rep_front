@@ -111,6 +111,29 @@ export function WalletPage() {
     ? callEarnings 
     : callEarnings.filter(call => call.gigId === selectedGigFilter);
 
+  const gigCommissions: Record<string, { rate: string; rules: string; bonus: string }> = {
+    all: {
+      rate: 'Taux Variable',
+      rules: 'Sélectionnez un Gig spécifique pour consulter son barème de commission exact.',
+      bonus: 'Bonus actifs'
+    },
+    'insurance-premium': {
+      rate: '$2.00 / min d\'appel',
+      rules: 'Commissions calculées sur la durée totale des appels validés par la compagnie.',
+      bonus: '+$5.00 bonus validation'
+    },
+    'cpf-booster': {
+      rate: '$2.00 / min d\'appel',
+      rules: 'Applicable sur les appels d\'une durée supérieure à 1 minute avec CPF valide.',
+      bonus: '+$10.00 bonus conversion'
+    },
+    'telecom-pro': {
+      rate: '$2.00 / min d\'appel',
+      rules: 'Taux standard appliqué sur tous les appels professionnels validés.',
+      bonus: 'Aucun bonus'
+    }
+  };
+
   // Sync state changes with localStorage and emit sync event
   useEffect(() => {
     localStorage.setItem('rep_available_balance', availableBalance.toString());
@@ -435,6 +458,32 @@ export function WalletPage() {
                         <option key={opt.id} value={opt.id}>{opt.title}</option>
                       ))}
                     </select>
+                  </div>
+                </div>
+
+                {/* Remboursement / Commission de Gig Info Banner */}
+                <div className="mx-6 mt-6 p-4 bg-blue-50/50 border border-blue-100 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-200">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2.5 bg-blue-500/15 text-blue-600 rounded-xl shrink-0">
+                      <Sparkles className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-blue-600 font-extrabold uppercase tracking-widest block">Barème de Commission</span>
+                      <p className="text-xs text-slate-500 font-medium leading-relaxed mt-0.5">
+                        {gigCommissions[selectedGigFilter]?.rules}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-left sm:text-right shrink-0">
+                    <span className="text-[9px] font-black text-slate-400 block uppercase tracking-wider">Commission</span>
+                    <span className="text-sm font-black text-blue-600 block mt-0.5">
+                      {gigCommissions[selectedGigFilter]?.rate}
+                    </span>
+                    {gigCommissions[selectedGigFilter]?.bonus !== 'Aucun bonus' && (
+                      <span className="inline-block text-[8px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-md mt-1.5">
+                        {gigCommissions[selectedGigFilter]?.bonus}
+                      </span>
+                    )}
                   </div>
                 </div>
 
