@@ -38,6 +38,8 @@ export function WalletPage() {
 
   // Filter and Call Records for "Liste des Appels"
   const [selectedGigFilter, setSelectedGigFilter] = useState('all');
+  const [callValidationFilter, setCallValidationFilter] = useState<'all' | 'approved' | 'pending'>('all');
+  const [transactionValidationFilter, setTransactionValidationFilter] = useState<'all' | 'approved' | 'refused' | 'pending'>('all');
   const [realCalls, setRealCalls] = useState<any[]>([]);
 
   // Dynamic balance calculations based on call records
@@ -476,17 +478,47 @@ export function WalletPage() {
                       Chaque appel validé par l'entreprise crédite votre solde de gains.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase text-slate-400">Filtrer par Gig :</span>
-                    <select
-                      value={selectedGigFilter}
-                      onChange={(e) => setSelectedGigFilter(e.target.value)}
-                      className="border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-black text-slate-700 bg-white shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    >
-                      {gigsFilterOptions.map(opt => (
-                        <option key={opt.id} value={opt.id}>{opt.title}</option>
-                      ))}
-                    </select>
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase text-slate-400">Filtrer par Gig :</span>
+                        <select
+                          value={selectedGigFilter}
+                          onChange={(e) => setSelectedGigFilter(e.target.value)}
+                          className="border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-black text-slate-700 bg-white shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        >
+                          {gigsFilterOptions.map(opt => (
+                            <option key={opt.id} value={opt.id}>{opt.title}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase text-slate-400">Appels :</span>
+                        <select
+                          value={callValidationFilter}
+                          onChange={(e) => setCallValidationFilter(e.target.value as any)}
+                          className="border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-black text-slate-700 bg-white shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        >
+                          <option value="all">Tous les appels</option>
+                          <option value="approved">Validés uniquement</option>
+                          <option value="pending">En attente / Non validés</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase text-slate-400">Transactions :</span>
+                        <select
+                          value={transactionValidationFilter}
+                          onChange={(e) => setTransactionValidationFilter(e.target.value as any)}
+                          className="border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-black text-slate-700 bg-white shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        >
+                          <option value="all">Toutes les transactions</option>
+                          <option value="approved">Validées (Signées)</option>
+                          <option value="refused">Refusées</option>
+                          <option value="pending">À valider (En attente)</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -517,7 +549,11 @@ export function WalletPage() {
                 </div>
 
                 <div className="p-6">
-                  <CallRecords gigId={selectedGigFilter === 'all' ? undefined : selectedGigFilter} />
+                  <CallRecords 
+                    gigId={selectedGigFilter === 'all' ? undefined : selectedGigFilter} 
+                    callValidationFilter={callValidationFilter}
+                    transactionValidationFilter={transactionValidationFilter}
+                  />
                 </div>
               </>
             )}

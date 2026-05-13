@@ -119,9 +119,11 @@ interface Lead {
 interface CallRecordsProps {
   gigId?: string;
   leadId?: string;
+  callValidationFilter?: 'all' | 'approved' | 'pending';
+  transactionValidationFilter?: 'all' | 'approved' | 'refused' | 'pending';
 }
 
-export function CallRecords({ gigId, leadId }: CallRecordsProps) {
+export function CallRecords({ gigId, leadId, callValidationFilter = 'all', transactionValidationFilter = 'all' }: CallRecordsProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [callRecords, setCallRecords] = useState<CallRecord[]>([]);
@@ -245,6 +247,16 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
         : recordGig;
       if (idStr !== gigId) return false;
     }
+
+    // Call Validation Filter
+    if (callValidationFilter === 'approved' && record.companyValidation !== 'approved') return false;
+    if (callValidationFilter === 'pending' && record.companyValidation === 'approved') return false;
+
+    // Transaction Validation Filter
+    if (transactionValidationFilter === 'approved' && record.transaction?.validByCompany !== true) return false;
+    if (transactionValidationFilter === 'refused' && record.transaction?.validByCompany !== false) return false;
+    if (transactionValidationFilter === 'pending' && record.transaction?.validByCompany !== null) return false;
+
     return true;
   });
 
