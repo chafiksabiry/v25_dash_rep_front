@@ -32,15 +32,9 @@ export function WalletPage() {
   const [selectedDateRange, setSelectedDateRange] = useState('this-month');
 
   // Dynamic state metrics for simulating real-time payouts
-  const [availableBalance, setAvailableBalance] = useState(() => {
-    const saved = localStorage.getItem('rep_available_balance');
-    return saved ? parseFloat(saved) : 1250.00;
-  });
-  const [pendingEarnings, setPendingEarnings] = useState(() => {
-    const saved = localStorage.getItem('rep_pending_balance');
-    return saved ? parseFloat(saved) : 325.00;
-  });
-  const [lifetimeEarnings, setLifetimeEarnings] = useState(12450.00);
+  const [availableBalance, setAvailableBalance] = useState(0);
+  const [pendingEarnings, setPendingEarnings] = useState(0);
+  const [lifetimeEarnings, setLifetimeEarnings] = useState(0);
 
   // Filter and Call Records for "Liste des Appels"
   const [selectedGigFilter, setSelectedGigFilter] = useState('all');
@@ -48,33 +42,22 @@ export function WalletPage() {
 
   // Dynamic balance calculations based on call records
   const calculateBalances = (callsList: any[]) => {
-    let available = 1250.00; // start with a premium base balance
-    let pending = 325.00;    // start with a premium base pending
+    let available = 0; 
+    let pending = 0;   
+    let lifetime = 0;
 
     callsList.forEach(call => {
       const recordGig = call.lead?.gigId;
-      const gigId = typeof recordGig === 'object' ? (recordGig?._id || (recordGig as any)?.$oid) : recordGig;
+      const gigData = typeof recordGig === 'object' ? recordGig : null;
       
-      let callRate = 4.00; 
-      let txRate = 30.00;
-
-      if (gigId === '69df585b6cad0fd23cffc2ae') {
-        callRate = 4.00;
-        txRate = 30.00;
-      } else if (gigId === 'insurance-premium') {
-        callRate = 4.00;
-        txRate = 20.00;
-      } else if (gigId === 'cpf-booster') {
-        callRate = 3.00;
-        txRate = 40.00;
-      } else if (gigId === 'telecom-pro') {
-        callRate = 5.00;
-        txRate = 25.00;
-      }
+      // Use call.price if available, otherwise fallback to gig data or default
+      let callRate = call.price || (gigData?.rewardPerCall) || 4.00; 
+      let txRate = (gigData?.rewardPerSale) || 30.00;
 
       // 1. Call Validation commission
       if (call.companyValidation === 'approved') {
         available += callRate;
+        lifetime += callRate;
       } else if (call.companyValidation === 'pending' || !call.companyValidation) {
         pending += callRate;
       }
@@ -84,13 +67,54 @@ export function WalletPage() {
       if (hasTransaction) {
         if (call.transaction?.validByCompany === true) {
           available += txRate;
+          lifetime += txRate;
         } else if (call.transaction?.validByCompany === null || call.transaction?.validByCompany === undefined) {
           pending += txRate;
         }
       }
     });
 
-    return { available, pending };
+    return { available, pending, lifetime };
+  };
+
+  const generateTransactionsFromCalls = (callsList: any[]) => {
+    const dynamicTxs: any[] = [];
+    callsList.forEach(call => {
+      const gigData = typeof call.lead?.gigId === 'object' ? call.lead.gigId : null;
+      const gigTitle = gigData?.title || "Projet";
+
+      // Call Commission
+      if (call.companyValidation === 'approved') {
+        dynamicTxs.push({
+          id: `call-${call._id}`,
+          type: 'Commission',
+          amount: call.price || gigData?.rewardPerCall || 4.00,
+          status: 'Completed',
+          date: call.createdAt || call.startTime,
+          method: 'Wallet',
+          reference: call._id,
+          description: `Com. Appel Validé - ${gigTitle}`
+        });
+      }
+
+      // Transaction Commission
+      const hasTransaction = call.transaction?.validByReps === true || call.transactionOccurred === true;
+      if (hasTransaction && call.transaction?.validByCompany === true) {
+        dynamicTxs.push({
+          id: `tx-${call._id}`,
+          type: 'Bonus',
+          amount: gigData?.rewardPerSale || 30.00,
+          status: 'Completed',
+          date: call.transaction?.updatedAt || call.createdAt,
+          method: 'Wallet',
+          reference: call._id,
+          description: `Com. Vente Validée - ${gigTitle}`
+        });
+      }
+    });
+    
+    // Sort by date descending
+    return dynamicTxs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
   const fetchRealCalls = async () => {
@@ -100,9 +124,18 @@ export function WalletPage() {
       const response = await api.calls.getByAgentId(agentId);
       if (response && response.success && Array.isArray(response.data)) {
         setRealCalls(response.data);
-        const { available, pending } = calculateBalances(response.data);
+        const { available, pending, lifetime } = calculateBalances(response.data);
         setAvailableBalance(available);
         setPendingEarnings(pending);
+        setLifetimeEarnings(lifetime);
+        
+        // Update transaction history
+        const callTxs = generateTransactionsFromCalls(response.data);
+        setTransactions(prev => {
+          // Keep existing Payouts (withdrawals) from the session
+          const payouts = prev.filter(t => t.type === 'Payout');
+          return [...payouts, ...callTxs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        });
       }
     } catch (err) {
       console.error('Error fetching real calls for counts in Wallet:', err);
@@ -182,38 +215,7 @@ export function WalletPage() {
   }, [availableBalance, pendingEarnings]);
 
   // Stateful transaction log
-  const [transactions, setTransactions] = useState([
-    {
-      id: 1,
-      type: 'Payout',
-      amount: 450.00,
-      status: 'Completed',
-      date: '2024-03-15',
-      method: 'Bank Transfer',
-      reference: 'TRX-001234',
-      description: 'Weekly earnings payout'
-    },
-    {
-      id: 2,
-      type: 'Bonus',
-      amount: 100.00,
-      status: 'Processing',
-      date: '2024-03-14',
-      method: 'PayPal',
-      reference: 'BNS-005678',
-      description: 'Performance bonus'
-    },
-    {
-      id: 3,
-      type: 'Reward',
-      amount: 75.00,
-      status: 'Completed',
-      date: '2024-03-10',
-      method: 'Bank Transfer',
-      reference: 'RWD-009012',
-      description: 'Customer satisfaction reward'
-    }
-  ]);
+  const [transactions, setTransactions] = useState<any[]>([]);
 
 
 
