@@ -243,7 +243,7 @@ export const profileApi = {
 };
 
 // Export the API client for direct use
-export { repApiClient };
+export { repApiClient, dashboardCompanyApiClient, apiClient, callsApiClient };
 
 // Default export with all APIs
 export default {
@@ -251,4 +251,8 @@ export default {
   vertex: vertexApi,
   auth: authApi,
   profile: profileApi,
+  get: dashboardCompanyApiClient.get,
+  post: dashboardCompanyApiClient.post,
+  put: dashboardCompanyApiClient.put,
+  delete: dashboardCompanyApiClient.delete,
 };
