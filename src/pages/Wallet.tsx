@@ -41,6 +41,7 @@ export function WalletPage() {
   const [availableBalance, setAvailableBalance] = useState(0);
   const [pendingEarnings, setPendingEarnings] = useState(0);
   const [lifetimeEarnings, setLifetimeEarnings] = useState(0);
+  const [pendingTransactionsCount, setPendingTransactionsCount] = useState(0);
 
   // Filter and Call Records for "Liste des Appels"
   const [realCalls, setRealCalls] = useState<any[]>([]);
@@ -261,8 +262,12 @@ export function WalletPage() {
 
       if (walletRes.data?.success) {
         setAvailableBalance(walletRes.data.data.availableBalance);
-        setPendingEarnings(walletRes.data.data.pendingWithdrawals);
+        // Pending Earnings = Pending Withdrawals + Pending Commissions
+        const pendingTotal = (walletRes.data.data.pendingWithdrawals || 0) + (walletRes.data.data.pendingCommissions || 0);
+        setPendingEarnings(pendingTotal);
         setLifetimeEarnings(walletRes.data.data.lifetimeEarnings);
+        // Store pending count for the badge
+        setPendingTransactionsCount(walletRes.data.data.pendingCount || 0);
       }
 
       if (withdrawalsRes.data?.success) {
@@ -373,7 +378,7 @@ export function WalletPage() {
       return;
     }
     if (amount > availableBalance) {
-      setValidationError(`Le montant dépasse votre solde disponible de $${availableBalance.toFixed(2)}.`);
+      setValidationError(`Le montant dépasse votre solde disponible de ${availableBalance.toFixed(2)}€.`);
       return;
     }
     setValidationError('');
@@ -426,7 +431,7 @@ export function WalletPage() {
       title: t('wallet.pendingEarnings'),
       amount: `${pendingEarnings.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`,
       icon: Clock,
-      change: `${transactions.filter(t => t.status === 'Processing').length} transactions en attente`,
+      change: `${pendingTransactionsCount} transactions en attente`,
       status: 'neutral'
     }
   ];
