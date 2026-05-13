@@ -387,7 +387,7 @@ export function WalletPage() {
   };
 
   // Handle Step 2 Submit (2FA Check)
-  const handleStep2Submit = (e: React.FormEvent) => {
+  const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (verificationCode.trim() !== '1234') {
       setValidationError('Code de vérification incorrect. Saisissez 1234 pour simuler la validation.');
