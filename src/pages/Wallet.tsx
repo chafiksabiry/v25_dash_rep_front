@@ -52,9 +52,10 @@ export function WalletPage() {
       const recordGig = call.lead?.gigId;
       const gigData = typeof recordGig === 'object' ? recordGig : null;
       
-      // Use call.price if available, otherwise fallback to gig data or default
-      let callRate = call.price || (gigData?.rewardPerCall) || 4.00; 
-      let txRate = (gigData?.rewardPerSale) || 30.00;
+      // Priority: Gig-defined commission > Default fallback (4€/30€)
+      // Note: We ignore call.price as it often represents the provider cost (e.g. 0.12€)
+      let callRate = gigData?.commission?.commission_per_call || (gigData?.rewardPerCall) || 4.00; 
+      let txRate = gigData?.commission?.transactionCommission || (gigData?.rewardPerSale) || 30.00;
 
       // 1. Call Validation commission
       if (call.companyValidation === 'approved') {
@@ -87,10 +88,11 @@ export function WalletPage() {
 
       // Call Commission
       if (call.companyValidation === 'approved') {
+        const callRate = gigData?.commission?.commission_per_call || gigData?.rewardPerCall || 4.00;
         dynamicTxs.push({
           id: `call-${call._id}`,
           type: 'Commission',
-          amount: call.price || gigData?.rewardPerCall || 4.00,
+          amount: callRate,
           status: 'Completed',
           date: call.createdAt || call.startTime,
           method: 'Wallet',
@@ -102,10 +104,11 @@ export function WalletPage() {
       // Transaction Commission
       const hasTransaction = call.transaction?.validByReps === true || call.transactionOccurred === true;
       if (hasTransaction && call.transaction?.validByCompany === true) {
+        const txRate = gigData?.commission?.transactionCommission || gigData?.rewardPerSale || 30.00;
         dynamicTxs.push({
           id: `tx-${call._id}`,
           type: 'Bonus',
-          amount: gigData?.rewardPerSale || 30.00,
+          amount: txRate,
           status: 'Completed',
           date: call.transaction?.updatedAt || call.createdAt,
           method: 'Wallet',
@@ -221,8 +224,8 @@ export function WalletPage() {
 
     if (callFromGig) {
       const gigData = typeof callFromGig.lead?.gigId === 'object' ? callFromGig.lead.gigId : null;
-      const callRate = callFromGig.price || gigData?.rewardPerCall || 4.00;
-      const txRate = gigData?.rewardPerSale || 30.00;
+      const callRate = gigData?.commission?.commission_per_call || gigData?.rewardPerCall || 4.00;
+      const txRate = gigData?.commission?.transactionCommission || gigData?.rewardPerSale || 30.00;
       
       return {
         rate: `${callRate.toFixed(2)} € / appel + ${txRate.toFixed(2)} € / transaction`,

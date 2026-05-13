@@ -374,7 +374,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                               {record.companyValidation === 'approved' && record.agentValidation === 'approved' ? (
                                 <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-36 whitespace-nowrap">
                                   <Check className="w-3.5 h-3.5" />
-                                  Validé (+{(record.price || record.lead?.gigId?.commission?.commission_per_call || record.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)
+                                  Validé (+{(record.lead?.gigId?.commission?.commission_per_call || record.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)
                                 </span>
                             ) : record.companyValidation === 'rejected' || record.agentValidation === 'rejected' ? (
                               <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32 whitespace-nowrap">
@@ -575,7 +575,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                           selectedCall.companyValidation === 'rejected' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
                             'bg-amber-500/10 text-amber-600 border-amber-500/20'
                         }`}>
-                        {selectedCall.companyValidation === 'approved' ? `Validé (+${(selectedCall.price || selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)` :
+                        {selectedCall.companyValidation === 'approved' ? `Validé (+${(selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)` :
                           selectedCall.companyValidation === 'rejected' ? 'Refusé' :
                             'En attente'}
                       </span>
