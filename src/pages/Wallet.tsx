@@ -257,8 +257,8 @@ export function WalletPage() {
     setIsLoadingWallet(true);
     try {
       const [walletRes, withdrawalsRes] = await Promise.all([
-        api.get(`/agent/wallet/${agentId}`),
-        api.get(`/agent/withdrawals/${agentId}`)
+        api.get(`/escrow/agent/wallet/${agentId}`),
+        api.get(`/escrow/agent/withdrawals/${agentId}`)
       ]);
 
       if (walletRes.data?.success) {
@@ -399,7 +399,7 @@ export function WalletPage() {
     const parsedAmount = parseFloat(withdrawAmount);
     
     try {
-      const res = await api.post('/agent/withdraw', {
+      const res = await api.post('/escrow/agent/withdraw', {
         agentId,
         amount: parsedAmount,
         method: selectedMethod,

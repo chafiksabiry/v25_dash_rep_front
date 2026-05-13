@@ -187,6 +187,16 @@ export interface Agent {
   };
 }
 
+const orchestratorApiClient = axios.create({
+  baseURL: import.meta.env.VITE_COMPORCHESTRATOR_BACK_URL || 'https://v25comporchestratorback-production.up.railway.app/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add auth token interceptor to orchestrator client
+addAuthInterceptor(orchestratorApiClient);
+
 // API methods
 export const callsApi = {
   getByAgentId: async (agentId: string) => {
@@ -243,7 +253,7 @@ export const profileApi = {
 };
 
 // Export the API client for direct use
-export { repApiClient, dashboardCompanyApiClient, apiClient, callsApiClient };
+export { repApiClient, dashboardCompanyApiClient, apiClient, callsApiClient, orchestratorApiClient };
 
 // Default export with all APIs
 export default {
@@ -251,8 +261,8 @@ export default {
   vertex: vertexApi,
   auth: authApi,
   profile: profileApi,
-  get: dashboardCompanyApiClient.get,
-  post: dashboardCompanyApiClient.post,
-  put: dashboardCompanyApiClient.put,
-  delete: dashboardCompanyApiClient.delete,
+  get: orchestratorApiClient.get,
+  post: orchestratorApiClient.post,
+  put: orchestratorApiClient.put,
+  delete: orchestratorApiClient.delete,
 };
