@@ -136,7 +136,7 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
             <div className="text-left leading-none">
               <span className="text-[8px] text-slate-400 font-black uppercase tracking-wider block">Solde</span>
               <span className="text-xs font-black text-white tracking-wide mt-0.5 block">
-                ${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {balance.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
               </span>
             </div>
           </div>

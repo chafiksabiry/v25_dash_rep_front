@@ -246,6 +246,32 @@ export function WalletPage() {
 
   // Sync state changes with localStorage and emit sync event
   useEffect(() => {
+    localStorage.setItem('rep_pending_balance', pendingEarnings.toString());
+  }, [availableBalance, pendingEarnings]);
+
+  const getWeeklyEarnings = () => {
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    return realCalls.reduce((total, call) => {
+      const callDate = new Date(call.createdAt || call.startTime);
+      if (callDate >= oneWeekAgo) {
+        const gigData = typeof call.lead?.gigId === 'object' ? call.lead.gigId : null;
+        const callRate = gigData?.commission?.commission_per_call || gigData?.rewardPerCall || 4.00;
+        const txRate = gigData?.commission?.transactionCommission || gigData?.rewardPerSale || 30.00;
+        
+        if (call.companyValidation === 'approved') {
+          total += callRate;
+        }
+        if (call.transaction?.validByCompany === true) {
+          total += txRate;
+        }
+      }
+      return total;
+    }, 0);
+  };
+
+  useEffect(() => {
     localStorage.setItem('rep_available_balance', availableBalance.toString());
     localStorage.setItem('rep_pending_balance', pendingEarnings.toString());
     window.dispatchEvent(new Event('WALLET_BALANCE_UPDATED'));
@@ -335,14 +361,14 @@ export function WalletPage() {
   const balanceStats = [
     {
       title: t('wallet.availableBalance'),
-      amount: `$${availableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      amount: `${availableBalance.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`,
       icon: Wallet,
-      change: '+$450 this week',
+      change: `+${getWeeklyEarnings().toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€ cette semaine`,
       status: 'positive'
     },
     {
       title: t('wallet.pendingEarnings'),
-      amount: `$${pendingEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      amount: `${pendingEarnings.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`,
       icon: Clock,
       change: `${transactions.filter(t => t.status === 'Processing').length} transactions en attente`,
       status: 'neutral'
