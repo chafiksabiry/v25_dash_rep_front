@@ -30,6 +30,9 @@ export function WalletPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('transactions');
   const [selectedDateRange, setSelectedDateRange] = useState('this-month');
+  const [selectedGigId, setSelectedGigId] = useState('all');
+  const [callValidationFilter, setCallValidationFilter] = useState<'all' | 'approved' | 'pending'>('all');
+  const [transactionValidationFilter, setTransactionValidationFilter] = useState<'all' | 'approved' | 'refused' | 'pending'>('all');
 
   // Dynamic state metrics for simulating real-time payouts
   const [availableBalance, setAvailableBalance] = useState(0);
@@ -37,9 +40,6 @@ export function WalletPage() {
   const [lifetimeEarnings, setLifetimeEarnings] = useState(0);
 
   // Filter and Call Records for "Liste des Appels"
-  const [selectedGigFilter, setSelectedGigFilter] = useState('all');
-  const [callValidationFilter, setCallValidationFilter] = useState<'all' | 'approved' | 'pending'>('all');
-  const [transactionValidationFilter, setTransactionValidationFilter] = useState<'all' | 'approved' | 'refused' | 'pending'>('all');
   const [realCalls, setRealCalls] = useState<any[]>([]);
 
   // Dynamic balance calculations based on call records
@@ -85,6 +85,7 @@ export function WalletPage() {
     callsList.forEach(call => {
       const gigData = typeof call.lead?.gigId === 'object' ? call.lead.gigId : null;
       const gigTitle = gigData?.title || "Projet";
+      const gigId = typeof call.lead?.gigId === 'object' ? call.lead.gigId?._id : call.lead?.gigId;
 
       // Call Commission
       if (call.companyValidation === 'approved') {
@@ -97,7 +98,8 @@ export function WalletPage() {
           date: call.createdAt || call.startTime,
           method: 'Wallet',
           reference: call._id,
-          description: `Com. Appel Validé - ${gigTitle}`
+          description: `Com. Appel Validé - ${gigTitle}`,
+          gigId: gigId
         });
       }
 
@@ -113,7 +115,8 @@ export function WalletPage() {
           date: call.transaction?.updatedAt || call.createdAt,
           method: 'Wallet',
           reference: call._id,
-          description: `Com. Vente Validée - ${gigTitle}`
+          description: `Com. Vente Validée - ${gigTitle}`,
+          gigId: gigId
         });
       }
     });
@@ -213,13 +216,13 @@ export function WalletPage() {
   };
 
   const getSelectedGigCommission = () => {
-    if (selectedGigFilter === 'all') return gigCommissions.all;
+    if (selectedGigId === 'all') return gigCommissions.all;
 
     // Find a call from this gig to extract live rates
     const callFromGig = realCalls.find(record => {
       const recordGig = record.lead?.gigId;
       const idStr = typeof recordGig === 'object' ? (recordGig?._id || (recordGig as any)?.$oid) : recordGig;
-      return idStr === selectedGigFilter;
+      return idStr === selectedGigId;
     });
 
     if (callFromGig) {
@@ -234,7 +237,7 @@ export function WalletPage() {
       };
     }
 
-    return gigCommissions[selectedGigFilter] || {
+    return gigCommissions[selectedGigId] || {
       rate: 'Non spécifié',
       rules: 'Aucune donnée de commission disponible pour ce projet.',
       bonus: 'Aucun'
@@ -425,28 +428,63 @@ export function WalletPage() {
             {activeTab === 'transactions' ? (
               <>
                 <div className="p-6 border-b border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Historique de Retraits</h2>
-                    <div className="flex items-center space-x-3">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Historique de Retraits & Commissions</h2>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Gig Filter */}
+                      <select
+                        value={selectedGigId}
+                        onChange={(e) => setSelectedGigId(e.target.value)}
+                        className="border border-slate-200 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 bg-white focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                      >
+                        {gigsFilterOptions.map(gig => (
+                          <option key={gig.id} value={gig.id}>{gig.title}</option>
+                        ))}
+                      </select>
+
+                      {/* Transaction Filter */}
+                      <select
+                        value={transactionValidationFilter}
+                        onChange={(e) => setTransactionValidationFilter(e.target.value)}
+                        className="border border-slate-200 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 bg-white focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                      >
+                        <option value="all">Toutes les Ventes</option>
+                        <option value="validated">Ventes Validées</option>
+                        <option value="pending">Ventes en Attente</option>
+                        <option value="rejected">Ventes Refusées</option>
+                        <option value="to_validate">À Valider (Moi)</option>
+                      </select>
+
                       <select
                         value={selectedDateRange}
                         onChange={(e) => setSelectedDateRange(e.target.value)}
-                        className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 bg-white"
+                        className="border border-slate-200 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 bg-white focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                       >
                         <option value="today">Today</option>
                         <option value="this-week">This Week</option>
                         <option value="this-month">This Month</option>
                         <option value="last-month">Last Month</option>
                       </select>
-                      <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
-                        <Filter className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
                 </div>
 
                 <div className="divide-y divide-slate-100">
-                  {transactions.map((transaction) => (
+                  {transactions
+                    .filter(tx => {
+                      // Apply Gig Filter if it's a commission transaction
+                      if (selectedGigId !== 'all' && tx.gigId && tx.gigId !== selectedGigId) return false;
+                      
+                      // Apply Status Filter
+                      if (transactionValidationFilter !== 'all') {
+                        if (transactionValidationFilter === 'validated' && tx.status !== 'Completed') return false;
+                        if (transactionValidationFilter === 'pending' && tx.status !== 'Pending') return false;
+                        // Note: current transactions state doesn't have 'Rejected' status, but we can extend it
+                      }
+                      
+                      return true;
+                    })
+                    .map((transaction) => (
                     <div key={transaction.id} className="p-6 hover:bg-slate-50/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
@@ -500,9 +538,9 @@ export function WalletPage() {
                       <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
                         Total : {getCallCountForGig('all')} appels
                       </span>
-                      {selectedGigFilter !== 'all' && (
+                      {selectedGigId !== 'all' && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 border border-blue-100">
-                          Ce Gig : {getCallCountForGig(selectedGigFilter)}
+                          Ce Gig : {getCallCountForGig(selectedGigId)}
                         </span>
                       )}
                     </div>
@@ -514,8 +552,8 @@ export function WalletPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-black uppercase text-slate-400">Filtrer par Gig :</span>
                       <select
-                        value={selectedGigFilter}
-                        onChange={(e) => setSelectedGigFilter(e.target.value)}
+                        value={selectedGigId}
+                        onChange={(e) => setSelectedGigId(e.target.value)}
                         className="border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-black text-slate-700 bg-white shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                       >
                         {gigsFilterOptions.map(opt => (
@@ -581,7 +619,7 @@ export function WalletPage() {
 
                 <div className="p-6">
                   <CallRecords 
-                    gigId={selectedGigFilter === 'all' ? undefined : selectedGigFilter} 
+                    gigId={selectedGigId === 'all' ? undefined : selectedGigId} 
                     callValidationFilter={callValidationFilter}
                     transactionValidationFilter={transactionValidationFilter}
                   />
