@@ -167,10 +167,18 @@ export function WalletPage() {
 
   const gigsFilterOptions = [
     { id: 'all', title: `Tous les Gigs (${getCallCountForGig('all')})` },
-    { id: '69df585b6cad0fd23cffc2ae', title: `Force de vente de complémentaire santé / mutuelle (${getCallCountForGig('69df585b6cad0fd23cffc2ae')})` },
-    { id: 'insurance-premium', title: `Assurance Santé Premium (${getCallCountForGig('insurance-premium')})` },
-    { id: 'cpf-booster', title: `Formation CPF Booster (${getCallCountForGig('cpf-booster')})` },
-    { id: 'telecom-pro', title: `Télécom Fibre Pro (${getCallCountForGig('telecom-pro')})` }
+    ...Array.from(new Set(realCalls.map(c => {
+      const gig = c.lead?.gigId;
+      return typeof gig === 'object' ? (gig?._id || (gig as any)?.$oid) : gig;
+    }).filter(Boolean))).map(id => {
+      const call = realCalls.find(c => {
+        const gig = c.lead?.gigId;
+        const gigId = typeof gig === 'object' ? (gig?._id || (gig as any)?.$oid) : gig;
+        return gigId === id;
+      });
+      const title = call?.lead?.gigId?.title || "Projet Sans Titre";
+      return { id, title: `${title} (${getCallCountForGig(id)})` };
+    })
   ];
 
   const gigCommissions: Record<string, { rate: string; rules: string; bonus: string }> = {
@@ -202,6 +210,27 @@ export function WalletPage() {
   };
 
   const getSelectedGigCommission = () => {
+    if (selectedGigFilter === 'all') return gigCommissions.all;
+
+    // Find a call from this gig to extract live rates
+    const callFromGig = realCalls.find(record => {
+      const recordGig = record.lead?.gigId;
+      const idStr = typeof recordGig === 'object' ? (recordGig?._id || (recordGig as any)?.$oid) : recordGig;
+      return idStr === selectedGigFilter;
+    });
+
+    if (callFromGig) {
+      const gigData = typeof callFromGig.lead?.gigId === 'object' ? callFromGig.lead.gigId : null;
+      const callRate = callFromGig.price || gigData?.rewardPerCall || 4.00;
+      const txRate = gigData?.rewardPerSale || 30.00;
+      
+      return {
+        rate: `${callRate.toFixed(2)} € / appel + ${txRate.toFixed(2)} € / transaction`,
+        rules: gigData?.description || "Barème de commission standard pour ce projet.",
+        bonus: gigData?.bonusInfo || 'Aucun bonus actif'
+      };
+    }
+
     return gigCommissions[selectedGigFilter] || {
       rate: 'Non spécifié',
       rules: 'Aucune donnée de commission disponible pour ce projet.',
