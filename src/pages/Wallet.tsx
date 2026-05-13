@@ -25,22 +25,27 @@ import {
 
 import { CallRecords } from '../components/CallRecords';
 import api from '../utils/client';
+import { useAuth } from '../contexts/AuthContext';
 
 export function WalletPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const agentId = user?.agentId;
   const [activeTab, setActiveTab] = useState('transactions');
   const [selectedDateRange, setSelectedDateRange] = useState('this-month');
   const [selectedGigId, setSelectedGigId] = useState('all');
   const [callValidationFilter, setCallValidationFilter] = useState<'all' | 'approved' | 'pending'>('all');
   const [transactionValidationFilter, setTransactionValidationFilter] = useState<'all' | 'approved' | 'refused' | 'pending'>('all');
 
-  // Dynamic state metrics for simulating real-time payouts
+  // Dynamic state metrics for real payouts
   const [availableBalance, setAvailableBalance] = useState(0);
   const [pendingEarnings, setPendingEarnings] = useState(0);
   const [lifetimeEarnings, setLifetimeEarnings] = useState(0);
 
   // Filter and Call Records for "Liste des Appels"
   const [realCalls, setRealCalls] = useState<any[]>([]);
+  const [backendWithdrawals, setBackendWithdrawals] = useState<any[]>([]);
+  const [isLoadingWallet, setIsLoadingWallet] = useState(false);
 
   // Dynamic balance calculations based on call records
   const calculateBalances = (callsList: any[]) => {
@@ -244,9 +249,51 @@ export function WalletPage() {
     };
   };
 
+  // Fetch wallet and withdrawals from backend
+  const fetchWalletData = async () => {
+    if (!agentId) return;
+    setIsLoadingWallet(true);
+    try {
+      const [walletRes, withdrawalsRes] = await Promise.all([
+        api.get(`/agent/wallet/${agentId}`),
+        api.get(`/agent/withdrawals/${agentId}`)
+      ]);
+
+      if (walletRes.data?.success) {
+        setAvailableBalance(walletRes.data.data.availableBalance);
+        setPendingEarnings(walletRes.data.data.pendingWithdrawals);
+        setLifetimeEarnings(walletRes.data.data.lifetimeEarnings);
+      }
+
+      if (withdrawalsRes.data?.success) {
+        const formattedWithdrawals = withdrawalsRes.data.data.map((w: any) => ({
+          id: w._id,
+          type: 'Payout',
+          amount: w.amount,
+          status: w.status === 'pending' ? 'Processing' : w.status === 'completed' ? 'Completed' : 'Failed',
+          date: w.createdAt,
+          method: w.method === 'bank' ? 'Bank Transfer' : 'PayPal',
+          reference: w.reference,
+          description: w.description
+        }));
+        setBackendWithdrawals(formattedWithdrawals);
+      }
+    } catch (err) {
+      console.error('Error fetching wallet data:', err);
+    } finally {
+      setIsLoadingWallet(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWalletData();
+  }, [agentId]);
+
   // Sync state changes with localStorage and emit sync event
   useEffect(() => {
+    localStorage.setItem('rep_available_balance', availableBalance.toString());
     localStorage.setItem('rep_pending_balance', pendingEarnings.toString());
+    window.dispatchEvent(new Event('WALLET_BALANCE_UPDATED'));
   }, [availableBalance, pendingEarnings]);
 
   const getWeeklyEarnings = () => {
@@ -280,6 +327,12 @@ export function WalletPage() {
   // Stateful transaction log
   const [transactions, setTransactions] = useState<any[]>([]);
 
+  // Update transactions list when backend data or calls change
+  useEffect(() => {
+    const callTxs = generateTransactionsFromCalls(realCalls);
+    setTransactions([...backendWithdrawals, ...callTxs]);
+  }, [realCalls, backendWithdrawals]);
+
 
 
   // Withdrawal Modal States
@@ -289,6 +342,7 @@ export function WalletPage() {
   const [selectedMethod, setSelectedMethod] = useState('bank');
   const [verificationCode, setVerificationCode] = useState('');
   const [validationError, setValidationError] = useState('');
+  const [lastWithdrawal, setLastWithdrawal] = useState<any>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' | null }>({ text: '', type: null });
 
   const showToast = (text: string, type: 'success' | 'error') => {
@@ -337,25 +391,27 @@ export function WalletPage() {
     
     // Process withdrawal
     const parsedAmount = parseFloat(withdrawAmount);
-    setAvailableBalance(prev => prev - parsedAmount);
-    setPendingEarnings(prev => prev + parsedAmount);
+    
+    try {
+      const res = await api.post('/agent/withdraw', {
+        agentId,
+        amount: parsedAmount,
+        method: selectedMethod,
+        methodDetails: selectedMethod === 'bank' ? 'Bank Account (...4567)' : 'PayPal (john.doe@example.com)'
+      });
 
-    // Add transaction to history list
-    const methodDetails = selectedMethod === 'bank' ? 'Bank Account (...4567)' : 'PayPal (john.doe@example.com)';
-    const refNum = `TRX-${Math.floor(100000 + Math.random() * 900000)}`;
-    const newTx = {
-      id: Date.now(),
-      type: 'Payout',
-      amount: parsedAmount,
-      status: 'Processing',
-      date: new Date().toISOString().split('T')[0],
-      method: selectedMethod === 'bank' ? 'Bank Transfer' : 'PayPal',
-      reference: refNum,
-      description: `Withdrawal request via ${methodDetails}`
-    };
-
-    setTransactions(prev => [newTx, ...prev]);
-    setWithdrawStep(3); // Go to Success page
+      if (res.data?.success) {
+        setLastWithdrawal(res.data.withdrawal);
+        showToast(`Demande de retrait de ${parsedAmount.toFixed(2)}€ envoyée avec succès.`, 'success');
+        fetchWalletData(); // Refresh wallet data
+        setWithdrawStep(3); // Go to Success page
+      } else {
+        setValidationError(res.data?.error || 'Échec du traitement du retrait.');
+      }
+    } catch (err: any) {
+      console.error('Error processing withdrawal:', err);
+      setValidationError(err.response?.data?.error || 'Une erreur est survenue lors du retrait.');
+    }
   };
 
   const balanceStats = [
@@ -739,12 +795,12 @@ export function WalletPage() {
                       Montant à Retirer
                     </label>
                     <span className="text-[10px] text-slate-500 font-black uppercase">
-                      Max: ${availableBalance.toFixed(2)}
+                      Max: {availableBalance.toFixed(2)}€
                     </span>
                   </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                      <DollarSign className="h-4.5 w-4.5 text-slate-400" />
+                      <span className="text-slate-400 font-black text-xs">€</span>
                     </div>
                     <input
                       type="number"
@@ -782,7 +838,7 @@ export function WalletPage() {
                         }}
                         className="flex-1 py-1 bg-slate-50 hover:bg-slate-100 text-[10px] font-extrabold text-slate-600 rounded-lg transition-all border border-slate-100"
                       >
-                        ${quick}
+                        {quick}€
                       </button>
                     ))}
                   </div>
@@ -872,14 +928,14 @@ export function WalletPage() {
                     Retrait Soumis ! <Sparkles className="w-4 h-4 text-amber-500" />
                   </h4>
                   <p className="text-[10px] text-slate-400 font-bold uppercase max-w-sm mx-auto leading-relaxed">
-                    Félicitations, votre demande de ${parseFloat(withdrawAmount).toFixed(2)} a été enregistrée.
+                    Félicitations, votre demande de {parseFloat(withdrawAmount).toFixed(2)}€ a été enregistrée.
                   </p>
                 </div>
 
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-left max-w-xs mx-auto text-xs font-bold space-y-2 text-slate-600">
                   <div className="flex justify-between">
                     <span className="text-slate-400 text-[10px] uppercase">Montant</span>
-                    <span className="text-slate-800 font-black">${parseFloat(withdrawAmount).toFixed(2)}</span>
+                    <span className="text-slate-800 font-black">{parseFloat(withdrawAmount).toFixed(2)}€</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400 text-[10px] uppercase">Frais de réseau</span>
@@ -891,7 +947,7 @@ export function WalletPage() {
                   </div>
                   <div className="flex justify-between border-t border-dashed border-slate-200 pt-2 text-[10px] text-slate-400">
                     <span>TRANSACTION REF</span>
-                    <span>TRX-{Math.floor(200000 + Math.random() * 800000)}</span>
+                    <span>{lastWithdrawal?.reference || 'WTH-PENDING'}</span>
                   </div>
                 </div>
 
