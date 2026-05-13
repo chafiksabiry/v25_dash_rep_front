@@ -26,6 +26,7 @@ import {
 import { CallRecords } from '../components/CallRecords';
 import api from '../utils/client';
 import { useAuth } from '../contexts/AuthContext';
+import Cookies from 'js-cookie';
 
 export function WalletPage() {
   const { t } = useTranslation();
@@ -402,7 +403,8 @@ export function WalletPage() {
         agentId,
         amount: parsedAmount,
         method: selectedMethod,
-        methodDetails: selectedMethod === 'bank' ? 'Bank Account (...4567)' : 'PayPal (john.doe@example.com)'
+        methodDetails: selectedMethod === 'bank' ? 'Bank Account (...4567)' : 'PayPal (john.doe@example.com)',
+        companyId: Cookies.get('companyId') || localStorage.getItem('companyId')
       });
 
       if (res.data?.success) {
