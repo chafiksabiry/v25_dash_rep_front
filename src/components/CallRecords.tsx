@@ -332,6 +332,10 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                           <Clock className="w-3.5 h-3.5 text-slate-300" />
                           <span>{new Date(record.startTime || record.createdAt).toLocaleString()}</span>
                         </div>
+                        <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-1 flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                          {record.sid && <span>SID: {record.sid}</span>}
+                          {record.call_id && <span>ID: {record.call_id}</span>}
+                        </div>
                       </div>
                     </div>
 
@@ -542,6 +546,10 @@ export function CallRecords({ gigId, leadId }: CallRecordsProps) {
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
                     {new Date(selectedCall.startTime || selectedCall.createdAt).toLocaleString()} • {selectedCall.duration ? `${Math.floor(selectedCall.duration / 60)}m ${selectedCall.duration % 60}s` : '0s'}
                   </p>
+                  <div className="flex items-center gap-3 mt-1 opacity-60">
+                    {selectedCall.sid && <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">SID: {selectedCall.sid}</span>}
+                    {selectedCall.call_id && <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">ID: {selectedCall.call_id}</span>}
+                  </div>
                   <div className="flex flex-wrap items-center gap-4 mt-3">
                     <div className="flex flex-col gap-1">
                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appel (Compagnie)</span>
