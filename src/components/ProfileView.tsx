@@ -798,6 +798,19 @@ export const ProfileView: React.FC<{
           onSaveAvailability={handleSaveAvailability}
         />
       );
+      case 'onboarding': return (
+        <OnboardingTab 
+          profile={profile}
+          countryMismatch={countryMismatch}
+          checkingCountryMismatch={checkingCountryMismatch}
+          showLoadingSpinner={showLoadingSpinner}
+          timezoneData={timezoneData}
+          allTimezones={allTimezones}
+          getTimezoneMismatchInfo={getTimezoneMismatchInfo}
+          repWizardApi={repWizardApi}
+          onSaveAvailability={handleSaveAvailability}
+        />
+      );
       default: return <ProfileTab profile={profile} onSaveAbout={handleSaveAbout} onReplaceVideo={handleReplaceVideo} isUploadingVideo={isUploadingVideo} />;
     }
   };
@@ -822,6 +835,10 @@ export const ProfileView: React.FC<{
     specialization: {
       title: t('profile.tabs.specialization.title'),
       subtitle: t('profile.tabs.specialization.subtitle')
+    },
+    onboarding: {
+      title: t('profile.tabs.onboarding.title', { defaultValue: 'Onboarding Progress' }),
+      subtitle: t('profile.tabs.onboarding.subtitle', { defaultValue: 'Track your verification and setup steps' })
     },
     availability: {
       title: t('profile.tabs.availability.title', { defaultValue: 'Availability & Schedule' }),
@@ -851,21 +868,6 @@ export const ProfileView: React.FC<{
             {currentHeader.subtitle}
           </p>
         </div>
-
-      {/* Onboarding Progress rendered directly on page */}
-      <div className="w-full mb-6">
-        <OnboardingTab 
-          profile={profile}
-          countryMismatch={countryMismatch}
-          checkingCountryMismatch={checkingCountryMismatch}
-          showLoadingSpinner={showLoadingSpinner}
-          timezoneData={timezoneData}
-          allTimezones={allTimezones}
-          getTimezoneMismatchInfo={getTimezoneMismatchInfo}
-          repWizardApi={repWizardApi}
-          onSaveAvailability={handleSaveAvailability}
-        />
-      </div>
 
       {/* Navigation Tabs at the Top */}
       <div className="w-full">
@@ -924,6 +926,13 @@ export const ProfileView: React.FC<{
                 <p className="text-sm font-bold text-transparent bg-clip-text bg-gradient-harx uppercase tracking-widest italic">{profile.professionalSummary?.currentRole || 'Representative'}</p>
               </div>
               <div className="flex items-center gap-3">
+                {/* Small Onboarding Info */}
+                <div className="px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl flex items-center gap-2">
+                  <ClipboardCheck className="w-4 h-4" />
+                  <span className="text-xs font-black uppercase tracking-wider">
+                    Phase {profile.onboardingProgress?.currentPhase || 1}
+                  </span>
+                </div>
                 {profile.status !== 'completed' && (
                   <button
                     onClick={handlePublish}
