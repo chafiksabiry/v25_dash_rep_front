@@ -128,9 +128,9 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
   const initials = getInitials(userName);
 
   return (
-    <header className="h-20 bg-black flex items-center px-8 shrink-0 z-20 relative">
+    <header className="h-20 bg-black grid grid-cols-3 items-center px-8 shrink-0 z-20">
 
-      {/* ── Left: hamburger (mobile) ── */}
+      {/* ── Col 1: Left — hamburger (mobile) ── */}
       <div className="flex items-center">
         <button
           className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all duration-300 shadow-sm md:hidden"
@@ -140,8 +140,8 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
         </button>
       </div>
 
-      {/* ── Center: Wallet + Planning (absolutely centered) ── */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+      {/* ── Col 2: Center — Wallet + Planning ── */}
+      <div className="flex items-center justify-center gap-3">
 
         {/* Wallet */}
         <button
@@ -153,7 +153,7 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
             <Wallet className="w-4 h-4" />
           </div>
           <div className="text-left leading-none">
-            <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block">Solde</span>
+            <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block">Mon Portefeuille</span>
             <span className="text-sm font-black text-white tracking-wide mt-0.5 block">
               {balance.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
             </span>
@@ -161,7 +161,7 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
         </button>
 
         {/* Divider */}
-        <div className="w-px h-6 bg-white/10" />
+        <div className="w-px h-6 bg-white/10 shrink-0" />
 
         {/* Session Planning */}
         <button
@@ -180,8 +180,8 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
 
       </div>
 
-      {/* ── Right: Language + Avatar ── */}
-      <div className="flex items-center gap-4 ml-auto">
+      {/* ── Col 3: Right — Language + Avatar ── */}
+      <div className="flex items-center justify-end gap-4">
         <LanguageSwitcher />
         <div className="relative" ref={dropdownRef}>
           <div
@@ -229,4 +229,5 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
 
     </header>
   );
-}
+}
+
