@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Menu, Wallet } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Menu, Wallet, ChevronDown, UserCircle, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getUserInfo } from '../utils/authUtils';
+import { useAuth } from '../contexts/AuthContext';
 import { LanguageSwitcher } from './ui/LanguageSwitcher';
 
 interface TopBarProps {
@@ -32,7 +33,10 @@ const PROFILE_UPDATE_EVENT = 'PROFILE_UPDATED';
 
 export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [balance, setBalance] = useState(() => {
     const saved = localStorage.getItem('rep_available_balance');
     return saved ? parseFloat(saved) : 1250.00;
@@ -46,8 +50,17 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
       }
     };
     window.addEventListener('WALLET_BALANCE_UPDATED', handleBalanceUpdate);
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+
     return () => {
       window.removeEventListener('WALLET_BALANCE_UPDATED', handleBalanceUpdate);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -141,21 +154,53 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
             </div>
           </div>
           <LanguageSwitcher />
-          <div className="flex items-center space-x-3 p-2 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-white/10">
-            {profileData?.personalInfo?.photo?.url ? (
-              <img
-                src={profileData.personalInfo.photo.url}
-                alt={userName}
-                className="w-10 h-10 rounded-xl object-cover shadow-sm"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white font-black shadow-sm border border-white/20">
-                {initials}
+          <div className="relative" ref={dropdownRef}>
+            <div 
+              className="flex items-center space-x-3 p-2 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-white/10"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+              {profileData?.personalInfo?.photo?.url ? (
+                <img
+                  src={profileData.personalInfo.photo.url}
+                  alt={userName}
+                  className="w-10 h-10 rounded-xl object-cover shadow-sm"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white font-black shadow-sm border border-white/20">
+                  {initials}
+                </div>
+              )}
+              <div className="text-right">
+                <p className="text-sm font-black tracking-tight text-white">{userName}</p>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-white/50 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            </div>
+
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-white/10 rounded-xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                <button
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    navigate('/profile');
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-2 text-sm font-medium text-white hover:bg-white/5 transition-colors"
+                >
+                  <UserCircle className="h-4 w-4 text-harx-400" />
+                  <span>Mon Profil</span>
+                </button>
+                <div className="h-px bg-white/10 my-1"></div>
+                <button
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    logout();
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Déconnexion</span>
+                </button>
               </div>
             )}
-            <div className="text-right">
-              <p className="text-sm font-black tracking-tight text-white">{userName}</p>
-            </div>
           </div>
         </div>
       </div>
