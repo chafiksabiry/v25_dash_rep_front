@@ -9,12 +9,11 @@ interface ProfileNavbarProps {
 export const ProfileNavbar: React.FC<ProfileNavbarProps> = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'skills', label: 'Skills', icon: Zap },
     { id: 'experience', label: 'Experience', icon: Briefcase },
+    { id: 'skills', label: 'Skills', icon: Zap },
     { id: 'specialization', label: 'Specialization', icon: Target },
     { id: 'availability', label: 'Availability', icon: Clock },
     { id: 'languages', label: 'Languages', icon: Globe },
-    { id: 'onboarding', label: 'Onboarding', icon: ClipboardCheck },
   ];
 
   return (

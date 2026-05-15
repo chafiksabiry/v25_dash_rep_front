@@ -819,10 +819,6 @@ export const ProfileView: React.FC<{
       title: t('profile.tabs.languages.title'),
       subtitle: t('profile.tabs.languages.subtitle')
     },
-    onboarding: {
-      title: t('profile.tabs.onboarding.title'),
-      subtitle: t('profile.tabs.onboarding.subtitle')
-    },
     specialization: {
       title: t('profile.tabs.specialization.title'),
       subtitle: t('profile.tabs.specialization.subtitle')
@@ -855,6 +851,21 @@ export const ProfileView: React.FC<{
             {currentHeader.subtitle}
           </p>
         </div>
+
+      {/* Onboarding Progress rendered directly on page */}
+      <div className="w-full mb-6">
+        <OnboardingTab 
+          profile={profile}
+          countryMismatch={countryMismatch}
+          checkingCountryMismatch={checkingCountryMismatch}
+          showLoadingSpinner={showLoadingSpinner}
+          timezoneData={timezoneData}
+          allTimezones={allTimezones}
+          getTimezoneMismatchInfo={getTimezoneMismatchInfo}
+          repWizardApi={repWizardApi}
+          onSaveAvailability={handleSaveAvailability}
+        />
+      </div>
 
       {/* Navigation Tabs at the Top */}
       <div className="w-full">
