@@ -13,15 +13,23 @@ const renderCommissionInfo = (gig: any) => {
   const comm = gig.commission;
   const currencySymbol = typeof comm.currency === 'object' ? comm.currency?.symbol || '€' : comm.currency || '€';
   
-  const perCall = comm.commission_per_call;
+  const applyCut = (val: any) => {
+    if (val === undefined || val === null || val === '') return val;
+    const num = parseFloat(String(val).replace(/,/g, ''));
+    if (isNaN(num)) return val;
+    return Number((num * 0.7).toFixed(2));
+  };
+
+  const perCall = applyCut(comm.commission_per_call);
   const hasCall = perCall !== undefined && perCall > 0;
   
   const transComm = comm.transactionCommission;
   const hasTrans = transComm !== undefined && (typeof transComm === 'number' ? transComm > 0 : Number(transComm.amount) > 0);
-  const transAmount = typeof transComm === 'number' ? transComm : transComm?.amount;
+  const transAmount = applyCut(typeof transComm === 'number' ? transComm : transComm?.amount);
   const transType = typeof transComm === 'object' && transComm.type ? transComm.type : 'Transaction';
 
-  const bonus = comm.bonusAmount || comm.bonus;
+  const bonusRaw = comm.bonusAmount || comm.bonus;
+  const bonus = applyCut(bonusRaw);
   const hasBonus = bonus !== undefined && bonus != 0 && bonus != "0";
 
   let bonusConditionStr = '';
@@ -48,7 +56,7 @@ const renderCommissionInfo = (gig: any) => {
   }
 
   if (!hasCall && !hasTrans && !hasBonus) {
-    const base = comm.baseAmount;
+    const base = applyCut(comm.baseAmount);
     if (base && base != 0 && base != "0") {
       return (
         <div className="flex flex-wrap gap-2 mb-3">
