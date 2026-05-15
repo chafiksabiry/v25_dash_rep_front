@@ -72,78 +72,33 @@ const renderCommissionInfo = (gig: any) => {
   }
 
   return (
-    <div className="flex flex-wrap gap-2 mb-3">
-      <style>{`
-        @keyframes shine {
-          0% { left: -100%; }
-          20% { left: 100%; }
-          100% { left: 100%; }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3px); }
-        }
-        .animate-shine {
-          position: relative;
-          overflow: hidden;
-        }
-        .animate-shine::after {
-          content: '';
-          position: absolute;
-          top: -50%;
-          left: -100%;
-          width: 50%;
-          height: 200%;
-          background: linear-gradient(
-            to right,
-            transparent,
-            rgba(255, 255, 255, 0.4),
-            transparent
-          );
-          transform: rotate(30deg);
-          animation: shine 4s infinite linear;
-        }
-        .animate-float-slow {
-          animation: float 3s ease-in-out infinite;
-        }
-        .animate-float-delayed {
-          animation: float 3s ease-in-out infinite;
-          animation-delay: 1.5s;
-        }
-      `}</style>
-      
+    <div className="flex flex-wrap gap-2 mb-2">
       {hasCall && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 animate-shine animate-float-slow" title="Commission par appel">
-          <div className="bg-white/20 p-1 rounded-lg">
-            <Phone className="w-3.5 h-3.5 text-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-black text-sm leading-none">{perCall}{currencySymbol}</span>
-            <span className="text-[8px] font-extrabold uppercase tracking-widest opacity-90">/ Appel</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg border border-emerald-400 shadow-[0_2px_10px_-2px_rgba(16,185,129,0.4)] animate-shine animate-pulse-ring" title="Commission par appel">
+          <Phone className="w-3.5 h-4 fill-white animate-float" />
+          <div className="flex flex-col leading-none">
+            <span className="font-black text-xs">{perCall}{currencySymbol}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider opacity-90">/ appel</span>
           </div>
         </div>
       )}
       
       {hasTrans && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:scale-105 animate-shine animate-float-delayed" title="Commission par transaction">
-          <div className="bg-white/20 p-1 rounded-lg">
-            <Briefcase className="w-3.5 h-3.5 text-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-black text-sm leading-none">{transAmount}{currencySymbol}</span>
-            <span className="text-[8px] font-extrabold uppercase tracking-widest opacity-90">/ {transType}</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg border border-indigo-400 shadow-[0_2px_10px_-2px_rgba(79,70,229,0.4)] animate-shine animate-pulse-ring" title="Commission par transaction">
+          <Briefcase className="w-3.5 h-3.5 fill-white animate-float" />
+          <div className="flex flex-col leading-none">
+            <span className="font-black text-xs">{transAmount}{currencySymbol}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider opacity-90">/ {transType}</span>
           </div>
         </div>
       )}
 
       {hasBonus && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-400 to-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/30 transition-all hover:scale-105 animate-shine" title="Bonus">
-          <div className="bg-white/20 p-1 rounded-lg animate-bounce">
-            <Sparkles className="w-3.5 h-3.5 text-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-black text-sm leading-none">+{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
-            <span className="text-[8px] font-extrabold uppercase tracking-widest opacity-95">🔥 {bonusPeriodStr}</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-lg border border-amber-300 shadow-[0_2px_10px_-2px_rgba(245,158,11,0.4)] animate-shine animate-pulse-ring" title="Bonus">
+          <Sparkles className="w-3.5 h-3.5 fill-white animate-float" />
+          <div className="flex flex-col leading-none">
+            <span className="font-black text-xs">+{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider opacity-90">{bonusPeriodStr}</span>
           </div>
         </div>
       )}
