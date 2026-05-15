@@ -1633,9 +1633,8 @@ export function GigsMarketplace() {
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleSmartStart(gig._id)}
-                          className="flex-[2] bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(79,70,229,0.4)] transition-all font-black text-sm uppercase tracking-widest hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group/btn overflow-hidden relative"
+                          className="flex-[2] bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(244,63,94,0.4)] font-black text-sm uppercase tracking-widest hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group/btn overflow-hidden relative"
                         >
-                          <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />
                           <Play className="w-4 h-4 fill-current" />
                           <span>START</span>
                         </button>
@@ -1649,9 +1648,10 @@ export function GigsMarketplace() {
                     ) : (
                       <button
                         onClick={() => navigate(`/gig/${gig._id}`)}
-                        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(79,70,229,0.4)] transition-all font-black text-sm uppercase tracking-widest hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group/btn overflow-hidden relative"
+                      <button
+                        onClick={() => navigate(`/gig/${gig._id}`)}
+                        className="w-full bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(244,63,94,0.4)] font-black text-sm uppercase tracking-widest hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group/btn overflow-hidden relative"
                       >
-                        <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />
                         <Sparkles className="w-4 h-4" />
                         <span>VIEW OPPORTUNITY</span>
                       </button>
@@ -1981,16 +1981,16 @@ export function GigsMarketplace() {
                       <div className="mt-4 flex gap-2">
                         <button
                           onClick={() => acceptInvitation(enrollment.id)}
-                          className="flex-[2] bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(16,185,129,0.4)] transition-all font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 group/btn"
+                          className="flex-[2] bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(244,63,94,0.4)] font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 group/btn"
                         >
-                          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                          <span>Accept</span>
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>ACCEPT</span>
                         </button>
                         <button
                           onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
                           className="flex-1 bg-slate-100 text-slate-600 py-2.5 px-3 rounded-xl hover:bg-slate-200 transition-all font-black text-[11px] uppercase tracking-wider flex items-center justify-center"
                         >
-                          Details
+                          DETAILS
                         </button>
                         <button
                           onClick={() => rejectInvitation(enrollment.id)}
@@ -2191,13 +2191,12 @@ export function GigsMarketplace() {
                       <div className="mt-4 flex gap-2">
                         <button
                           onClick={() => handleSmartStart(enrolledGig.gig._id)}
-                          className="flex-[2] bg-gradient-to-r from-indigo-600 to-violet-700 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(79,70,229,0.4)] transition-all font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 group/btn relative overflow-hidden"
+                          className="flex-[2] bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(244,63,94,0.4)] font-black text-sm uppercase tracking-widest hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group/btn overflow-hidden relative"
                         >
-                          <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />
                           <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
                             <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[7px] border-l-white border-b-[4px] border-b-transparent ml-0.5" />
                           </div>
-                          <span>Start Session</span>
+                          <span>START SESSION</span>
                         </button>
                         <button
                           onClick={() => navigate(`/gig/${enrolledGig.gig._id}`)}
