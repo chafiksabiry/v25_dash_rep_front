@@ -24,6 +24,15 @@ const renderCommissionInfo = (gig: any) => {
   const bonus = comm.bonusAmount || comm.bonus;
   const hasBonus = bonus !== undefined && bonus != 0 && bonus != "0";
 
+  let bonusConditionStr = '';
+  if (comm.minimumVolume?.amount) {
+    const unit = String(comm.minimumVolume?.unit || '').toUpperCase();
+    const translatedUnit = unit === 'CALLS' || unit === 'APPELS' ? 'APPELS' :
+                           unit === 'TRANSACTIONS' ? 'TRANSACTIONS' :
+                           unit === 'SALES' || unit === 'VENTES' ? 'VENTES' : unit;
+    bonusConditionStr = `POUR ${comm.minimumVolume.amount} ${translatedUnit}`;
+  }
+
   const bonusPeriodRaw = comm.bonusPeriod || comm.bonusType || comm.minimumVolume?.period || '';
   let bonusPeriodStr = 'BONUS';
   if (bonusPeriodRaw) {
@@ -32,6 +41,10 @@ const renderCommissionInfo = (gig: any) => {
     else if (p.includes('week') || p.includes('semaine')) bonusPeriodStr = 'BONUS / SEMAINE';
     else if (p.includes('day') || p.includes('jour')) bonusPeriodStr = 'BONUS / JOUR';
     else bonusPeriodStr = `BONUS / ${bonusPeriodRaw}`.toUpperCase();
+  }
+
+  if (bonusConditionStr) {
+    bonusPeriodStr = bonusPeriodStr.replace('BONUS', `BONUS ${bonusConditionStr}`);
   }
 
   if (!hasCall && !hasTrans && !hasBonus) {
