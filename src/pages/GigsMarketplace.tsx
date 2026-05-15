@@ -1472,7 +1472,7 @@ export function GigsMarketplace() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {(currentGigs as PopulatedGig[]).map((gig) => {
             const gigStatus = getGigStatus(gig._id);
             const gigStyle = getCardStyleForStatus(gigStatus);
@@ -1480,10 +1480,10 @@ export function GigsMarketplace() {
               <div key={gig._id} className={gigStyle.container}>
                 {/* Header: Logo & Actions/Status */}
                 <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-10 h-10 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                       {gig.companyId?.logo ? (
-                        <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1" />
+                        <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-base uppercase">
                           {gig.companyId?.name?.[0] || '?'}
@@ -1491,7 +1491,7 @@ export function GigsMarketplace() {
                       )}
                     </div>
                     {gig.companyId?.name && (
-                      <span className="text-xs font-bold text-slate-700 truncate" title={gig.companyId.name}>
+                      <span className="text-sm font-bold text-slate-700 truncate" title={gig.companyId.name}>
                         {gig.companyId.name}
                       </span>
                     )}
@@ -1550,7 +1550,7 @@ export function GigsMarketplace() {
                   </p>
                 </div>
 
-                <div className="mt-4 space-y-3">
+                <div className="mt-3 space-y-2">
                   {renderCommissionInfo(gig)}
                   <div className="flex items-center text-sm text-gray-500">
                     <Globe className="w-4 h-4 mr-2" />
@@ -1673,7 +1673,7 @@ export function GigsMarketplace() {
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {(currentGigs as PopulatedGig[]).map((gig) => {
                   const gigStatus = getGigStatus(gig._id);
                   const gigStyle = getCardStyleForStatus(gigStatus);
@@ -1681,10 +1681,10 @@ export function GigsMarketplace() {
                     <div key={gig._id} className={`${gigStyle.container} min-w-0`}>
                       {/* Header: Logo & Status/Actions */}
                       <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-10 h-10 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                             {gig.companyId?.logo ? (
-                              <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1" />
+                              <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-base uppercase">
                                 {gig.companyId?.name?.[0] || '?'}
@@ -1692,7 +1692,7 @@ export function GigsMarketplace() {
                             )}
                           </div>
                           {gig.companyId?.name && (
-                            <span className="text-xs font-bold text-slate-700 truncate" title={gig.companyId.name}>
+                            <span className="text-sm font-bold text-slate-700 truncate" title={gig.companyId.name}>
                               {gig.companyId.name}
                             </span>
                           )}
@@ -1729,17 +1729,17 @@ export function GigsMarketplace() {
                               e.preventDefault();
                               removeFromFavorites(gig._id);
                             }}
-                            className="p-1.5 bg-red-50 text-red-500 rounded-full transition-colors group/heart"
+                            className="p-1 bg-red-50 text-red-500 rounded-full transition-colors group/heart"
                             title="Remove from favorites"
                           >
-                            <Heart className="w-4.5 h-4.5 fill-current scale-110" />
+                            <Heart className="w-3.5 h-3.5 fill-current scale-110" />
                           </button>
                         </div>
                       </div>
 
                       {/* Content: Title & Brand */}
                       <div className="mb-3">
-                        <h3 className="text-lg font-bold text-slate-800 mb-1 tracking-tight leading-tight line-clamp-2" title={gig.title}>
+                        <h3 className="text-lg font-bold text-slate-800 mb-0.5 tracking-tight leading-tight line-clamp-2" title={gig.title}>
                           {gig.title}
                         </h3>
                         <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
@@ -1747,26 +1747,26 @@ export function GigsMarketplace() {
                         </p>
                       </div>
 
-                    <div className="mt-4 space-y-3">
+                    <div className="mt-2 space-y-2">
                       {renderCommissionInfo(gig)}
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Globe className="w-4 h-4 mr-2" />
+                      <div className="flex items-center text-[11px] text-gray-500">
+                        <Globe className="w-3.5 h-3.5 mr-1.5" />
                         <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.zoneName || gig.availability?.time_zone?.countryName || gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
                       </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Calendar className="w-4 h-4 mr-2" />
+                      <div className="flex items-center text-[11px] text-gray-500">
+                        <Calendar className="w-3.5 h-3.5 mr-1.5" />
                         <span>{gig.availability?.minimumHours?.weekly || 'N/A'}h/week</span>
                       </div>
                     </div>
 
-                    <div className="mt-4 flex-grow">
+                    <div className="mt-3 flex-grow">
                       {/* Industries */}
                       {gig.industries && gig.industries.length > 0 && (
-                        <div className="mb-4">
-                          <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                        <div className="mb-2">
+                          <p className="text-xs font-medium text-gray-700 mb-1">Industries:</p>
                           <div className="flex flex-wrap gap-1">
                             {(expandedIndustries[gig._id] ? gig.industries : gig.industries.slice(0, 3)).map((industry) => (
-                              <span key={industry._id} className="px-2.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg text-xs font-medium text-slate-600">
+                              <span key={industry._id} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded-lg text-[10px] font-medium text-slate-600">
                                 {industry.name}
                               </span>
                             ))}
@@ -1777,9 +1777,9 @@ export function GigsMarketplace() {
                                   e.stopPropagation();
                                   setExpandedIndustries(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
                                 }}
-                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                                className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
                               >
-                                {expandedIndustries[gig._id] ? 'Show less' : `+${gig.industries.length - 3} more`}
+                                {expandedIndustries[gig._id] ? 'Less' : `+${gig.industries.length - 3}`}
                               </button>
                             )}
                           </div>
@@ -1789,10 +1789,10 @@ export function GigsMarketplace() {
                       {/* Activities */}
                       {gig.activities && gig.activities.length > 0 && (
                         <div>
-                          <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                          <p className="text-xs font-medium text-gray-700 mb-1">Activities:</p>
                           <div className="flex flex-wrap gap-1">
                             {(expandedActivities[gig._id] ? gig.activities : gig.activities.slice(0, 3)).map((activity) => (
-                              <span key={activity._id} className="px-2.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg text-xs font-medium text-slate-600">
+                              <span key={activity._id} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded-lg text-[10px] font-medium text-slate-600">
                                 {activity.name}
                               </span>
                             ))}
@@ -1803,9 +1803,9 @@ export function GigsMarketplace() {
                                   e.stopPropagation();
                                   setExpandedActivities(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
                                 }}
-                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                                className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
                               >
-                                {expandedActivities[gig._id] ? 'Show less' : `+${gig.activities.length - 3} more`}
+                                {expandedActivities[gig._id] ? 'Less' : `+${gig.activities.length - 3}`}
                               </button>
                             )}
                           </div>
@@ -1815,9 +1815,9 @@ export function GigsMarketplace() {
 
                     <button
                       onClick={() => navigate(`/gig/${gig._id}`)}
-                      className="mt-6 w-full bg-gradient-harx text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                      className="mt-4 w-full bg-gradient-harx text-white py-2 px-3 rounded-lg hover:shadow-md transition-all font-black text-xs uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
                     >
-                      View Details
+                      Details
                     </button>
                   </div>
                 );
@@ -1852,19 +1852,19 @@ export function GigsMarketplace() {
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {(currentGigs as InvitedEnrollment[]).map((enrollment) => {
                   const gigStyle = getCardStyleForStatus('invited');
                   return (
                     <div key={enrollment.id} className={`${gigStyle.container} min-w-0`}>
                       {/* Header: Logo & Status/Actions */}
-                      <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-10 h-10 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-8 h-8 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                             {enrollment.gig.companyId?.logo ? (
                               <img src={enrollment.gig.companyId.logo} alt={enrollment.gig.companyId.name} className="w-full h-full object-contain p-1" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-base uppercase">
+                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-xs uppercase">
                                 {enrollment.gig.companyId?.name?.[0] || '?'}
                               </div>
                             )}
@@ -1875,8 +1875,8 @@ export function GigsMarketplace() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
+                        <div className="flex items-center space-x-1">
+                          <span className="px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
                             ✉ Invited
                           </span>
                           <button
@@ -1886,10 +1886,10 @@ export function GigsMarketplace() {
                                 ? removeFromFavorites(enrollment.gig._id)
                                 : addToFavorites(enrollment.gig._id);
                             }}
-                            className="p-1.5 hover:bg-red-50 rounded-full transition-colors group/heart"
+                            className="p-1 hover:bg-red-50 rounded-full transition-colors group/heart"
                           >
                             <Heart
-                              className={`w-4.5 h-4.5 transition-all ${favoriteGigs.includes(enrollment.gig._id)
+                              className={`w-3.5 h-3.5 transition-all ${favoriteGigs.includes(enrollment.gig._id)
                                 ? 'fill-red-500 text-red-500 scale-110'
                                 : 'text-slate-300 group-hover/heart:text-red-400'
                                 }`}
@@ -1900,7 +1900,7 @@ export function GigsMarketplace() {
 
                       {/* Content: Title & Brand */}
                       <div className="mb-3">
-                        <h3 className="text-lg font-bold text-slate-800 mb-1 tracking-tight leading-tight line-clamp-2" title={enrollment.gig.title}>
+                        <h3 className="text-lg font-bold text-slate-800 mb-0.5 tracking-tight leading-tight line-clamp-2" title={enrollment.gig.title}>
                           {enrollment.gig.title}
                         </h3>
                         <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
@@ -1908,26 +1908,26 @@ export function GigsMarketplace() {
                         </p>
                       </div>
 
-                    <div className="mt-4 space-y-3">
+                    <div className="mt-2 space-y-2">
                       {renderCommissionInfo(enrollment.gig)}
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Globe className="w-4 h-4 mr-2" />
+                      <div className="flex items-center text-[11px] text-gray-500">
+                        <Globe className="w-3.5 h-3.5 mr-1.5" />
                         <span>{typeof enrollment.gig.destination_zone === 'object' ? enrollment.gig.destination_zone?.name?.common || enrollment.gig.destination_zone?.cca2 || 'Unknown' : enrollment.gig.destination_zone} ({('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.zoneName) ? enrollment.gig.availability.time_zone.zoneName : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.countryName) ? enrollment.gig.availability.time_zone.countryName : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.abbreviation) ? enrollment.gig.availability.time_zone.abbreviation : 'N/A'})</span>
                       </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Calendar className="w-4 h-4 mr-2" />
+                      <div className="flex items-center text-[11px] text-gray-500">
+                        <Calendar className="w-3.5 h-3.5 mr-1.5" />
                         <span>{('availability' in enrollment.gig && enrollment.gig.availability?.minimumHours?.weekly) ? `${enrollment.gig.availability.minimumHours.weekly}h/week` : 'N/A h/week'}</span>
                       </div>
                     </div>
 
-                    <div className="mt-4 flex-grow">
+                    <div className="mt-3 flex-grow">
                       {/* Industries */}
                       {('industries' in enrollment.gig && enrollment.gig.industries && enrollment.gig.industries.length > 0) ? (
-                        <div className="mb-4">
-                          <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                        <div className="mb-2">
+                          <p className="text-xs font-medium text-gray-700 mb-1">Industries:</p>
                           <div className="flex flex-wrap gap-1">
                             {(expandedIndustries[enrollment.gig._id] ? enrollment.gig.industries : enrollment.gig.industries.slice(0, 3)).map((industry) => (
-                              <span key={industry._id} className="px-2.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg text-xs font-medium text-slate-600">
+                              <span key={industry._id} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded-lg text-[10px] font-medium text-slate-600">
                                 {industry.name}
                               </span>
                             ))}
@@ -1938,31 +1938,22 @@ export function GigsMarketplace() {
                                   e.stopPropagation();
                                   setExpandedIndustries(prev => ({ ...prev, [enrollment.gig._id]: !prev[enrollment.gig._id] }));
                                 }}
-                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                                className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
                               >
-                                {expandedIndustries[enrollment.gig._id] ? 'Show less' : `+${enrollment.gig.industries.length - 3} more`}
+                                {expandedIndustries[enrollment.gig._id] ? 'Less' : `+${enrollment.gig.industries.length - 3}`}
                               </button>
                             )}
                           </div>
                         </div>
-                      ) : (
-                        <div className="mb-4">
-                          <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
-                          <div className="flex flex-wrap gap-1">
-                            <span className="px-2.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg text-xs font-medium text-slate-600">
-                              N/A
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                      ) : null}
 
                       {/* Activities */}
                       {('activities' in enrollment.gig && enrollment.gig.activities && enrollment.gig.activities.length > 0) ? (
                         <div>
-                          <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                          <p className="text-xs font-medium text-gray-700 mb-1">Activities:</p>
                           <div className="flex flex-wrap gap-1">
                             {(expandedActivities[enrollment.gig._id] ? enrollment.gig.activities : enrollment.gig.activities.slice(0, 3)).map((activity) => (
-                              <span key={activity._id} className="px-2.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg text-xs font-medium text-slate-600">
+                              <span key={activity._id} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded-lg text-[10px] font-medium text-slate-600">
                                 {activity.name}
                               </span>
                             ))}
@@ -1973,43 +1964,32 @@ export function GigsMarketplace() {
                                   e.stopPropagation();
                                   setExpandedActivities(prev => ({ ...prev, [enrollment.gig._id]: !prev[enrollment.gig._id] }));
                                 }}
-                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                                className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
                               >
-                                {expandedActivities[enrollment.gig._id] ? 'Show less' : `+${enrollment.gig.activities.length - 3} more`}
+                                {expandedActivities[enrollment.gig._id] ? 'Less' : `+${enrollment.gig.activities.length - 3}`}
                               </button>
                             )}
                           </div>
                         </div>
-                      ) : (
-                        <div>
-                          <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
-                          <div className="flex flex-wrap gap-1">
-                            <span className="px-2.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg text-xs font-medium text-slate-600">
-                              N/A
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                      ) : null}
                     </div>
 
-                    <div className="mt-6 flex space-x-3">
+                    <div className="mt-4 flex space-x-2">
                       <button
                         onClick={() => acceptInvitation(enrollment.id)}
-                        className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                        className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-2 px-3 rounded-lg hover:shadow-md transition-all font-black text-[11px] uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
                       >
                         Accept
                       </button>
-
                       <button
                         onClick={() => rejectInvitation(enrollment.id)}
-                        className="flex-1 bg-gray-100 text-gray-600 py-2.5 px-4 rounded-xl hover:bg-gray-200 transition-all font-black text-sm uppercase tracking-wider"
+                        className="px-3 bg-gray-100 text-gray-600 py-2 rounded-lg hover:bg-gray-200 transition-all font-black text-[11px] uppercase tracking-wider"
                       >
-                        Reject
+                        ✕
                       </button>
-
                       <button
                         onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
-                        className="flex-1 bg-gradient-harx text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                        className="flex-1 bg-gradient-harx text-white py-2 px-3 rounded-lg hover:shadow-md transition-all font-black text-[11px] uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
                       >
                         Details
                       </button>
@@ -2041,19 +2021,19 @@ export function GigsMarketplace() {
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {(currentGigs as EnrolledGig[]).map((enrolledGig) => {
                   const gigStyle = getCardStyleForStatus('enrolled');
                   return (
                     <div key={enrolledGig.id} className={`${gigStyle.container} min-w-0`}>
                       {/* Header: Logo & Status/Actions */}
-                      <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-10 h-10 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-8 h-8 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                             {enrolledGig.gig.companyId?.logo ? (
                               <img src={enrolledGig.gig.companyId.logo} alt={enrolledGig.gig.companyId.name} className="w-full h-full object-contain p-1" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-base uppercase">
+                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-xs uppercase">
                                 {enrolledGig.gig.companyId?.name?.[0] || '?'}
                               </div>
                             )}
@@ -2064,8 +2044,8 @@ export function GigsMarketplace() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
+                        <div className="flex items-center space-x-1">
+                          <span className="px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
                             ✓ Enrolled
                           </span>
                           <button
@@ -2075,10 +2055,10 @@ export function GigsMarketplace() {
                                 ? removeFromFavorites(enrolledGig.gig._id)
                                 : addToFavorites(enrolledGig.gig._id);
                             }}
-                            className="p-1.5 hover:bg-red-50 rounded-full transition-colors group/heart"
+                            className="p-1 hover:bg-red-50 rounded-full transition-colors group/heart"
                           >
                             <Heart
-                              className={`w-4.5 h-4.5 transition-all ${favoriteGigs.includes(enrolledGig.gig._id)
+                              className={`w-3.5 h-3.5 transition-all ${favoriteGigs.includes(enrolledGig.gig._id)
                                 ? 'fill-red-500 text-red-500 scale-110'
                                 : 'text-slate-300 group-hover/heart:text-red-400'
                                 }`}
@@ -2089,7 +2069,7 @@ export function GigsMarketplace() {
 
                       {/* Content: Title & Brand */}
                       <div className="mb-3">
-                        <h3 className="text-lg font-bold text-slate-800 mb-1 tracking-tight leading-tight line-clamp-2" title={enrolledGig.gig.title}>
+                        <h3 className="text-lg font-bold text-slate-800 mb-0.5 tracking-tight leading-tight line-clamp-2" title={enrolledGig.gig.title}>
                           {enrolledGig.gig.title}
                         </h3>
                         <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
