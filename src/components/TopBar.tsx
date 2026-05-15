@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Menu, Wallet, ChevronDown, UserCircle, LogOut } from 'lucide-react';
+import { Menu, Wallet, ChevronDown, UserCircle, LogOut, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getUserInfo } from '../utils/authUtils';
 import { useAuth } from '../contexts/AuthContext';
@@ -128,15 +128,109 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
   const initials = getInitials(userName);
 
   return (
-    <header className="h-20 bg-black flex items-center justify-between px-8 shrink-0 z-20">
-      <div className="flex w-full items-center justify-between">
+    <header className="h-20 bg-black flex items-center px-8 shrink-0 z-20 relative">
+
+      {/* ── Left: hamburger (mobile) ── */}
+      <div className="flex items-center">
         <button
           className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all duration-300 shadow-sm md:hidden"
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         >
           <Menu className="h-5 w-5" />
         </button>
-        <div className="flex items-center space-x-6 ml-auto">
+      </div>
+
+      {/* ── Center: Wallet + Planning (absolutely centered) ── */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+
+        {/* Wallet */}
+        <button
+          onClick={() => navigate('/wallet')}
+          className="flex items-center gap-2.5 bg-white/5 border border-white/10 hover:border-blue-500/40 hover:bg-blue-500/10 px-4 py-2.5 rounded-2xl text-white transition-all duration-200 shadow-md group active:scale-95"
+          title="Mon Portefeuille"
+        >
+          <div className="p-1.5 bg-blue-500/15 text-blue-400 rounded-xl group-hover:bg-blue-500 group-hover:text-white transition-all duration-200">
+            <Wallet className="w-4 h-4" />
+          </div>
+          <div className="text-left leading-none">
+            <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block">Solde</span>
+            <span className="text-sm font-black text-white tracking-wide mt-0.5 block">
+              {balance.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
+            </span>
+          </div>
+        </button>
+
+        {/* Divider */}
+        <div className="w-px h-6 bg-white/10" />
+
+        {/* Session Planning */}
+        <button
+          onClick={() => navigate('/session-planning')}
+          className="flex items-center gap-2.5 bg-white/5 border border-white/10 hover:border-violet-500/40 hover:bg-violet-500/10 px-4 py-2.5 rounded-2xl text-white transition-all duration-200 shadow-md group active:scale-95"
+          title="Session Planning"
+        >
+          <div className="p-1.5 bg-violet-500/15 text-violet-400 rounded-xl group-hover:bg-violet-500 group-hover:text-white transition-all duration-200">
+            <Calendar className="w-4 h-4" />
+          </div>
+          <div className="text-left leading-none">
+            <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block">Planning</span>
+            <span className="text-sm font-black text-white tracking-wide mt-0.5 block">Sessions</span>
+          </div>
+        </button>
+
+      </div>
+
+      {/* ── Right: Language + Avatar ── */}
+      <div className="flex items-center gap-4 ml-auto">
+        <LanguageSwitcher />
+        <div className="relative" ref={dropdownRef}>
+          <div
+            className="flex items-center space-x-3 p-2 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-white/10"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          >
+            {profileData?.personalInfo?.photo?.url ? (
+              <img
+                src={profileData.personalInfo.photo.url}
+                alt={userName}
+                className="w-10 h-10 rounded-xl object-cover shadow-sm"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white font-black shadow-sm border border-white/20">
+                {initials}
+              </div>
+            )}
+            <div className="text-right">
+              <p className="text-sm font-black tracking-tight text-white">{userName}</p>
+            </div>
+            <ChevronDown className={`h-4 w-4 text-white/50 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          </div>
+
+          {isDropdownOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-white/10 rounded-xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
+              <button
+                onClick={() => { setIsDropdownOpen(false); navigate('/profile'); }}
+                className="w-full flex items-center space-x-3 px-4 py-2 text-sm font-medium text-white hover:bg-white/5 transition-colors"
+              >
+                <UserCircle className="h-4 w-4 text-harx-400" />
+                <span>Mon Profil</span>
+              </button>
+              <div className="h-px bg-white/10 my-1" />
+              <button
+                onClick={() => { setIsDropdownOpen(false); logout(); }}
+                className="w-full flex items-center space-x-3 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Déconnexion</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+    </header>
+  );
+}
+
           {/* Live Syncing Wallet Balance Badge */}
           <div 
             onClick={() => navigate('/wallet')}
@@ -153,6 +247,22 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
               </span>
             </div>
           </div>
+
+          {/* Session Planning shortcut */}
+          <div
+            onClick={() => navigate('/session-planning')}
+            className="flex items-center space-x-2.5 bg-white/5 border border-white/10 hover:border-white/25 hover:bg-white/10 px-4 py-2 rounded-2xl cursor-pointer text-white transition-all shadow-md group active:scale-95"
+            title="Session Planning"
+          >
+            <div className="p-1 bg-violet-500/15 text-violet-400 rounded-lg group-hover:bg-violet-500 group-hover:text-white transition-all">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div className="text-left leading-none hidden sm:block">
+              <span className="text-[8px] text-slate-400 font-black uppercase tracking-wider block">Planning</span>
+              <span className="text-xs font-black text-white tracking-wide mt-0.5 block">Sessions</span>
+            </div>
+          </div>
+
           <LanguageSwitcher />
           <div className="relative" ref={dropdownRef}>
             <div 

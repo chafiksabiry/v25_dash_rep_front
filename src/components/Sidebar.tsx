@@ -102,12 +102,6 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       isAccessible: () => true
     },
     {
-      icon: Wallet,
-      label: t('sidebar.wallet'),
-      path: '/wallet',
-      isAccessible: () => true
-    },
-    {
       icon: GraduationCap,
       label: t('sidebar.training'),
       path: '/training',
@@ -131,12 +125,6 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       ]
     },
     {
-      icon: Calendar,
-      label: t('sidebar.sessionPlanning'),
-      path: '/session-planning',
-      isAccessible: () => true
-    },
-    {
       icon: Settings,
       label: t('sidebar.operations'),
       path: '/operations',
@@ -146,8 +134,8 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
 
   const filteredNavItems = navItems.filter(item => item.isAccessible());
 
-  const group1 = filteredNavItems.filter(i => ['/', '/gigs-marketplace', '/calls', '/wallet', '/workspace'].includes(i.path));
-  const group2 = filteredNavItems.filter(i => ['/training', '/session-planning'].includes(i.path));
+  const group1 = filteredNavItems.filter(i => ['/', '/gigs-marketplace', '/calls', '/workspace'].includes(i.path));
+  const group2 = filteredNavItems.filter(i => ['/training'].includes(i.path));
 
   useEffect(() => {
     console.log('🔒 Access Control Status:', {
