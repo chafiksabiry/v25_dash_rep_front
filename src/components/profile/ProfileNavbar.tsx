@@ -10,10 +10,10 @@ export const ProfileNavbar: React.FC<ProfileNavbarProps> = ({ activeTab, onTabCh
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'experience', label: 'Experience', icon: Briefcase },
+    { id: 'languages', label: 'Languages', icon: Globe },
     { id: 'skills', label: 'Skills', icon: Zap },
     { id: 'specialization', label: 'Specialization', icon: Target },
     { id: 'availability', label: 'Availability', icon: Clock },
-    { id: 'languages', label: 'Languages', icon: Globe },
   ];
 
   return (
