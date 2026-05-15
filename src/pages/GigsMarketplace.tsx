@@ -1732,7 +1732,6 @@ export function GigsMarketplace() {
                           {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
                         </p>
                       </div>
-                    </div>
 
                     <div className="mt-4 space-y-3">
                       {renderCommissionInfo(gig)}
