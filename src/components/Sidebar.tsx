@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, UserCircle, LogOut, Settings, Monitor, Calendar, ChevronLeft, ChevronRight, X, ChevronDown, Phone, User, PhoneOutgoing, GraduationCap, AlertTriangle, Wallet } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Settings, Monitor, Calendar, X, ChevronDown, Phone, User, PhoneOutgoing, GraduationCap, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRepTrainingNav } from '../contexts/RepTrainingNavContext';
 import { useTranslation } from 'react-i18next';
@@ -46,7 +46,7 @@ type TrainingSidebarModule = {
 };
 
 export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, setIsCollapsed }: SidebarProps) {
-  const { logout } = useAuth();
+
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -558,19 +558,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
         )}
       </nav>
 
-      <div className={`shrink-0 sticky bottom-0 bg-black transition-all duration-300 ${isCollapsed ? 'p-3 flex justify-center' : 'p-4'}`}>
-        <button
-          onClick={logout}
-          className={`flex items-center rounded-xl transition-all duration-300 group font-bold text-sm text-gray-400 hover:bg-harx-600/20 hover:text-harx-400 ${
-            isCollapsed ? 'justify-center p-3' : 'w-full space-x-3 py-2 px-4'
-          }`}
-        >
-          <div className="p-2 rounded-lg bg-gray-800/50 group-hover:bg-harx-500/20 transition-colors shrink-0">
-            <LogOut className="h-4 w-4" />
-          </div>
-          {!isCollapsed && <span>{t('sidebar.logout')}</span>}
-        </button>
-      </div>
+
 
       {/* Warning Modal */}
       {showWarningModal && createPortal(
