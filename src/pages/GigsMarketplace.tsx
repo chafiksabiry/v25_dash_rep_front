@@ -1767,7 +1767,8 @@ export function GigsMarketplace() {
                       View Details
                     </button>
                   </div>
-                ))}
+                );
+              })}
               </div>
             </div>
           )}
