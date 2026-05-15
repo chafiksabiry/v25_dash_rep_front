@@ -6,13 +6,12 @@ import { useNavigate } from 'react-router-dom';
 import { User, Users, Globe, Calendar, Heart, ChevronLeft, ChevronRight, Phone, Briefcase, Sparkles, BadgeEuro, Play } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchPendingRequests as fetchPendingRequestsUtil, fetchEnrolledGigsFromProfile } from '../utils/gigStatusUtils';
-import { resolveGigStartRoute } from '../utils/gigStartRouting';
 
 const renderCommissionInfo = (gig: any) => {
   if (!gig || !gig.commission) return null;
   const comm = gig.commission;
   const currencySymbol = typeof comm.currency === 'object' ? comm.currency?.symbol || '€' : comm.currency || '€';
-  
+
   const applyCut = (val: any) => {
     if (val === undefined || val === null || val === '') return val;
     const num = parseFloat(String(val).replace(/,/g, ''));
@@ -22,7 +21,7 @@ const renderCommissionInfo = (gig: any) => {
 
   const perCall = applyCut(comm.commission_per_call);
   const hasCall = perCall !== undefined && perCall > 0;
-  
+
   const transComm = comm.transactionCommission;
   const hasTrans = transComm !== undefined && (typeof transComm === 'number' ? transComm > 0 : Number(transComm.amount) > 0);
   const transAmount = applyCut(typeof transComm === 'number' ? transComm : transComm?.amount);
@@ -36,8 +35,8 @@ const renderCommissionInfo = (gig: any) => {
   if (comm.minimumVolume?.amount) {
     const unit = String(comm.minimumVolume?.unit || '').toUpperCase();
     const translatedUnit = unit === 'CALLS' || unit === 'APPELS' ? 'APPELS' :
-                           unit === 'TRANSACTIONS' ? 'TRANSACTIONS' :
-                           unit === 'SALES' || unit === 'VENTES' ? 'VENTES' : unit;
+      unit === 'TRANSACTIONS' ? 'TRANSACTIONS' :
+        unit === 'SALES' || unit === 'VENTES' ? 'VENTES' : unit;
     bonusConditionStr = `POUR ${comm.minimumVolume.amount} ${translatedUnit}`;
   }
 
@@ -82,7 +81,7 @@ const renderCommissionInfo = (gig: any) => {
           </div>
         </div>
       )}
-      
+
       {hasTrans && (
         <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg border border-violet-400 shadow-[0_2px_12px_-2px_rgba(139,92,246,0.5)] animate-shine animate-pulse-ring animate-border-flash animate-tilt" title="Commission par transaction">
           <Briefcase className="w-3.5 h-3.5 fill-white animate-float" />
@@ -1480,185 +1479,185 @@ export function GigsMarketplace() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {(currentGigs as PopulatedGig[]).map((gig) => {
-            const gigStatus = getGigStatus(gig._id);
-            const gigStyle = getCardStyleForStatus(gigStatus);
-            return (
-              <div key={gig._id} className={gigStyle.container}>
-                {/* Header: Logo & Actions/Status */}
-                <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
-                      {gig.companyId?.logo ? (
-                        <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-base uppercase">
-                          {gig.companyId?.name?.[0] || '?'}
-                        </div>
+              const gigStatus = getGigStatus(gig._id);
+              const gigStyle = getCardStyleForStatus(gigStatus);
+              return (
+                <div key={gig._id} className={gigStyle.container}>
+                  {/* Header: Logo & Actions/Status */}
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                        {gig.companyId?.logo ? (
+                          <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-base uppercase">
+                            {gig.companyId?.name?.[0] || '?'}
+                          </div>
+                        )}
+                      </div>
+                      {gig.companyId?.name && (
+                        <span className="text-sm font-extrabold text-slate-900 line-clamp-1 flex-1" title={gig.companyId.name}>
+                          {gig.companyId.name}
+                        </span>
                       )}
                     </div>
-                    {gig.companyId?.name && (
-                      <span className="text-sm font-bold text-slate-700 truncate" title={gig.companyId.name}>
-                        {gig.companyId.name}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {gigStatus === 'none' ? (
+                    <div className="flex items-center space-x-2">
+                      {gigStatus === 'none' ? (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleApplyToGig(gig._id);
+                          }}
+                          disabled={applyingGigId === gig._id}
+                          className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm ${applyingGigId === gig._id
+                            ? 'bg-harx-100 text-harx-400 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-pink-500 to-rose-600 text-white border border-pink-400 shadow-[0_2px_10px_-2px_rgba(244,63,94,0.4)] animate-pulse-ring cursor-pointer'
+                            }`}
+                        >
+                          {applyingGigId === gig._id ? '⏳ Applying...' : '🚀 Apply Now'}
+                        </button>
+                      ) : (
+                        <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm ${gigStatus === 'enrolled' ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-400' :
+                          gigStatus === 'invited' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white border-indigo-400' :
+                            'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-amber-400'
+                          }`}>
+                          {gigStatus === 'enrolled' ? '✓ Enrolled' : gigStatus === 'invited' ? '✉ Invited' : '⌛ Pending'}
+                        </span>
+                      )}
+
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          e.stopPropagation();
-                          handleApplyToGig(gig._id);
+                          favoriteGigs.includes(gig._id)
+                            ? removeFromFavorites(gig._id)
+                            : addToFavorites(gig._id);
                         }}
-                        disabled={applyingGigId === gig._id}
-                        className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm ${applyingGigId === gig._id
-                          ? 'bg-harx-100 text-harx-400 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-pink-500 to-rose-600 text-white border border-pink-400 shadow-[0_2px_10px_-2px_rgba(244,63,94,0.4)] animate-pulse-ring cursor-pointer'
-                          }`}
+                        className="p-1.5 hover:bg-red-50 rounded-full transition-colors group/heart"
                       >
-                        {applyingGigId === gig._id ? '⏳ Applying...' : '🚀 Apply Now'}
+                        <Heart
+                          className={`w-4.5 h-4.5 transition-all ${favoriteGigs.includes(gig._id)
+                            ? 'fill-red-500 text-red-500 scale-110'
+                            : 'text-slate-300 group-hover/heart:text-red-400'
+                            }`}
+                        />
                       </button>
-                    ) : (
-                      <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm ${gigStatus === 'enrolled' ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-400' :
-                        gigStatus === 'invited' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white border-indigo-400' :
-                          'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-amber-400'
-                        }`}>
-                        {gigStatus === 'enrolled' ? '✓ Enrolled' : gigStatus === 'invited' ? '✉ Invited' : '⌛ Pending'}
-                      </span>
+                    </div>
+                  </div>
+
+                  {/* Content: Title & Brand */}
+                  <div className="mb-3">
+                    <h3 className="text-lg font-bold text-indigo-950 mb-1 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={gig.title}>
+                      {gig.title}
+                    </h3>
+                    <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500`}>
+                      {gig.category}
+                    </p>
+                  </div>
+
+                  <div className="mt-3 space-y-2">
+                    {renderCommissionInfo(gig)}
+
+                    {/* Compact Metadata Row */}
+                    <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Globe className="w-3 h-3 opacity-70" />
+                        <span className="truncate max-w-[120px]">{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Remote' : gig.destination_zone || 'Remote'}</span>
+                      </div>
+                      <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Calendar className="w-3 h-3 opacity-70" />
+                        <span>{gig.availability?.minimumHours?.weekly || 'N/A'}h/wk</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex-grow">
+                    {/* Industries */}
+                    {gig.industries && gig.industries.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {(expandedIndustries[gig._id] ? gig.industries : gig.industries.slice(0, 3)).map((industry) => (
+                            <span key={industry._id} className="px-2 py-1 bg-harx-alt-100/50 rounded-lg text-[10px] font-bold text-harx-alt-700">
+                              {industry.name}
+                            </span>
+                          ))}
+                          {gig.industries.length > 3 && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setExpandedIndustries(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
+                              }}
+                              className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                            >
+                              {expandedIndustries[gig._id] ? 'Show less' : `+${gig.industries.length - 3} more`}
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     )}
 
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        favoriteGigs.includes(gig._id)
-                          ? removeFromFavorites(gig._id)
-                          : addToFavorites(gig._id);
-                      }}
-                      className="p-1.5 hover:bg-red-50 rounded-full transition-colors group/heart"
-                    >
-                      <Heart
-                        className={`w-4.5 h-4.5 transition-all ${favoriteGigs.includes(gig._id)
-                          ? 'fill-red-500 text-red-500 scale-110'
-                          : 'text-slate-300 group-hover/heart:text-red-400'
-                          }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Content: Title & Brand */}
-                <div className="mb-3">
-                  <h3 className="text-lg font-bold text-indigo-950 mb-1 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={gig.title}>
-                    {gig.title}
-                  </h3>
-                  <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500`}>
-                    {gig.category}
-                  </p>
-                </div>
-
-                <div className="mt-3 space-y-2">
-                  {renderCommissionInfo(gig)}
-                  
-                  {/* Compact Metadata Row */}
-                  <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Globe className="w-3 h-3 opacity-70" />
-                      <span className="truncate max-w-[120px]">{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone}</span>
-                    </div>
-                    <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Calendar className="w-3 h-3 opacity-70" />
-                      <span>{gig.availability?.minimumHours?.weekly || 'N/A'}h/wk</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex-grow">
-                  {/* Industries */}
-                  {gig.industries && gig.industries.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {(expandedIndustries[gig._id] ? gig.industries : gig.industries.slice(0, 3)).map((industry) => (
-                          <span key={industry._id} className="px-2 py-1 bg-harx-alt-100/50 rounded-lg text-[10px] font-bold text-harx-alt-700">
-                            {industry.name}
-                          </span>
-                        ))}
-                        {gig.industries.length > 3 && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setExpandedIndustries(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
-                            }}
-                            className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
-                          >
-                            {expandedIndustries[gig._id] ? 'Show less' : `+${gig.industries.length - 3} more`}
-                          </button>
-                        )}
+                    {/* Activities */}
+                    {gig.activities && gig.activities.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {(expandedActivities[gig._id] ? gig.activities : gig.activities.slice(0, 3)).map((activity) => (
+                            <span key={activity._id} className="px-2 py-1 bg-emerald-50 rounded-lg text-[10px] font-bold text-emerald-700">
+                              {activity.name}
+                            </span>
+                          ))}
+                          {gig.activities.length > 3 && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setExpandedActivities(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
+                              }}
+                              className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
+                            >
+                              {expandedActivities[gig._id] ? 'Show less' : `+${gig.activities.length - 3} more`}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  {/* Activities */}
-                  {gig.activities && gig.activities.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {(expandedActivities[gig._id] ? gig.activities : gig.activities.slice(0, 3)).map((activity) => (
-                          <span key={activity._id} className="px-2 py-1 bg-emerald-50 rounded-lg text-[10px] font-bold text-emerald-700">
-                            {activity.name}
-                          </span>
-                        ))}
-                        {gig.activities.length > 3 && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setExpandedActivities(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
-                            }}
-                            className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors cursor-pointer"
-                          >
-                            {expandedActivities[gig._id] ? 'Show less' : `+${gig.activities.length - 3} more`}
-                          </button>
-                        )}
+                  {/* Buttons section - conditional based on status */}
+                  <div className="mt-6">
+                    {gigStatus === 'enrolled' ? (
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handleSmartStart(gig._id)}
+                          className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group/btn overflow-hidden relative"
+                        >
+                          <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />
+                          <Play className="w-4 h-4 fill-current" />
+                          🚀 Start
+                        </button>
+                        <button
+                          onClick={() => navigate(`/gig/${gig._id}`)}
+                          className="flex-1 bg-gradient-harx text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                        >
+                          Details
+                        </button>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Buttons section - conditional based on status */}
-                <div className="mt-6">
-                  {gigStatus === 'enrolled' ? (
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => handleSmartStart(gig._id)}
-                        className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group/btn overflow-hidden relative"
-                      >
-                        <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />
-                        <Play className="w-4 h-4 fill-current" />
-                        🚀 Start
-                      </button>
+                    ) : (
                       <button
                         onClick={() => navigate(`/gig/${gig._id}`)}
-                        className="flex-1 bg-gradient-harx text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                        className="w-full bg-gradient-harx text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
                       >
-                        Details
+                        View Details
                       </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => navigate(`/gig/${gig._id}`)}
-                      className="w-full bg-gradient-harx text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-harx-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
-                    >
-                      View Details
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
         )
       ) : activeTab === 'favorite' ? (
         <div>
@@ -1676,7 +1675,7 @@ export function GigsMarketplace() {
                 <p className="text-sm text-gray-500 font-medium">
                   Love a gig? Click the heart icon to save it here for later.
                 </p>
-                <button 
+                <button
                   onClick={() => setActiveTab('available')}
                   className="mt-6 bg-slate-900 text-white py-2.5 px-6 rounded-xl hover:bg-slate-800 transition-all font-semibold text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5"
                 >
@@ -1737,88 +1736,88 @@ export function GigsMarketplace() {
                         </p>
                       </div>
 
-                    <div className="mt-2 space-y-2">
-                      {renderCommissionInfo(gig)}
+                      <div className="mt-2 space-y-2">
+                        {renderCommissionInfo(gig)}
 
-                      {/* Compact Metadata Row */}
-                      <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Globe className="w-3 h-3 opacity-70" />
-                          <span className="truncate max-w-[120px]">{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone}</span>
-                        </div>
-                        <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Calendar className="w-3 h-3 opacity-70" />
-                          <span>{gig.availability?.minimumHours?.weekly || 'N/A'}h/wk</span>
+                        {/* Compact Metadata Row */}
+                        <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Globe className="w-3 h-3 opacity-70" />
+                            <span className="truncate max-w-[120px]">{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Remote' : gig.destination_zone || 'Remote'}</span>
+                          </div>
+                          <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Calendar className="w-3 h-3 opacity-70" />
+                            <span>{gig.availability?.minimumHours?.weekly || 'N/A'}h/wk</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="mt-3 flex-grow">
-                      {/* Industries */}
-                      {gig.industries && gig.industries.length > 0 && (
-                        <div className="mb-2">
-                          <p className="text-xs font-medium text-gray-700 mb-1">Industries:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {(expandedIndustries[gig._id] ? gig.industries : gig.industries.slice(0, 3)).map((industry) => (
-                              <span key={industry._id} className="px-2 py-0.5 bg-pink-50 border border-pink-100 rounded-lg text-[10px] font-medium text-pink-600">
-                                {industry.name}
-                              </span>
-                            ))}
-                            {gig.industries.length > 3 && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setExpandedIndustries(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
-                                }}
-                                className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
-                              >
-                                {expandedIndustries[gig._id] ? 'Less' : `+${gig.industries.length - 3}`}
-                              </button>
-                            )}
+                      <div className="mt-3 flex-grow">
+                        {/* Industries */}
+                        {gig.industries && gig.industries.length > 0 && (
+                          <div className="mb-2">
+                            <p className="text-xs font-medium text-gray-700 mb-1">Industries:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {(expandedIndustries[gig._id] ? gig.industries : gig.industries.slice(0, 3)).map((industry) => (
+                                <span key={industry._id} className="px-2 py-0.5 bg-pink-50 border border-pink-100 rounded-lg text-[10px] font-medium text-pink-600">
+                                  {industry.name}
+                                </span>
+                              ))}
+                              {gig.industries.length > 3 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setExpandedIndustries(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
+                                  }}
+                                  className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
+                                >
+                                  {expandedIndustries[gig._id] ? 'Less' : `+${gig.industries.length - 3}`}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Activities */}
-                      {gig.activities && gig.activities.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium text-gray-700 mb-1">Activities:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {(expandedActivities[gig._id] ? gig.activities : gig.activities.slice(0, 3)).map((activity) => (
-                              <span key={activity._id} className="px-2 py-0.5 bg-cyan-50 border border-cyan-100 rounded-lg text-[10px] font-medium text-cyan-700">
-                                {activity.name}
-                              </span>
-                            ))}
-                            {gig.activities.length > 3 && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setExpandedActivities(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
-                                }}
-                                className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
-                              >
-                                {expandedActivities[gig._id] ? 'Less' : `+${gig.activities.length - 3}`}
-                              </button>
-                            )}
+                        {/* Activities */}
+                        {gig.activities && gig.activities.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-gray-700 mb-1">Activities:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {(expandedActivities[gig._id] ? gig.activities : gig.activities.slice(0, 3)).map((activity) => (
+                                <span key={activity._id} className="px-2 py-0.5 bg-cyan-50 border border-cyan-100 rounded-lg text-[10px] font-medium text-cyan-700">
+                                  {activity.name}
+                                </span>
+                              ))}
+                              {gig.activities.length > 3 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setExpandedActivities(prev => ({ ...prev, [gig._id]: !prev[gig._id] }));
+                                  }}
+                                  className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
+                                >
+                                  {expandedActivities[gig._id] ? 'Less' : `+${gig.activities.length - 3}`}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
 
-                    <button
-                      onClick={() => navigate(`/gig/${gig._id}`)}
-                      className="mt-4 w-full bg-gradient-to-r from-indigo-600 to-violet-700 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(79,70,229,0.4)] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 group/btn overflow-hidden relative"
-                    >
-                      <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />
-                      <Sparkles className="w-4 h-4" />
-                      <span>View Opportunity</span>
-                    </button>
-                  </div>
-                );
-              })}
+                      <button
+                        onClick={() => navigate(`/gig/${gig._id}`)}
+                        className="mt-4 w-full bg-gradient-to-r from-indigo-600 to-violet-700 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(79,70,229,0.4)] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 group/btn overflow-hidden relative"
+                      >
+                        <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />
+                        <Sparkles className="w-4 h-4" />
+                        <span>View Opportunity</span>
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1839,7 +1838,7 @@ export function GigsMarketplace() {
                 <p className="text-sm text-gray-500 font-medium">
                   Keep your profile updated! When companies love your skills, invitations will appear here.
                 </p>
-                <button 
+                <button
                   onClick={() => setActiveTab('available')}
                   className="mt-6 bg-slate-900 text-white py-2.5 px-6 rounded-xl hover:bg-slate-800 transition-all font-semibold text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5"
                 >
@@ -1905,102 +1904,102 @@ export function GigsMarketplace() {
                         </p>
                       </div>
 
-                    <div className="mt-2 space-y-2">
-                      {renderCommissionInfo(enrollment.gig)}
+                      <div className="mt-2 space-y-2">
+                        {renderCommissionInfo(enrollment.gig)}
 
-                      {/* Compact Metadata Row */}
-                      <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Globe className="w-3 h-3 opacity-70" />
-                          <span className="truncate max-w-[120px]">{typeof enrollment.gig.destination_zone === 'object' ? enrollment.gig.destination_zone?.name?.common || enrollment.gig.destination_zone?.cca2 || 'Unknown' : enrollment.gig.destination_zone}</span>
-                        </div>
-                        <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Calendar className="w-3 h-3 opacity-70" />
-                          <span>{('availability' in enrollment.gig && enrollment.gig.availability?.minimumHours?.weekly) ? `${enrollment.gig.availability.minimumHours.weekly}h/wk` : 'N/A h/wk'}</span>
+                        {/* Compact Metadata Row */}
+                        <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Globe className="w-3 h-3 opacity-70" />
+                            <span className="truncate max-w-[120px]">{typeof enrollment.gig.destination_zone === 'object' ? enrollment.gig.destination_zone?.name?.common || enrollment.gig.destination_zone?.cca2 || 'Remote' : enrollment.gig.destination_zone || 'Remote'}</span>
+                          </div>
+                          <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Calendar className="w-3 h-3 opacity-70" />
+                            <span>{('availability' in enrollment.gig && enrollment.gig.availability?.minimumHours?.weekly) ? `${enrollment.gig.availability.minimumHours.weekly}h/wk` : 'N/A h/wk'}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="mt-3 flex-grow">
-                      {/* Industries */}
-                      {('industries' in enrollment.gig && enrollment.gig.industries && enrollment.gig.industries.length > 0) ? (
-                        <div className="mb-2">
-                          <p className="text-xs font-medium text-gray-700 mb-1">Industries:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {(expandedIndustries[enrollment.gig._id] ? enrollment.gig.industries : enrollment.gig.industries.slice(0, 3)).map((industry) => (
-                              <span key={industry._id} className="px-2 py-0.5 bg-pink-50 border border-pink-100 rounded-lg text-[10px] font-medium text-pink-600">
-                                {industry.name}
-                              </span>
-                            ))}
-                            {enrollment.gig.industries.length > 3 && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setExpandedIndustries(prev => ({ ...prev, [enrollment.gig._id]: !prev[enrollment.gig._id] }));
-                                }}
-                                className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
-                              >
-                                {expandedIndustries[enrollment.gig._id] ? 'Less' : `+${enrollment.gig.industries.length - 3}`}
-                              </button>
-                            )}
+                      <div className="mt-3 flex-grow">
+                        {/* Industries */}
+                        {('industries' in enrollment.gig && enrollment.gig.industries && enrollment.gig.industries.length > 0) ? (
+                          <div className="mb-2">
+                            <p className="text-xs font-medium text-gray-700 mb-1">Industries:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {(expandedIndustries[enrollment.gig._id] ? enrollment.gig.industries : enrollment.gig.industries.slice(0, 3)).map((industry) => (
+                                <span key={industry._id} className="px-2 py-0.5 bg-pink-50 border border-pink-100 rounded-lg text-[10px] font-medium text-pink-600">
+                                  {industry.name}
+                                </span>
+                              ))}
+                              {enrollment.gig.industries.length > 3 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setExpandedIndustries(prev => ({ ...prev, [enrollment.gig._id]: !prev[enrollment.gig._id] }));
+                                  }}
+                                  className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
+                                >
+                                  {expandedIndustries[enrollment.gig._id] ? 'Less' : `+${enrollment.gig.industries.length - 3}`}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ) : null}
+                        ) : null}
 
-                      {/* Activities */}
-                      {('activities' in enrollment.gig && enrollment.gig.activities && enrollment.gig.activities.length > 0) ? (
-                        <div>
-                          <p className="text-xs font-medium text-gray-700 mb-1">Activities:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {(expandedActivities[enrollment.gig._id] ? enrollment.gig.activities : enrollment.gig.activities.slice(0, 3)).map((activity) => (
-                              <span key={activity._id} className="px-2 py-0.5 bg-cyan-50 border border-cyan-100 rounded-lg text-[10px] font-medium text-cyan-700">
-                                {activity.name}
-                              </span>
-                            ))}
-                            {enrollment.gig.activities.length > 3 && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setExpandedActivities(prev => ({ ...prev, [enrollment.gig._id]: !prev[enrollment.gig._id] }));
-                                }}
-                                className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
-                              >
-                                {expandedActivities[enrollment.gig._id] ? 'Less' : `+${enrollment.gig.activities.length - 3}`}
-                              </button>
-                            )}
+                        {/* Activities */}
+                        {('activities' in enrollment.gig && enrollment.gig.activities && enrollment.gig.activities.length > 0) ? (
+                          <div>
+                            <p className="text-xs font-medium text-gray-700 mb-1">Activities:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {(expandedActivities[enrollment.gig._id] ? enrollment.gig.activities : enrollment.gig.activities.slice(0, 3)).map((activity) => (
+                                <span key={activity._id} className="px-2 py-0.5 bg-cyan-50 border border-cyan-100 rounded-lg text-[10px] font-medium text-cyan-700">
+                                  {activity.name}
+                                </span>
+                              ))}
+                              {enrollment.gig.activities.length > 3 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setExpandedActivities(prev => ({ ...prev, [enrollment.gig._id]: !prev[enrollment.gig._id] }));
+                                  }}
+                                  className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
+                                >
+                                  {expandedActivities[enrollment.gig._id] ? 'Less' : `+${enrollment.gig.activities.length - 3}`}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ) : null}
-                    </div>
+                        ) : null}
+                      </div>
 
-                    <div className="mt-4 flex gap-2">
-                      <button
-                        onClick={() => acceptInvitation(enrollment.id)}
-                        className="flex-[2] bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(16,185,129,0.4)] transition-all font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 group/btn"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                        <span>Accept</span>
-                      </button>
-                      <button
-                        onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
-                        className="flex-1 bg-slate-100 text-slate-600 py-2.5 px-3 rounded-xl hover:bg-slate-200 transition-all font-black text-[11px] uppercase tracking-wider flex items-center justify-center"
-                      >
-                        Details
-                      </button>
-                      <button
-                        onClick={() => rejectInvitation(enrollment.id)}
-                        className="w-11 bg-rose-50 text-rose-500 py-2.5 rounded-xl hover:bg-rose-100 transition-all font-black text-[11px] flex items-center justify-center"
-                        title="Reject Invitation"
-                      >
-                        ✕
-                      </button>
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          onClick={() => acceptInvitation(enrollment.id)}
+                          className="flex-[2] bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(16,185,129,0.4)] transition-all font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 group/btn"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                          <span>Accept</span>
+                        </button>
+                        <button
+                          onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
+                          className="flex-1 bg-slate-100 text-slate-600 py-2.5 px-3 rounded-xl hover:bg-slate-200 transition-all font-black text-[11px] uppercase tracking-wider flex items-center justify-center"
+                        >
+                          Details
+                        </button>
+                        <button
+                          onClick={() => rejectInvitation(enrollment.id)}
+                          className="w-11 bg-rose-50 text-rose-500 py-2.5 rounded-xl hover:bg-rose-100 transition-all font-black text-[11px] flex items-center justify-center"
+                          title="Reject Invitation"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2043,7 +2042,7 @@ export function GigsMarketplace() {
                             )}
                           </div>
                           {enrolledGig.gig.companyId?.name && (
-                            <span className="text-xs font-bold text-slate-700 truncate" title={enrolledGig.gig.companyId.name}>
+                            <span className="text-sm font-extrabold text-slate-900 line-clamp-1 flex-1" title={enrolledGig.gig.companyId.name}>
                               {enrolledGig.gig.companyId.name}
                             </span>
                           )}
@@ -2081,76 +2080,76 @@ export function GigsMarketplace() {
                         </p>
                       </div>
 
-                    <div className="mt-2 space-y-2">
-                      {renderCommissionInfo(enrolledGig.gig)}
+                      <div className="mt-2 space-y-2">
+                        {renderCommissionInfo(enrolledGig.gig)}
 
-                      {/* Compact Metadata Row */}
-                      <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Globe className="w-3 h-3 opacity-70" />
-                          <span className="truncate max-w-[120px]">{typeof enrolledGig.gig.destination_zone === 'object' ? enrolledGig.gig.destination_zone?.name?.common || enrolledGig.gig.destination_zone?.cca2 || 'Unknown' : enrolledGig.gig.destination_zone}</span>
-                        </div>
-                        <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Calendar className="w-3 h-3 opacity-70" />
-                          <span>{('availability' in enrolledGig.gig && enrolledGig.gig.availability?.minimumHours?.weekly) ? `${enrolledGig.gig.availability.minimumHours.weekly}h/wk` : 'N/A h/wk'}</span>
+                        {/* Compact Metadata Row */}
+                        <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Globe className="w-3 h-3 opacity-70" />
+                            <span className="truncate max-w-[120px]">{typeof enrolledGig.gig.destination_zone === 'object' ? enrolledGig.gig.destination_zone?.name?.common || enrolledGig.gig.destination_zone?.cca2 || 'Remote' : enrolledGig.gig.destination_zone || 'Remote'}</span>
+                          </div>
+                          <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Calendar className="w-3 h-3 opacity-70" />
+                            <span>{('availability' in enrolledGig.gig && enrolledGig.gig.availability?.minimumHours?.weekly) ? `${enrolledGig.gig.availability.minimumHours.weekly}h/wk` : 'N/A h/wk'}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="mt-3 flex-grow">
-                      {/* Industries */}
-                      {('industries' in enrolledGig.gig && enrolledGig.gig.industries && enrolledGig.gig.industries.length > 0) ? (
-                        <div className="mb-2">
-                          <p className="text-xs font-medium text-gray-700 mb-1">Industries:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {(expandedIndustries[enrolledGig.gig._id] ? enrolledGig.gig.industries : enrolledGig.gig.industries.slice(0, 3)).map((industry) => (
-                              <span key={industry._id} className="px-2 py-0.5 bg-pink-50 border border-pink-100 rounded-lg text-[10px] font-medium text-pink-600">
-                                {industry.name}
-                              </span>
-                            ))}
-                            {enrolledGig.gig.industries.length > 3 && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setExpandedIndustries(prev => ({ ...prev, [enrolledGig.gig._id]: !prev[enrolledGig.gig._id] }));
-                                }}
-                                className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
-                              >
-                                {expandedIndustries[enrolledGig.gig._id] ? 'Less' : `+${enrolledGig.gig.industries.length - 3}`}
-                              </button>
-                            )}
+                      <div className="mt-3 flex-grow">
+                        {/* Industries */}
+                        {('industries' in enrolledGig.gig && enrolledGig.gig.industries && enrolledGig.gig.industries.length > 0) ? (
+                          <div className="mb-2">
+                            <p className="text-xs font-medium text-gray-700 mb-1">Industries:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {(expandedIndustries[enrolledGig.gig._id] ? enrolledGig.gig.industries : enrolledGig.gig.industries.slice(0, 3)).map((industry) => (
+                                <span key={industry._id} className="px-2 py-0.5 bg-pink-50 border border-pink-100 rounded-lg text-[10px] font-medium text-pink-600">
+                                  {industry.name}
+                                </span>
+                              ))}
+                              {enrolledGig.gig.industries.length > 3 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setExpandedIndustries(prev => ({ ...prev, [enrolledGig.gig._id]: !prev[enrolledGig.gig._id] }));
+                                  }}
+                                  className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
+                                >
+                                  {expandedIndustries[enrolledGig.gig._id] ? 'Less' : `+${enrolledGig.gig.industries.length - 3}`}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ) : null}
+                        ) : null}
 
-                      {/* Activities */}
-                      {('activities' in enrolledGig.gig && enrolledGig.gig.activities && enrolledGig.gig.activities.length > 0) ? (
-                        <div>
-                          <p className="text-xs font-medium text-gray-700 mb-1">Activities:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {(expandedActivities[enrolledGig.gig._id] ? enrolledGig.gig.activities : enrolledGig.gig.activities.slice(0, 3)).map((activity) => (
-                              <span key={activity._id} className="px-2 py-0.5 bg-cyan-50 border border-cyan-100 rounded-lg text-[10px] font-medium text-cyan-700">
-                                {activity.name}
-                              </span>
-                            ))}
-                            {enrolledGig.gig.activities.length > 3 && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setExpandedActivities(prev => ({ ...prev, [enrolledGig.gig._id]: !prev[enrolledGig.gig._id] }));
-                                }}
-                                className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
-                              >
-                                {expandedActivities[enrolledGig.gig._id] ? 'Less' : `+${enrolledGig.gig.activities.length - 3}`}
-                              </button>
-                            )}
+                        {/* Activities */}
+                        {('activities' in enrolledGig.gig && enrolledGig.gig.activities && enrolledGig.gig.activities.length > 0) ? (
+                          <div>
+                            <p className="text-xs font-medium text-gray-700 mb-1">Activities:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {(expandedActivities[enrolledGig.gig._id] ? enrolledGig.gig.activities : enrolledGig.gig.activities.slice(0, 3)).map((activity) => (
+                                <span key={activity._id} className="px-2 py-0.5 bg-cyan-50 border border-cyan-100 rounded-lg text-[10px] font-medium text-cyan-700">
+                                  {activity.name}
+                                </span>
+                              ))}
+                              {enrolledGig.gig.activities.length > 3 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setExpandedActivities(prev => ({ ...prev, [enrolledGig.gig._id]: !prev[enrolledGig.gig._id] }));
+                                  }}
+                                  className="px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-full text-[10px] text-gray-600 transition-colors cursor-pointer"
+                                >
+                                  {expandedActivities[enrolledGig.gig._id] ? 'Less' : `+${enrolledGig.gig.activities.length - 3}`}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ) : null}
-                    </div>
+                        ) : null}
+                      </div>
 
 
                       {/* Leads */}
@@ -2203,8 +2202,8 @@ export function GigsMarketplace() {
                         </button>
                       </div>
                     </div>
-                );
-              })}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2219,7 +2218,7 @@ export function GigsMarketplace() {
             <p className="text-sm text-gray-500 font-medium">
               Accept an invitation or apply to a gig to see your active projects here.
             </p>
-            <button 
+            <button
               onClick={() => setActiveTab('available')}
               className="mt-6 bg-slate-900 text-white py-2.5 px-6 rounded-xl hover:bg-slate-800 transition-all font-semibold text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5"
             >
