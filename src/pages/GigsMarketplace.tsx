@@ -1513,7 +1513,6 @@ export function GigsMarketplace() {
                         disabled={applyingGigId === gig._id}
                         className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm ${applyingGigId === gig._id
                           ? 'bg-harx-100 text-harx-400 cursor-not-allowed'
-                          : 'bg-harx-50 text-harx-600 hover:bg-harx-100 hover:shadow-md cursor-pointer'
                           : 'bg-gradient-to-r from-pink-500 to-rose-600 text-white border border-pink-400 shadow-[0_2px_10px_-2px_rgba(244,63,94,0.4)] animate-pulse-ring cursor-pointer'
                           }`}
                       >
