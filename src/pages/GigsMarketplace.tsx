@@ -1341,12 +1341,12 @@ export function GigsMarketplace() {
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 space-y-4">
-              <div className="flex justify-between">
+              <div className="flex gap-4">
+                <Skeleton className="w-12 h-12 rounded-xl shrink-0" variant="rounded" />
                 <div className="space-y-2 flex-1">
                   <Skeleton className="h-6 w-3/4" variant="rounded" />
                   <Skeleton className="h-3 w-1/4" variant="rounded" />
                 </div>
-                <Skeleton className="h-8 w-20" variant="rounded" />
               </div>
               <Skeleton className="h-12 w-full" variant="rounded" />
               <div className="space-y-2 pt-2">
@@ -1479,11 +1479,22 @@ export function GigsMarketplace() {
             return (
               <div key={gig._id} className={gigStyle.container}>
                 <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{gig.title}</h3>
-                    <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
-                      {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
-                    </p>
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shrink-0 overflow-hidden shadow-sm">
+                      {gig.companyId?.logo ? (
+                        <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
+                          {gig.companyId?.name?.[0] || '?'}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug truncate" title={gig.title}>{gig.title}</h3>
+                      <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                        {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     {/* Status Badge */}
@@ -1665,11 +1676,22 @@ export function GigsMarketplace() {
                   return (
                     <div key={gig._id} className={gigStyle.container}>
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{gig.title}</h3>
-                          <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
-                            {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
-                          </p>
+                        <div className="flex items-start gap-4 flex-1">
+                          <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shrink-0 overflow-hidden shadow-sm">
+                            {gig.companyId?.logo ? (
+                              <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
+                                {gig.companyId?.name?.[0] || '?'}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug truncate" title={gig.title}>{gig.title}</h3>
+                            <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                              {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
+                            </p>
+                          </div>
                         </div>
                       <div className="flex items-center space-x-2">
                         {/* Status Badge */}
@@ -1825,11 +1847,22 @@ export function GigsMarketplace() {
                   return (
                     <div key={enrollment.id} className={gigStyle.container}>
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{enrollment.gig.title}</h3>
-                          <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
-                            {enrollment.gig.category} {('companyId' in enrollment.gig && enrollment.gig.companyId?.name) ? `• ${enrollment.gig.companyId.name}` : ''}
-                          </p>
+                        <div className="flex items-start gap-4 flex-1">
+                          <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shrink-0 overflow-hidden shadow-sm">
+                            {enrollment.gig.companyId?.logo ? (
+                              <img src={enrollment.gig.companyId.logo} alt={enrollment.gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
+                                {enrollment.gig.companyId?.name?.[0] || '?'}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug truncate" title={enrollment.gig.title}>{enrollment.gig.title}</h3>
+                            <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                              {enrollment.gig.category} {('companyId' in enrollment.gig && enrollment.gig.companyId?.name) ? `• ${enrollment.gig.companyId.name}` : ''}
+                            </p>
+                          </div>
                         </div>
                       <div className="flex items-center space-x-2">
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
@@ -1997,11 +2030,22 @@ export function GigsMarketplace() {
                   return (
                     <div key={enrolledGig.id} className={gigStyle.container}>
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{enrolledGig.gig.title}</h3>
-                          <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
-                            {enrolledGig.gig.category} {('companyId' in enrolledGig.gig && enrolledGig.gig.companyId?.name) ? `• ${enrolledGig.gig.companyId.name}` : ''}
-                          </p>
+                        <div className="flex items-start gap-4 flex-1">
+                          <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shrink-0 overflow-hidden shadow-sm">
+                            {enrolledGig.gig.companyId?.logo ? (
+                              <img src={enrolledGig.gig.companyId.logo} alt={enrolledGig.gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
+                                {enrolledGig.gig.companyId?.name?.[0] || '?'}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug truncate" title={enrolledGig.gig.title}>{enrolledGig.gig.title}</h3>
+                            <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                              {enrolledGig.gig.category} {('companyId' in enrolledGig.gig && enrolledGig.gig.companyId?.name) ? `• ${enrolledGig.gig.companyId.name}` : ''}
+                            </p>
+                          </div>
                         </div>
                       <div className="flex items-center space-x-2">
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
