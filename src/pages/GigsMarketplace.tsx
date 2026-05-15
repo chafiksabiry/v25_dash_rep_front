@@ -1490,7 +1490,7 @@ export function GigsMarketplace() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug truncate" title={gig.title}>{gig.title}</h3>
+                      <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug" title={gig.title}>{gig.title}</h3>
                       <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors truncate ${gigStyle.category}`} title={gig.companyId?.name}>
                         {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
                       </p>
@@ -1687,7 +1687,7 @@ export function GigsMarketplace() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug truncate" title={gig.title}>{gig.title}</h3>
+                            <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug" title={gig.title}>{gig.title}</h3>
                             <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors truncate ${gigStyle.category}`} title={gig.companyId?.name}>
                               {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
                             </p>
@@ -1858,7 +1858,7 @@ export function GigsMarketplace() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug truncate" title={enrollment.gig.title}>{enrollment.gig.title}</h3>
+                            <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug" title={enrollment.gig.title}>{enrollment.gig.title}</h3>
                             <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors truncate ${gigStyle.category}`} title={enrollment.gig.companyId?.name}>
                               {enrollment.gig.category} {('companyId' in enrollment.gig && enrollment.gig.companyId?.name) ? `• ${enrollment.gig.companyId.name}` : ''}
                             </p>
@@ -2041,7 +2041,7 @@ export function GigsMarketplace() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug truncate" title={enrolledGig.gig.title}>{enrolledGig.gig.title}</h3>
+                            <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug" title={enrolledGig.gig.title}>{enrolledGig.gig.title}</h3>
                             <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors truncate ${gigStyle.category}`} title={enrolledGig.gig.companyId?.name}>
                               {enrolledGig.gig.category} {('companyId' in enrolledGig.gig && enrolledGig.gig.companyId?.name) ? `• ${enrolledGig.gig.companyId.name}` : ''}
                             </p>
