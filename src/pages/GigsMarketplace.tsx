@@ -1558,6 +1558,19 @@ export function GigsMarketplace() {
 
                 <div className="mt-3 space-y-2">
                   {renderCommissionInfo(gig)}
+                  
+                  {/* Compact Metadata Row */}
+                  <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Globe className="w-3 h-3 opacity-70" />
+                      <span className="truncate max-w-[120px]">{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone}</span>
+                    </div>
+                    <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Calendar className="w-3 h-3 opacity-70" />
+                      <span>{gig.availability?.minimumHours?.weekly || 'N/A'}h/wk</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-4 flex-grow">
@@ -1747,6 +1760,19 @@ export function GigsMarketplace() {
 
                     <div className="mt-2 space-y-2">
                       {renderCommissionInfo(gig)}
+
+                      {/* Compact Metadata Row */}
+                      <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Globe className="w-3 h-3 opacity-70" />
+                          <span className="truncate max-w-[120px]">{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone}</span>
+                        </div>
+                        <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Calendar className="w-3 h-3 opacity-70" />
+                          <span>{gig.availability?.minimumHours?.weekly || 'N/A'}h/wk</span>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="mt-3 flex-grow">
@@ -1900,6 +1926,19 @@ export function GigsMarketplace() {
 
                     <div className="mt-2 space-y-2">
                       {renderCommissionInfo(enrollment.gig)}
+
+                      {/* Compact Metadata Row */}
+                      <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Globe className="w-3 h-3 opacity-70" />
+                          <span className="truncate max-w-[120px]">{typeof enrollment.gig.destination_zone === 'object' ? enrollment.gig.destination_zone?.name?.common || enrollment.gig.destination_zone?.cca2 || 'Unknown' : enrollment.gig.destination_zone}</span>
+                        </div>
+                        <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Calendar className="w-3 h-3 opacity-70" />
+                          <span>{('availability' in enrollment.gig && enrollment.gig.availability?.minimumHours?.weekly) ? `${enrollment.gig.availability.minimumHours.weekly}h/wk` : 'N/A h/wk'}</span>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="mt-3 flex-grow">
@@ -2061,6 +2100,19 @@ export function GigsMarketplace() {
 
                     <div className="mt-2 space-y-2">
                       {renderCommissionInfo(enrolledGig.gig)}
+
+                      {/* Compact Metadata Row */}
+                      <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Globe className="w-3 h-3 opacity-70" />
+                          <span className="truncate max-w-[120px]">{typeof enrolledGig.gig.destination_zone === 'object' ? enrolledGig.gig.destination_zone?.name?.common || enrolledGig.gig.destination_zone?.cca2 || 'Unknown' : enrolledGig.gig.destination_zone}</span>
+                        </div>
+                        <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Calendar className="w-3 h-3 opacity-70" />
+                          <span>{('availability' in enrolledGig.gig && enrolledGig.gig.availability?.minimumHours?.weekly) ? `${enrolledGig.gig.availability.minimumHours.weekly}h/wk` : 'N/A h/wk'}</span>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="mt-3 flex-grow">
