@@ -18,6 +18,7 @@ import { ExperienceTab } from './profile/tabs/ExperienceTab';
 import { LanguagesTab } from './profile/tabs/LanguagesTab';
 import { OnboardingTab } from './profile/tabs/OnboardingTab';
 import { SpecializationTab } from './profile/tabs/SpecializationTab';
+import { AvailabilityTab } from './profile/tabs/AvailabilityTab';
 
 // Shared Interface Redefinitions (if needed by tabs)
 export interface AssessmentResults {
@@ -784,6 +785,19 @@ export const ProfileView: React.FC<{
           onAddItemClick={(section, value) => onAddSpecializationItem?.(section, value)}
         />
       );
+      case 'availability': return (
+        <AvailabilityTab 
+          profile={profile}
+          countryMismatch={countryMismatch}
+          checkingCountryMismatch={checkingCountryMismatch}
+          showLoadingSpinner={showLoadingSpinner}
+          timezoneData={timezoneData}
+          allTimezones={allTimezones}
+          getTimezoneMismatchInfo={getTimezoneMismatchInfo}
+          repWizardApi={repWizardApi}
+          onSaveAvailability={handleSaveAvailability}
+        />
+      );
       default: return <ProfileTab profile={profile} onSaveAbout={handleSaveAbout} onReplaceVideo={handleReplaceVideo} isUploadingVideo={isUploadingVideo} />;
     }
   };
@@ -812,6 +826,10 @@ export const ProfileView: React.FC<{
     specialization: {
       title: t('profile.tabs.specialization.title'),
       subtitle: t('profile.tabs.specialization.subtitle')
+    },
+    availability: {
+      title: t('profile.tabs.availability.title', { defaultValue: 'Availability & Schedule' }),
+      subtitle: t('profile.tabs.availability.subtitle', { defaultValue: 'Manage your working hours and timezone' })
     }
   };
 

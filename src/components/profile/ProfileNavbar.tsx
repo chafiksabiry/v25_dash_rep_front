@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Zap, Briefcase, Globe, ClipboardCheck, Target } from 'lucide-react';
+import { User, Zap, Briefcase, Globe, ClipboardCheck, Target, Clock } from 'lucide-react';
 
 interface ProfileNavbarProps {
   activeTab: string;
@@ -9,9 +9,10 @@ interface ProfileNavbarProps {
 export const ProfileNavbar: React.FC<ProfileNavbarProps> = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'specialization', label: 'Specialization', icon: Target },
     { id: 'skills', label: 'Skills', icon: Zap },
     { id: 'experience', label: 'Experience', icon: Briefcase },
+    { id: 'specialization', label: 'Specialization', icon: Target },
+    { id: 'availability', label: 'Availability', icon: Clock },
     { id: 'languages', label: 'Languages', icon: Globe },
     { id: 'onboarding', label: 'Onboarding', icon: ClipboardCheck },
   ];
