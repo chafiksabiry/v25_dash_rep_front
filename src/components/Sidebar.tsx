@@ -146,6 +146,9 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
 
   const filteredNavItems = navItems.filter(item => item.isAccessible());
 
+  const group1 = filteredNavItems.filter(i => ['/', '/gigs-marketplace', '/calls', '/wallet', '/workspace'].includes(i.path));
+  const group2 = filteredNavItems.filter(i => ['/training', '/session-planning'].includes(i.path));
+
   useEffect(() => {
     console.log('🔒 Access Control Status:', {
       phases,
@@ -182,8 +185,13 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
         )}
       </div>
 
-      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-1">
-        {filteredNavItems.map((item) => (
+      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-5">
+        {/* ── Group 1: Main ── */}
+        <div className="space-y-1">
+          {!isCollapsed && (
+            <p className="px-2 pb-1 text-[9px] font-extrabold uppercase tracking-[0.18em] text-gray-600 select-none">Main</p>
+          )}
+          {group1.map((item) => (
           <div key={item.path} className="space-y-1">
             {item.label === 'Training' && Array.isArray(item.subItems) && item.subItems.length > 0 && !isCollapsed ? (
               <>
@@ -393,7 +401,123 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
               </NavLink>
             )}
           </div>
-        ))}
+          ))}
+        </div>
+
+        {/* ── Divider ── */}
+        {group2.length > 0 && (
+          <div className="mx-2 border-t border-white/[0.07]" />
+        )}
+
+        {/* ── Group 2: Training & Planning ── */}
+        {group2.length > 0 && (
+          <div className="space-y-1">
+            {!isCollapsed && (
+              <p className="px-2 pb-1 text-[9px] font-extrabold uppercase tracking-[0.18em] text-gray-600 select-none">Training & Planning</p>
+            )}
+            {group2.map((item) => (
+              <div key={item.path} className="space-y-1">
+                {item.label === t('sidebar.training') && Array.isArray(item.subItems) && item.subItems.length > 0 && !isCollapsed ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        setIsTrainingOpen(!isTrainingOpen);
+                        if (!location.pathname.includes('/training')) navigate('/training');
+                      }}
+                      className={`flex w-full items-center rounded-2xl transition-all duration-300 group relative space-x-3 py-3 px-5 ${
+                        isTrainingOpen || window.location.pathname.includes(item.path)
+                          ? 'bg-white/5 text-white'
+                          : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
+                      }`}
+                    >
+                      <div className={`p-2 rounded-xl transition-all shrink-0 ${isTrainingOpen || window.location.pathname.includes(item.path) ? 'bg-gradient-to-br from-orange-500 to-pink-600 text-white shadow-lg shadow-pink-500/30' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
+                        <item.icon className="h-5 w-5" />
+                      </div>
+                      <span className="font-black text-sm tracking-tight whitespace-nowrap overflow-hidden flex-1 text-left">{item.label}</span>
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isTrainingOpen ? 'rotate-180 text-harx-400' : 'text-gray-400'}`} />
+                    </button>
+                    {isTrainingOpen && (
+                      <div className="ml-4 pl-3 border-l border-white/[0.08] space-y-0.5 animate-in slide-in-from-top-1 duration-200">
+                        {item.subItems.map((sub: any, idx: number) => {
+                          const isActiveSub = activeTrainingModuleIndex === idx && location.pathname.includes('/training');
+                          const moduleOpen = openTrainingModuleIndexes.includes(idx);
+                          const slideList: TrainingSidebarSlide[] = Array.isArray(sub.slides) ? sub.slides : [];
+                          return (
+                            <div key={sub.path} className="space-y-0.5">
+                              <button
+                                type="button"
+                                onClick={() => setOpenTrainingModuleIndexes((prev) => prev.includes(idx) ? prev.filter((x) => x !== idx) : [...prev, idx])}
+                                className={`group/mod flex w-full items-center justify-between gap-2 rounded-lg transition-all duration-200 py-2 px-2.5 ${isActiveSub ? 'bg-white/[0.06] text-white shadow-[inset_3px_0_0_0] shadow-harx-500' : 'text-gray-400 hover:bg-white/[0.04] hover:text-gray-200'}`}
+                              >
+                                <p className={`min-w-0 flex-1 truncate text-left text-[10px] font-bold uppercase tracking-wider leading-tight ${isActiveSub ? 'text-harx-200' : 'text-gray-400'}`}>
+                                  <span className="mr-1 font-extrabold tabular-nums text-harx-500/90">{idx + 1}.</span>
+                                  {sub.label}
+                                </p>
+                                <ChevronDown className={`h-3 w-3 shrink-0 opacity-70 transition-transform duration-200 ${moduleOpen ? 'rotate-180 text-harx-400' : 'text-gray-500'}`} />
+                              </button>
+                              {moduleOpen && (
+                                <div className="relative ml-1.5 pl-2.5 pt-0.5 pb-0.5">
+                                  <div className="pointer-events-none absolute left-0 top-1 bottom-1 w-px bg-gradient-to-b from-harx-500/35 via-white/12 to-transparent" aria-hidden />
+                                  {slideList.length === 0 ? (
+                                    <div className="flex w-full items-start gap-2 rounded-md py-1.5 pl-2.5 pr-2 opacity-70">
+                                      <p className="text-[9.5px] text-gray-500">No slides</p>
+                                    </div>
+                                  ) : (
+                                    slideList.map((slide, slideIdx) => {
+                                      const isSlideActive = slide.globalIndex >= 0 && slide.globalIndex === activeTrainingSlideIndex && location.pathname.includes('/training');
+                                      return (
+                                        <button
+                                          key={`${sub.path}-slide-${slideIdx}`}
+                                          type="button"
+                                          onClick={() => {
+                                            if (!location.pathname.includes('/training')) navigate('/training');
+                                            if (slide.globalIndex >= 0) {
+                                              window.dispatchEvent(new CustomEvent('rep-training-goto-slide', { detail: { index: slide.globalIndex, ...(slide.slideId ? { slideId: slide.slideId } : {}) } }));
+                                            }
+                                          }}
+                                          className={`group/sl flex w-full items-start gap-2 rounded-md py-1.5 pl-2.5 pr-2 text-left transition-all duration-200 ${isSlideActive ? 'bg-harx-500/[0.12] text-harx-100 ring-1 ring-harx-500/20' : 'text-gray-500 hover:bg-white/[0.03] hover:text-gray-300'}`}
+                                        >
+                                          <span className={`mt-0.5 shrink-0 tabular-nums text-[9px] font-bold ${isSlideActive ? 'text-harx-400' : 'text-gray-600'}`}>{slideIdx + 1}.</span>
+                                          <p className={`min-w-0 flex-1 text-left text-[9.5px] font-medium leading-snug tracking-wide ${isSlideActive ? 'text-harx-50' : 'text-gray-500'}`}>{slide.title}</p>
+                                        </button>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `flex w-full items-center rounded-2xl transition-all duration-300 group relative ${
+                        isCollapsed ? 'justify-center p-3' : 'space-x-3 py-3 px-5'
+                      } ${
+                        isActive
+                          ? 'bg-gradient-to-br from-orange-500 to-pink-600 text-white shadow-xl shadow-pink-500/30 ring-1 ring-white/10'
+                          : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <div className={`p-2 rounded-xl transition-all shrink-0 ${isActive ? 'bg-white/20' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
+                          <item.icon className="h-5 w-5" />
+                        </div>
+                        {!isCollapsed && <span className="font-black text-sm tracking-tight whitespace-nowrap overflow-hidden">{item.label}</span>}
+                      </>
+                    )}
+                  </NavLink>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </nav>
 
       <div className={`shrink-0 sticky bottom-0 bg-black transition-all duration-300 ${isCollapsed ? 'p-3 flex justify-center' : 'p-4'}`}>
