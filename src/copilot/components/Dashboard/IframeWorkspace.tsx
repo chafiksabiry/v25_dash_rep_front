@@ -189,9 +189,9 @@ export function IframeWorkspace() {
         />
       )}
 
-      {/* Side drawer modal taking exactly 70% width on the right */}
+      {/* Side drawer modal taking most of the width on the right */}
       {isOpen && (
-        <div className="fixed inset-y-0 right-0 w-[70vw] min-w-[320px] bg-slate-950 z-[9999] flex flex-col overflow-hidden border-l border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-right duration-500">
+        <div className="fixed inset-y-0 right-0 w-[95vw] lg:w-[90vw] min-w-[320px] bg-slate-950 z-[9999] flex flex-col overflow-hidden border-l border-white/10 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] animate-in slide-in-from-right duration-500">
           
           {/* CRM Header & Toolbar at the very top of the drawer */}
           <div className="p-4 md:p-6 border-b border-white/10 bg-slate-950/80 backdrop-blur-md flex flex-col gap-3 shrink-0">
@@ -261,10 +261,10 @@ export function IframeWorkspace() {
           </div>
 
           {/* Main Workspace Body Content */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-900">
-                      {/* Top Area: Script displayed with custom toggle */}
+          <div className="flex-1 flex flex-col xl:flex-row min-h-0 overflow-hidden bg-slate-900">
+            {/* Sidebar Area: Script displayed with custom toggle */}
             {showScript && (
-              <div className="w-full shrink-0 max-h-[42vh] overflow-y-auto custom-scrollbar bg-slate-900/60 backdrop-blur-2xl border-b border-white/10 flex flex-col p-4 md:p-6 animate-in slide-in-from-top duration-500 shadow-inner">
+              <div className="w-full xl:w-[420px] shrink-0 max-h-[40vh] xl:max-h-full overflow-y-auto custom-scrollbar bg-slate-900/60 backdrop-blur-2xl border-b xl:border-b-0 xl:border-r border-white/10 flex flex-col p-4 md:p-6 animate-in slide-in-from-top xl:slide-in-from-left duration-500 shadow-[inset_-10px_0_30px_rgba(0,0,0,0.2)] z-10">
                 <div className="flex flex-col gap-4">
                   
                   {/* Script mini-header */}
@@ -290,8 +290,8 @@ export function IframeWorkspace() {
                         if (!currentStage) return null;
                         return (
                           <div className="flex flex-col gap-4 animate-in fade-in duration-300">
-                            {/* Side-by-side grid of agent speech and compliance/checks/objections */}
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                            {/* Stacked grid of agent speech and compliance/checks/objections */}
+                            <div className="flex flex-col gap-5">
                               {/* Left Column: Agent Replica Card */}
                               <div className="relative overflow-hidden rounded-[1.25rem] border p-5 pl-7 flex flex-col gap-4 group transition-all duration-300 bg-white/[0.02] hover:bg-white/[0.04] border-white/5 hover:border-indigo-500/30 shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-sm">
                                 {/* Glowing left accent bar */}
@@ -468,8 +468,8 @@ export function IframeWorkspace() {
                         return (
                           <div className="flex flex-col gap-4 animate-in fade-in duration-300">
                             
-                            {/* Combined Stacked/Side-by-side Cards */}
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                            {/* Combined Stacked Cards */}
+                            <div className="flex flex-col gap-5">
                               {/* Agent Replica Card */}
                               {currentPair.agent ? (
                                 <div className="relative overflow-hidden rounded-[1.25rem] border p-5 pl-7 flex flex-col gap-4 group transition-all duration-300 bg-white/[0.02] hover:bg-white/[0.04] border-white/5 hover:border-indigo-500/30 shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-sm">
@@ -593,8 +593,8 @@ export function IframeWorkspace() {
               </div>
             )}
 
-            {/* Bottom Area: CRM Iframe Workspace */}
-            <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-950 relative">
+            {/* Main Area: CRM Iframe Workspace */}
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-950 relative z-0">
 
               <div className="flex-1 relative bg-white min-h-0">
                 <iframe
