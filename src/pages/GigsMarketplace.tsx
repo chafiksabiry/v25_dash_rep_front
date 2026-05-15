@@ -1459,8 +1459,21 @@ export function GigsMarketplace() {
       )}
 
       {activeTab === 'available' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {(currentGigs as PopulatedGig[]).map((gig) => {
+        currentGigs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <div className="bg-harx-50/50 rounded-3xl p-12 max-w-sm w-full border border-harx-100/50 backdrop-blur-sm">
+              <div className="text-4xl mb-4">🔍</div>
+              <h3 className="text-xl font-black text-gray-900 mb-2">
+                No Gigs Available
+              </h3>
+              <p className="text-sm text-gray-500 font-medium">
+                We couldn't find any opportunities right now. Check back later!
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {(currentGigs as PopulatedGig[]).map((gig) => {
             const gigStatus = getGigStatus(gig._id);
             const gigStyle = getCardStyleForStatus(gigStatus);
             return (
@@ -1618,6 +1631,7 @@ export function GigsMarketplace() {
             );
           })}
         </div>
+        )
       ) : activeTab === 'favorite' ? (
         <div>
           {loading ? (
@@ -1634,6 +1648,12 @@ export function GigsMarketplace() {
                 <p className="text-sm text-gray-500 font-medium">
                   Love a gig? Click the heart icon to save it here for later.
                 </p>
+                <button 
+                  onClick={() => setActiveTab('available')}
+                  className="mt-6 bg-slate-900 text-white py-2.5 px-6 rounded-xl hover:bg-slate-800 transition-all font-semibold text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                >
+                  Browse Available Gigs
+                </button>
               </div>
             </div>
           ) : (
@@ -1789,6 +1809,12 @@ export function GigsMarketplace() {
                 <p className="text-sm text-gray-500 font-medium">
                   Keep your profile updated! When companies love your skills, invitations will appear here.
                 </p>
+                <button 
+                  onClick={() => setActiveTab('available')}
+                  className="mt-6 bg-slate-900 text-white py-2.5 px-6 rounded-xl hover:bg-slate-800 transition-all font-semibold text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                >
+                  Browse Available Gigs
+                </button>
               </div>
             </div>
           ) : (
@@ -2143,14 +2169,21 @@ export function GigsMarketplace() {
           )}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-12 px-4">
-          <div className="bg-blue-50 rounded-xl p-8 max-w-md w-full text-center">
-            <h3 className="text-xl font-semibold text-blue-900 mb-2">
-              Enrolled Gigs Coming Soon!
+        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+          <div className="bg-harx-50/50 rounded-3xl p-12 max-w-sm w-full border border-harx-100/50 backdrop-blur-sm">
+            <div className="text-4xl mb-4">🚀</div>
+            <h3 className="text-xl font-black text-gray-900 mb-2">
+              No Enrolled Gigs Yet
             </h3>
-            <p className="text-blue-600">
-              We're working on bringing you a dedicated space to manage your enrolled gigs. Stay tuned for updates!
+            <p className="text-sm text-gray-500 font-medium">
+              Accept an invitation or apply to a gig to see your active projects here.
             </p>
+            <button 
+              onClick={() => setActiveTab('available')}
+              className="mt-6 bg-slate-900 text-white py-2.5 px-6 rounded-xl hover:bg-slate-800 transition-all font-semibold text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5"
+            >
+              Browse Available Gigs
+            </button>
           </div>
         </div>
       )}
