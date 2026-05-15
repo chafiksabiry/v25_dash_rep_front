@@ -264,8 +264,8 @@ export function IframeWorkspace() {
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-900">
                       {/* Top Area: Script displayed with custom toggle */}
             {showScript && (
-              <div className="w-full shrink-0 max-h-[48vh] overflow-y-auto custom-scrollbar bg-slate-950/60 backdrop-blur-md border-b border-white/10 flex flex-col p-4 md:p-5 animate-in slide-in-from-top duration-300">
-                <div className="flex flex-col gap-3.5">
+              <div className="w-full shrink-0 max-h-[42vh] overflow-y-auto custom-scrollbar bg-slate-900/60 backdrop-blur-2xl border-b border-white/10 flex flex-col p-4 md:p-6 animate-in slide-in-from-top duration-500 shadow-inner">
+                <div className="flex flex-col gap-4">
                   
                   {/* Script mini-header */}
                   <div className="flex items-center justify-between shrink-0">
@@ -293,12 +293,12 @@ export function IframeWorkspace() {
                             {/* Side-by-side grid of agent speech and compliance/checks/objections */}
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                               {/* Left Column: Agent Replica Card */}
-                              <div className="relative overflow-hidden rounded-2xl border p-4 md:p-5 pl-6 md:pl-7 flex flex-col gap-3 group transition-all duration-300 bg-gradient-to-br from-indigo-950/15 via-slate-900/90 to-slate-950/90 border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.05)]">
+                              <div className="relative overflow-hidden rounded-[1.25rem] border p-5 pl-7 flex flex-col gap-4 group transition-all duration-300 bg-white/[0.02] hover:bg-white/[0.04] border-white/5 hover:border-indigo-500/30 shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-sm">
                                 {/* Glowing left accent bar */}
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500" />
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500 opacity-80" />
                                 
                                 <div className="flex gap-4 items-start">
-                                  <div className="p-2.5 rounded-xl h-fit shrink-0 bg-indigo-500/20 text-indigo-300">
+                                  <div className="p-2.5 rounded-xl h-fit shrink-0 bg-indigo-500/20 text-indigo-300 ring-1 ring-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
                                     <Bot className="w-5 h-5 animate-pulse" />
                                   </div>
                                   <div className="space-y-1.5 flex-1 min-w-0 text-left">
@@ -318,7 +318,7 @@ export function IframeWorkspace() {
                                         )}
                                       </button>
                                     </div>
-                                    <p className="text-xs md:text-sm leading-relaxed font-bold text-indigo-100 italic">
+                                    <p className="text-[13px] md:text-sm leading-relaxed font-medium text-slate-200 tracking-wide">
                                       {currentStage.introReplica}
                                     </p>
                                   </div>
@@ -330,15 +330,15 @@ export function IframeWorkspace() {
                                     {currentStage.reminders.map((rem: any, idx: number) => (
                                       <div 
                                         key={idx} 
-                                        className={`p-2.5 rounded-xl border flex items-start gap-2.5 text-left ${
+                                        className={`p-2 rounded-lg border flex items-center gap-2 text-left ${
                                           rem.type === 'warning' 
-                                            ? 'bg-red-500/10 border-red-500/20 text-red-200' 
+                                            ? 'bg-rose-500/10 border-rose-500/20 text-rose-300' 
                                             : rem.type === 'clock' 
-                                              ? 'bg-orange-500/10 border-orange-500/20 text-orange-200' 
-                                              : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'
+                                              ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' 
+                                              : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
                                         }`}
                                       >
-                                        <span className="text-[10px] font-black mt-0.5">•</span>
+                                        <span className="text-[10px] font-black opacity-50">•</span>
                                         <p className="text-[10px] font-bold leading-normal">{rem.text}</p>
                                       </div>
                                     ))}
@@ -359,10 +359,10 @@ export function IframeWorkspace() {
                                         <button
                                           key={opt.id}
                                           onClick={() => setSelectedOptionId(opt.id)}
-                                          className={`p-2.5 rounded-xl border text-left transition-all duration-200 outline-none flex flex-col justify-between cursor-pointer ${
+                                          className={`p-3 rounded-2xl border text-left transition-all duration-300 outline-none flex flex-col justify-between cursor-pointer group ${
                                             selectedOptionId === opt.id
-                                              ? 'bg-indigo-500/15 border-indigo-500/50 shadow-lg shadow-indigo-500/10'
-                                              : 'bg-slate-900/60 border-white/5 hover:bg-slate-850'
+                                              ? 'bg-indigo-500/20 border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.15)] scale-[1.01]'
+                                              : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06] hover:border-indigo-500/30 shadow-sm'
                                           }`}
                                         >
                                           <span className="text-[10px] font-black text-slate-100 flex items-center gap-1">
@@ -437,11 +437,11 @@ export function IframeWorkspace() {
                             </div>
 
                             {/* Back/Next Step Navigation bar */}
-                            <div className="p-2.5 bg-slate-950/40 border border-white/5 rounded-2xl flex items-center justify-between gap-3 shrink-0">
+                            <div className="p-3 bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-2xl flex items-center justify-between gap-3 shrink-0 mt-2 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
                               <button
                                 disabled={activePhaseIndex === 0}
                                 onClick={() => setActivePhaseIndex(prev => Math.max(0, prev - 1))}
-                                className="px-3.5 py-1.5 bg-slate-900/80 hover:bg-slate-850 disabled:opacity-20 disabled:pointer-events-none border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
+                                className="px-4 py-2 bg-slate-900/60 hover:bg-slate-800 disabled:opacity-20 disabled:pointer-events-none border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-white transition-all duration-300 flex items-center gap-2 cursor-pointer shadow-sm"
                               >
                                 ← Précédent
                               </button>
@@ -472,12 +472,12 @@ export function IframeWorkspace() {
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                               {/* Agent Replica Card */}
                               {currentPair.agent ? (
-                                <div className="relative overflow-hidden rounded-2xl border p-4 md:p-5 pl-6 md:pl-7 flex flex-col gap-3 group transition-all duration-300 bg-gradient-to-br from-indigo-950/15 via-slate-900/90 to-slate-950/90 border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.05)]">
+                                <div className="relative overflow-hidden rounded-[1.25rem] border p-5 pl-7 flex flex-col gap-4 group transition-all duration-300 bg-white/[0.02] hover:bg-white/[0.04] border-white/5 hover:border-indigo-500/30 shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-sm">
                                   {/* Glowing left accent bar */}
-                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500" />
+                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500 opacity-80" />
                                   
                                   <div className="flex gap-4 items-start">
-                                    <div className="p-2.5 rounded-xl h-fit shrink-0 transition-transform duration-300 group-hover:scale-110 bg-indigo-500/20 text-indigo-300">
+                                    <div className="p-2.5 rounded-xl h-fit shrink-0 transition-transform duration-300 group-hover:scale-110 bg-indigo-500/20 text-indigo-300 ring-1 ring-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
                                       <Bot className="w-5 h-5 animate-pulse" />
                                     </div>
                                     <div className="space-y-1.5 flex-1 min-w-0">
@@ -497,7 +497,7 @@ export function IframeWorkspace() {
                                           )}
                                         </button>
                                       </div>
-                                      <p className="text-xs md:text-sm leading-relaxed font-bold text-indigo-100 group-hover:text-white">
+                                      <p className="text-[13px] md:text-sm leading-relaxed font-medium text-slate-200 tracking-wide">
                                         {currentPair.agent.replica}
                                       </p>
                                     </div>
@@ -511,12 +511,12 @@ export function IframeWorkspace() {
 
                               {/* Lead Replica Card */}
                               {currentPair.lead ? (
-                                <div className="relative overflow-hidden rounded-2xl border p-4 md:p-5 pl-6 md:pl-7 flex flex-col gap-3 group transition-all duration-300 bg-gradient-to-br from-emerald-950/15 via-slate-900/90 to-slate-950/90 border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.05)]">
+                                <div className="relative overflow-hidden rounded-[1.25rem] border p-5 pl-7 flex flex-col gap-4 group transition-all duration-300 bg-white/[0.02] hover:bg-white/[0.04] border-white/5 hover:border-emerald-500/30 shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-sm">
                                   {/* Glowing left accent bar */}
-                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-400 via-teal-500 to-emerald-600" />
+                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-400 via-teal-500 to-emerald-600 opacity-80" />
                                   
                                   <div className="flex gap-4 items-start">
-                                    <div className="p-2.5 rounded-xl h-fit shrink-0 transition-transform duration-300 group-hover:scale-110 bg-emerald-500/20 text-emerald-300">
+                                    <div className="p-2.5 rounded-xl h-fit shrink-0 transition-transform duration-300 group-hover:scale-110 bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
                                       <User className="w-5 h-5" />
                                     </div>
                                     <div className="space-y-1.5 flex-1 min-w-0">
@@ -536,7 +536,7 @@ export function IframeWorkspace() {
                                           )}
                                         </button>
                                       </div>
-                                      <p className="text-xs md:text-sm leading-relaxed font-bold text-emerald-100 group-hover:text-white">
+                                      <p className="text-[13px] md:text-sm leading-relaxed font-medium text-slate-200 tracking-wide">
                                         {currentPair.lead.replica}
                                       </p>
                                     </div>
@@ -550,12 +550,12 @@ export function IframeWorkspace() {
                             </div>
 
                             {/* Consolidated Pager & Navigation controls below the cards */}
-                            <div className="p-3 bg-slate-950/40 border border-white/5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shrink-0">
-                              <div className="flex items-center gap-2">
+                            <div className="p-3 bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shrink-0 mt-2 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
+                              <div className="flex items-center gap-2 w-full justify-between sm:w-auto">
                                 <button
                                   disabled={activeReplicaIndex === 0}
                                   onClick={() => setActiveReplicaIndex(prev => Math.max(0, prev - 1))}
-                                  className="px-4 py-2 bg-slate-900/80 hover:bg-slate-850 disabled:opacity-20 disabled:pointer-events-none border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5 hover:scale-103 active:scale-97 shadow-sm shadow-black/20 cursor-pointer"
+                                  className="px-4 py-2 bg-slate-900/60 hover:bg-slate-800 disabled:opacity-20 disabled:pointer-events-none border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-white transition-all duration-300 flex items-center gap-1.5 shadow-sm cursor-pointer"
                                 >
                                   ← Précédent
                                 </button>
