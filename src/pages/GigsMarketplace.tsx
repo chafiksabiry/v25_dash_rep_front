@@ -1365,6 +1365,32 @@ export function GigsMarketplace() {
     return <div className="text-red-600 text-center p-4">{error}</div>;
   }
 
+  const getCardStyleForStatus = (status: string) => {
+    const baseClass = "group rounded-2xl p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border hover:-translate-y-1 transition-all duration-300 flex flex-col h-full";
+    switch (status) {
+      case 'enrolled':
+        return {
+          container: `${baseClass} bg-gradient-to-br from-white to-emerald-50/60 border-emerald-100 hover:border-emerald-300 hover:shadow-[0_8px_30px_-4px_rgba(16,185,129,0.15)]`,
+          category: 'text-emerald-600/90 group-hover:text-emerald-600'
+        };
+      case 'invited':
+        return {
+          container: `${baseClass} bg-gradient-to-br from-white to-indigo-50/60 border-indigo-100 hover:border-indigo-300 hover:shadow-[0_8px_30px_-4px_rgba(99,102,241,0.15)]`,
+          category: 'text-indigo-600/90 group-hover:text-indigo-600'
+        };
+      case 'pending':
+        return {
+          container: `${baseClass} bg-gradient-to-br from-white to-amber-50/60 border-amber-100 hover:border-amber-300 hover:shadow-[0_8px_30px_-4px_rgba(245,158,11,0.15)]`,
+          category: 'text-amber-600/90 group-hover:text-amber-600'
+        };
+      default:
+        return {
+          container: `${baseClass} bg-gradient-to-br from-white to-slate-50/80 border-slate-200/60 hover:border-slate-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)]`,
+          category: 'text-indigo-600/90 group-hover:text-indigo-600'
+        };
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -1436,12 +1462,13 @@ export function GigsMarketplace() {
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {(currentGigs as PopulatedGig[]).map((gig) => {
             const gigStatus = getGigStatus(gig._id);
+            const gigStyle = getCardStyleForStatus(gigStatus);
             return (
-              <div key={gig._id} className="group bg-gradient-to-br from-white to-slate-50/80 rounded-2xl p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-200/60 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+              <div key={gig._id} className={gigStyle.container}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{gig.title}</h3>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600/90 group-hover:text-indigo-600 transition-colors">
+                    <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
                       {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
                     </p>
                   </div>
@@ -1612,13 +1639,18 @@ export function GigsMarketplace() {
           ) : (
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {(currentGigs as PopulatedGig[]).map((gig) => (
-                  <div key={gig._id} className="group bg-gradient-to-br from-white to-slate-50/80 rounded-2xl p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-200/60 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{gig.title}</h3>
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600/90 group-hover:text-indigo-600 transition-colors">{gig.category}</p>
-                      </div>
+                {(currentGigs as PopulatedGig[]).map((gig) => {
+                  const gigStatus = getGigStatus(gig._id);
+                  const gigStyle = getCardStyleForStatus(gigStatus);
+                  return (
+                    <div key={gig._id} className={gigStyle.container}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{gig.title}</h3>
+                          <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                            {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
+                          </p>
+                        </div>
                       <div className="flex items-center space-x-2">
                         {/* Status Badge */}
                         {(() => {
@@ -1761,15 +1793,17 @@ export function GigsMarketplace() {
           ) : (
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {(currentGigs as InvitedEnrollment[]).map((enrollment) => (
-                  <div key={enrollment.id} className="group bg-gradient-to-br from-white to-slate-50/80 rounded-2xl p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-200/60 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{enrollment.gig.title}</h3>
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600/90 group-hover:text-indigo-600 transition-colors">
-                          {enrollment.gig.category} {('companyId' in enrollment.gig && enrollment.gig.companyId?.name) ? `• ${enrollment.gig.companyId.name}` : ''}
-                        </p>
-                      </div>
+                {(currentGigs as InvitedEnrollment[]).map((enrollment) => {
+                  const gigStyle = getCardStyleForStatus('invited');
+                  return (
+                    <div key={enrollment.id} className={gigStyle.container}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{enrollment.gig.title}</h3>
+                          <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                            {enrollment.gig.category} {('companyId' in enrollment.gig && enrollment.gig.companyId?.name) ? `• ${enrollment.gig.companyId.name}` : ''}
+                          </p>
+                        </div>
                       <div className="flex items-center space-x-2">
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
                           ✉ Invited
@@ -1904,7 +1938,8 @@ export function GigsMarketplace() {
                       </button>
                     </div>
                   </div>
-                ))}
+                );
+              })}
               </div>
             </div>
           )}
@@ -1930,15 +1965,17 @@ export function GigsMarketplace() {
           ) : (
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {(currentGigs as EnrolledGig[]).map((enrolledGig) => (
-                  <div key={enrolledGig.id} className="group bg-gradient-to-br from-white to-slate-50/80 rounded-2xl p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-200/60 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{enrolledGig.gig.title}</h3>
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600/90 group-hover:text-indigo-600 transition-colors">
-                          {enrolledGig.gig.category} {('companyId' in enrolledGig.gig && enrolledGig.gig.companyId?.name) ? `• ${enrolledGig.gig.companyId.name}` : ''}
-                        </p>
-                      </div>
+                {(currentGigs as EnrolledGig[]).map((enrolledGig) => {
+                  const gigStyle = getCardStyleForStatus('enrolled');
+                  return (
+                    <div key={enrolledGig.id} className={gigStyle.container}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{enrolledGig.gig.title}</h3>
+                          <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                            {enrolledGig.gig.category} {('companyId' in enrolledGig.gig && enrolledGig.gig.companyId?.name) ? `• ${enrolledGig.gig.companyId.name}` : ''}
+                          </p>
+                        </div>
                       <div className="flex items-center space-x-2">
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                           ✓ Enrolled
@@ -2098,7 +2135,8 @@ export function GigsMarketplace() {
                       </button>
                     </div>
                   </div>
-                ))}
+                );
+              })}
               </div>
             </div>
           )}
