@@ -1401,8 +1401,9 @@ export function GigsMarketplace() {
       <div className="space-y-4">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t('gigsMarketplace.title')}</h1>
-          <p className="mt-2 text-gray-600 max-w-3xl">
-            Explore exciting opportunities posted by companies worldwide. Find projects that match your skills and interests, and take control of your professional journey. Browse through available gigs and bookmark your favorites for future reference.
+          <p className="mt-2 text-gray-500 max-w-2xl text-sm leading-relaxed font-medium">
+            Discover premium projects worldwide that match your unique skills and professional aspirations.<br />
+            Take control of your journey, find your next exclusive mission, and start earning today.
           </p>
         </div>
       </div>
