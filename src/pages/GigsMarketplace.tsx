@@ -1441,7 +1441,9 @@ export function GigsMarketplace() {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="text-xl font-black text-gray-900 mb-1 tracking-tight">{gig.title}</h3>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-harx-400">{gig.category}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-harx-400">
+                      {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
+                    </p>
                   </div>
                   <div className="flex items-center space-x-2">
                     {/* Status Badge */}
@@ -1493,14 +1495,8 @@ export function GigsMarketplace() {
                   </div>
                 </div>
 
-                <p className="mt-2 text-sm text-gray-600 line-clamp-2">{gig.description}</p>
-
                 <div className="mt-4 space-y-3">
                   {renderCommissionInfo(gig)}
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Users className="w-4 h-4 mr-2" />
-                    <span>{gig.seniority?.yearsExperience || 'N/A'} years experience</span>
-                  </div>
                   <div className="flex items-center text-sm text-gray-500">
                     <Globe className="w-4 h-4 mr-2" />
                     <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.zoneName || gig.availability?.time_zone?.countryName || gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
@@ -1508,10 +1504,6 @@ export function GigsMarketplace() {
                   <div className="flex items-center text-sm text-gray-500">
                     <Calendar className="w-4 h-4 mr-2" />
                     <span>{gig.availability?.minimumHours?.weekly || 'N/A'}h/week</span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <User className="w-4 h-4 mr-2" />
-                    <span>{gig.companyId?.name || (gig as any).company || gig.userId?.fullName || 'Unknown'}</span>
                   </div>
                 </div>
 
@@ -1670,14 +1662,8 @@ export function GigsMarketplace() {
                       </div>
                     </div>
 
-                    <p className="mt-3 text-sm text-gray-600 line-clamp-2 leading-relaxed font-medium">{gig.description}</p>
-
                     <div className="mt-4 space-y-3">
                       {renderCommissionInfo(gig)}
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Users className="w-4 h-4 mr-2" />
-                        <span>{gig.seniority?.yearsExperience || 'N/A'} years experience</span>
-                      </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
                         <span>{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone} ({gig.availability?.time_zone?.zoneName || gig.availability?.time_zone?.countryName || gig.availability?.time_zone?.abbreviation || gig.availability?.time_zone?.name || 'N/A'})</span>
@@ -1685,10 +1671,6 @@ export function GigsMarketplace() {
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
                         <span>{gig.availability?.minimumHours?.weekly || 'N/A'}h/week</span>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <User className="w-4 h-4 mr-2" />
-                        <span>{gig.companyId?.name || 'Unknown'}</span>
                       </div>
                     </div>
 
@@ -1784,7 +1766,9 @@ export function GigsMarketplace() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <h3 className="text-xl font-black text-gray-900 mb-1 tracking-tight">{enrollment.gig.title}</h3>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-harx-400">{enrollment.gig.category}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-harx-400">
+                          {enrollment.gig.category} {('companyId' in enrollment.gig && enrollment.gig.companyId?.name) ? `• ${enrollment.gig.companyId.name}` : ''}
+                        </p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
@@ -1813,14 +1797,8 @@ export function GigsMarketplace() {
                       </div>
                     </div>
 
-                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">{enrollment.gig.description}</p>
-
                     <div className="mt-4 space-y-3">
                       {renderCommissionInfo(enrollment.gig)}
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Users className="w-4 h-4 mr-2" />
-                        <span>{('seniority' in enrollment.gig && enrollment.gig.seniority?.yearsExperience) ? `${enrollment.gig.seniority.yearsExperience} years experience` : 'N/A years experience'}</span>
-                      </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
                         <span>{typeof enrollment.gig.destination_zone === 'object' ? enrollment.gig.destination_zone?.name?.common || enrollment.gig.destination_zone?.cca2 || 'Unknown' : enrollment.gig.destination_zone} ({('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.zoneName) ? enrollment.gig.availability.time_zone.zoneName : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.countryName) ? enrollment.gig.availability.time_zone.countryName : ('availability' in enrollment.gig && enrollment.gig.availability?.time_zone?.abbreviation) ? enrollment.gig.availability.time_zone.abbreviation : 'N/A'})</span>
@@ -1828,10 +1806,6 @@ export function GigsMarketplace() {
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
                         <span>{('availability' in enrollment.gig && enrollment.gig.availability?.minimumHours?.weekly) ? `${enrollment.gig.availability.minimumHours.weekly}h/week` : 'N/A h/week'}</span>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <User className="w-4 h-4 mr-2" />
-                        <span>{('companyId' in enrollment.gig && enrollment.gig.companyId?.name) ? enrollment.gig.companyId.name : 'Unknown'}</span>
                       </div>
                     </div>
 
@@ -1961,7 +1935,9 @@ export function GigsMarketplace() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <h3 className="text-xl font-black text-gray-900 mb-1 tracking-tight">{enrolledGig.gig.title}</h3>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-harx-400">{enrolledGig.gig.category}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-harx-400">
+                          {enrolledGig.gig.category} {('companyId' in enrolledGig.gig && enrolledGig.gig.companyId?.name) ? `• ${enrolledGig.gig.companyId.name}` : ''}
+                        </p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
@@ -1990,14 +1966,8 @@ export function GigsMarketplace() {
                       </div>
                     </div>
 
-                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">{enrolledGig.gig.description}</p>
-
                     <div className="mt-4 space-y-3">
                       {renderCommissionInfo(enrolledGig.gig)}
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Users className="w-4 h-4 mr-2" />
-                        <span>{('seniority' in enrolledGig.gig && enrolledGig.gig.seniority?.yearsExperience) ? `${enrolledGig.gig.seniority.yearsExperience} years experience` : 'N/A years experience'}</span>
-                      </div>
                       <div className="flex items-center text-sm text-gray-500">
                         <Globe className="w-4 h-4 mr-2" />
                         <span>{typeof enrolledGig.gig.destination_zone === 'object' ? enrolledGig.gig.destination_zone?.name?.common || enrolledGig.gig.destination_zone?.cca2 || 'Unknown' : enrolledGig.gig.destination_zone} ({('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.zoneName) ? enrolledGig.gig.availability.time_zone.zoneName : ('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.countryName) ? enrolledGig.gig.availability.time_zone.countryName : ('availability' in enrolledGig.gig && enrolledGig.gig.availability?.time_zone?.abbreviation) ? enrolledGig.gig.availability.time_zone.abbreviation : 'N/A'})</span>
@@ -2005,10 +1975,6 @@ export function GigsMarketplace() {
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
                         <span>{('availability' in enrolledGig.gig && enrolledGig.gig.availability?.minimumHours?.weekly) ? `${enrolledGig.gig.availability.minimumHours.weekly}h/week` : 'N/A h/week'}</span>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <User className="w-4 h-4 mr-2" />
-                        <span>{('companyId' in enrolledGig.gig && enrolledGig.gig.companyId?.name) ? enrolledGig.gig.companyId.name : 'Unknown'}</span>
                       </div>
                     </div>
 
