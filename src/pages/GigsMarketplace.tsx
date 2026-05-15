@@ -1514,14 +1514,15 @@ export function GigsMarketplace() {
                         className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm ${applyingGigId === gig._id
                           ? 'bg-harx-100 text-harx-400 cursor-not-allowed'
                           : 'bg-harx-50 text-harx-600 hover:bg-harx-100 hover:shadow-md cursor-pointer'
+                          : 'bg-gradient-to-r from-pink-500 to-rose-600 text-white border border-pink-400 shadow-[0_2px_10px_-2px_rgba(244,63,94,0.4)] animate-pulse-ring cursor-pointer'
                           }`}
                       >
-                        {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
+                        {applyingGigId === gig._id ? '⏳ Applying...' : '🚀 Apply Now'}
                       </button>
                     ) : (
-                      <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm ${gigStatus === 'enrolled' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                        gigStatus === 'invited' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
-                          'bg-amber-50 text-amber-700 border-amber-100'
+                      <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm ${gigStatus === 'enrolled' ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-400' :
+                        gigStatus === 'invited' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white border-indigo-400' :
+                          'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-amber-400'
                         }`}>
                         {gigStatus === 'enrolled' ? '✓ Enrolled' : gigStatus === 'invited' ? '✉ Invited' : '⌛ Pending'}
                       </span>
@@ -1633,8 +1634,10 @@ export function GigsMarketplace() {
                     <div className="flex gap-3">
                       <button
                         onClick={() => handleSmartStart(gig._id)}
-                        className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                        className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-2.5 px-4 rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all font-black text-sm uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group/btn overflow-hidden relative"
                       >
+                        <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />
+                        <Play className="w-4 h-4 fill-current" />
                         🚀 Start
                       </button>
                       <button
@@ -1709,32 +1712,9 @@ export function GigsMarketplace() {
                           )}
                         </div>
                         <div className="flex items-center space-x-2">
-                          {(() => {
-                            const gigStatus = getGigStatus(gig._id);
-                            return gigStatus === 'none' ? (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleApplyToGig(gig._id);
-                                }}
-                                disabled={applyingGigId === gig._id}
-                                className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm ${applyingGigId === gig._id
-                                  ? 'bg-harx-100 text-harx-400 cursor-not-allowed'
-                                  : 'bg-harx-50 text-harx-600 hover:bg-harx-100 hover:shadow-md cursor-pointer'
-                                  }`}
-                              >
-                                {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
-                              </button>
-                            ) : (
-                              <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm ${gigStatus === 'enrolled' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                gigStatus === 'invited' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
-                                  'bg-amber-50 text-amber-700 border-amber-100'
-                                }`}>
-                                {gigStatus === 'enrolled' ? '✓ Enrolled' : gigStatus === 'invited' ? '✉ Invited' : '⌛ Pending'}
-                              </span>
-                            );
-                          })()}
+                          <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-pink-500 to-rose-600 text-white border border-pink-400 shadow-[0_2px_10px_-2px_rgba(244,63,94,0.4)]">
+                            🚀 Apply Now
+                          </span>
                           <button
                             onClick={(e) => {
                               e.preventDefault();
@@ -1831,9 +1811,11 @@ export function GigsMarketplace() {
 
                     <button
                       onClick={() => navigate(`/gig/${gig._id}`)}
-                      className="mt-4 w-full bg-gradient-harx text-white py-2 px-3 rounded-lg hover:shadow-md transition-all font-black text-xs uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                      className="mt-4 w-full bg-gradient-to-r from-indigo-600 to-violet-700 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(79,70,229,0.4)] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 group/btn overflow-hidden relative"
                     >
-                      Details
+                      <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />
+                      <Sparkles className="w-4 h-4" />
+                      <span>View Opportunity</span>
                     </button>
                   </div>
                 );
@@ -1892,7 +1874,7 @@ export function GigsMarketplace() {
                           )}
                         </div>
                         <div className="flex items-center space-x-1">
-                          <span className="px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
+                          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-indigo-500 to-purple-600 text-white border border-indigo-400 shadow-[0_2px_10px_-2px_rgba(99,102,241,0.4)]">
                             ✉ Invited
                           </span>
                           <button
@@ -1995,24 +1977,26 @@ export function GigsMarketplace() {
                       ) : null}
                     </div>
 
-                    <div className="mt-4 flex space-x-2">
+                    <div className="mt-4 flex gap-2">
                       <button
                         onClick={() => acceptInvitation(enrollment.id)}
-                        className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-2 px-3 rounded-lg hover:shadow-md transition-all font-black text-[11px] uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                        className="flex-[2] bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(16,185,129,0.4)] transition-all font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 group/btn"
                       >
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => rejectInvitation(enrollment.id)}
-                        className="px-3 bg-gray-100 text-gray-600 py-2 rounded-lg hover:bg-gray-200 transition-all font-black text-[11px] uppercase tracking-wider"
-                      >
-                        ✕
+                        <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                        <span>Accept</span>
                       </button>
                       <button
                         onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
-                        className="flex-1 bg-gradient-harx text-white py-2 px-3 rounded-lg hover:shadow-md transition-all font-black text-[11px] uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                        className="flex-1 bg-slate-100 text-slate-600 py-2.5 px-3 rounded-xl hover:bg-slate-200 transition-all font-black text-[11px] uppercase tracking-wider flex items-center justify-center"
                       >
                         Details
+                      </button>
+                      <button
+                        onClick={() => rejectInvitation(enrollment.id)}
+                        className="w-11 bg-rose-50 text-rose-500 py-2.5 rounded-xl hover:bg-rose-100 transition-all font-black text-[11px] flex items-center justify-center"
+                        title="Reject Invitation"
+                      >
+                        ✕
                       </button>
                     </div>
                   </div>
@@ -2066,7 +2050,7 @@ export function GigsMarketplace() {
                           )}
                         </div>
                         <div className="flex items-center space-x-1">
-                          <span className="px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
+                          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-emerald-500 to-teal-600 text-white border border-emerald-400 shadow-[0_2px_10px_-2px_rgba(16,185,129,0.4)]">
                             ✓ Enrolled
                           </span>
                           <button
@@ -2204,13 +2188,17 @@ export function GigsMarketplace() {
                       <div className="mt-4 flex gap-2">
                         <button
                           onClick={() => handleSmartStart(enrolledGig.gig._id)}
-                          className="flex-1 bg-slate-900 text-white py-2 px-3 rounded-lg hover:bg-slate-800 transition-all font-black text-[11px] uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                          className="flex-[2] bg-gradient-to-r from-indigo-600 to-violet-700 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(79,70,229,0.4)] transition-all font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 group/btn relative overflow-hidden"
                         >
-                          Start
+                          <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />
+                          <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+                            <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[7px] border-l-white border-b-[4px] border-b-transparent ml-0.5" />
+                          </div>
+                          <span>Start Session</span>
                         </button>
                         <button
                           onClick={() => navigate(`/gig/${enrolledGig.gig._id}`)}
-                          className="flex-1 bg-white text-slate-700 border border-slate-200 py-2 px-3 rounded-lg hover:bg-slate-50 transition-all font-black text-[11px] uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                          className="flex-1 bg-slate-100 text-slate-600 py-2.5 px-4 rounded-xl hover:bg-slate-200 transition-all font-black text-[11px] uppercase tracking-wider flex items-center justify-center"
                         >
                           Details
                         </button>
