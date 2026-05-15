@@ -1548,10 +1548,10 @@ export function GigsMarketplace() {
 
                 {/* Content: Title & Brand */}
                 <div className="mb-3">
-                  <h3 className="text-lg font-bold text-slate-800 mb-1 tracking-tight leading-tight line-clamp-2" title={gig.title}>
+                  <h3 className="text-lg font-bold text-indigo-950 mb-1 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={gig.title}>
                     {gig.title}
                   </h3>
-                  <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                  <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500`}>
                     {gig.category}
                   </p>
                 </div>
@@ -1745,10 +1745,10 @@ export function GigsMarketplace() {
 
                       {/* Content: Title & Brand */}
                       <div className="mb-3">
-                        <h3 className="text-lg font-bold text-slate-800 mb-0.5 tracking-tight leading-tight line-clamp-2" title={gig.title}>
+                        <h3 className="text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={gig.title}>
                           {gig.title}
                         </h3>
-                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500`}>
                           {gig.category}
                         </p>
                       </div>
@@ -1772,7 +1772,7 @@ export function GigsMarketplace() {
                           <p className="text-xs font-medium text-gray-700 mb-1">Industries:</p>
                           <div className="flex flex-wrap gap-1">
                             {(expandedIndustries[gig._id] ? gig.industries : gig.industries.slice(0, 3)).map((industry) => (
-                              <span key={industry._id} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded-lg text-[10px] font-medium text-slate-600">
+                              <span key={industry._id} className="px-2 py-0.5 bg-pink-50 border border-pink-100 rounded-lg text-[10px] font-medium text-pink-600">
                                 {industry.name}
                               </span>
                             ))}
@@ -1798,7 +1798,7 @@ export function GigsMarketplace() {
                           <p className="text-xs font-medium text-gray-700 mb-1">Activities:</p>
                           <div className="flex flex-wrap gap-1">
                             {(expandedActivities[gig._id] ? gig.activities : gig.activities.slice(0, 3)).map((activity) => (
-                              <span key={activity._id} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded-lg text-[10px] font-medium text-slate-600">
+                              <span key={activity._id} className="px-2 py-0.5 bg-cyan-50 border border-cyan-100 rounded-lg text-[10px] font-medium text-cyan-700">
                                 {activity.name}
                               </span>
                             ))}
@@ -1906,10 +1906,10 @@ export function GigsMarketplace() {
 
                       {/* Content: Title & Brand */}
                       <div className="mb-3">
-                        <h3 className="text-lg font-bold text-slate-800 mb-0.5 tracking-tight leading-tight line-clamp-2" title={enrollment.gig.title}>
+                        <h3 className="text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={enrollment.gig.title}>
                           {enrollment.gig.title}
                         </h3>
-                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500`}>
                           {enrollment.gig.category}
                         </p>
                       </div>
@@ -1933,7 +1933,7 @@ export function GigsMarketplace() {
                           <p className="text-xs font-medium text-gray-700 mb-1">Industries:</p>
                           <div className="flex flex-wrap gap-1">
                             {(expandedIndustries[enrollment.gig._id] ? enrollment.gig.industries : enrollment.gig.industries.slice(0, 3)).map((industry) => (
-                              <span key={industry._id} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded-lg text-[10px] font-medium text-slate-600">
+                              <span key={industry._id} className="px-2 py-0.5 bg-pink-50 border border-pink-100 rounded-lg text-[10px] font-medium text-pink-600">
                                 {industry.name}
                               </span>
                             ))}
@@ -1959,7 +1959,7 @@ export function GigsMarketplace() {
                           <p className="text-xs font-medium text-gray-700 mb-1">Activities:</p>
                           <div className="flex flex-wrap gap-1">
                             {(expandedActivities[enrollment.gig._id] ? enrollment.gig.activities : enrollment.gig.activities.slice(0, 3)).map((activity) => (
-                              <span key={activity._id} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded-lg text-[10px] font-medium text-slate-600">
+                              <span key={activity._id} className="px-2 py-0.5 bg-cyan-50 border border-cyan-100 rounded-lg text-[10px] font-medium text-cyan-700">
                                 {activity.name}
                               </span>
                             ))}
@@ -2075,10 +2075,10 @@ export function GigsMarketplace() {
 
                       {/* Content: Title & Brand */}
                       <div className="mb-3">
-                        <h3 className="text-lg font-bold text-slate-800 mb-0.5 tracking-tight leading-tight line-clamp-2" title={enrolledGig.gig.title}>
+                        <h3 className="text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={enrolledGig.gig.title}>
                           {enrolledGig.gig.title}
                         </h3>
-                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500`}>
                           {enrolledGig.gig.category}
                         </p>
                       </div>
