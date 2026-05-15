@@ -24,6 +24,16 @@ const renderCommissionInfo = (gig: any) => {
   const bonus = comm.bonusAmount || comm.bonus;
   const hasBonus = bonus !== undefined && bonus != 0 && bonus != "0";
 
+  const bonusPeriodRaw = comm.bonusPeriod || comm.bonusType || comm.minimumVolume?.period || '';
+  let bonusPeriodStr = 'BONUS';
+  if (bonusPeriodRaw) {
+    const p = String(bonusPeriodRaw).toLowerCase();
+    if (p.includes('month') || p.includes('mois')) bonusPeriodStr = 'BONUS / MOIS';
+    else if (p.includes('week') || p.includes('semaine')) bonusPeriodStr = 'BONUS / SEMAINE';
+    else if (p.includes('day') || p.includes('jour')) bonusPeriodStr = 'BONUS / JOUR';
+    else bonusPeriodStr = `BONUS / ${bonusPeriodRaw}`.toUpperCase();
+  }
+
   if (!hasCall && !hasTrans && !hasBonus) {
     const base = comm.baseAmount;
     if (base && base != 0 && base != "0") {
@@ -62,7 +72,7 @@ const renderCommissionInfo = (gig: any) => {
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50/80 text-amber-700 rounded-xl border border-amber-100 shadow-sm" title="Bonus">
           <Sparkles className="w-4 h-4 text-amber-500" />
           <span className="font-black text-sm">+{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Bonus</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">{bonusPeriodStr}</span>
         </div>
       )}
     </div>
