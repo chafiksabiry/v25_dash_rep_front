@@ -74,31 +74,31 @@ const renderCommissionInfo = (gig: any) => {
   return (
     <div className="flex flex-wrap gap-2 mb-2">
       {hasCall && (
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-700 rounded-lg border border-slate-200/60 shadow-sm animate-shine group/badge" title="Commission par appel">
-          <Phone className="w-3.5 h-3.5 text-emerald-500 animate-float" />
-          <div className="flex items-center gap-1 leading-none">
-            <span className="font-bold text-xs">{perCall}{currencySymbol}</span>
-            <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">/ appel</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg border border-cyan-400 shadow-[0_2px_12px_-2px_rgba(6,182,212,0.5)] animate-shine animate-pulse-ring animate-border-flash animate-tilt" title="Commission par appel">
+          <Phone className="w-3.5 h-4 fill-white animate-float" />
+          <div className="flex flex-col leading-none">
+            <span className="font-black text-xs">{perCall}{currencySymbol}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider opacity-90">/ appel</span>
           </div>
         </div>
       )}
       
       {hasTrans && (
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-700 rounded-lg border border-slate-200/60 shadow-sm animate-shine group/badge" title="Commission par transaction">
-          <Briefcase className="w-3.5 h-3.5 text-indigo-500 animate-float" />
-          <div className="flex items-center gap-1 leading-none">
-            <span className="font-bold text-xs">{transAmount}{currencySymbol}</span>
-            <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">/ {transType}</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg border border-violet-400 shadow-[0_2px_12px_-2px_rgba(139,92,246,0.5)] animate-shine animate-pulse-ring animate-border-flash animate-tilt" title="Commission par transaction">
+          <Briefcase className="w-3.5 h-3.5 fill-white animate-float" />
+          <div className="flex flex-col leading-none">
+            <span className="font-black text-xs">{transAmount}{currencySymbol}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider opacity-90">/ {transType}</span>
           </div>
         </div>
       )}
 
       {hasBonus && (
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-700 rounded-lg border border-slate-200/60 shadow-sm animate-shine group/badge" title="Bonus">
-          <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-float" />
-          <div className="flex items-center gap-1 leading-none">
-            <span className="font-bold text-xs">+{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
-            <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">bonus</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg border border-pink-400 shadow-[0_2px_12px_-2px_rgba(244,63,94,0.5)] animate-shine animate-pulse-ring animate-border-flash animate-tilt" title="Bonus">
+          <Sparkles className="w-3.5 h-3.5 fill-white animate-wiggle" />
+          <div className="flex flex-col leading-none">
+            <span className="font-black text-xs">+{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider opacity-90">{bonusPeriodStr}</span>
           </div>
         </div>
       )}
@@ -1371,47 +1371,47 @@ export function GigsMarketplace() {
     return <div className="text-red-600 text-center p-4">{error}</div>;
   }
 
-    const getCardStyleForStatus = (status: string) => {
-      const baseClass = "group rounded-2xl p-5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] border bg-white hover:-translate-y-1 transition-all duration-300 flex flex-col h-full min-w-0";
-      switch (status) {
-        case 'enrolled':
-          return {
-            container: `${baseClass} border-slate-100 hover:border-emerald-200 hover:shadow-[0_8px_30px_-4px_rgba(16,185,129,0.1)]`,
-            category: 'text-slate-400 group-hover:text-emerald-600'
-          };
-        case 'invited':
-          return {
-            container: `${baseClass} border-slate-100 hover:border-indigo-200 hover:shadow-[0_8px_30px_-4px_rgba(99,102,241,0.1)]`,
-            category: 'text-slate-400 group-hover:text-indigo-600'
-          };
-        case 'pending':
-          return {
-            container: `${baseClass} border-slate-100 hover:border-amber-200 hover:shadow-[0_8px_30px_-4px_rgba(245,158,11,0.1)]`,
-            category: 'text-slate-400 group-hover:text-amber-600'
-          };
-        default:
-          return {
-            container: `${baseClass} border-slate-100 hover:border-slate-200 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.05)]`,
-            category: 'text-slate-400 group-hover:text-slate-600'
-          };
-      }
-    };
+  const getCardStyleForStatus = (status: string) => {
+    const baseClass = "group rounded-2xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border hover:-translate-y-1 transition-all duration-300 flex flex-col h-full min-w-0";
+    switch (status) {
+      case 'enrolled':
+        return {
+          container: `${baseClass} bg-gradient-to-br from-white to-emerald-50/60 border-emerald-100 hover:border-emerald-300 hover:shadow-[0_8px_30px_-4px_rgba(16,185,129,0.15)]`,
+          category: 'text-emerald-600/90 group-hover:text-emerald-600'
+        };
+      case 'invited':
+        return {
+          container: `${baseClass} bg-gradient-to-br from-white to-indigo-50/60 border-indigo-100 hover:border-indigo-300 hover:shadow-[0_8px_30px_-4px_rgba(99,102,241,0.15)]`,
+          category: 'text-indigo-600/90 group-hover:text-indigo-600'
+        };
+      case 'pending':
+        return {
+          container: `${baseClass} bg-gradient-to-br from-white to-amber-50/60 border-amber-100 hover:border-amber-300 hover:shadow-[0_8px_30px_-4px_rgba(245,158,11,0.15)]`,
+          category: 'text-amber-600/90 group-hover:text-amber-600'
+        };
+      default:
+        return {
+          container: `${baseClass} bg-gradient-to-br from-white to-slate-50/80 border-slate-200/60 hover:border-slate-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)]`,
+          category: 'text-indigo-600/90 group-hover:text-indigo-600'
+        };
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
+    <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">{t('gigsMarketplace.title')}</h1>
-          <p className="mt-1 text-sm text-gray-600 max-w-3xl">
-            Explore exciting opportunities posted by companies worldwide. Find projects that match your skills and interests.
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t('gigsMarketplace.title')}</h1>
+          <p className="mt-2 text-gray-600 max-w-3xl">
+            Explore exciting opportunities posted by companies worldwide. Find projects that match your skills and interests, and take control of your professional journey. Browse through available gigs and bookmark your favorites for future reference.
           </p>
         </div>
       </div>
 
-      <div className="flex space-x-6 border-b border-gray-100 overflow-x-auto scrollbar-hide">
+      <div className="flex space-x-8 border-b border-gray-100 overflow-x-auto scrollbar-hide">
         <button
           onClick={() => setActiveTab('available')}
-          className={`px-1 py-2 text-sm font-bold transition-all relative ${activeTab === 'available'
+          className={`px-1 py-4 text-sm font-bold transition-all relative ${activeTab === 'available'
             ? 'text-harx-600'
             : 'text-gray-400 hover:text-gray-600'
             }`}
@@ -1421,7 +1421,7 @@ export function GigsMarketplace() {
         </button>
         <button
           onClick={() => setActiveTab('enrolled')}
-          className={`px-1 py-2 text-sm font-bold transition-all relative ${activeTab === 'enrolled'
+          className={`px-1 py-4 text-sm font-bold transition-all relative ${activeTab === 'enrolled'
             ? 'text-harx-600'
             : 'text-gray-400 hover:text-gray-600'
             }`}
@@ -1431,7 +1431,7 @@ export function GigsMarketplace() {
         </button>
         <button
           onClick={() => setActiveTab('favorite')}
-          className={`px-1 py-2 text-sm font-bold transition-all relative ${activeTab === 'favorite'
+          className={`px-1 py-4 text-sm font-bold transition-all relative ${activeTab === 'favorite'
             ? 'text-harx-600'
             : 'text-gray-400 hover:text-gray-600'
             }`}
@@ -1441,7 +1441,7 @@ export function GigsMarketplace() {
         </button>
         <button
           onClick={() => setActiveTab('invited')}
-          className={`px-1 py-2 text-sm font-bold transition-all relative ${activeTab === 'invited'
+          className={`px-1 py-4 text-sm font-bold transition-all relative ${activeTab === 'invited'
             ? 'text-harx-600'
             : 'text-gray-400 hover:text-gray-600'
             }`}
@@ -1679,7 +1679,7 @@ export function GigsMarketplace() {
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {(currentGigs as PopulatedGig[]).map((gig) => {
                   const gigStatus = getGigStatus(gig._id);
                   const gigStyle = getCardStyleForStatus(gigStatus);
@@ -1772,9 +1772,9 @@ export function GigsMarketplace() {
                           <p className="text-xs font-medium text-gray-700 mb-1">Industries:</p>
                           <div className="flex flex-wrap gap-1">
                             {(expandedIndustries[gig._id] ? gig.industries : gig.industries.slice(0, 3)).map((industry) => (
-                                <span key={industry._id} className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-medium text-slate-500">
-                                  {industry.name}
-                                </span>
+                              <span key={industry._id} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded-lg text-[10px] font-medium text-slate-600">
+                                {industry.name}
+                              </span>
                             ))}
                             {gig.industries.length > 3 && (
                               <button
@@ -1798,9 +1798,9 @@ export function GigsMarketplace() {
                           <p className="text-xs font-medium text-gray-700 mb-1">Activities:</p>
                           <div className="flex flex-wrap gap-1">
                             {(expandedActivities[gig._id] ? gig.activities : gig.activities.slice(0, 3)).map((activity) => (
-                                <span key={activity._id} className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-medium text-slate-500">
-                                  {activity.name}
-                                </span>
+                              <span key={activity._id} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded-lg text-[10px] font-medium text-slate-600">
+                                {activity.name}
+                              </span>
                             ))}
                             {gig.activities.length > 3 && (
                               <button
@@ -1858,7 +1858,7 @@ export function GigsMarketplace() {
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {(currentGigs as InvitedEnrollment[]).map((enrollment) => {
                   const gigStyle = getCardStyleForStatus('invited');
                   return (
@@ -1933,9 +1933,9 @@ export function GigsMarketplace() {
                           <p className="text-xs font-medium text-gray-700 mb-1">Industries:</p>
                           <div className="flex flex-wrap gap-1">
                             {(expandedIndustries[enrollment.gig._id] ? enrollment.gig.industries : enrollment.gig.industries.slice(0, 3)).map((industry) => (
-                                <span key={industry._id} className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-medium text-slate-500">
-                                  {industry.name}
-                                </span>
+                              <span key={industry._id} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded-lg text-[10px] font-medium text-slate-600">
+                                {industry.name}
+                              </span>
                             ))}
                             {enrollment.gig.industries.length > 3 && (
                               <button
@@ -1959,9 +1959,9 @@ export function GigsMarketplace() {
                           <p className="text-xs font-medium text-gray-700 mb-1">Activities:</p>
                           <div className="flex flex-wrap gap-1">
                             {(expandedActivities[enrollment.gig._id] ? enrollment.gig.activities : enrollment.gig.activities.slice(0, 3)).map((activity) => (
-                                <span key={activity._id} className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-medium text-slate-500">
-                                  {activity.name}
-                                </span>
+                              <span key={activity._id} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded-lg text-[10px] font-medium text-slate-600">
+                                {activity.name}
+                              </span>
                             ))}
                             {enrollment.gig.activities.length > 3 && (
                               <button
@@ -2027,7 +2027,7 @@ export function GigsMarketplace() {
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {(currentGigs as EnrolledGig[]).map((enrolledGig) => {
                   const gigStyle = getCardStyleForStatus('enrolled');
                   return (

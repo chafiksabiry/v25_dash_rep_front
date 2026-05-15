@@ -94,3 +94,30 @@
 .animate-pulse-ring {
   animation: pulse-ring 1.5s infinite ease-in-out;
 }
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+
+.animate-wiggle {
+  animation: wiggle 0.5s infinite ease-in-out;
+}
+
+@keyframes border-flash {
+  0%, 100% { border-color: rgba(255, 255, 255, 0.3); }
+  50% { border-color: rgba(255, 255, 255, 0.9); box-shadow: 0 0 10px rgba(255, 255, 255, 0.4); }
+}
+
+.animate-border-flash {
+  animation: border-flash 2s infinite ease-in-out;
+}
+
+@keyframes tilt {
+  0%, 100% { transform: perspective(500px) rotateY(0deg); }
+  50% { transform: perspective(500px) rotateY(10deg); }
+}
+
+.animate-tilt {
+  animation: tilt 3s infinite ease-in-out;
+}
