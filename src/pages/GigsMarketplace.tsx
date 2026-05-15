@@ -60,10 +60,10 @@ const renderCommissionInfo = (gig: any) => {
     if (base && base != 0 && base != "0") {
       return (
         <div className="flex flex-wrap gap-2 mb-3">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-700 rounded-lg border border-slate-200/60 shadow-sm">
-            <BadgeEuro className="w-4 h-4 text-slate-500" />
-            <span className="font-bold text-[13px]">{base}{currencySymbol}</span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">/yr base</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50/80 text-blue-700 rounded-xl border border-blue-100 shadow-sm">
+            <BadgeEuro className="w-4 h-4 opacity-70" />
+            <span className="font-black text-sm">{base}{currencySymbol}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">/yr base</span>
           </div>
         </div>
       );
@@ -74,26 +74,26 @@ const renderCommissionInfo = (gig: any) => {
   return (
     <div className="flex flex-wrap gap-2 mb-3">
       {hasCall && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200/60 shadow-sm" title="Commission par appel">
-          <Phone className="w-3.5 h-3.5 text-emerald-600" />
-          <span className="font-bold text-[13px]">{perCall}{currencySymbol}</span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600/80">/ appel</span>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50/80 text-emerald-700 rounded-xl border border-emerald-100 shadow-sm" title="Commission par appel">
+          <Phone className="w-4 h-4 text-emerald-500" />
+          <span className="font-black text-sm">{perCall}{currencySymbol}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">/ appel</span>
         </div>
       )}
       
       {hasTrans && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200/60 shadow-sm" title="Commission par transaction">
-          <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
-          <span className="font-bold text-[13px]">{transAmount}{currencySymbol}</span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600/80">/ {transType}</span>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50/80 text-purple-700 rounded-xl border border-purple-100 shadow-sm" title="Commission par transaction">
+          <Briefcase className="w-4 h-4 text-purple-500" />
+          <span className="font-black text-sm">{transAmount}{currencySymbol}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">/ {transType}</span>
         </div>
       )}
 
       {hasBonus && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg border border-amber-200/60 shadow-sm" title="Bonus">
-          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-          <span className="font-bold text-[13px]">+{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-600/80">{bonusPeriodStr}</span>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50/80 text-amber-700 rounded-xl border border-amber-100 shadow-sm" title="Bonus">
+          <Sparkles className="w-4 h-4 text-amber-500" />
+          <span className="font-black text-sm">+{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">{bonusPeriodStr}</span>
         </div>
       )}
     </div>
@@ -1367,56 +1367,55 @@ export function GigsMarketplace() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-8 rounded-3xl border border-slate-200/60 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-slate-100 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 opacity-70 blur-3xl"></div>
-        <div className="relative z-10">
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">{t('gigsMarketplace.title')}</h1>
-          <p className="mt-3 text-slate-500 max-w-3xl leading-relaxed text-sm">
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t('gigsMarketplace.title')}</h1>
+          <p className="mt-2 text-gray-600 max-w-3xl">
             Explore exciting opportunities posted by companies worldwide. Find projects that match your skills and interests, and take control of your professional journey. Browse through available gigs and bookmark your favorites for future reference.
           </p>
         </div>
       </div>
 
-      <div className="flex space-x-8 border-b border-slate-200 overflow-x-auto scrollbar-hide px-2">
+      <div className="flex space-x-8 border-b border-gray-100 overflow-x-auto scrollbar-hide">
         <button
           onClick={() => setActiveTab('available')}
-          className={`px-1 py-4 text-sm font-semibold transition-all relative ${activeTab === 'available'
-            ? 'text-slate-900'
-            : 'text-slate-400 hover:text-slate-600'
+          className={`px-1 py-4 text-sm font-bold transition-all relative ${activeTab === 'available'
+            ? 'text-harx-600'
+            : 'text-gray-400 hover:text-gray-600'
             }`}
         >
           {t('gigsMarketplace.tabs.available')}
-          {activeTab === 'available' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-slate-900 rounded-full"></div>}
+          {activeTab === 'available' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-harx-500 rounded-full"></div>}
         </button>
         <button
           onClick={() => setActiveTab('enrolled')}
-          className={`px-1 py-4 text-sm font-semibold transition-all relative ${activeTab === 'enrolled'
-            ? 'text-slate-900'
-            : 'text-slate-400 hover:text-slate-600'
+          className={`px-1 py-4 text-sm font-bold transition-all relative ${activeTab === 'enrolled'
+            ? 'text-harx-600'
+            : 'text-gray-400 hover:text-gray-600'
             }`}
         >
           {t('gigsMarketplace.tabs.enrolled')}
-          {activeTab === 'enrolled' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-slate-900 rounded-full"></div>}
+          {activeTab === 'enrolled' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-harx-500 rounded-full"></div>}
         </button>
         <button
           onClick={() => setActiveTab('favorite')}
-          className={`px-1 py-4 text-sm font-semibold transition-all relative ${activeTab === 'favorite'
-            ? 'text-slate-900'
-            : 'text-slate-400 hover:text-slate-600'
+          className={`px-1 py-4 text-sm font-bold transition-all relative ${activeTab === 'favorite'
+            ? 'text-harx-600'
+            : 'text-gray-400 hover:text-gray-600'
             }`}
         >
           {t('gigsMarketplace.tabs.favorite')}
-          {activeTab === 'favorite' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-slate-900 rounded-full"></div>}
+          {activeTab === 'favorite' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-harx-500 rounded-full"></div>}
         </button>
         <button
           onClick={() => setActiveTab('invited')}
-          className={`px-1 py-4 text-sm font-semibold transition-all relative ${activeTab === 'invited'
-            ? 'text-slate-900'
-            : 'text-slate-400 hover:text-slate-600'
+          className={`px-1 py-4 text-sm font-bold transition-all relative ${activeTab === 'invited'
+            ? 'text-harx-600'
+            : 'text-gray-400 hover:text-gray-600'
             }`}
         >
           {t('gigsMarketplace.tabs.invited')}
-          {activeTab === 'invited' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-slate-900 rounded-full"></div>}
+          {activeTab === 'invited' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-harx-500 rounded-full"></div>}
         </button>
       </div>
 
@@ -1438,11 +1437,11 @@ export function GigsMarketplace() {
           {(currentGigs as PopulatedGig[]).map((gig) => {
             const gigStatus = getGigStatus(gig._id);
             return (
-              <div key={gig._id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 hover:shadow-md hover:border-slate-300 transition-all duration-300 flex flex-col h-full">
+              <div key={gig._id} className="group bg-gradient-to-br from-white to-slate-50/80 rounded-2xl p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-200/60 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{gig.title}</h3>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600/90 group-hover:text-indigo-600 transition-colors">
                       {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
                     </p>
                   </div>
@@ -1456,9 +1455,9 @@ export function GigsMarketplace() {
                           handleApplyToGig(gig._id);
                         }}
                         disabled={applyingGigId === gig._id}
-                        className={`px-4 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all shadow-sm ${applyingGigId === gig._id
-                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                          : 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md cursor-pointer'
+                        className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm ${applyingGigId === gig._id
+                          ? 'bg-harx-100 text-harx-400 cursor-not-allowed'
+                          : 'bg-harx-50 text-harx-600 hover:bg-harx-100 hover:shadow-md cursor-pointer'
                           }`}
                       >
                         {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
@@ -1600,7 +1599,7 @@ export function GigsMarketplace() {
             </div>
           ) : filteredAndSortedGigs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-              <div className="bg-slate-50 rounded-3xl p-12 max-w-sm w-full border border-slate-200/60 backdrop-blur-sm">
+              <div className="bg-harx-50/50 rounded-3xl p-12 max-w-sm w-full border border-harx-100/50 backdrop-blur-sm">
                 <div className="text-4xl mb-4">❤️</div>
                 <h3 className="text-xl font-black text-gray-900 mb-2">
                   No Favorites Yet
@@ -1614,11 +1613,11 @@ export function GigsMarketplace() {
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {(currentGigs as PopulatedGig[]).map((gig) => (
-                  <div key={gig._id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 hover:shadow-md hover:border-slate-300 transition-all duration-300 flex flex-col h-full">
+                  <div key={gig._id} className="group bg-gradient-to-br from-white to-slate-50/80 rounded-2xl p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-200/60 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{gig.title}</h3>
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{gig.category}</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600/90 group-hover:text-indigo-600 transition-colors">{gig.category}</p>
                       </div>
                       <div className="flex items-center space-x-2">
                         {/* Status Badge */}
@@ -1632,9 +1631,9 @@ export function GigsMarketplace() {
                                 handleApplyToGig(gig._id);
                               }}
                               disabled={applyingGigId === gig._id}
-                              className={`px-4 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all shadow-sm ${applyingGigId === gig._id
-                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                : 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md cursor-pointer'
+                              className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm ${applyingGigId === gig._id
+                                ? 'bg-harx-100 text-harx-400 cursor-not-allowed'
+                                : 'bg-harx-50 text-harx-600 hover:bg-harx-100 hover:shadow-md cursor-pointer'
                                 }`}
                             >
                               {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
@@ -1749,7 +1748,7 @@ export function GigsMarketplace() {
             </div>
           ) : invitedEnrollments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-              <div className="bg-slate-50 rounded-3xl p-12 max-w-sm w-full border border-slate-200/60 backdrop-blur-sm">
+              <div className="bg-harx-50/50 rounded-3xl p-12 max-w-sm w-full border border-harx-100/50 backdrop-blur-sm">
                 <div className="text-4xl mb-4">✉️</div>
                 <h3 className="text-xl font-black text-gray-900 mb-2">
                   No Invitations Yet
@@ -1763,11 +1762,11 @@ export function GigsMarketplace() {
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {(currentGigs as InvitedEnrollment[]).map((enrollment) => (
-                  <div key={enrollment.id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 hover:shadow-md hover:border-slate-300 transition-all duration-300 flex flex-col h-full">
+                  <div key={enrollment.id} className="group bg-gradient-to-br from-white to-slate-50/80 rounded-2xl p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-200/60 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{enrollment.gig.title}</h3>
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600/90 group-hover:text-indigo-600 transition-colors">
                           {enrollment.gig.category} {('companyId' in enrollment.gig && enrollment.gig.companyId?.name) ? `• ${enrollment.gig.companyId.name}` : ''}
                         </p>
                       </div>
@@ -1918,7 +1917,7 @@ export function GigsMarketplace() {
             </div>
           ) : enrolledGigs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-              <div className="bg-slate-50 rounded-3xl p-12 max-w-sm w-full border border-slate-200/60 backdrop-blur-sm">
+              <div className="bg-emerald-50/50 rounded-3xl p-12 max-w-sm w-full border border-emerald-100/50 backdrop-blur-sm">
                 <div className="text-4xl mb-4">🚀</div>
                 <h3 className="text-xl font-black text-gray-900 mb-2">
                   Ready to Start?
@@ -1932,11 +1931,11 @@ export function GigsMarketplace() {
             <div>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {(currentGigs as EnrolledGig[]).map((enrolledGig) => (
-                  <div key={enrolledGig.id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 hover:shadow-md hover:border-slate-300 transition-all duration-300 flex flex-col h-full">
+                  <div key={enrolledGig.id} className="group bg-gradient-to-br from-white to-slate-50/80 rounded-2xl p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-200/60 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug">{enrolledGig.gig.title}</h3>
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600/90 group-hover:text-indigo-600 transition-colors">
                           {enrolledGig.gig.category} {('companyId' in enrolledGig.gig && enrolledGig.gig.companyId?.name) ? `• ${enrolledGig.gig.companyId.name}` : ''}
                         </p>
                       </div>
