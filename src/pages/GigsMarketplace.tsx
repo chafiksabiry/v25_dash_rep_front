@@ -2149,24 +2149,21 @@ export function GigsMarketplace() {
                           </div>
                         </div>
                       )}
-
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          onClick={() => handleSmartStart(enrolledGig.gig._id)}
+                          className="flex-1 bg-slate-900 text-white py-2 px-3 rounded-lg hover:bg-slate-800 transition-all font-black text-[11px] uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                        >
+                          Start
+                        </button>
+                        <button
+                          onClick={() => navigate(`/gig/${enrolledGig.gig._id}`)}
+                          className="flex-1 bg-white text-slate-700 border border-slate-200 py-2 px-3 rounded-lg hover:bg-slate-50 transition-all font-black text-[11px] uppercase tracking-wider hover:-translate-y-0.5 active:translate-y-0"
+                        >
+                          Details
+                        </button>
+                      </div>
                     </div>
-
-                    <div className="mt-6 flex gap-3">
-                      <button
-                        onClick={() => handleSmartStart(enrolledGig.gig._id)}
-                        className="flex-1 bg-slate-900 text-white py-2.5 px-4 rounded-xl hover:bg-slate-800 hover:shadow-md transition-all font-semibold text-sm hover:-translate-y-0.5 active:translate-y-0"
-                      >
-                        Start Session
-                      </button>
-                      <button
-                        onClick={() => navigate(`/gig/${enrolledGig.gig._id}`)}
-                        className="flex-1 bg-white text-slate-700 border border-slate-200 py-2.5 px-4 rounded-xl hover:bg-slate-50 hover:shadow-sm transition-all font-semibold text-sm hover:-translate-y-0.5 active:translate-y-0"
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  </div>
                 );
               })}
               </div>
