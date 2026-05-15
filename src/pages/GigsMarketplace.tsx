@@ -1478,26 +1478,18 @@ export function GigsMarketplace() {
             const gigStyle = getCardStyleForStatus(gigStatus);
             return (
               <div key={gig._id} className={gigStyle.container}>
-                <div className="flex justify-between items-start gap-3">
-                  <div className="flex items-start gap-4 flex-1 min-w-0">
-                    <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shrink-0 overflow-hidden shadow-sm">
-                      {gig.companyId?.logo ? (
-                        <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
-                          {gig.companyId?.name?.[0] || '?'}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug" title={gig.title}>{gig.title}</h3>
-                      <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors truncate ${gigStyle.category}`} title={gig.companyId?.name}>
-                        {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
-                      </p>
-                    </div>
+                {/* Header: Logo & Actions/Status */}
+                <div className="flex justify-between items-center mb-5">
+                  <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                    {gig.companyId?.logo ? (
+                      <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
+                        {gig.companyId?.name?.[0] || '?'}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center space-x-2 shrink-0">
-                    {/* Status Badge */}
+                  <div className="flex items-center space-x-2">
                     {gigStatus === 'none' ? (
                       <button
                         onClick={(e) => {
@@ -1514,15 +1506,14 @@ export function GigsMarketplace() {
                         {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
                       </button>
                     ) : (
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${gigStatus === 'enrolled' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                        gigStatus === 'invited' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
-                          'bg-slate-50 text-slate-700 border border-slate-200'
+                      <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm ${gigStatus === 'enrolled' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                        gigStatus === 'invited' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
+                          'bg-amber-50 text-amber-700 border-amber-100'
                         }`}>
-                        {gigStatus === 'enrolled' ? '✓ Enrolled' :
-                          gigStatus === 'invited' ? '✉ Invited' :
-                            '⏳ Pending'}
+                        {gigStatus === 'enrolled' ? '✓ Enrolled' : gigStatus === 'invited' ? '✉ Invited' : '⌛ Pending'}
                       </span>
                     )}
+
                     <button
                       onClick={(e) => {
                         e.preventDefault();
@@ -1530,20 +1521,26 @@ export function GigsMarketplace() {
                           ? removeFromFavorites(gig._id)
                           : addToFavorites(gig._id);
                       }}
-                      className={`p-2 rounded-xl transition-all ${favoriteGigs.includes(gig._id)
-                        ? 'bg-harx-50 text-harx-500'
-                        : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                        }`}
-                      title={favoriteGigs.includes(gig._id) ? "Remove from favorites" : "Add to favorites"}
+                      className="p-1.5 hover:bg-red-50 rounded-full transition-colors group/heart"
                     >
                       <Heart
-                        className={`w-5 h-5 ${favoriteGigs.includes(gig._id)
-                          ? 'text-red-500 fill-current'
-                          : 'text-gray-400'
+                        className={`w-4.5 h-4.5 transition-all ${favoriteGigs.includes(gig._id)
+                          ? 'fill-red-500 text-red-500 scale-110'
+                          : 'text-slate-300 group-hover/heart:text-red-400'
                           }`}
                       />
                     </button>
                   </div>
+                </div>
+
+                {/* Content: Title & Brand */}
+                <div className="mb-5">
+                  <h3 className="text-xl font-bold text-slate-800 mb-1.5 tracking-tight leading-tight line-clamp-2" title={gig.title}>
+                    {gig.title}
+                  </h3>
+                  <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                    {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
+                  </p>
                 </div>
 
                 <div className="mt-4 space-y-3">
@@ -1675,62 +1672,66 @@ export function GigsMarketplace() {
                   const gigStyle = getCardStyleForStatus(gigStatus);
                   return (
                     <div key={gig._id} className={`${gigStyle.container} min-w-0`}>
-                      <div className="flex justify-between items-start gap-3">
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                          <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shrink-0 overflow-hidden shadow-sm">
-                            {gig.companyId?.logo ? (
-                              <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
-                                {gig.companyId?.name?.[0] || '?'}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug" title={gig.title}>{gig.title}</h3>
-                            <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors truncate ${gigStyle.category}`} title={gig.companyId?.name}>
-                              {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
-                            </p>
-                          </div>
-                        </div>
-                      <div className="flex items-center space-x-2 shrink-0">
-                        {/* Status Badge */}
-                        {(() => {
-                          const gigStatus = getGigStatus(gig._id);
-                          return gigStatus === 'none' ? (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleApplyToGig(gig._id);
-                              }}
-                              disabled={applyingGigId === gig._id}
-                              className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm ${applyingGigId === gig._id
-                                ? 'bg-harx-100 text-harx-400 cursor-not-allowed'
-                                : 'bg-harx-50 text-harx-600 hover:bg-harx-100 hover:shadow-md cursor-pointer'
-                                }`}
-                            >
-                              {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
-                            </button>
+                      {/* Header: Logo & Status/Actions */}
+                      <div className="flex justify-between items-center mb-5">
+                        <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                          {gig.companyId?.logo ? (
+                            <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
                           ) : (
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${gigStatus === 'enrolled' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                              gigStatus === 'invited' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
-                                'bg-slate-50 text-slate-700 border border-slate-200'
-                              }`}>
-                              {gigStatus === 'enrolled' ? '✓ Enrolled' :
-                                gigStatus === 'invited' ? '✉ Invited' :
-                                  '⏳ Pending'}
-                            </span>
-                          );
-                        })()}
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            removeFromFavorites(gig._id);
-                          }}
-                          className="p-2 bg-harx-50 text-harx-500 rounded-xl transition-all shadow-sm"
-                          title="Remove from favorites"
-                        >
+                            <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
+                              {gig.companyId?.name?.[0] || '?'}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {(() => {
+                            const gigStatus = getGigStatus(gig._id);
+                            return gigStatus === 'none' ? (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleApplyToGig(gig._id);
+                                }}
+                                disabled={applyingGigId === gig._id}
+                                className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm ${applyingGigId === gig._id
+                                  ? 'bg-harx-100 text-harx-400 cursor-not-allowed'
+                                  : 'bg-harx-50 text-harx-600 hover:bg-harx-100 hover:shadow-md cursor-pointer'
+                                  }`}
+                              >
+                                {applyingGigId === gig._id ? '⏳ Applying...' : '📝 Apply now'}
+                              </button>
+                            ) : (
+                              <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm ${gigStatus === 'enrolled' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                gigStatus === 'invited' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
+                                  'bg-amber-50 text-amber-700 border-amber-100'
+                                }`}>
+                                {gigStatus === 'enrolled' ? '✓ Enrolled' : gigStatus === 'invited' ? '✉ Invited' : '⌛ Pending'}
+                              </span>
+                            );
+                          })()}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              removeFromFavorites(gig._id);
+                            }}
+                            className="p-1.5 bg-red-50 text-red-500 rounded-full transition-colors group/heart"
+                            title="Remove from favorites"
+                          >
+                            <Heart className="w-4.5 h-4.5 fill-current scale-110" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Content: Title & Brand */}
+                      <div className="mb-5">
+                        <h3 className="text-xl font-bold text-slate-800 mb-1.5 tracking-tight leading-tight line-clamp-2" title={gig.title}>
+                          {gig.title}
+                        </h3>
+                        <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                          {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
+                        </p>
+                      </div>
                           <Heart className="w-5 h-5 fill-current" />
                         </button>
                       </div>
@@ -1846,50 +1847,49 @@ export function GigsMarketplace() {
                   const gigStyle = getCardStyleForStatus('invited');
                   return (
                     <div key={enrollment.id} className={`${gigStyle.container} min-w-0`}>
-                      <div className="flex justify-between items-start gap-3">
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                          <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shrink-0 overflow-hidden shadow-sm">
-                            {enrollment.gig.companyId?.logo ? (
-                              <img src={enrollment.gig.companyId.logo} alt={enrollment.gig.companyId.name} className="w-full h-full object-contain p-1.5" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
-                                {enrollment.gig.companyId?.name?.[0] || '?'}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug" title={enrollment.gig.title}>{enrollment.gig.title}</h3>
-                            <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors truncate ${gigStyle.category}`} title={enrollment.gig.companyId?.name}>
-                              {enrollment.gig.category} {('companyId' in enrollment.gig && enrollment.gig.companyId?.name) ? `• ${enrollment.gig.companyId.name}` : ''}
-                            </p>
-                          </div>
+                      {/* Header: Logo & Status/Actions */}
+                      <div className="flex justify-between items-center mb-5">
+                        <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                          {enrollment.gig.companyId?.logo ? (
+                            <img src={enrollment.gig.companyId.logo} alt={enrollment.gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
+                              {enrollment.gig.companyId?.name?.[0] || '?'}
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center space-x-2 shrink-0">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
-                          ✉ Invited
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            favoriteGigs.includes(enrollment.gig._id)
-                              ? removeFromFavorites(enrollment.gig._id)
-                              : addToFavorites(enrollment.gig._id);
-                          }}
-                          className={`p-2 rounded-xl transition-all ${favoriteGigs.includes(enrollment.gig._id)
-                            ? 'bg-harx-50 text-harx-500'
-                            : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                            }`}
-                          title={favoriteGigs.includes(enrollment.gig._id) ? "Remove from favorites" : "Add to favorites"}
-                        >
-                          <Heart
-                            className={`w-5 h-5 ${favoriteGigs.includes(enrollment.gig._id)
-                              ? 'fill-current'
-                              : ''
-                              }`}
-                          />
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <span className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
+                            ✉ Invited
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              favoriteGigs.includes(enrollment.gig._id)
+                                ? removeFromFavorites(enrollment.gig._id)
+                                : addToFavorites(enrollment.gig._id);
+                            }}
+                            className="p-1.5 hover:bg-red-50 rounded-full transition-colors group/heart"
+                          >
+                            <Heart
+                              className={`w-4.5 h-4.5 transition-all ${favoriteGigs.includes(enrollment.gig._id)
+                                ? 'fill-red-500 text-red-500 scale-110'
+                                : 'text-slate-300 group-hover/heart:text-red-400'
+                                }`}
+                            />
+                          </button>
+                        </div>
                       </div>
-                    </div>
+
+                      {/* Content: Title & Brand */}
+                      <div className="mb-5">
+                        <h3 className="text-xl font-bold text-slate-800 mb-1.5 tracking-tight leading-tight line-clamp-2" title={enrollment.gig.title}>
+                          {enrollment.gig.title}
+                        </h3>
+                        <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                          {enrollment.gig.category} {('companyId' in enrollment.gig && enrollment.gig.companyId?.name) ? `• ${enrollment.gig.companyId.name}` : ''}
+                        </p>
+                      </div>
 
                     <div className="mt-4 space-y-3">
                       {renderCommissionInfo(enrollment.gig)}
@@ -2029,50 +2029,49 @@ export function GigsMarketplace() {
                   const gigStyle = getCardStyleForStatus('enrolled');
                   return (
                     <div key={enrolledGig.id} className={`${gigStyle.container} min-w-0`}>
-                      <div className="flex justify-between items-start gap-3">
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                          <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shrink-0 overflow-hidden shadow-sm">
-                            {enrolledGig.gig.companyId?.logo ? (
-                              <img src={enrolledGig.gig.companyId.logo} alt={enrolledGig.gig.companyId.name} className="w-full h-full object-contain p-1.5" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
-                                {enrolledGig.gig.companyId?.name?.[0] || '?'}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-bold text-slate-800 mb-1.5 tracking-tight leading-snug" title={enrolledGig.gig.title}>{enrolledGig.gig.title}</h3>
-                            <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors truncate ${gigStyle.category}`} title={enrolledGig.gig.companyId?.name}>
-                              {enrolledGig.gig.category} {('companyId' in enrolledGig.gig && enrolledGig.gig.companyId?.name) ? `• ${enrolledGig.gig.companyId.name}` : ''}
-                            </p>
-                          </div>
+                      {/* Header: Logo & Status/Actions */}
+                      <div className="flex justify-between items-center mb-5">
+                        <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                          {enrolledGig.gig.companyId?.logo ? (
+                            <img src={enrolledGig.gig.companyId.logo} alt={enrolledGig.gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
+                              {enrolledGig.gig.companyId?.name?.[0] || '?'}
+                            </div>
+                          )}
                         </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          ✓ Enrolled
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            favoriteGigs.includes(enrolledGig.gig._id)
-                              ? removeFromFavorites(enrolledGig.gig._id)
-                              : addToFavorites(enrolledGig.gig._id);
-                          }}
-                          className={`p-2 rounded-xl transition-all ${favoriteGigs.includes(enrolledGig.gig._id)
-                            ? 'bg-harx-50 text-harx-500'
-                            : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                            }`}
-                          title={favoriteGigs.includes(enrolledGig.gig._id) ? "Remove from favorites" : "Add to favorites"}
-                        >
-                          <Heart
-                            className={`w-5 h-5 ${favoriteGigs.includes(enrolledGig.gig._id)
-                              ? 'fill-current'
-                              : ''
-                              }`}
-                          />
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <span className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
+                            ✓ Enrolled
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              favoriteGigs.includes(enrolledGig.gig._id)
+                                ? removeFromFavorites(enrolledGig.gig._id)
+                                : addToFavorites(enrolledGig.gig._id);
+                            }}
+                            className="p-1.5 hover:bg-red-50 rounded-full transition-colors group/heart"
+                          >
+                            <Heart
+                              className={`w-4.5 h-4.5 transition-all ${favoriteGigs.includes(enrolledGig.gig._id)
+                                ? 'fill-red-500 text-red-500 scale-110'
+                                : 'text-slate-300 group-hover/heart:text-red-400'
+                                }`}
+                            />
+                          </button>
+                        </div>
                       </div>
-                    </div>
+
+                      {/* Content: Title & Brand */}
+                      <div className="mb-5">
+                        <h3 className="text-xl font-bold text-slate-800 mb-1.5 tracking-tight leading-tight line-clamp-2" title={enrolledGig.gig.title}>
+                          {enrolledGig.gig.title}
+                        </h3>
+                        <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                          {enrolledGig.gig.category} {('companyId' in enrolledGig.gig && enrolledGig.gig.companyId?.name) ? `• ${enrolledGig.gig.companyId.name}` : ''}
+                        </p>
+                      </div>
 
                     <div className="mt-4 space-y-3">
                       {renderCommissionInfo(enrolledGig.gig)}
