@@ -3,10 +3,72 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { useTranslation } from 'react-i18next';
 
 import { useNavigate } from 'react-router-dom';
-import { User, Users, Globe, Calendar, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { User, Users, Globe, Calendar, Heart, ChevronLeft, ChevronRight, Phone, Briefcase, Sparkles, BadgeEuro } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchPendingRequests as fetchPendingRequestsUtil, fetchEnrolledGigsFromProfile } from '../utils/gigStatusUtils';
 import { resolveGigStartRoute } from '../utils/gigStartRouting';
+
+const renderCommissionInfo = (gig: any) => {
+  if (!gig || !gig.commission) return null;
+  const comm = gig.commission;
+  const currencySymbol = typeof comm.currency === 'object' ? comm.currency?.symbol || '€' : comm.currency || '€';
+  
+  const perCall = comm.commission_per_call;
+  const hasCall = perCall !== undefined && perCall > 0;
+  
+  const transComm = comm.transactionCommission;
+  const hasTrans = transComm !== undefined && (typeof transComm === 'number' ? transComm > 0 : Number(transComm.amount) > 0);
+  const transAmount = typeof transComm === 'number' ? transComm : transComm?.amount;
+  const transType = typeof transComm === 'object' && transComm.type ? transComm.type : 'Transaction';
+
+  const bonus = comm.bonusAmount || comm.bonus;
+  const hasBonus = bonus !== undefined && bonus != 0 && bonus != "0";
+
+  if (!hasCall && !hasTrans && !hasBonus) {
+    const base = comm.baseAmount;
+    if (base && base != 0 && base != "0") {
+      return (
+        <div className="flex flex-wrap gap-2 mb-3">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50/80 text-blue-700 rounded-xl border border-blue-100 shadow-sm">
+            <BadgeEuro className="w-4 h-4 opacity-70" />
+            <span className="font-black text-sm">{base}{currencySymbol}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">/yr base</span>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2 mb-3">
+      {hasCall && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50/80 text-emerald-700 rounded-xl border border-emerald-100 shadow-sm" title="Commission par appel">
+          <Phone className="w-4 h-4 text-emerald-500" />
+          <span className="font-black text-sm">{perCall}{currencySymbol}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">/ appel</span>
+        </div>
+      )}
+      
+      {hasTrans && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50/80 text-purple-700 rounded-xl border border-purple-100 shadow-sm" title="Commission par transaction">
+          <Briefcase className="w-4 h-4 text-purple-500" />
+          <span className="font-black text-sm">{transAmount}{currencySymbol}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">/ {transType}</span>
+        </div>
+      )}
+
+      {hasBonus && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50/80 text-amber-700 rounded-xl border border-amber-100 shadow-sm" title="Bonus">
+          <Sparkles className="w-4 h-4 text-amber-500" />
+          <span className="font-black text-sm">+{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Bonus</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 
 // Interface pour les gigs populés
@@ -1403,18 +1465,7 @@ export function GigsMarketplace() {
                 <p className="mt-2 text-sm text-gray-600 line-clamp-2">{gig.description}</p>
 
                 <div className="mt-4 space-y-3">
-                  <div className="flex items-center text-sm text-gray-500">
-                    <span>
-                      {gig.commission?.commission_per_call !== undefined
-                        ? `${gig.commission.commission_per_call} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'} / call`
-                        : `${gig.commission?.baseAmount || 0} ${typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}/yr base`}
-                    </span>
-                    {(gig.commission?.bonus && gig.commission.bonus != 0 || gig.commission?.bonusAmount && gig.commission.bonusAmount != "0") && (
-                      <span className="ml-1 text-xs font-bold text-emerald-600">
-                        + {gig.commission.bonusAmount || gig.commission.bonus} bonus
-                      </span>
-                    )}
-                  </div>
+                  {renderCommissionInfo(gig)}
                   <div className="flex items-center text-sm text-gray-500">
                     <Users className="w-4 h-4 mr-2" />
                     <span>{gig.seniority?.yearsExperience || 'N/A'} years experience</span>
@@ -1591,18 +1642,7 @@ export function GigsMarketplace() {
                     <p className="mt-3 text-sm text-gray-600 line-clamp-2 leading-relaxed font-medium">{gig.description}</p>
 
                     <div className="mt-4 space-y-3">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <span>
-                          {gig.commission?.commission_per_call !== undefined
-                            ? `${gig.commission.commission_per_call} ${typeof gig.commission.currency === 'object' ? gig.commission.currency?.symbol || '€' : gig.commission.currency || '€'} / call`
-                            : `${gig.commission?.baseAmount || 0} ${typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}/yr base`}
-                        </span>
-                        {(gig.commission?.bonus && gig.commission.bonus != 0 || gig.commission?.bonusAmount && gig.commission.bonusAmount != "0") && (
-                          <span className="ml-1 text-xs text-green-600">
-                            + {gig.commission.bonusAmount || gig.commission.bonus} bonus
-                          </span>
-                        )}
-                      </div>
+                      {renderCommissionInfo(gig)}
                       <div className="flex items-center text-sm text-gray-500">
                         <Users className="w-4 h-4 mr-2" />
                         <span>{gig.seniority?.yearsExperience || 'N/A'} years experience</span>
@@ -1745,20 +1785,7 @@ export function GigsMarketplace() {
                     <p className="mt-2 text-sm text-gray-600 line-clamp-2">{enrollment.gig.description}</p>
 
                     <div className="mt-4 space-y-3">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <span>
-                          {('commission' in enrollment.gig && enrollment.gig.commission?.commission_per_call !== undefined)
-                            ? `${enrollment.gig.commission.commission_per_call} ${typeof enrollment.gig.commission.currency === 'object' ? enrollment.gig.commission.currency?.symbol || '€' : enrollment.gig.commission.currency || '€'} / call`
-                            : ('commission' in enrollment.gig && enrollment.gig.commission?.baseAmount)
-                              ? `${enrollment.gig.commission.baseAmount} ${typeof enrollment.gig.commission.currency === 'object' ? enrollment.gig.commission.currency?.symbol || enrollment.gig.commission.currency?.code || 'EUR' : enrollment.gig.commission.currency || 'EUR'}/yr base`
-                              : 'N/A / call'}
-                        </span>
-                        {('commission' in enrollment.gig && (enrollment.gig.commission?.bonus && enrollment.gig.commission.bonus != 0 || enrollment.gig.commission?.bonusAmount && enrollment.gig.commission.bonusAmount != "0")) && (
-                          <span className="ml-1 text-xs text-green-600">
-                            + {enrollment.gig.commission?.bonusAmount || enrollment.gig.commission?.bonus} bonus
-                          </span>
-                        )}
-                      </div>
+                      {renderCommissionInfo(enrollment.gig)}
                       <div className="flex items-center text-sm text-gray-500">
                         <Users className="w-4 h-4 mr-2" />
                         <span>{('seniority' in enrollment.gig && enrollment.gig.seniority?.yearsExperience) ? `${enrollment.gig.seniority.yearsExperience} years experience` : 'N/A years experience'}</span>
@@ -1935,20 +1962,7 @@ export function GigsMarketplace() {
                     <p className="mt-2 text-sm text-gray-600 line-clamp-2">{enrolledGig.gig.description}</p>
 
                     <div className="mt-4 space-y-3">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <span>
-                          {('commission' in enrolledGig.gig && enrolledGig.gig.commission?.commission_per_call !== undefined)
-                            ? `${enrolledGig.gig.commission.commission_per_call} ${typeof enrolledGig.gig.commission.currency === 'object' ? enrolledGig.gig.commission.currency?.symbol || '€' : enrolledGig.gig.commission.currency || '€'} / call`
-                            : ('commission' in enrolledGig.gig && enrolledGig.gig.commission?.baseAmount)
-                              ? `${enrolledGig.gig.commission.baseAmount} ${typeof enrolledGig.gig.commission.currency === 'object' ? enrolledGig.gig.commission.currency?.symbol || enrolledGig.gig.commission.currency?.code || 'EUR' : enrolledGig.gig.commission.currency || 'EUR'}/yr base`
-                              : 'N/A / call'}
-                        </span>
-                        {('commission' in enrolledGig.gig && (enrolledGig.gig.commission?.bonus && enrolledGig.gig.commission.bonus != 0 || enrolledGig.gig.commission?.bonusAmount && enrolledGig.gig.commission.bonusAmount != "0")) && (
-                          <span className="ml-1 text-xs text-green-600">
-                            + {enrolledGig.gig.commission?.bonusAmount || enrolledGig.gig.commission?.bonus} bonus
-                          </span>
-                        )}
-                      </div>
+                      {renderCommissionInfo(enrolledGig.gig)}
                       <div className="flex items-center text-sm text-gray-500">
                         <Users className="w-4 h-4 mr-2" />
                         <span>{('seniority' in enrolledGig.gig && enrolledGig.gig.seniority?.yearsExperience) ? `${enrolledGig.gig.seniority.yearsExperience} years experience` : 'N/A years experience'}</span>
