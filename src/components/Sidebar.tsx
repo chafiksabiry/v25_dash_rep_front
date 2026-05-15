@@ -130,12 +130,19 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       path: '/operations',
       isAccessible: () => isPhaseCompleted(5)
     },
+    {
+      icon: Calendar,
+      label: t('sidebar.sessionPlanning'),
+      path: '/session-planning',
+      isAccessible: () => true
+    },
   ];
 
   const filteredNavItems = navItems.filter(item => item.isAccessible());
 
   const group1 = filteredNavItems.filter(i => ['/', '/gigs-marketplace', '/calls', '/workspace'].includes(i.path));
   const group2 = filteredNavItems.filter(i => ['/training'].includes(i.path));
+  const group3 = filteredNavItems.filter(i => ['/session-planning'].includes(i.path));
 
   useEffect(() => {
     console.log('🔒 Access Control Status:', {
@@ -503,6 +510,49 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
                   </NavLink>
                 )}
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Divider ── */}
+        {group3.length > 0 && (
+          <div className="mx-2 border-t border-white/[0.07]" />
+        )}
+
+        {/* ── Group 3: Planning ── */}
+        {group3.length > 0 && (
+          <div className="space-y-1">
+            {!isCollapsed && (
+              <p className="px-2 pb-1 text-[9px] font-extrabold uppercase tracking-[0.18em] text-gray-600 select-none">Planning</p>
+            )}
+            {group3.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  `flex w-full items-center rounded-2xl transition-all duration-300 group relative ${
+                    isCollapsed ? 'justify-center p-3' : 'space-x-3 py-3 px-5'
+                  } ${
+                    isActive
+                      ? 'bg-gradient-to-br from-orange-500 to-pink-600 text-white shadow-xl shadow-pink-500/30 ring-1 ring-white/10'
+                      : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <div className={`p-2 rounded-xl transition-all shrink-0 ${isActive ? 'bg-white/20' : 'bg-gray-800/40 group-hover:bg-gray-800'}`}>
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    {!isCollapsed && <span className="font-black text-sm tracking-tight whitespace-nowrap overflow-hidden">{item.label}</span>}
+                    {isCollapsed && (
+                      <div className="absolute left-16 bg-slate-900 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl border border-white/10">
+                        {item.label}
+                      </div>
+                    )}
+                  </>
+                )}
+              </NavLink>
             ))}
           </div>
         )}
