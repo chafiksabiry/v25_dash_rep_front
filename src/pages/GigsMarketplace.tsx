@@ -1732,9 +1732,6 @@ export function GigsMarketplace() {
                           {gig.category} {gig.companyId?.name && `• ${gig.companyId.name}`}
                         </p>
                       </div>
-                          <Heart className="w-5 h-5 fill-current" />
-                        </button>
-                      </div>
                     </div>
 
                     <div className="mt-4 space-y-3">
