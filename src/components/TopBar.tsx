@@ -206,24 +206,56 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
           </div>
 
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-white/10 rounded-xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
-              <button
-                onClick={() => { setIsDropdownOpen(false); navigate('/profile'); }}
-                className="w-full flex items-center space-x-3 px-4 py-2 text-sm font-medium text-white hover:bg-white/5 transition-colors"
-              >
-                <UserCircle className="h-4 w-4 text-harx-400" />
-                <span>Mon Profil</span>
-              </button>
-              <div className="h-px bg-white/10 my-1" />
-              <button
-                onClick={() => { setIsDropdownOpen(false); logout(); }}
-                className="w-full flex items-center space-x-3 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Déconnexion</span>
-              </button>
+            <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+
+              {/* ── Header: Photo + Name + Role ── */}
+              <div className="px-4 py-4 flex items-center gap-3 border-b border-white/10 bg-white/[0.03]">
+                {profileData?.personalInfo?.photo?.url ? (
+                  <img
+                    src={profileData.personalInfo.photo.url}
+                    alt={userName}
+                    className="w-12 h-12 rounded-xl object-cover shadow-md ring-2 ring-white/10 shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center text-white font-black text-lg shadow-md shrink-0">
+                    {initials}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-white truncate">{userName}</p>
+                  <p className="text-[10px] text-slate-400 font-medium truncate mt-0.5">{userRole}</p>
+                </div>
+              </div>
+
+              {/* ── Menu Items ── */}
+              <div className="py-2">
+                <button
+                  onClick={() => { setIsDropdownOpen(false); navigate('/profile'); }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-white hover:bg-white/5 transition-colors"
+                >
+                  <div className="p-1.5 bg-harx-500/15 text-harx-400 rounded-lg">
+                    <UserCircle className="h-4 w-4" />
+                  </div>
+                  <span>Mon Profil</span>
+                </button>
+              </div>
+
+              {/* ── Logout ── */}
+              <div className="border-t border-white/10 px-3 py-3">
+                <button
+                  onClick={() => { setIsDropdownOpen(false); logout(); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition-colors group"
+                >
+                  <div className="p-1.5 bg-red-500/10 text-red-400 rounded-lg group-hover:bg-red-500/20 transition-colors">
+                    <LogOut className="h-4 w-4" />
+                  </div>
+                  <span>Déconnexion</span>
+                </button>
+              </div>
+
             </div>
           )}
+
         </div>
       </div>
 
