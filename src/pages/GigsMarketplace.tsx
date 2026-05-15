@@ -74,26 +74,38 @@ const renderCommissionInfo = (gig: any) => {
   return (
     <div className="flex flex-wrap gap-2 mb-3">
       {hasCall && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50/80 text-emerald-700 rounded-xl border border-emerald-100 shadow-sm" title="Commission par appel">
-          <Phone className="w-4 h-4 text-emerald-500" />
-          <span className="font-black text-sm">{perCall}{currencySymbol}</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">/ appel</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 transition-all hover:shadow-emerald-500/40 hover:-translate-y-0.5" title="Commission par appel">
+          <div className="bg-white/20 p-1 rounded-lg">
+            <Phone className="w-3.5 h-3.5 text-white" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-black text-sm leading-none">{perCall}{currencySymbol}</span>
+            <span className="text-[8px] font-extrabold uppercase tracking-widest opacity-90">/ Appel</span>
+          </div>
         </div>
       )}
       
       {hasTrans && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50/80 text-purple-700 rounded-xl border border-purple-100 shadow-sm" title="Commission par transaction">
-          <Briefcase className="w-4 h-4 text-purple-500" />
-          <span className="font-black text-sm">{transAmount}{currencySymbol}</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">/ {transType}</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl shadow-lg shadow-purple-500/20 transition-all hover:shadow-purple-500/40 hover:-translate-y-0.5" title="Commission par transaction">
+          <div className="bg-white/20 p-1 rounded-lg">
+            <Briefcase className="w-3.5 h-3.5 text-white" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-black text-sm leading-none">{transAmount}{currencySymbol}</span>
+            <span className="text-[8px] font-extrabold uppercase tracking-widest opacity-90">/ {transType}</span>
+          </div>
         </div>
       )}
 
       {hasBonus && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50/80 text-amber-700 rounded-xl border border-amber-100 shadow-sm" title="Bonus">
-          <Sparkles className="w-4 h-4 text-amber-500" />
-          <span className="font-black text-sm">+{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">{bonusPeriodStr}</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-400 to-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 transition-all hover:shadow-amber-500/40 hover:-translate-y-0.5" title="Bonus">
+          <div className="bg-white/20 p-1 rounded-lg animate-pulse">
+            <Sparkles className="w-3.5 h-3.5 text-white" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-black text-sm leading-none">+{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
+            <span className="text-[8px] font-extrabold uppercase tracking-widest opacity-90">{bonusPeriodStr}</span>
+          </div>
         </div>
       )}
     </div>
