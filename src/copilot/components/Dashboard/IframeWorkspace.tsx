@@ -15,7 +15,10 @@ import {
   Search,
   Sparkles,
   Bot,
-  User
+  User,
+  Mic,
+  MicOff,
+  PhoneOff
 } from 'lucide-react';
 
 export function IframeWorkspace() {
@@ -231,6 +234,32 @@ export function IframeWorkspace() {
                         </button>
                       )}
                     </div>
+                  </div>
+                )}
+
+                {/* Embedded Call Controls (Active only during a call) */}
+                {state.callState.isActive && (
+                  <div className="flex items-center gap-1 bg-rose-500/10 border border-rose-500/20 rounded-xl p-1 shrink-0 shadow-inner">
+                    <button
+                      onClick={() => dispatch({ type: 'TOGGLE_MIC' })}
+                      className={`p-1.5 rounded-lg transition-all flex items-center justify-center ${state.isMicMuted ? 'bg-rose-500 text-white shadow-[0_0_10px_rgba(243,24,96,0.4)]' : 'bg-transparent hover:bg-white/10 text-rose-300 hover:text-white'}`}
+                      title={state.isMicMuted ? 'Activer le micro' : 'Couper le micro'}
+                    >
+                      {state.isMicMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        if (state.twilioConnection) {
+                          state.twilioConnection.disconnect();
+                        }
+                      }}
+                      className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all shadow-lg shadow-rose-600/20 flex items-center gap-1.5 active:scale-95"
+                      title="Raccrocher l'appel en cours"
+                    >
+                      <PhoneOff className="w-3 h-3" />
+                      Raccrocher
+                    </button>
                   </div>
                 )}
 
