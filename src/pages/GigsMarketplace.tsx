@@ -1497,7 +1497,7 @@ export function GigsMarketplace() {
                         )}
                       </div>
                       {gig.companyId?.name && (
-                        <span className="text-sm font-extrabold text-slate-900 line-clamp-1 flex-1" title={gig.companyId.name}>
+                        <span className="text-[13px] font-extrabold text-slate-950 line-clamp-2 leading-tight flex-1" title={gig.companyId.name}>
                           {gig.companyId.name}
                         </span>
                       )}
@@ -2031,43 +2031,45 @@ export function GigsMarketplace() {
                   return (
                     <div key={enrolledGig.id} className={`${gigStyle.container} min-w-0`}>
                       {/* Header: Logo & Status/Actions */}
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-8 h-8 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                             {enrolledGig.gig.companyId?.logo ? (
-                              <img src={enrolledGig.gig.companyId.logo} alt={enrolledGig.gig.companyId.name} className="w-full h-full object-contain p-1" />
+                              <img src={enrolledGig.gig.companyId.logo} alt={enrolledGig.gig.companyId.name} className="w-full h-full object-contain p-1.5" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-xs uppercase">
+                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-base uppercase">
                                 {enrolledGig.gig.companyId?.name?.[0] || '?'}
                               </div>
                             )}
                           </div>
                           {enrolledGig.gig.companyId?.name && (
-                            <span className="text-sm font-extrabold text-slate-900 line-clamp-1 flex-1" title={enrolledGig.gig.companyId.name}>
+                            <span className="text-[13px] font-extrabold text-slate-950 line-clamp-2 leading-tight flex-1" title={enrolledGig.gig.companyId.name}>
                               {enrolledGig.gig.companyId.name}
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-emerald-500 to-teal-600 text-white border border-emerald-400 shadow-[0_2px_10px_-2px_rgba(16,185,129,0.4)]">
-                            ✓ Enrolled
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              favoriteGigs.includes(enrolledGig.gig._id)
-                                ? removeFromFavorites(enrolledGig.gig._id)
-                                : addToFavorites(enrolledGig.gig._id);
-                            }}
-                            className="p-1 hover:bg-red-50 rounded-full transition-colors group/heart"
-                          >
-                            <Heart
-                              className={`w-3.5 h-3.5 transition-all ${favoriteGigs.includes(enrolledGig.gig._id)
-                                ? 'fill-red-500 text-red-500 scale-110'
-                                : 'text-slate-300 group-hover/heart:text-red-400'
-                                }`}
-                            />
-                          </button>
+                        <div className="flex flex-col items-end gap-2 ml-3 shrink-0">
+                          <div className="flex items-center space-x-1">
+                            <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-emerald-500 to-teal-600 text-white border border-emerald-400 shadow-[0_2px_10px_-2px_rgba(16,185,129,0.4)]">
+                              ✓ Enrolled
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                favoriteGigs.includes(enrolledGig.gig._id)
+                                  ? removeFromFavorites(enrolledGig.gig._id)
+                                  : addToFavorites(enrolledGig.gig._id);
+                              }}
+                              className="p-1 hover:bg-red-50 rounded-full transition-colors group/heart"
+                            >
+                              <Heart
+                                className={`w-3.5 h-3.5 transition-all ${favoriteGigs.includes(enrolledGig.gig._id)
+                                  ? 'fill-red-500 text-red-500 scale-110'
+                                  : 'text-slate-300 group-hover/heart:text-red-400'
+                                  }`}
+                              />
+                            </button>
+                          </div>
                         </div>
                       </div>
 
