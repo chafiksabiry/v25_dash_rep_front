@@ -26,9 +26,12 @@ export function IframeWorkspace() {
   // Fetch script details dynamically based on URL lead and gig
   const searchParams = new URLSearchParams(location.search);
   const leadId = searchParams.get('leadId') || sessionStorage.getItem('activeLeadId');
+  const urlGigId = searchParams.get('gigId') || sessionStorage.getItem('activeGigId');
   const { lead: apiLead } = useLead(leadId);
   const gig = apiLead?.gigId;
-  const { scripts, loading: scriptLoading } = useGigScript(gig?._id);
+  
+  const resolvedGigId = urlGigId || (typeof gig === 'string' ? gig : gig?._id);
+  const { scripts, activeScript, loading: scriptLoading } = useGigScript(resolvedGigId);
 
   const isOpen = state.isIframeOpen;
   const setIsOpen = (val: boolean) => dispatch({ type: 'TOGGLE_IFRAME', payload: val });
@@ -49,7 +52,6 @@ export function IframeWorkspace() {
   const [activeReplicaIndex, setActiveReplicaIndex] = useState(0);
 
   // Support for interactive cockpit stages schema
-  const activeScript = scripts?.[0];
   const interactiveStages = activeScript?.playbook?.stages || [];
   const hasInteractiveStages = Array.isArray(interactiveStages) && interactiveStages.length > 0;
 
