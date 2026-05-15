@@ -1646,14 +1646,14 @@ export function GigsMarketplace() {
                         </button>
                       </div>
                     ) : (
-                      <><button
-                        onClick={() => navigate(`/gig/${gig._id}`)} /><button
-                          onClick={() => navigate(`/gig/${gig._id}`)}
-                          className="w-full bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(244,63,94,0.4)] font-black text-sm uppercase tracking-widest hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group/btn overflow-hidden relative"
-                        >
-                          <Sparkles className="w-4 h-4" />
-                          <span>VIEW DETAILS</span>
-                        </button></>
+                      <button
+                        onClick={() => navigate(`/gig/${gig._id}`)}
+                        className="w-full bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 text-white py-2.5 px-4 rounded-xl hover:shadow-[0_8px_20px_-4px_rgba(244,63,94,0.4)] font-black text-sm uppercase tracking-widest hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group/btn overflow-hidden relative"
+                      >
+                        <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />
+                        <Sparkles className="w-4 h-4" />
+                        <span>VIEW DETAILS</span>
+                      </button>
                     )}
                   </div>
                 </div>
