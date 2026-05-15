@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Pencil, Camera, ChevronDown } from 'lucide-react';
+import { X, MapPin, Mail, Phone, Target, Briefcase, RefreshCw, Check, Pencil, Camera, ChevronDown, ClipboardCheck } from 'lucide-react';
 import { getProfilePlan, checkCountryMismatch, updateProfileData, fetchProfileFromAPI, getRepresentativePlans, updateProfilePlan } from '../utils/profileUtils';
 import { repWizardApi, Timezone } from '../services/api/repWizard';
 import { fetchAllSkills, fetchSkillById, Skill, SkillsByCategory, SkillType } from '../services/api/skills';
@@ -499,8 +499,8 @@ export const ProfileView: React.FC<{
       typeof profile.personalInfo?.country === 'object'
         ? String(profile.personalInfo?.country?._id || '')
         : (typeof profile.personalInfo?.country === 'string' && profile.personalInfo.country.length === 24
-            ? profile.personalInfo.country
-            : '');
+          ? profile.personalInfo.country
+          : '');
 
     setPublicInfoDraft({
       country: getCountryDisplayName(),
@@ -654,11 +654,11 @@ export const ProfileView: React.FC<{
     const canvas = document.createElement('canvas');
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-    
+
     // Set canvas size to the actual cropped pixels in the original image for high quality
     canvas.width = pixelCrop.width * scaleX;
     canvas.height = pixelCrop.height * scaleY;
-    
+
     const ctx = canvas.getContext('2d');
 
     if (!ctx) {
@@ -700,7 +700,7 @@ export const ProfileView: React.FC<{
     try {
       setIsUploadingPhoto(true);
       setIsCropModalOpen(false);
-      
+
       const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
       const formData = new FormData();
       formData.append('photo', croppedBlob, 'profile.jpg');
@@ -735,8 +735,8 @@ export const ProfileView: React.FC<{
     switch (activeTab) {
       case 'profile': return <ProfileTab profile={profile} onSaveAbout={handleSaveAbout} onReplaceVideo={handleReplaceVideo} isUploadingVideo={isUploadingVideo} />;
       case 'skills': return (
-        <SkillsTab 
-          profile={profile} 
+        <SkillsTab
+          profile={profile}
           formatSkillsForDisplay={formatSkillsForDisplay}
           findSkillData={findSkillData}
           takeContactCenterSkillAssessment={takeContactCenterSkillAssessment}
@@ -756,8 +756,8 @@ export const ProfileView: React.FC<{
         />
       );
       case 'languages': return (
-        <LanguagesTab 
-          profile={profile} 
+        <LanguagesTab
+          profile={profile}
           availableLanguages={availableLanguages}
           getProficiencyStars={getProficiencyStars}
           takeLanguageAssessment={takeLanguageAssessment}
@@ -766,7 +766,7 @@ export const ProfileView: React.FC<{
         />
       );
       case 'onboarding': return (
-        <OnboardingTab 
+        <OnboardingTab
           profile={profile}
           countryMismatch={countryMismatch}
           checkingCountryMismatch={checkingCountryMismatch}
@@ -786,7 +786,7 @@ export const ProfileView: React.FC<{
         />
       );
       case 'availability': return (
-        <AvailabilityTab 
+        <AvailabilityTab
           profile={profile}
           countryMismatch={countryMismatch}
           checkingCountryMismatch={checkingCountryMismatch}
@@ -799,7 +799,7 @@ export const ProfileView: React.FC<{
         />
       );
       case 'onboarding': return (
-        <OnboardingTab 
+        <OnboardingTab
           profile={profile}
           countryMismatch={countryMismatch}
           checkingCountryMismatch={checkingCountryMismatch}
@@ -869,258 +869,258 @@ export const ProfileView: React.FC<{
           </p>
         </div>
 
-      {/* Navigation Tabs at the Top */}
-      <div className="w-full">
-        <ProfileNavbar activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
+        {/* Navigation Tabs at the Top */}
+        <div className="w-full">
+          <ProfileNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+        </div>
 
-      {/* Header / Identity Section (Twilio Style) - Only visible on 'Profile' tab */}
-      {activeTab === 'profile' && (
-        <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-8 lg:p-10 shadow-sm border border-harx-100/70 animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="flex flex-col md:flex-row gap-10 items-start">
-            {/* Photo management */}
-            <div className="relative group shrink-0">
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoSelect}
-                className="hidden"
-              />
-              <div 
-                className="w-40 h-40 rounded-[32px] shadow-xl border-4 border-white bg-slate-200/50 overflow-hidden relative cursor-pointer ring-4 ring-harx-50 transition-transform group-hover:scale-[1.02]"
-                onClick={() => profile.personalInfo?.photo?.url && setShowImageModal(true)}
-              >
-                {profile.personalInfo?.photo?.url ? (
-                  <img 
-                    src={profile.personalInfo.photo.url} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-5xl font-black text-gray-200 bg-gray-50 uppercase tracking-tighter">
-                    {profile.personalInfo?.name?.charAt(0) || '?'}
+        {/* Header / Identity Section (Twilio Style) - Only visible on 'Profile' tab */}
+        {activeTab === 'profile' && (
+          <div className="bg-harx-50/30 backdrop-blur-md rounded-3xl p-8 lg:p-10 shadow-sm border border-harx-100/70 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex flex-col md:flex-row gap-10 items-start">
+              {/* Photo management */}
+              <div className="relative group shrink-0">
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+                <div
+                  className="w-40 h-40 rounded-[32px] shadow-xl border-4 border-white bg-slate-200/50 overflow-hidden relative cursor-pointer ring-4 ring-harx-50 transition-transform group-hover:scale-[1.02]"
+                  onClick={() => profile.personalInfo?.photo?.url && setShowImageModal(true)}
+                >
+                  {profile.personalInfo?.photo?.url ? (
+                    <img
+                      src={profile.personalInfo.photo.url}
+                      alt="Profile"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-5xl font-black text-gray-200 bg-gray-50 uppercase tracking-tighter">
+                      {profile.personalInfo?.name?.charAt(0) || '?'}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px]">
+                    <div className="text-white text-xs font-black uppercase tracking-widest bg-white/20 px-4 py-2 rounded-full border border-white/30 truncate">View Photo</div>
                   </div>
-                )}
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px]">
-                  <div className="text-white text-xs font-black uppercase tracking-widest bg-white/20 px-4 py-2 rounded-full border border-white/30 truncate">View Photo</div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => !isUploadingPhoto && photoInputRef.current?.click()}
+                  disabled={isUploadingPhoto}
+                  className="absolute -top-2 -right-2 p-2 rounded-xl bg-gradient-harx text-white shadow-lg hover:opacity-90 disabled:opacity-60"
+                  title="Change photo"
+                >
+                  {isUploadingPhoto ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => !isUploadingPhoto && photoInputRef.current?.click()}
-                disabled={isUploadingPhoto}
-                className="absolute -top-2 -right-2 p-2 rounded-xl bg-gradient-harx text-white shadow-lg hover:opacity-90 disabled:opacity-60"
-                title="Change photo"
-              >
-                {isUploadingPhoto ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-              </button>
-            </div>
 
-            {/* Properties Grid */}
-            <div className="flex-1 w-full relative">
-              {/* Action Buttons Top Right */}
-              <div className="flex flex-wrap gap-3 mb-8 pb-6 border-b border-slate-200/50 justify-between items-center">
-              <div>
-                <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-1">{profile.personalInfo?.name}</h2>
-                <p className="text-sm font-bold text-transparent bg-clip-text bg-gradient-harx uppercase tracking-widest italic">{profile.professionalSummary?.currentRole || 'Representative'}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                {/* Small Onboarding Info */}
-                <div className="px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl flex items-center gap-2">
-                  <ClipboardCheck className="w-4 h-4" />
-                  <span className="text-xs font-black uppercase tracking-wider">
-                    Phase {profile.onboardingProgress?.currentPhase || 1}
-                  </span>
+              {/* Properties Grid */}
+              <div className="flex-1 w-full relative">
+                {/* Action Buttons Top Right */}
+                <div className="flex flex-wrap gap-3 mb-8 pb-6 border-b border-slate-200/50 justify-between items-center">
+                  <div>
+                    <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-1">{profile.personalInfo?.name}</h2>
+                    <p className="text-sm font-bold text-transparent bg-clip-text bg-gradient-harx uppercase tracking-widest italic">{profile.professionalSummary?.currentRole || 'Representative'}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {/* Small Onboarding Info */}
+                    <div className="px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl flex items-center gap-2">
+                      <ClipboardCheck className="w-4 h-4" />
+                      <span className="text-xs font-black uppercase tracking-wider">
+                        Phase {profile.onboardingProgress?.currentPhase || 1}
+                      </span>
+                    </div>
+                    {profile.status !== 'completed' && (
+                      <button
+                        onClick={handlePublish}
+                        disabled={isPublishing}
+                        className="px-6 py-2.5 rounded-2xl bg-gradient-harx text-white hover:opacity-90 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-harx-500/20 active:scale-95 disabled:opacity-50"
+                      >
+                        {isPublishing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check size={16} />}
+                        {isPublishing ? 'Publishing...' : 'Publish'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {profile.status !== 'completed' && (
-                  <button
-                    onClick={handlePublish}
-                    disabled={isPublishing}
-                    className="px-6 py-2.5 rounded-2xl bg-gradient-harx text-white hover:opacity-90 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-harx-500/20 active:scale-95 disabled:opacity-50"
-                  >
-                    {isPublishing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check size={16} />}
-                    {isPublishing ? 'Publishing...' : 'Publish'}
-                  </button>
-                )}
-              </div>
-            </div>
 
-              <div className="flex items-center justify-end mb-3">
-                {!isEditingPublicInfo ? (
-                  <button
-                    type="button"
-                    onClick={openPublicInfoEditor}
-                    className="inline-flex items-center justify-center p-2 rounded-lg bg-gradient-harx text-white hover:opacity-90 transition-all"
-                    title="Edit Public Properties"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-end mb-3">
+                  {!isEditingPublicInfo ? (
                     <button
                       type="button"
-                      onClick={() => setIsEditingPublicInfo(false)}
-                      className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-slate-50"
+                      onClick={openPublicInfoEditor}
+                      className="inline-flex items-center justify-center p-2 rounded-lg bg-gradient-harx text-white hover:opacity-90 transition-all"
+                      title="Edit Public Properties"
                     >
-                      Cancel
+                      <Pencil className="w-3.5 h-3.5" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={savePublicInfoInline}
-                      disabled={isSavingPublicInfo}
-                      className="px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-60"
-                    >
-                      {isSavingPublicInfo ? 'Saving...' : 'Save'}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-                {/* Location */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Country</label>
-                  <div className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-200 transition-colors">
-                    <MapPin className="w-3.5 h-3.5 text-harx-400" />
-                    {isEditingPublicInfo ? (
-                      <div className="relative w-full">
-                        <input
-                          type="text"
-                          value={publicInfoDraft.country}
-                          onChange={(e) => {
-                            setPublicInfoDraft((prev) => ({ ...prev, country: e.target.value, countryId: '' }));
-                            setIsCountryDropdownOpen(true);
-                          }}
-                          onFocus={() => setIsCountryDropdownOpen(true)}
-                          onBlur={() => {
-                            setTimeout(() => setIsCountryDropdownOpen(false), 160);
-                          }}
-                          placeholder="Search country..."
-                          className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
-                        />
-                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        {isCountryDropdownOpen && (
-                          <div className="absolute z-50 mt-2 w-full bg-white border border-harx-100 rounded-xl shadow-xl overflow-hidden">
-                            <div className="max-h-56 overflow-y-auto">
-                              {filteredCountries.length > 0 ? (
-                                filteredCountries.map((country) => (
-                                  <button
-                                    key={country._id || country.countryCode || country.zoneName}
-                                    type="button"
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      setPublicInfoDraft((prev) => ({
-                                        ...prev,
-                                        country: String(country.countryName || ''),
-                                        countryId: String(country._id || '')
-                                      }));
-                                      setIsCountryDropdownOpen(false);
-                                    }}
-                                    className="w-full text-left px-3 py-2.5 hover:bg-harx-50 border-b border-harx-50 last:border-b-0 transition-colors"
-                                  >
-                                    <div className="text-xs font-bold text-slate-800">{country.countryName}</div>
-                                    <div className="text-[10px] text-slate-500">{country.countryCode || ''}</div>
-                                  </button>
-                                ))
-                              ) : (
-                                <div className="px-3 py-2.5 text-xs text-slate-500">No countries found.</div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-sm font-bold text-slate-900">{getCountryDisplayName()}</span>
-                    )}
-                    {countryMismatch?.hasMismatch && (
-                      <div className="ml-auto w-2 h-2 bg-amber-500 rounded-full animate-pulse" title="Location mismatch" />
-                    )}
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Direct Contact</label>
-                  <div className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-500 hover:text-harx-600 transition-all">
-                    <Mail className="w-3.5 h-3.5 text-slate-400 group-hover:text-harx-500" />
-                    {isEditingPublicInfo ? (
-                      <input
-                        type="email"
-                        value={publicInfoDraft.email}
-                        onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, email: e.target.value }))}
-                        className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
-                      />
-                    ) : (
-                      <span className="text-sm font-bold text-slate-900 truncate max-w-[120px]">{profile.personalInfo?.email || 'N/A'}</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Phone */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Line</label>
-                  <div className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-500 hover:text-harx-600 transition-all">
-                    <Phone className="w-3.5 h-3.5 text-slate-400 group-hover:text-harx-500" />
-                    {isEditingPublicInfo ? (
-                      <input
-                        type="text"
-                        value={publicInfoDraft.phone}
-                        onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, phone: e.target.value }))}
-                        className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
-                      />
-                    ) : (
-                      <span className="text-sm font-bold text-slate-900">{profile.personalInfo?.phone || 'N/A'}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Stats Grid (Score & Plan) */}
-            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div className="flex items-center gap-4 p-4 bg-slate-50/50 rounded-2xl border border-slate-200/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-harx-100/20 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-harx-100/40 transition-colors"></div>
-                  <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-harx-500 relative z-10">
-                    <Target size={24} className="animate-pulse" />
-                  </div>
-                  <div className="relative z-10">
-                    <div className="text-[10px] font-black text-harx-400 uppercase tracking-widest">REPS Score (Overall)</div>
-                    <div className="text-2xl font-black text-harx-900 tracking-tighter leading-none mt-0.5">{calculateOverallScore()} / 100</div>
-                  </div>
-               </div>
-
-               <div className="flex items-center gap-4 p-4 bg-slate-50/50 rounded-2xl border border-slate-200/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-harx-alt-100/20 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-harx-alt-100/40 transition-colors"></div>
-                  <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-harx-alt-500 relative z-10">
-                    <Briefcase size={24} />
-                  </div>
-                  <div className="relative z-10">
-                    <div className="text-[10px] font-black text-harx-alt-400 uppercase tracking-widest">Growth Plan</div>
-                    {isEditingPublicInfo ? (
+                  ) : (
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setIsPlanModalOpen(true)}
-                        className="w-full text-left text-sm font-black text-harx-alt-900 tracking-tight leading-none mt-1 bg-transparent outline-none hover:text-harx-alt-700 transition-colors"
+                        onClick={() => setIsEditingPublicInfo(false)}
+                        className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-slate-50"
                       >
-                        {(availablePlans.find((plan) => plan._id === publicInfoDraft.growthPlanId)?.name) || 'Select a plan'}
+                        Cancel
                       </button>
-                    ) : (
-                      <div className="text-lg font-black text-harx-alt-900 tracking-tight leading-none mt-0.5">
-                        {planData?.plan?.name || "Standard Representative"}
-                      </div>
-                    )}
+                      <button
+                        type="button"
+                        onClick={savePublicInfoInline}
+                        disabled={isSavingPublicInfo}
+                        className="px-3 py-1.5 rounded-lg bg-gradient-harx text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-60"
+                      >
+                        {isSavingPublicInfo ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+                  {/* Location */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Country</label>
+                    <div className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-200 transition-colors">
+                      <MapPin className="w-3.5 h-3.5 text-harx-400" />
+                      {isEditingPublicInfo ? (
+                        <div className="relative w-full">
+                          <input
+                            type="text"
+                            value={publicInfoDraft.country}
+                            onChange={(e) => {
+                              setPublicInfoDraft((prev) => ({ ...prev, country: e.target.value, countryId: '' }));
+                              setIsCountryDropdownOpen(true);
+                            }}
+                            onFocus={() => setIsCountryDropdownOpen(true)}
+                            onBlur={() => {
+                              setTimeout(() => setIsCountryDropdownOpen(false), 160);
+                            }}
+                            placeholder="Search country..."
+                            className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
+                          />
+                          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          {isCountryDropdownOpen && (
+                            <div className="absolute z-50 mt-2 w-full bg-white border border-harx-100 rounded-xl shadow-xl overflow-hidden">
+                              <div className="max-h-56 overflow-y-auto">
+                                {filteredCountries.length > 0 ? (
+                                  filteredCountries.map((country) => (
+                                    <button
+                                      key={country._id || country.countryCode || country.zoneName}
+                                      type="button"
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        setPublicInfoDraft((prev) => ({
+                                          ...prev,
+                                          country: String(country.countryName || ''),
+                                          countryId: String(country._id || '')
+                                        }));
+                                        setIsCountryDropdownOpen(false);
+                                      }}
+                                      className="w-full text-left px-3 py-2.5 hover:bg-harx-50 border-b border-harx-50 last:border-b-0 transition-colors"
+                                    >
+                                      <div className="text-xs font-bold text-slate-800">{country.countryName}</div>
+                                      <div className="text-[10px] text-slate-500">{country.countryCode || ''}</div>
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="px-3 py-2.5 text-xs text-slate-500">No countries found.</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm font-bold text-slate-900">{getCountryDisplayName()}</span>
+                      )}
+                      {countryMismatch?.hasMismatch && (
+                        <div className="ml-auto w-2 h-2 bg-amber-500 rounded-full animate-pulse" title="Location mismatch" />
+                      )}
+                    </div>
                   </div>
-               </div>
+
+                  {/* Email */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Direct Contact</label>
+                    <div className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-500 hover:text-harx-600 transition-all">
+                      <Mail className="w-3.5 h-3.5 text-slate-400 group-hover:text-harx-500" />
+                      {isEditingPublicInfo ? (
+                        <input
+                          type="email"
+                          value={publicInfoDraft.email}
+                          onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, email: e.target.value }))}
+                          className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
+                        />
+                      ) : (
+                        <span className="text-sm font-bold text-slate-900 truncate max-w-[120px]">{profile.personalInfo?.email || 'N/A'}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Phone */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Line</label>
+                    <div className="flex items-center gap-2 py-2 px-3 bg-slate-200/50 rounded-xl border border-slate-200/30 group hover:border-harx-500 hover:text-harx-600 transition-all">
+                      <Phone className="w-3.5 h-3.5 text-slate-400 group-hover:text-harx-500" />
+                      {isEditingPublicInfo ? (
+                        <input
+                          type="text"
+                          value={publicInfoDraft.phone}
+                          onChange={(e) => setPublicInfoDraft((prev) => ({ ...prev, phone: e.target.value }))}
+                          className="w-full text-sm font-bold text-slate-900 bg-transparent outline-none"
+                        />
+                      ) : (
+                        <span className="text-sm font-bold text-slate-900">{profile.personalInfo?.phone || 'N/A'}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Stats Grid (Score & Plan) */}
+                <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-4 p-4 bg-slate-50/50 rounded-2xl border border-slate-200/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-harx-100/20 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-harx-100/40 transition-colors"></div>
+                    <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-harx-500 relative z-10">
+                      <Target size={24} className="animate-pulse" />
+                    </div>
+                    <div className="relative z-10">
+                      <div className="text-[10px] font-black text-harx-400 uppercase tracking-widest">REPS Score (Overall)</div>
+                      <div className="text-2xl font-black text-harx-900 tracking-tighter leading-none mt-0.5">{calculateOverallScore()} / 100</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-4 bg-slate-50/50 rounded-2xl border border-slate-200/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-harx-alt-100/20 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-harx-alt-100/40 transition-colors"></div>
+                    <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-harx-alt-500 relative z-10">
+                      <Briefcase size={24} />
+                    </div>
+                    <div className="relative z-10">
+                      <div className="text-[10px] font-black text-harx-alt-400 uppercase tracking-widest">Growth Plan</div>
+                      {isEditingPublicInfo ? (
+                        <button
+                          type="button"
+                          onClick={() => setIsPlanModalOpen(true)}
+                          className="w-full text-left text-sm font-black text-harx-alt-900 tracking-tight leading-none mt-1 bg-transparent outline-none hover:text-harx-alt-700 transition-colors"
+                        >
+                          {(availablePlans.find((plan) => plan._id === publicInfoDraft.growthPlanId)?.name) || 'Select a plan'}
+                        </button>
+                      ) : (
+                        <div className="text-lg font-black text-harx-alt-900 tracking-tight leading-none mt-0.5">
+                          {planData?.plan?.name || "Standard Representative"}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      )}
+        )}
 
-      <div className="w-full">
-        <div className="flex-1 min-h-[600px]">
-          {renderActiveTab()}
-        </div>
+        <div className="w-full">
+          <div className="flex-1 min-h-[600px]">
+            {renderActiveTab()}
+          </div>
         </div>
       </div>
 
@@ -1164,11 +1164,10 @@ export const ProfileView: React.FC<{
                     key={plan._id}
                     type="button"
                     onClick={() => setTempSelectedPlanId(plan._id)}
-                    className={`w-full text-left p-4 rounded-2xl border transition-all ${
-                      isSelected
+                    className={`w-full text-left p-4 rounded-2xl border transition-all ${isSelected
                         ? 'border-harx-400 bg-harx-50 shadow-sm'
                         : 'border-slate-200 hover:border-harx-200 hover:bg-harx-50/40'
-                    }`}
+                      }`}
                   >
                     <div className="text-sm font-black text-harx-900">{plan.name}</div>
                     <div className="text-xs text-slate-600">${plan.price} / month</div>
@@ -1205,14 +1204,14 @@ export const ProfileView: React.FC<{
           <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-xl font-black text-slate-900">Crop Profile Photo</h3>
-              <button 
+              <button
                 onClick={() => setIsCropModalOpen(false)}
                 className="p-2 hover:bg-slate-50 rounded-xl transition-colors"
               >
                 <X className="w-5 h-5 text-slate-400" />
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-auto p-6 bg-slate-50/50 flex justify-center items-center">
               <ReactCrop
                 crop={crop}
