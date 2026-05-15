@@ -90,12 +90,6 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       isAccessible: () => true
     },
     {
-      icon: UserCircle,
-      label: t('sidebar.profile'),
-      path: '/profile',
-      isAccessible: () => true
-    },
-    {
       icon: Briefcase,
       label: t('sidebar.marketplace'),
       path: '/gigs-marketplace',
