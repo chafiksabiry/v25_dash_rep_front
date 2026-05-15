@@ -73,8 +73,47 @@ const renderCommissionInfo = (gig: any) => {
 
   return (
     <div className="flex flex-wrap gap-2 mb-3">
+      <style>{`
+        @keyframes shine {
+          0% { left: -100%; }
+          20% { left: 100%; }
+          100% { left: 100%; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+        .animate-shine {
+          position: relative;
+          overflow: hidden;
+        }
+        .animate-shine::after {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -100%;
+          width: 50%;
+          height: 200%;
+          background: linear-gradient(
+            to right,
+            transparent,
+            rgba(255, 255, 255, 0.4),
+            transparent
+          );
+          transform: rotate(30deg);
+          animation: shine 4s infinite linear;
+        }
+        .animate-float-slow {
+          animation: float 3s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+          animation: float 3s ease-in-out infinite;
+          animation-delay: 1.5s;
+        }
+      `}</style>
+      
       {hasCall && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 transition-all hover:shadow-emerald-500/40 hover:-translate-y-0.5" title="Commission par appel">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 animate-shine animate-float-slow" title="Commission par appel">
           <div className="bg-white/20 p-1 rounded-lg">
             <Phone className="w-3.5 h-3.5 text-white" />
           </div>
@@ -86,7 +125,7 @@ const renderCommissionInfo = (gig: any) => {
       )}
       
       {hasTrans && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl shadow-lg shadow-purple-500/20 transition-all hover:shadow-purple-500/40 hover:-translate-y-0.5" title="Commission par transaction">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:scale-105 animate-shine animate-float-delayed" title="Commission par transaction">
           <div className="bg-white/20 p-1 rounded-lg">
             <Briefcase className="w-3.5 h-3.5 text-white" />
           </div>
@@ -98,13 +137,13 @@ const renderCommissionInfo = (gig: any) => {
       )}
 
       {hasBonus && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-400 to-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 transition-all hover:shadow-amber-500/40 hover:-translate-y-0.5" title="Bonus">
-          <div className="bg-white/20 p-1 rounded-lg animate-pulse">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-400 to-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/30 transition-all hover:scale-105 animate-shine" title="Bonus">
+          <div className="bg-white/20 p-1 rounded-lg animate-bounce">
             <Sparkles className="w-3.5 h-3.5 text-white" />
           </div>
           <div className="flex flex-col">
             <span className="font-black text-sm leading-none">+{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
-            <span className="text-[8px] font-extrabold uppercase tracking-widest opacity-90">{bonusPeriodStr}</span>
+            <span className="text-[8px] font-extrabold uppercase tracking-widest opacity-95">🔥 {bonusPeriodStr}</span>
           </div>
         </div>
       )}
