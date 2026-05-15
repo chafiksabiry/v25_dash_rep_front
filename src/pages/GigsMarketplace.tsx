@@ -3,7 +3,7 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { useTranslation } from 'react-i18next';
 
 import { useNavigate } from 'react-router-dom';
-import { User, Users, Globe, Calendar, Heart, ChevronLeft, ChevronRight, Phone, Briefcase, Sparkles, BadgeEuro } from 'lucide-react';
+import { User, Users, Globe, Calendar, Heart, ChevronLeft, ChevronRight, Phone, Briefcase, Sparkles, BadgeEuro, Play } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchPendingRequests as fetchPendingRequestsUtil, fetchEnrolledGigsFromProfile } from '../utils/gigStatusUtils';
 import { resolveGigStartRoute } from '../utils/gigStartRouting';
