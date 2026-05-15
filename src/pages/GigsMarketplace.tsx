@@ -1366,7 +1366,7 @@ export function GigsMarketplace() {
   }
 
   const getCardStyleForStatus = (status: string) => {
-    const baseClass = "group rounded-2xl p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border hover:-translate-y-1 transition-all duration-300 flex flex-col h-full min-w-0";
+    const baseClass = "group rounded-2xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border hover:-translate-y-1 transition-all duration-300 flex flex-col h-full min-w-0";
     switch (status) {
       case 'enrolled':
         return {
@@ -1472,26 +1472,26 @@ export function GigsMarketplace() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {(currentGigs as PopulatedGig[]).map((gig) => {
             const gigStatus = getGigStatus(gig._id);
             const gigStyle = getCardStyleForStatus(gigStatus);
             return (
               <div key={gig._id} className={gigStyle.container}>
                 {/* Header: Logo & Actions/Status */}
-                <div className="flex justify-between items-center mb-5">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                       {gig.companyId?.logo ? (
-                        <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                        <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
+                        <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-base uppercase">
                           {gig.companyId?.name?.[0] || '?'}
                         </div>
                       )}
                     </div>
                     {gig.companyId?.name && (
-                      <span className="text-sm font-bold text-slate-700 truncate" title={gig.companyId.name}>
+                      <span className="text-xs font-bold text-slate-700 truncate" title={gig.companyId.name}>
                         {gig.companyId.name}
                       </span>
                     )}
@@ -1541,11 +1541,11 @@ export function GigsMarketplace() {
                 </div>
 
                 {/* Content: Title & Brand */}
-                <div className="mb-5">
-                  <h3 className="text-xl font-bold text-slate-800 mb-1.5 tracking-tight leading-tight line-clamp-2" title={gig.title}>
+                <div className="mb-3">
+                  <h3 className="text-lg font-bold text-slate-800 mb-1 tracking-tight leading-tight line-clamp-2" title={gig.title}>
                     {gig.title}
                   </h3>
-                  <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                  <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
                     {gig.category}
                   </p>
                 </div>
@@ -1673,26 +1673,26 @@ export function GigsMarketplace() {
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {(currentGigs as PopulatedGig[]).map((gig) => {
                   const gigStatus = getGigStatus(gig._id);
                   const gigStyle = getCardStyleForStatus(gigStatus);
                   return (
                     <div key={gig._id} className={`${gigStyle.container} min-w-0`}>
                       {/* Header: Logo & Status/Actions */}
-                      <div className="flex justify-between items-center mb-5">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                      <div className="flex justify-between items-center mb-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-10 h-10 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                             {gig.companyId?.logo ? (
-                              <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                              <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
+                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-base uppercase">
                                 {gig.companyId?.name?.[0] || '?'}
                               </div>
                             )}
                           </div>
                           {gig.companyId?.name && (
-                            <span className="text-sm font-bold text-slate-700 truncate" title={gig.companyId.name}>
+                            <span className="text-xs font-bold text-slate-700 truncate" title={gig.companyId.name}>
                               {gig.companyId.name}
                             </span>
                           )}
@@ -1738,11 +1738,11 @@ export function GigsMarketplace() {
                       </div>
 
                       {/* Content: Title & Brand */}
-                      <div className="mb-5">
-                        <h3 className="text-xl font-bold text-slate-800 mb-1.5 tracking-tight leading-tight line-clamp-2" title={gig.title}>
+                      <div className="mb-3">
+                        <h3 className="text-lg font-bold text-slate-800 mb-1 tracking-tight leading-tight line-clamp-2" title={gig.title}>
                           {gig.title}
                         </h3>
-                        <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
                           {gig.category}
                         </p>
                       </div>
@@ -1852,25 +1852,25 @@ export function GigsMarketplace() {
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {(currentGigs as InvitedEnrollment[]).map((enrollment) => {
                   const gigStyle = getCardStyleForStatus('invited');
                   return (
                     <div key={enrollment.id} className={`${gigStyle.container} min-w-0`}>
                       {/* Header: Logo & Status/Actions */}
-                      <div className="flex justify-between items-center mb-5">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                      <div className="flex justify-between items-center mb-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-10 h-10 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                             {enrollment.gig.companyId?.logo ? (
-                              <img src={enrollment.gig.companyId.logo} alt={enrollment.gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                              <img src={enrollment.gig.companyId.logo} alt={enrollment.gig.companyId.name} className="w-full h-full object-contain p-1" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
+                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-base uppercase">
                                 {enrollment.gig.companyId?.name?.[0] || '?'}
                               </div>
                             )}
                           </div>
                           {enrollment.gig.companyId?.name && (
-                            <span className="text-sm font-bold text-slate-700 truncate" title={enrollment.gig.companyId.name}>
+                            <span className="text-xs font-bold text-slate-700 truncate" title={enrollment.gig.companyId.name}>
                               {enrollment.gig.companyId.name}
                             </span>
                           )}
@@ -1899,11 +1899,11 @@ export function GigsMarketplace() {
                       </div>
 
                       {/* Content: Title & Brand */}
-                      <div className="mb-5">
-                        <h3 className="text-xl font-bold text-slate-800 mb-1.5 tracking-tight leading-tight line-clamp-2" title={enrollment.gig.title}>
+                      <div className="mb-3">
+                        <h3 className="text-lg font-bold text-slate-800 mb-1 tracking-tight leading-tight line-clamp-2" title={enrollment.gig.title}>
                           {enrollment.gig.title}
                         </h3>
-                        <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
                           {enrollment.gig.category}
                         </p>
                       </div>
@@ -2041,25 +2041,25 @@ export function GigsMarketplace() {
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {(currentGigs as EnrolledGig[]).map((enrolledGig) => {
                   const gigStyle = getCardStyleForStatus('enrolled');
                   return (
                     <div key={enrolledGig.id} className={`${gigStyle.container} min-w-0`}>
                       {/* Header: Logo & Status/Actions */}
-                      <div className="flex justify-between items-center mb-5">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                      <div className="flex justify-between items-center mb-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-10 h-10 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                             {enrolledGig.gig.companyId?.logo ? (
-                              <img src={enrolledGig.gig.companyId.logo} alt={enrolledGig.gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                              <img src={enrolledGig.gig.companyId.logo} alt={enrolledGig.gig.companyId.name} className="w-full h-full object-contain p-1" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-lg uppercase">
+                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-base uppercase">
                                 {enrolledGig.gig.companyId?.name?.[0] || '?'}
                               </div>
                             )}
                           </div>
                           {enrolledGig.gig.companyId?.name && (
-                            <span className="text-sm font-bold text-slate-700 truncate" title={enrolledGig.gig.companyId.name}>
+                            <span className="text-xs font-bold text-slate-700 truncate" title={enrolledGig.gig.companyId.name}>
                               {enrolledGig.gig.companyId.name}
                             </span>
                           )}
@@ -2088,11 +2088,11 @@ export function GigsMarketplace() {
                       </div>
 
                       {/* Content: Title & Brand */}
-                      <div className="mb-5">
-                        <h3 className="text-xl font-bold text-slate-800 mb-1.5 tracking-tight leading-tight line-clamp-2" title={enrolledGig.gig.title}>
+                      <div className="mb-3">
+                        <h3 className="text-lg font-bold text-slate-800 mb-1 tracking-tight leading-tight line-clamp-2" title={enrolledGig.gig.title}>
                           {enrolledGig.gig.title}
                         </h3>
-                        <p className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${gigStyle.category}`}>
                           {enrolledGig.gig.category}
                         </p>
                       </div>
