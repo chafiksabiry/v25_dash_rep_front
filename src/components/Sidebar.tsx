@@ -95,12 +95,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
       path: '/gigs-marketplace',
       isAccessible: () => isPhaseCompleted(4)
     },
-    {
-      icon: Phone,
-      label: t('sidebar.calls'),
-      path: '/calls',
-      isAccessible: () => true
-    },
+
     {
       icon: GraduationCap,
       label: t('sidebar.training'),
@@ -140,7 +135,7 @@ export function Sidebar({ phases, isSidebarOpen, setIsSidebarOpen, isCollapsed, 
 
   const filteredNavItems = navItems.filter(item => item.isAccessible());
 
-  const group1 = filteredNavItems.filter(i => ['/', '/gigs-marketplace', '/calls', '/workspace'].includes(i.path));
+  const group1 = filteredNavItems.filter(i => ['/', '/gigs-marketplace', '/workspace'].includes(i.path));
   const group2 = filteredNavItems.filter(i => ['/training'].includes(i.path));
   const group3 = filteredNavItems.filter(i => ['/session-planning'].includes(i.path));
 
