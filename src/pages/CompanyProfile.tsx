@@ -132,7 +132,9 @@ export function CompanyProfile() {
       searchParams.get('gigId') || searchParams.get('fromGig') || searchParams.get('returnGig');
     const fromGigId = state?.fromGigId || getCompanyReturnGig(companyId) || fromQuery || undefined;
     if (fromGigId) {
-      navigate(`/gig/${fromGigId}`);
+      // Replace so we do not push a second "gig" entry on top of "company".
+      // Without this, browser Back from the gig page returns to company — it feels like Back is broken.
+      navigate(`/gig/${fromGigId}`, { replace: true });
       return;
     }
     if (window.history.length > 1) {
