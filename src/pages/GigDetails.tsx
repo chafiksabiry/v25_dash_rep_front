@@ -1086,9 +1086,29 @@ export function GigDetails() {
           <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
             <div className="flex justify-between items-start mb-6">
               <div className="flex-1">
-                <div className="flex items-center flex-wrap gap-4 mb-3">
+
+                {/* Company logo + name — avant le titre */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                    {gig.companyId?.logo ? (
+                      <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-black text-lg uppercase">
+                        {(gig.companyId?.name || (gig as any).company || gig.userId?.fullName || '?')[0]}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-base font-extrabold text-slate-900 leading-tight">
+                      {gig.companyId?.name || (gig as any).company || gig.userId?.fullName || 'Unknown'}
+                    </p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-500 mt-0.5">{gig.category}</p>
+                  </div>
+                </div>
+
+                {/* Titre + badges statut */}
+                <div className="flex items-center flex-wrap gap-3 mb-4">
                   <h1 className="text-4xl font-black text-gray-900 tracking-tight">{gig.title}</h1>
-                  {/* Badge de statut */}
                   {getAgentStatus() === 'enrolled' && (
                     <span className="inline-block px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
                       ✓ Enrolled
@@ -1100,17 +1120,8 @@ export function GigDetails() {
                     </span>
                   )}
                 </div>
-                <p className="text-lg text-gray-500 font-medium mb-4">{gig.category}</p>
-                <div className="flex items-center gap-4">
-                  <span className="inline-block px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest bg-harx-alt-50 text-harx-alt-700">
-                    {gig.seniority?.level || 'N/A'}
-                  </span>
-                  <span className="text-sm text-gray-600">
-                    at <span className="font-medium text-gray-900">{gig.companyId?.name || (gig as any).company || gig.userId?.fullName || 'Unknown'}</span>
-                  </span>
-                </div>
 
-                {/* Commission pills — juste sous company */}
+                {/* Commission pills */}
                 {(() => {
                   const currencySymbol = typeof gig.commission?.currency === 'object'
                     ? gig.commission?.currency?.symbol || gig.commission?.currency?.code || '€'
@@ -1121,7 +1132,7 @@ export function GigDetails() {
                     : (gig.commission?.transactionCommission as any)?.amount;
                   const bonus = gig.commission?.bonusAmount;
                   return (
-                    <div className="flex flex-wrap gap-2 mt-4">
+                    <div className="flex flex-wrap gap-2">
                       {perCall && Number(perCall) > 0 && (
                         <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg border border-cyan-400 shadow-[0_2px_12px_-2px_rgba(6,182,212,0.5)] animate-shine animate-pulse-ring">
                           <Phone className="w-3.5 h-3.5 shrink-0" />
