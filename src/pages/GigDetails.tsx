@@ -6,7 +6,7 @@ import Cookies from 'js-cookie';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchEnrolledGigsFromProfile, fetchPendingRequests, refreshGigStatuses } from '../utils/gigStatusUtils';
 import { resolveGigStartRoute } from '../utils/gigStartRouting';
-import { getBonusPillDisplay, getTransactionPillDisplay } from '../utils/gigCommissionDisplay';
+import { getBonusPillDisplay, getTransactionPillDisplay, getResolvedAgentFacing, type GigCommissionExtended, type AgentFacingCommissionBlock } from '../utils/gigCommissionDisplay';
 import { persistCompanyProfile, persistCompanyReturnGig, type CompanyProfileData } from '../utils/companyProfileStorage';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
@@ -206,7 +206,7 @@ interface PopulatedGig {
     };
   };
 
-  // 💰 Commission
+  // 💰 Commission (agentFacing optional = server-enriched agent amounts)
   commission: {
     commission_per_call: number;
     bonusAmount?: string | number;
@@ -229,6 +229,7 @@ interface PopulatedGig {
       amount: string | number;
     };
     additionalDetails?: string;
+    agentFacing?: AgentFacingCommissionBlock;
   };
 
   // 🎯 Leads
@@ -1087,7 +1088,8 @@ export function GigDetails() {
     typeof gig.commission?.currency === 'object'
       ? gig.commission?.currency?.symbol || gig.commission?.currency?.code || '€'
       : gig.commission?.currency || '€';
-  const commissionPerCall = gig.commission?.commission_per_call;
+  const resolvedFacing = getResolvedAgentFacing(gig.commission as GigCommissionExtended);
+  const commissionPerCall = resolvedFacing?.commission_per_call;
   const transactionPill = getTransactionPillDisplay(gig.commission, commissionCurrencySymbol);
   const bonusPill = getBonusPillDisplay(gig.commission, commissionCurrencySymbol);
   const hasCommissionPills = Boolean(

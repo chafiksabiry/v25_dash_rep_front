@@ -7,30 +7,43 @@ import { User, Users, Globe, Calendar, Heart, ChevronLeft, ChevronRight, Phone, 
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchPendingRequests as fetchPendingRequestsUtil, fetchEnrolledGigsFromProfile } from '../utils/gigStatusUtils';
 import { persistCompanyProfile, persistCompanyReturnGig, type CompanyProfileData } from '../utils/companyProfileStorage';
+import type { GigCommissionExtended } from '../utils/gigCommissionDisplay';
+import { getResolvedAgentFacing } from '../utils/gigCommissionDisplay';
 
 const renderCommissionInfo = (gig: any) => {
   if (!gig || !gig.commission) return null;
-  const comm = gig.commission;
+  const comm = gig.commission as GigCommissionExtended;
   const currencySymbol = typeof comm.currency === 'object' ? comm.currency?.symbol || '€' : comm.currency || '€';
 
-  const applyCut = (val: any) => {
-    if (val === undefined || val === null || val === '') return val;
-    const num = parseFloat(String(val).replace(/,/g, ''));
-    if (isNaN(num)) return val;
-    return Number((num * 0.7).toFixed(2));
-  };
+  const af = getResolvedAgentFacing(comm);
 
-  const perCall = applyCut(comm.commission_per_call);
-  const hasCall = perCall !== undefined && perCall > 0;
+  const perCall = af?.commission_per_call;
+  const hasCall = perCall !== undefined && perCall !== null && Number(perCall) > 0;
 
-  const transComm = comm.transactionCommission;
-  const hasTrans = transComm !== undefined && (typeof transComm === 'number' ? transComm > 0 : Number(transComm.amount) > 0);
-  const transAmount = applyCut(typeof transComm === 'number' ? transComm : transComm?.amount);
-  const transType = typeof transComm === 'object' && transComm.type ? transComm.type : 'Transaction';
+  const transEff = af?.transactionCommission;
+  let hasTrans = false;
+  let transDisplay: string | number = '';
+  let transType = 'Transaction';
+  if (transEff !== undefined && transEff !== null) {
+    if (typeof transEff === 'number') {
+      hasTrans = transEff > 0;
+      transDisplay = transEff;
+    } else if (typeof transEff === 'object') {
+      const typ = String(transEff.type || '').toLowerCase();
+      const amt = transEff.amount !== undefined && transEff.amount !== null ? Number(String(transEff.amount).replace(/,/g, '')) : NaN;
+      hasTrans = !Number.isNaN(amt) && amt > 0;
+      if (typ === 'percentage' || typ === 'percent' || typ === '%') {
+        transDisplay = `${amt}%`;
+        transType = '%';
+      } else {
+        transDisplay = amt;
+        transType = (transEff as { type?: string }).type || 'Transaction';
+      }
+    }
+  }
 
-  const bonusRaw = comm.bonusAmount || comm.bonus;
-  const bonus = applyCut(bonusRaw);
-  const hasBonus = bonus !== undefined && bonus != 0 && bonus != "0";
+  const bonus = af?.bonusAmount ?? af?.bonus;
+  const hasBonus = bonus !== undefined && bonus !== null && Number(bonus) !== 0;
 
   let bonusConditionStr = '';
   if (comm.minimumVolume?.amount) {
@@ -56,8 +69,8 @@ const renderCommissionInfo = (gig: any) => {
   }
 
   if (!hasCall && !hasTrans && !hasBonus) {
-    const base = applyCut(comm.baseAmount);
-    if (base && base != 0 && base != "0") {
+    const base = af?.baseAmount;
+    if (base && base != 0 && base != '0') {
       return (
         <div className="flex flex-wrap gap-2 mb-3">
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50/80 text-blue-700 rounded-xl border border-blue-100 shadow-sm">
@@ -87,8 +100,8 @@ const renderCommissionInfo = (gig: any) => {
         <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg border border-violet-400 shadow-[0_2px_12px_-2px_rgba(139,92,246,0.5)] animate-shine animate-pulse-ring animate-border-flash animate-tilt" title="Commission par transaction">
           <Briefcase className="w-3.5 h-3.5 fill-white animate-float" />
           <div className="flex flex-col leading-none">
-            <span className="font-black text-xs">{transAmount}{currencySymbol}</span>
-            <span className="text-[8px] font-bold uppercase tracking-wider opacity-90">/ {transType}</span>
+            <span className="font-black text-xs">{transType === '%' ? transDisplay : `${transDisplay}${currencySymbol}`}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider opacity-90">/ {transType === '%' ? 'Transaction' : transType}</span>
           </div>
         </div>
       )}
