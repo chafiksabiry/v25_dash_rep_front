@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ProfileView } from '../components/ProfileView';
 import { ProfileEditView } from '../components/ProfileEditView';
@@ -139,6 +140,8 @@ interface ProfileData {
 
 export function Profile() {
   console.log('🧩 Profile component initializing');
+  const navigate = useNavigate();
+  const location = useLocation();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -146,16 +149,20 @@ export function Profile() {
   const [editInitialTab, setEditInitialTab] = useState('profile');
 
   useEffect(() => {
-    const url = new URL(window.location.href);
+    const qs = location.search.startsWith('?') ? location.search.slice(1) : location.search;
+    const params = new URLSearchParams(qs);
     if (isEditing) {
-      url.searchParams.set('edit', 'true');
+      params.set('edit', 'true');
     } else {
-      url.searchParams.delete('edit');
+      params.delete('edit');
     }
-    window.history.replaceState({}, '', url.toString());
-    // Dispatch a custom event to notify App.tsx if needed
+    const raw = params.toString();
+    const nextSearch = raw ? `?${raw}` : '';
+    if (nextSearch !== location.search) {
+      navigate({ pathname: location.pathname, search: nextSearch }, { replace: true });
+    }
     window.dispatchEvent(new Event('profile_edit_toggle'));
-  }, [isEditing]);
+  }, [isEditing, location.pathname, location.search, navigate]);
 
   useEffect(() => {
     console.log('📋 Profile component mounted - loading profile data');

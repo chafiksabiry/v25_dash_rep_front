@@ -76,8 +76,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // 4. Construire l'URL complète pour rediriger vers l'app principale
     const mainAppUrl = getMainAppUrl();
 
-    // 5. Nettoyer l'historique du navigateur pour empêcher le retour
-    window.history.replaceState({}, '', mainAppUrl);
+    // 5. Mettre à jour l'URL sans écraser l'état interne du routeur (meilleure cohérence avant hard redirect)
+    window.history.replaceState(window.history.state, '', mainAppUrl);
 
     // 6. Rediriger vers l'application principale (pas la sous-app)
     window.location.replace(mainAppUrl);

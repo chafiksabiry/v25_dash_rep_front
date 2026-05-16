@@ -31,9 +31,11 @@ const ProtectedRoute = ({ children, fallback }: { children: React.ReactNode; fal
       const basename = isStandalone ? '' : '/repdashboard';
       const fullPath = basename + location.pathname + location.search;
 
-      // Remplacer l'entrée actuelle de l'historique pour empêcher le retour
+      // Préserver history.state (React Router) tout en marquant l'entrée
+      const prev = window.history.state;
+      const baseState = prev && typeof prev === 'object' ? prev : {};
       window.history.replaceState(
-        { protected: true, timestamp: Date.now() },
+        { ...baseState, protected: true, timestamp: Date.now() },
         '',
         fullPath
       );
