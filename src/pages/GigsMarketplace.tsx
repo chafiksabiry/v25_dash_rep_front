@@ -1546,19 +1546,19 @@ export function GigsMarketplace() {
                     </div>
                   </div>
 
-                  {/* Content: Title & Brand */}
-                  <div className="mb-3">
-                    <h3 className="text-lg font-bold text-indigo-950 mb-1 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={gig.title}>
+                  {/* Content: Title, Brand & Commission */}
+                  <div className="mb-2">
+                    <h3 className="text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={gig.title}>
                       {gig.title}
                     </h3>
-                    <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500`}>
+                    <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500 mb-3`}>
                       {gig.category}
                     </p>
+                    {/* Commission pills — hero visuel */}
+                    {renderCommissionInfo(gig)}
                   </div>
 
-                  <div className="mt-3 space-y-2">
-                    {renderCommissionInfo(gig)}
-
+                  <div className="mt-1 space-y-2">
                     {/* Compact Metadata Row */}
                     <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
                       <div className="flex items-center gap-1 shrink-0">
@@ -1728,19 +1728,19 @@ export function GigsMarketplace() {
                         </div>
                       </div>
 
-                      {/* Content: Title & Brand */}
-                      <div className="mb-3">
+                      {/* Content: Title, Brand & Commission */}
+                      <div className="mb-2">
                         <h3 className="text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={gig.title}>
                           {gig.title}
                         </h3>
-                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500`}>
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500 mb-3`}>
                           {gig.category}
                         </p>
+                        {/* Commission pills — hero visuel */}
+                        {renderCommissionInfo(gig)}
                       </div>
 
-                      <div className="mt-2 space-y-2">
-                        {renderCommissionInfo(gig)}
-
+                      <div className="mt-1 space-y-2">
                         {/* Compact Metadata Row */}
                         <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
                           <div className="flex items-center gap-1 shrink-0">
@@ -1896,19 +1896,19 @@ export function GigsMarketplace() {
                         </div>
                       </div>
 
-                      {/* Content: Title & Brand */}
-                      <div className="mb-3">
+                      {/* Content: Title, Brand & Commission */}
+                      <div className="mb-2">
                         <h3 className="text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={enrollment.gig.title}>
                           {enrollment.gig.title}
                         </h3>
-                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500`}>
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500 mb-3`}>
                           {enrollment.gig.category}
                         </p>
+                        {/* Commission pills — hero visuel */}
+                        {renderCommissionInfo(enrollment.gig)}
                       </div>
 
-                      <div className="mt-2 space-y-2">
-                        {renderCommissionInfo(enrollment.gig)}
-
+                      <div className="mt-1 space-y-2">
                         {/* Compact Metadata Row */}
                         <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
                           <div className="flex items-center gap-1 shrink-0">
@@ -2074,19 +2074,19 @@ export function GigsMarketplace() {
                         </div>
                       </div>
 
-                      {/* Content: Title & Brand */}
-                      <div className="mb-3">
+                      {/* Content: Title, Brand & Commission */}
+                      <div className="mb-2">
                         <h3 className="text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={enrolledGig.gig.title}>
                           {enrolledGig.gig.title}
                         </h3>
-                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500`}>
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500 mb-3`}>
                           {enrolledGig.gig.category}
                         </p>
+                        {/* Commission pills — hero visuel */}
+                        {renderCommissionInfo(enrolledGig.gig)}
                       </div>
 
-                      <div className="mt-2 space-y-2">
-                        {renderCommissionInfo(enrolledGig.gig)}
-
+                      <div className="mt-1 space-y-2">
                         {/* Compact Metadata Row */}
                         <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1">
                           <div className="flex items-center gap-1 shrink-0">
