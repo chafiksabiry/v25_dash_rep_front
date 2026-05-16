@@ -284,19 +284,6 @@ export function CompanyProfile() {
               </section>
             )}
 
-            {company.culture?.workEnvironment && (
-              <section className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-8">
-                <h2 className="text-xl font-black text-slate-900 tracking-tight mb-3">Environnement de travail</h2>
-                <p className="text-slate-600 leading-relaxed font-medium">{company.culture.workEnvironment}</p>
-              </section>
-            )}
-
-            {company.opportunities?.growthPotential && (
-              <section className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-8">
-                <h2 className="text-xl font-black text-slate-900 tracking-tight mb-3">Évolution</h2>
-                <p className="text-slate-600 leading-relaxed font-medium">{company.opportunities.growthPotential}</p>
-              </section>
-            )}
           </div>
         </div>
       </div>
