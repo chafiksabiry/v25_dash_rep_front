@@ -19,7 +19,13 @@ import {
   loadCompanyProfileFromStorage,
   persistCompanyProfile,
   getCompanyReturnGig,
+  persistCompanyReturnGig,
 } from '../utils/companyProfileStorage';
+import {
+  normalizeEntityId,
+  fetchGigDetailsPayload,
+  fetchCompanyFromGigsListing,
+} from '../utils/companyProfileLoad';
 
 type CompanyLocationState = {
   company?: CompanyProfileData;
@@ -33,19 +39,88 @@ export function CompanyProfile() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const [company, setCompany] = useState<CompanyProfileData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!companyId) return;
-    const state = location.state as CompanyLocationState | null;
-    const fromState = state?.company;
-    if (fromState && fromState._id === companyId) {
-      setCompany(fromState);
-      persistCompanyProfile(companyId, fromState);
-      return;
+    const id: string = companyId;
+    let cancelled = false;
+
+    async function resolve() {
+      setLoadError(null);
+      try {
+        const locState = location.state as CompanyLocationState | null;
+        const fromState = locState?.company;
+        if (fromState && normalizeEntityId(fromState._id) === id) {
+          setCompany(fromState);
+          persistCompanyProfile(id, fromState);
+          return;
+        }
+
+        const cached = loadCompanyProfileFromStorage(id);
+        if (cached && normalizeEntityId(cached._id) === id) {
+          setCompany(cached);
+          return;
+        }
+
+        setCompany(null);
+        setLoading(true);
+
+        const gigId =
+          searchParams.get('gigId') ||
+          searchParams.get('fromGig') ||
+          searchParams.get('returnGig') ||
+          null;
+
+        let loaded: CompanyProfileData | null = null;
+
+        if (gigId) {
+          try {
+            const gig = await fetchGigDetailsPayload(gigId);
+            const co = gig.companyId;
+            if (co && typeof co === 'object') {
+              const cid = normalizeEntityId((co as { _id?: unknown })._id);
+              if (cid === id) {
+                loaded = co as CompanyProfileData;
+                persistCompanyReturnGig(id, gigId);
+              }
+            }
+          } catch {
+            /* fallback: listing */
+          }
+        }
+
+        if (!loaded && !cancelled) {
+          try {
+            loaded = await fetchCompanyFromGigsListing(id);
+          } catch {
+            loaded = null;
+          }
+        }
+
+        if (cancelled) return;
+
+        if (loaded) {
+          setCompany(loaded);
+          persistCompanyProfile(id, loaded);
+          setLoadError(null);
+        } else {
+          setCompany(null);
+          setLoadError(
+            'Impossible de charger ce profil. Vérifiez le lien, ou ouvrez l’entreprise depuis une fiche gig ou le marketplace.',
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
     }
-    const cached = loadCompanyProfileFromStorage(companyId);
-    setCompany(cached);
-  }, [companyId, location.state]);
+
+    resolve();
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId, location.state, searchParams]);
 
   const handleBack = useCallback(() => {
     if (!companyId) {
@@ -84,13 +159,23 @@ export function CompanyProfile() {
     return null;
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-4 text-slate-600">
+        <div className="h-10 w-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-semibold">Chargement du profil…</p>
+      </div>
+    );
+  }
+
   if (!company) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm max-w-md w-full p-10 text-center">
           <h1 className="text-xl font-black text-slate-900 mb-2">Entreprise introuvable</h1>
-          <p className="text-slate-600 text-sm mb-8">
-            Ouvrez cette page depuis une fiche gig pour charger le profil, ou le cache de session a expiré.
+          <p className="text-slate-600 text-sm mb-4">
+            {loadError ||
+              'Ouvrez cette page depuis une fiche gig ou le marketplace, ou vérifiez que l’URL est correcte.'}
           </p>
           <button
             type="button"

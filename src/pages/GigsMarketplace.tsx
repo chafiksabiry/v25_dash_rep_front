@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Users, Globe, Calendar, Heart, ChevronLeft, ChevronRight, Phone, Briefcase, Sparkles, BadgeEuro, Play } from 'lucide-react';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchPendingRequests as fetchPendingRequestsUtil, fetchEnrolledGigsFromProfile } from '../utils/gigStatusUtils';
+import { persistCompanyProfile, persistCompanyReturnGig, type CompanyProfileData } from '../utils/companyProfileStorage';
 
 const renderCommissionInfo = (gig: any) => {
   if (!gig || !gig.commission) return null;
@@ -437,6 +438,16 @@ export function GigsMarketplace() {
 
   const handleSmartStart = (gigId: string) => {
     navigate(`/workspace?tab=copilot&gigId=${encodeURIComponent(gigId)}`, { state: { gigId } });
+  };
+
+  const goToCompanyProfile = (gig: PopulatedGig) => {
+    const company = gig.companyId as unknown as CompanyProfileData | undefined;
+    if (!company?._id) return;
+    persistCompanyProfile(company._id, company);
+    persistCompanyReturnGig(company._id, gig._id);
+    navigate(`/company/${company._id}?gigId=${encodeURIComponent(gig._id)}`, {
+      state: { company, fromGigId: gig._id },
+    });
   };
 
   // Fonction pour obtenir le statut d'un gig pour l'agent connecté
@@ -1486,7 +1497,12 @@ export function GigsMarketplace() {
                 <div key={gig._id} className={gigStyle.container}>
                   {/* Header: Logo & Actions/Status */}
                   <div className="flex justify-between items-center mb-3">
-                    <div className="flex items-center gap-3 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => goToCompanyProfile(gig)}
+                      disabled={!gig.companyId?._id}
+                      className="flex items-center gap-3 min-w-0 text-left rounded-xl -m-1 p-1 pr-2 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+                    >
                       <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                         {gig.companyId?.logo ? (
                           <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
@@ -1501,7 +1517,7 @@ export function GigsMarketplace() {
                           {gig.companyId.name}
                         </span>
                       )}
-                    </div>
+                    </button>
                     <div className="flex items-center space-x-2">
                       {gigStatus === 'none' ? (
                         <button
@@ -1548,9 +1564,14 @@ export function GigsMarketplace() {
 
                   {/* Content: Title, Brand & Commission */}
                   <div className="mb-2">
-                    <h3 className="text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={gig.title}>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/gig/${gig._id}`)}
+                      className="text-left w-full text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 hover:text-indigo-600 transition-colors bg-transparent border-0 p-0 cursor-pointer"
+                      title={gig.title}
+                    >
                       {gig.title}
-                    </h3>
+                    </button>
                     <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500 mb-3`}>
                       {gig.category}
                     </p>
@@ -1695,7 +1716,12 @@ export function GigsMarketplace() {
                     <div key={gig._id} className={`${gigStyle.container} min-w-0`}>
                       {/* Header: Logo & Status/Actions */}
                       <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-3 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => goToCompanyProfile(gig)}
+                          disabled={!gig.companyId?._id}
+                          className="flex items-center gap-3 min-w-0 text-left rounded-xl -m-1 p-1 pr-2 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+                        >
                           <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                             {gig.companyId?.logo ? (
                               <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
@@ -1710,7 +1736,7 @@ export function GigsMarketplace() {
                               {gig.companyId.name}
                             </span>
                           )}
-                        </div>
+                        </button>
                         <div className="flex items-center space-x-2">
                           <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-pink-500 to-rose-600 text-white border border-pink-400 shadow-[0_2px_10px_-2px_rgba(244,63,94,0.4)]">
                             🚀 Apply Now
@@ -1730,9 +1756,14 @@ export function GigsMarketplace() {
 
                       {/* Content: Title, Brand & Commission */}
                       <div className="mb-2">
-                        <h3 className="text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={gig.title}>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/gig/${gig._id}`)}
+                          className="text-left w-full text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 hover:text-indigo-600 transition-colors bg-transparent border-0 p-0 cursor-pointer"
+                          title={gig.title}
+                        >
                           {gig.title}
-                        </h3>
+                        </button>
                         <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500 mb-3`}>
                           {gig.category}
                         </p>
@@ -1857,7 +1888,12 @@ export function GigsMarketplace() {
                     <div key={enrollment.id} className={`${gigStyle.container} min-w-0`}>
                       {/* Header: Logo & Status/Actions */}
                       <div className="flex justify-between items-center mb-2">
-                        <div className="flex items-center gap-2 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => goToCompanyProfile(enrollment.gig)}
+                          disabled={!enrollment.gig.companyId?._id}
+                          className="flex items-center gap-2 min-w-0 text-left rounded-lg -m-0.5 p-0.5 pr-1 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+                        >
                           <div className="w-8 h-8 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                             {enrollment.gig.companyId?.logo ? (
                               <img src={enrollment.gig.companyId.logo} alt={enrollment.gig.companyId.name} className="w-full h-full object-contain p-1" />
@@ -1872,7 +1908,7 @@ export function GigsMarketplace() {
                               {enrollment.gig.companyId.name}
                             </span>
                           )}
-                        </div>
+                        </button>
                         <div className="flex items-center space-x-1">
                           <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-indigo-500 to-purple-600 text-white border border-indigo-400 shadow-[0_2px_10px_-2px_rgba(99,102,241,0.4)]">
                             ✉ Invited
@@ -1898,9 +1934,14 @@ export function GigsMarketplace() {
 
                       {/* Content: Title, Brand & Commission */}
                       <div className="mb-2">
-                        <h3 className="text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={enrollment.gig.title}>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/gig/${enrollment.gig._id}`)}
+                          className="text-left w-full text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 hover:text-indigo-600 transition-colors bg-transparent border-0 p-0 cursor-pointer"
+                          title={enrollment.gig.title}
+                        >
                           {enrollment.gig.title}
-                        </h3>
+                        </button>
                         <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500 mb-3`}>
                           {enrollment.gig.category}
                         </p>
@@ -2033,7 +2074,12 @@ export function GigsMarketplace() {
                     <div key={enrolledGig.id} className={`${gigStyle.container} min-w-0`}>
                       {/* Header: Logo & Status/Actions */}
                       <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => goToCompanyProfile(enrolledGig.gig)}
+                          disabled={!enrolledGig.gig.companyId?._id}
+                          className="flex items-center gap-2 flex-1 min-w-0 text-left rounded-xl -m-1 p-1 pr-2 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+                        >
                           <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                             {enrolledGig.gig.companyId?.logo ? (
                               <img src={enrolledGig.gig.companyId.logo} alt={enrolledGig.gig.companyId.name} className="w-full h-full object-contain p-1.5" />
@@ -2048,7 +2094,7 @@ export function GigsMarketplace() {
                               {enrolledGig.gig.companyId.name}
                             </span>
                           )}
-                        </div>
+                        </button>
                         <div className="flex flex-col items-end gap-2 ml-3 shrink-0">
                           <div className="flex items-center space-x-1">
                             <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-emerald-500 to-teal-600 text-white border border-emerald-400 shadow-[0_2px_10px_-2px_rgba(16,185,129,0.4)]">
@@ -2076,9 +2122,14 @@ export function GigsMarketplace() {
 
                       {/* Content: Title, Brand & Commission */}
                       <div className="mb-2">
-                        <h3 className="text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors" title={enrolledGig.gig.title}>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/gig/${enrolledGig.gig._id}`)}
+                          className="text-left w-full text-lg font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-2 hover:text-indigo-600 transition-colors bg-transparent border-0 p-0 cursor-pointer"
+                          title={enrolledGig.gig.title}
+                        >
                           {enrolledGig.gig.title}
-                        </h3>
+                        </button>
                         <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors text-indigo-500 mb-3`}>
                           {enrolledGig.gig.category}
                         </p>
