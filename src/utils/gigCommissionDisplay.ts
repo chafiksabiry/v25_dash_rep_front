@@ -61,9 +61,10 @@ export type TransactionPillDisplay = {
 };
 
 /**
- * Transaction badge: legacy numeric values follow marketplace semantics (show agent share 70%).
- * Use `{ type: 'fixed' | 'eur' | 'currency', amount }` to show euro amount after agent cut.
- * Use `{ type: 'percentage' | 'percent', amount }` to show `amount%`.
+ * Transaction badge: numeric `transactionCommission` from the gig is treated as a gross amount in currency;
+ * the pill shows the agent share (× 0.7).
+ * Use `{ type: 'percentage' | 'percent', amount }` to show `amount%` explicitly.
+ * Other object shapes use `amount` as currency and apply the same × 0.7 rule.
  */
 export function getTransactionPillDisplay(
   comm: GigCommissionLike | undefined,
@@ -90,10 +91,9 @@ export function getTransactionPillDisplay(
   const num = Number(String(raw).replace(/,/g, ''));
   if (Number.isNaN(num) || num <= 0) return null;
 
-  return {
-    primary: `${Math.round(AGENT_COMMISSION_MULTIPLIER * 100)}%`,
-    isPercent: true,
-  };
+  const cut = applyAgentCut(num);
+  if (cut === null || cut <= 0) return null;
+  return { primary: `${cut}`, isPercent: false };
 }
 
 export type BonusPillDisplay = { primary: string; secondary: string | null };
