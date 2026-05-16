@@ -1250,10 +1250,15 @@ export function GigDetails() {
                         <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg border border-pink-400 shadow-[0_2px_12px_-2px_rgba(244,63,94,0.5)] animate-shine animate-pulse-ring">
                           <Star className="w-3.5 h-3.5 shrink-0" />
                           <div className="flex flex-col leading-tight min-w-0">
-                            <span className="font-black text-sm">{bonusPill.primary}</span>
-                            <span className="text-[10px] font-semibold uppercase tracking-widest opacity-90">
-                              {bonusPill.secondary || 'BONUS'}
+                            <span className="font-black text-sm inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
+                              <span>{bonusPill.primary}</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest opacity-95">BONUS</span>
                             </span>
+                            {bonusPill.secondary && (
+                              <span className="text-[10px] font-semibold uppercase tracking-widest opacity-90 mt-0.5">
+                                {bonusPill.secondary}
+                              </span>
+                            )}
                           </div>
                         </div>
                       )}

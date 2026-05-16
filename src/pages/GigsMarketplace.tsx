@@ -1501,9 +1501,9 @@ export function GigsMarketplace() {
                       type="button"
                       onClick={() => goToCompanyProfile(gig)}
                       disabled={!gig.companyId?._id}
-                      className="flex items-center gap-3 min-w-0 text-left rounded-xl -m-1 p-1 pr-2 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+                      className="group/company flex items-center gap-3 min-w-0 text-left rounded-xl -m-1 p-1 pr-2 border border-transparent cursor-pointer hover:bg-indigo-50/95 hover:border-indigo-200/70 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-transparent disabled:hover:shadow-none transition-all duration-200"
                     >
-                      <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                      <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 transition-all duration-200 group-hover/company:border-indigo-200 group-hover/company:shadow-md group-hover/company:ring-2 group-hover/company:ring-indigo-100/80">
                         {gig.companyId?.logo ? (
                           <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
                         ) : (
@@ -1513,7 +1513,7 @@ export function GigsMarketplace() {
                         )}
                       </div>
                       {gig.companyId?.name && (
-                        <span className="text-[13px] font-extrabold text-slate-950 line-clamp-2 leading-tight flex-1" title={gig.companyId.name}>
+                        <span className="text-[13px] font-extrabold text-slate-950 line-clamp-2 leading-tight flex-1 transition-colors group-hover/company:text-indigo-800 group-hover/company:underline group-hover/company:decoration-indigo-400/80 group-hover/company:underline-offset-2" title={gig.companyId.name}>
                           {gig.companyId.name}
                         </span>
                       )}
@@ -1720,9 +1720,9 @@ export function GigsMarketplace() {
                           type="button"
                           onClick={() => goToCompanyProfile(gig)}
                           disabled={!gig.companyId?._id}
-                          className="flex items-center gap-3 min-w-0 text-left rounded-xl -m-1 p-1 pr-2 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+                          className="group/company flex items-center gap-3 min-w-0 text-left rounded-xl -m-1 p-1 pr-2 border border-transparent cursor-pointer hover:bg-indigo-50/95 hover:border-indigo-200/70 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-transparent disabled:hover:shadow-none transition-all duration-200"
                         >
-                          <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                          <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 transition-all duration-200 group-hover/company:border-indigo-200 group-hover/company:shadow-md group-hover/company:ring-2 group-hover/company:ring-indigo-100/80">
                             {gig.companyId?.logo ? (
                               <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
                             ) : (
@@ -1732,7 +1732,7 @@ export function GigsMarketplace() {
                             )}
                           </div>
                           {gig.companyId?.name && (
-                            <span className="text-sm font-bold text-slate-700 truncate" title={gig.companyId.name}>
+                            <span className="text-sm font-bold text-slate-700 truncate transition-colors group-hover/company:text-indigo-800 group-hover/company:underline group-hover/company:decoration-indigo-400/80 group-hover/company:underline-offset-2" title={gig.companyId.name}>
                               {gig.companyId.name}
                             </span>
                           )}
@@ -1892,9 +1892,9 @@ export function GigsMarketplace() {
                           type="button"
                           onClick={() => goToCompanyProfile(enrollment.gig)}
                           disabled={!enrollment.gig.companyId?._id}
-                          className="flex items-center gap-2 min-w-0 text-left rounded-lg -m-0.5 p-0.5 pr-1 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+                          className="group/company flex items-center gap-2 min-w-0 text-left rounded-lg -m-0.5 p-0.5 pr-1 border border-transparent cursor-pointer hover:bg-indigo-50/95 hover:border-indigo-200/70 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-transparent disabled:hover:shadow-none transition-all duration-200"
                         >
-                          <div className="w-8 h-8 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                          <div className="w-8 h-8 rounded-lg border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 transition-all duration-200 group-hover/company:border-indigo-200 group-hover/company:shadow-md group-hover/company:ring-2 group-hover/company:ring-indigo-100/80">
                             {enrollment.gig.companyId?.logo ? (
                               <img src={enrollment.gig.companyId.logo} alt={enrollment.gig.companyId.name} className="w-full h-full object-contain p-1" />
                             ) : (
@@ -1904,7 +1904,7 @@ export function GigsMarketplace() {
                             )}
                           </div>
                           {enrollment.gig.companyId?.name && (
-                            <span className="text-xs font-bold text-slate-700 truncate" title={enrollment.gig.companyId.name}>
+                            <span className="text-xs font-bold text-slate-700 truncate transition-colors group-hover/company:text-indigo-800 group-hover/company:underline group-hover/company:decoration-indigo-400/80 group-hover/company:underline-offset-2" title={enrollment.gig.companyId.name}>
                               {enrollment.gig.companyId.name}
                             </span>
                           )}
@@ -2078,9 +2078,9 @@ export function GigsMarketplace() {
                           type="button"
                           onClick={() => goToCompanyProfile(enrolledGig.gig)}
                           disabled={!enrolledGig.gig.companyId?._id}
-                          className="flex items-center gap-2 flex-1 min-w-0 text-left rounded-xl -m-1 p-1 pr-2 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+                          className="group/company flex items-center gap-2 flex-1 min-w-0 text-left rounded-xl -m-1 p-1 pr-2 border border-transparent cursor-pointer hover:bg-indigo-50/95 hover:border-indigo-200/70 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-transparent disabled:hover:shadow-none transition-all duration-200"
                         >
-                          <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                          <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 transition-all duration-200 group-hover/company:border-indigo-200 group-hover/company:shadow-md group-hover/company:ring-2 group-hover/company:ring-indigo-100/80">
                             {enrolledGig.gig.companyId?.logo ? (
                               <img src={enrolledGig.gig.companyId.logo} alt={enrolledGig.gig.companyId.name} className="w-full h-full object-contain p-1.5" />
                             ) : (
@@ -2090,7 +2090,7 @@ export function GigsMarketplace() {
                             )}
                           </div>
                           {enrolledGig.gig.companyId?.name && (
-                            <span className="text-[13px] font-extrabold text-slate-950 line-clamp-2 leading-tight flex-1" title={enrolledGig.gig.companyId.name}>
+                            <span className="text-[13px] font-extrabold text-slate-950 line-clamp-2 leading-tight flex-1 transition-colors group-hover/company:text-indigo-800 group-hover/company:underline group-hover/company:decoration-indigo-400/80 group-hover/company:underline-offset-2" title={enrolledGig.gig.companyId.name}>
                               {enrolledGig.gig.companyId.name}
                             </span>
                           )}
