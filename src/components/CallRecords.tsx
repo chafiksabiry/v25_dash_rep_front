@@ -23,8 +23,7 @@ import {
   TrendingUp,
   Activity as ActivityIcon,
   ChevronDown,
-  Clock,
-  BookOpen
+  Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
