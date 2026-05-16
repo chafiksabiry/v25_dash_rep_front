@@ -22,6 +22,7 @@ import {
   Download,
   TrendingUp,
   Activity as ActivityIcon,
+  BookOpen,
   ChevronDown,
   Clock
 } from 'lucide-react';
