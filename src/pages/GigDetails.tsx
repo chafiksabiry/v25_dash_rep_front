@@ -1109,6 +1109,43 @@ export function GigDetails() {
                     at <span className="font-medium text-gray-900">{gig.companyId?.name || (gig as any).company || gig.userId?.fullName || 'Unknown'}</span>
                   </span>
                 </div>
+
+                {/* Commission pills — juste sous company */}
+                {(() => {
+                  const currencySymbol = typeof gig.commission?.currency === 'object'
+                    ? gig.commission?.currency?.symbol || gig.commission?.currency?.code || '€'
+                    : gig.commission?.currency || '€';
+                  const perCall = gig.commission?.commission_per_call;
+                  const txVal = typeof gig.commission?.transactionCommission === 'number'
+                    ? gig.commission.transactionCommission
+                    : (gig.commission?.transactionCommission as any)?.amount;
+                  const bonus = gig.commission?.bonusAmount;
+                  return (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {perCall && Number(perCall) > 0 && (
+                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg border border-cyan-400 shadow-[0_2px_12px_-2px_rgba(6,182,212,0.5)] animate-shine animate-pulse-ring">
+                          <Phone className="w-3.5 h-3.5 shrink-0" />
+                          <span className="font-black text-sm">{perCall}{currencySymbol}</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ APPEL</span>
+                        </div>
+                      )}
+                      {txVal && Number(txVal) > 0 && (
+                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg border border-violet-400 shadow-[0_2px_12px_-2px_rgba(139,92,246,0.5)] animate-shine animate-pulse-ring">
+                          <Repeat className="w-3.5 h-3.5 shrink-0" />
+                          <span className="font-black text-sm">{txVal}{currencySymbol}</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ TRANSACTION</span>
+                        </div>
+                      )}
+                      {bonus && Number(bonus) > 0 && (
+                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg border border-pink-400 shadow-[0_2px_12px_-2px_rgba(244,63,94,0.5)] animate-shine animate-pulse-ring">
+                          <Star className="w-3.5 h-3.5 shrink-0" />
+                          <span className="font-black text-sm">{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">BONUS</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div className="ml-6">
                 {/* Status message */}
@@ -1359,125 +1396,139 @@ export function GigDetails() {
                 <h2 className="text-xl font-black text-gray-900 tracking-tight">Commission Structure</h2>
               </div>
 
-              {/* Pill badges — même style que le Marketplace */}
-              <div className="flex flex-wrap gap-3 mb-8">
-                {/* Per Call */}
-                {(gig.commission?.commission_per_call ?? 0) > 0 && (
-                  <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg border border-cyan-400 shadow-[0_2px_12px_-2px_rgba(6,182,212,0.5)] animate-shine animate-pulse-ring" title="Commission par appel">
-                    <Phone className="w-3.5 h-3.5 shrink-0" />
-                    <span className="text-sm font-black">
-                      {gig.commission.commission_per_call}
-                      {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}
-                    </span>
-                    <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ APPEL</span>
-                  </div>
-                )}
+              {/* Two-column layout: commission left, additional details right */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-                {/* Transaction Commission */}
-                {(() => {
-                  const txVal = typeof gig.commission?.transactionCommission === 'number'
-                    ? gig.commission.transactionCommission
-                    : (gig.commission?.transactionCommission as any)?.amount;
-                  return txVal && Number(txVal) > 0 ? (
-                    <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg border border-violet-400 shadow-[0_2px_12px_-2px_rgba(139,92,246,0.5)] animate-shine animate-pulse-ring" title="Commission par transaction">
-                      <Repeat className="w-3.5 h-3.5 shrink-0" />
-                      <span className="text-sm font-black">
-                        {txVal}
-                        {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}
-                      </span>
-                      <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ TRANSACTION</span>
-                    </div>
-                  ) : null;
-                })()}
-
-                {/* Bonus */}
-                {gig.commission?.bonusAmount && Number(gig.commission.bonusAmount) > 0 && (
-                  <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg border border-pink-400 shadow-[0_2px_12px_-2px_rgba(244,63,94,0.5)] animate-shine animate-pulse-ring" title="Bonus">
-                    <Star className="w-3.5 h-3.5 shrink-0" />
-                    <span className="text-sm font-black">
-                      {gig.commission.bonusAmount}
-                      {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}
-                    </span>
-                    <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">BONUS</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Detail cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Per call */}
-                <div className="p-5 rounded-2xl bg-cyan-50/60 border border-cyan-100 flex flex-col gap-3 hover:shadow-md transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-cyan-100 rounded-xl">
-                      <Phone className="h-5 w-5 text-cyan-600" />
-                    </div>
-                    <span className="text-sm font-black text-gray-600 uppercase tracking-wider">Per Call</span>
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-4xl font-black text-gray-900">{gig.commission?.commission_per_call ?? 0}</span>
-                    <span className="text-xl text-gray-400 font-black">{typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}</span>
-                  </div>
-                </div>
-
-                {/* Transaction */}
-                <div className="p-5 rounded-2xl bg-violet-50/60 border border-violet-100 flex flex-col gap-3 hover:shadow-md transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-violet-100 rounded-xl">
-                      <Repeat className="h-5 w-5 text-violet-600" />
-                    </div>
-                    <span className="text-sm font-black text-gray-600 uppercase tracking-wider">Transaction</span>
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-4xl font-black text-gray-900">
-                      {typeof gig.commission?.transactionCommission === 'number'
+                {/* LEFT — pills + detail cards */}
+                <div className="xl:col-span-2 space-y-6">
+                  {/* Pill badges */}
+                  <div className="flex flex-wrap gap-3">
+                    {(gig.commission?.commission_per_call ?? 0) > 0 && (
+                      <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg border border-cyan-400 shadow-[0_2px_12px_-2px_rgba(6,182,212,0.5)] animate-shine animate-pulse-ring" title="Commission par appel">
+                        <Phone className="w-3.5 h-3.5 shrink-0" />
+                        <span className="text-sm font-black">
+                          {gig.commission.commission_per_call}
+                          {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}
+                        </span>
+                        <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ APPEL</span>
+                      </div>
+                    )}
+                    {(() => {
+                      const txVal = typeof gig.commission?.transactionCommission === 'number'
                         ? gig.commission.transactionCommission
-                        : (gig.commission?.transactionCommission as any)?.amount || 0}
-                    </span>
-                    <span className="text-xl text-gray-400 font-black">{typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}</span>
+                        : (gig.commission?.transactionCommission as any)?.amount;
+                      return txVal && Number(txVal) > 0 ? (
+                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg border border-violet-400 shadow-[0_2px_12px_-2px_rgba(139,92,246,0.5)] animate-shine animate-pulse-ring" title="Commission par transaction">
+                          <Repeat className="w-3.5 h-3.5 shrink-0" />
+                          <span className="text-sm font-black">
+                            {txVal}
+                            {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}
+                          </span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ TRANSACTION</span>
+                        </div>
+                      ) : null;
+                    })()}
+                    {gig.commission?.bonusAmount && Number(gig.commission.bonusAmount) > 0 && (
+                      <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg border border-pink-400 shadow-[0_2px_12px_-2px_rgba(244,63,94,0.5)] animate-shine animate-pulse-ring" title="Bonus">
+                        <Star className="w-3.5 h-3.5 shrink-0" />
+                        <span className="text-sm font-black">
+                          {gig.commission.bonusAmount}
+                          {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}
+                        </span>
+                        <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">BONUS</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Detail cards */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Per call */}
+                    <div className="p-5 rounded-2xl bg-cyan-50/60 border border-cyan-100 flex flex-col gap-3 hover:shadow-md transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-cyan-100 rounded-xl">
+                          <Phone className="h-5 w-5 text-cyan-600" />
+                        </div>
+                        <span className="text-sm font-black text-gray-600 uppercase tracking-wider">Per Call</span>
+                      </div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-4xl font-black text-gray-900">{gig.commission?.commission_per_call ?? 0}</span>
+                        <span className="text-xl text-gray-400 font-black">{typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}</span>
+                      </div>
+                    </div>
+
+                    {/* Transaction */}
+                    <div className="p-5 rounded-2xl bg-violet-50/60 border border-violet-100 flex flex-col gap-3 hover:shadow-md transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-violet-100 rounded-xl">
+                          <Repeat className="h-5 w-5 text-violet-600" />
+                        </div>
+                        <span className="text-sm font-black text-gray-600 uppercase tracking-wider">Transaction</span>
+                      </div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-4xl font-black text-gray-900">
+                          {typeof gig.commission?.transactionCommission === 'number'
+                            ? gig.commission.transactionCommission
+                            : (gig.commission?.transactionCommission as any)?.amount || 0}
+                        </span>
+                        <span className="text-xl text-gray-400 font-black">{typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}</span>
+                      </div>
+                    </div>
+
+                    {/* Bonus */}
+                    <div className="p-5 rounded-2xl bg-pink-50/60 border border-pink-100 flex flex-col gap-3 hover:shadow-md transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-pink-100 rounded-xl">
+                          <Star className="h-5 w-5 text-pink-600" />
+                        </div>
+                        <span className="text-sm font-black text-gray-600 uppercase tracking-wider">Bonus & Incentives</span>
+                      </div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-4xl font-black text-gray-900">{gig.commission?.bonusAmount || 0}</span>
+                        <span className="text-xl text-gray-400 font-black">{typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}</span>
+                      </div>
+                    </div>
+
+                    {/* Min Volume */}
+                    <div className="p-5 rounded-2xl bg-amber-50/60 border border-amber-100 flex flex-col gap-3 hover:shadow-md transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-amber-100 rounded-xl">
+                          <Target className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <span className="text-sm font-black text-gray-600 uppercase tracking-wider">Min. Volume (Bonus)</span>
+                      </div>
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-4xl font-black text-gray-900">{gig.commission?.minimumVolume?.amount || 0}</span>
+                        <span className="px-2.5 py-1 bg-white/80 border border-amber-200 rounded-lg text-[10px] font-black text-amber-700 uppercase tracking-widest">
+                          {gig.commission?.minimumVolume?.period || 'MONTHLY'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Bonus */}
-                <div className="p-5 rounded-2xl bg-pink-50/60 border border-pink-100 flex flex-col gap-3 hover:shadow-md transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-pink-100 rounded-xl">
-                      <Star className="h-5 w-5 text-pink-600" />
+                {/* RIGHT — Additional Details */}
+                <div className="xl:col-span-1">
+                  {gig.commission?.additionalDetails ? (
+                    <div className="h-full p-6 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/80 border border-slate-200 flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
+                          <FileText className="h-4 w-4 text-slate-500" />
+                        </div>
+                        <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Additional Details</span>
+                      </div>
+                      <p className="text-sm text-slate-700 leading-relaxed flex-1">{gig.commission.additionalDetails}</p>
                     </div>
-                    <span className="text-sm font-black text-gray-600 uppercase tracking-wider">Bonus & Incentives</span>
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-4xl font-black text-gray-900">{gig.commission?.bonusAmount || 0}</span>
-                    <span className="text-xl text-gray-400 font-black">{typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}</span>
-                  </div>
+                  ) : (
+                    <div className="h-full p-6 rounded-2xl bg-slate-50/60 border border-dashed border-slate-200 flex flex-col items-center justify-center gap-3 text-center">
+                      <FileText className="h-8 w-8 text-slate-200" />
+                      <p className="text-xs text-slate-400 font-medium">No additional details provided</p>
+                    </div>
+                  )}
                 </div>
 
-                {/* Min Volume */}
-                <div className="p-5 rounded-2xl bg-amber-50/60 border border-amber-100 flex flex-col gap-3 hover:shadow-md transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-amber-100 rounded-xl">
-                      <Target className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <span className="text-sm font-black text-gray-600 uppercase tracking-wider">Min. Volume (Bonus)</span>
-                  </div>
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-4xl font-black text-gray-900">{gig.commission?.minimumVolume?.amount || 0}</span>
-                    <span className="px-2.5 py-1 bg-white/80 border border-amber-200 rounded-lg text-[10px] font-black text-amber-700 uppercase tracking-widest">
-                      {gig.commission?.minimumVolume?.period || 'MONTHLY'}
-                    </span>
-                  </div>
-                </div>
               </div>
-
-              {gig.commission?.additionalDetails && (
-                <div className="mt-6 pt-6 border-t border-gray-100">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Additional Details</span>
-                  </div>
-                  <p className="text-sm text-gray-700 leading-relaxed">{gig.commission.additionalDetails}</p>
-                </div>
-              )}
             </div>
+
 
             {/* Leads Information - Only for enrolled agents */}
             {isAgentEnrolled() && gig.leads?.types?.length > 0 && (
