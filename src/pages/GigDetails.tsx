@@ -1070,6 +1070,24 @@ export function GigDetails() {
     );
   }
 
+  const commissionCurrencySymbol =
+    typeof gig.commission?.currency === 'object'
+      ? gig.commission?.currency?.symbol || gig.commission?.currency?.code || '€'
+      : gig.commission?.currency || '€';
+  const commissionPerCall = gig.commission?.commission_per_call;
+  const commissionTxVal =
+    typeof gig.commission?.transactionCommission === 'number'
+      ? gig.commission.transactionCommission
+      : (gig.commission?.transactionCommission as { amount?: number } | undefined)?.amount;
+  const commissionBonus = gig.commission?.bonusAmount;
+  const hasCommissionPills = Boolean(
+    (commissionPerCall && Number(commissionPerCall) > 0) ||
+      (commissionTxVal && Number(commissionTxVal) > 0) ||
+      (commissionBonus && Number(commissionBonus) > 0)
+  );
+  const hasAdditionalCommissionDetails = Boolean(gig.commission?.additionalDetails);
+  const showCommissionDetailsColumn = hasCommissionPills || hasAdditionalCommissionDetails;
+
   return (
     <div className="min-h-screen bg-transparent py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1120,43 +1138,6 @@ export function GigDetails() {
                     </span>
                   )}
                 </div>
-
-                {/* Commission pills */}
-                {(() => {
-                  const currencySymbol = typeof gig.commission?.currency === 'object'
-                    ? gig.commission?.currency?.symbol || gig.commission?.currency?.code || '€'
-                    : gig.commission?.currency || '€';
-                  const perCall = gig.commission?.commission_per_call;
-                  const txVal = typeof gig.commission?.transactionCommission === 'number'
-                    ? gig.commission.transactionCommission
-                    : (gig.commission?.transactionCommission as any)?.amount;
-                  const bonus = gig.commission?.bonusAmount;
-                  return (
-                    <div className="flex flex-wrap gap-2">
-                      {perCall && Number(perCall) > 0 && (
-                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg border border-cyan-400 shadow-[0_2px_12px_-2px_rgba(6,182,212,0.5)] animate-shine animate-pulse-ring">
-                          <Phone className="w-3.5 h-3.5 shrink-0" />
-                          <span className="font-black text-sm">{perCall}{currencySymbol}</span>
-                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ APPEL</span>
-                        </div>
-                      )}
-                      {txVal && Number(txVal) > 0 && (
-                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg border border-violet-400 shadow-[0_2px_12px_-2px_rgba(139,92,246,0.5)] animate-shine animate-pulse-ring">
-                          <Repeat className="w-3.5 h-3.5 shrink-0" />
-                          <span className="font-black text-sm">{txVal}{currencySymbol}</span>
-                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ TRANSACTION</span>
-                        </div>
-                      )}
-                      {bonus && Number(bonus) > 0 && (
-                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg border border-pink-400 shadow-[0_2px_12px_-2px_rgba(244,63,94,0.5)] animate-shine animate-pulse-ring">
-                          <Star className="w-3.5 h-3.5 shrink-0" />
-                          <span className="font-black text-sm">{bonus}{String(bonus).includes('€') ? '' : currencySymbol}</span>
-                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">BONUS</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
               </div>
               <div className="ml-6">
                 {/* Status message */}
@@ -1214,34 +1195,69 @@ export function GigDetails() {
               </div>
             </div>
 
-
-            {gig.commission?.additionalDetails && (
-              <div className="mt-4 animate-fade-in">
-                <div className="flex items-start gap-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100/80">
-                  <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 shrink-0">
-                    <FileText className="w-4 h-4 text-slate-400" />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Additional Commission Details</span>
-                    <p className="text-sm text-slate-600 font-medium leading-relaxed italic">
-                      {gig.commission.additionalDetails}
-                    </p>
-                  </div>
-                </div>
+            <div
+              className={`mt-8 grid gap-8 animate-fade-in ${showCommissionDetailsColumn ? 'lg:grid-cols-2 lg:gap-10' : ''}`}
+            >
+              <div className="min-w-0">
+                <h2 className="text-xl font-black text-gray-900 mb-4 tracking-tight">Job Description</h2>
+                <p className="text-gray-600 font-medium leading-relaxed whitespace-pre-wrap">{gig.description}</p>
               </div>
-            )}
+              {showCommissionDetailsColumn && (
+                <div className="min-w-0 lg:pl-8 lg:border-l lg:border-slate-100">
+                  <h2 className="text-xl font-black text-gray-900 mb-4 tracking-tight">Commission & details</h2>
+                  {hasCommissionPills && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {commissionPerCall && Number(commissionPerCall) > 0 && (
+                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg border border-cyan-400 shadow-[0_2px_12px_-2px_rgba(6,182,212,0.5)] animate-shine animate-pulse-ring">
+                          <Phone className="w-3.5 h-3.5 shrink-0" />
+                          <span className="font-black text-sm">
+                            {commissionPerCall}
+                            {commissionCurrencySymbol}
+                          </span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ APPEL</span>
+                        </div>
+                      )}
+                      {commissionTxVal && Number(commissionTxVal) > 0 && (
+                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg border border-violet-400 shadow-[0_2px_12px_-2px_rgba(139,92,246,0.5)] animate-shine animate-pulse-ring">
+                          <Repeat className="w-3.5 h-3.5 shrink-0" />
+                          <span className="font-black text-sm">
+                            {commissionTxVal}
+                            {commissionCurrencySymbol}
+                          </span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ TRANSACTION</span>
+                        </div>
+                      )}
+                      {commissionBonus && Number(commissionBonus) > 0 && (
+                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg border border-pink-400 shadow-[0_2px_12px_-2px_rgba(244,63,94,0.5)] animate-shine animate-pulse-ring">
+                          <Star className="w-3.5 h-3.5 shrink-0" />
+                          <span className="font-black text-sm">
+                            {commissionBonus}
+                            {String(commissionBonus).includes('€') ? '' : commissionCurrencySymbol}
+                          </span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">BONUS</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {hasAdditionalCommissionDetails && (
+                    <div className="flex items-start gap-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100/80">
+                      <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 shrink-0">
+                        <FileText className="w-4 h-4 text-slate-400" />
+                      </div>
+                      <p className="text-sm text-slate-600 font-medium leading-relaxed italic pt-0.5">
+                        {gig.commission!.additionalDetails}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
           {/* Colonne principale */}
           <div className="xl:col-span-3 space-y-8">
-            {/* Description */}
-            <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Job Description</h2>
-              <p className="text-gray-600 font-medium leading-relaxed whitespace-pre-wrap">{gig.description}</p>
-            </div>
-
             {/* Skills */}
             {(gig.skills?.technical?.length > 0 || gig.skills?.professional?.length > 0 || gig.skills?.soft?.length > 0 || gig.skills?.languages?.length > 0) && (
               <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
