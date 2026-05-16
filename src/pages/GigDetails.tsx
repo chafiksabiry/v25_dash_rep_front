@@ -6,6 +6,7 @@ import Cookies from 'js-cookie';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchEnrolledGigsFromProfile, fetchPendingRequests, refreshGigStatuses } from '../utils/gigStatusUtils';
 import { resolveGigStartRoute } from '../utils/gigStartRouting';
+import { getBonusPillDisplay, getTransactionPillDisplay } from '../utils/gigCommissionDisplay';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
 interface PopulatedGig {
@@ -214,11 +215,14 @@ interface PopulatedGig {
       symbol?: string;
       name?: string;
     } | string;
-    minimumVolume: {
+    minimumVolume?: {
       amount: string | number;
       period: string;
       unit: string;
     };
+    bonus?: string | number;
+    bonusPeriod?: string;
+    bonusType?: string;
     transactionCommission?: number | {
       type: string;
       amount: string | number;
@@ -1075,15 +1079,12 @@ export function GigDetails() {
       ? gig.commission?.currency?.symbol || gig.commission?.currency?.code || '€'
       : gig.commission?.currency || '€';
   const commissionPerCall = gig.commission?.commission_per_call;
-  const commissionTxVal =
-    typeof gig.commission?.transactionCommission === 'number'
-      ? gig.commission.transactionCommission
-      : (gig.commission?.transactionCommission as { amount?: number } | undefined)?.amount;
-  const commissionBonus = gig.commission?.bonusAmount;
+  const transactionPill = getTransactionPillDisplay(gig.commission, commissionCurrencySymbol);
+  const bonusPill = getBonusPillDisplay(gig.commission, commissionCurrencySymbol);
   const hasCommissionPills = Boolean(
     (commissionPerCall && Number(commissionPerCall) > 0) ||
-      (commissionTxVal && Number(commissionTxVal) > 0) ||
-      (commissionBonus && Number(commissionBonus) > 0)
+      transactionPill !== null ||
+      bonusPill !== null
   );
   const hasAdditionalCommissionDetails = Boolean(gig.commission?.additionalDetails);
   const showCommissionDetailsColumn = hasCommissionPills || hasAdditionalCommissionDetails;
@@ -1212,24 +1213,25 @@ export function GigDetails() {
                           <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ APPEL</span>
                         </div>
                       )}
-                      {commissionTxVal && Number(commissionTxVal) > 0 && (
+                      {transactionPill && (
                         <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg border border-violet-400 shadow-[0_2px_12px_-2px_rgba(139,92,246,0.5)] animate-shine animate-pulse-ring">
                           <Repeat className="w-3.5 h-3.5 shrink-0" />
                           <span className="font-black text-sm">
-                            {commissionTxVal}
-                            {commissionCurrencySymbol}
+                            {transactionPill.primary}
+                            {!transactionPill.isPercent ? commissionCurrencySymbol : ''}
                           </span>
                           <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ TRANSACTION</span>
                         </div>
                       )}
-                      {commissionBonus && Number(commissionBonus) > 0 && (
+                      {bonusPill && (
                         <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg border border-pink-400 shadow-[0_2px_12px_-2px_rgba(244,63,94,0.5)] animate-shine animate-pulse-ring">
                           <Star className="w-3.5 h-3.5 shrink-0" />
-                          <span className="font-black text-sm">
-                            {commissionBonus}
-                            {String(commissionBonus).includes('€') ? '' : commissionCurrencySymbol}
-                          </span>
-                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">BONUS</span>
+                          <div className="flex flex-col leading-tight min-w-0">
+                            <span className="font-black text-sm">{bonusPill.primary}</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-widest opacity-90">
+                              {bonusPill.secondary || 'BONUS'}
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1467,63 +1469,6 @@ export function GigDetails() {
                 </div>
               </div>
             )}
-
-            {/* Career Growth & Benefits */}
-            {((gig.companyId?.opportunities && (gig.companyId.opportunities.roles?.length > 0 || gig.companyId.opportunities.growthPotential || gig.companyId.opportunities.training)) ||
-              (gig.companyId?.culture && (gig.companyId.culture.benefits?.length > 0 || gig.companyId.culture.workEnvironment))) && (
-                <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
-                  <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Career Growth & Benefits</h2>
-
-                  {gig.companyId?.opportunities?.roles?.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="font-medium text-gray-800 mb-2">Career Progression:</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {gig.companyId.opportunities.roles.map((role, index) => (
-                          <span key={index} className="px-3 py-1.5 bg-emerald-50 rounded-xl text-xs font-black uppercase tracking-wider text-emerald-700">
-                            {role}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {gig.companyId?.opportunities?.growthPotential && (
-                    <div className="mb-3">
-                      <h3 className="font-medium text-gray-800 mb-1">Growth Potential:</h3>
-                      <p className="text-sm text-gray-600">{gig.companyId.opportunities.growthPotential}</p>
-                    </div>
-                  )}
-
-                  {gig.companyId?.opportunities?.training && (
-                    <div className="mb-4">
-                      <h3 className="font-medium text-gray-800 mb-1">Training & Development:</h3>
-                      <p className="text-sm text-gray-600">{gig.companyId.opportunities.training}</p>
-                    </div>
-                  )}
-
-                  {gig.companyId?.culture?.benefits?.length > 0 && (
-                    <div className="mb-3">
-                      <h3 className="font-medium text-gray-800 mb-2">Benefits Package:</h3>
-                      <ul className="text-sm text-gray-600 space-y-1">
-                        {gig.companyId.culture.benefits.map((benefit, index) => (
-                          <li key={index} className="flex items-start">
-                            <span className="text-green-600 mr-2">•</span>
-                            {benefit}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {gig.companyId?.culture?.workEnvironment && (
-                    <div>
-                      <h3 className="font-medium text-gray-800 mb-1">Work Environment:</h3>
-                      <p className="text-sm text-gray-600">{gig.companyId.culture.workEnvironment}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
           </div>
 
           {/* Sidebar */}
@@ -1736,292 +1681,6 @@ export function GigDetails() {
 
           </div>
         </div>
-
-        {/* Available Trainings Section - Before Leads */}
-        {isAgentEnrolled() && (
-          <div className="mt-12">
-            <div id="available-trainings-section" className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
-              <h2 className="text-2xl font-black text-gray-900 mb-8 tracking-tight">Available Trainings</h2>
-              {loadingTrainings ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-harx-500"></div>
-                  <span className="mt-4 text-gray-500 font-medium">Loading trainings...</span>
-                </div>
-              ) : availableTrainings.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {availableTrainings.map((training) => {
-                    const trainingId = extractId(training.id || training._id);
-                    // Chercher la progression par journeyId (qui correspond au trainingId)
-                    // L'API retourne journeyId dans les données de progression
-                    const progress = trainingsProgress[trainingId] || trainingsProgress[extractId(training.id || training._id)];
-                    const progressPercent = progress?.progress || 0;
-                    const progressStatus = progress?.status || 'not-started';
-
-                    return (
-                      <div
-                        key={trainingId}
-                        className="bg-white h-full p-6 border border-gray-100 rounded-3xl hover:border-harx-200 hover:shadow-xl hover:shadow-harx-500/5 transition-all cursor-pointer flex flex-col group"
-                        onClick={() => handleTrainingClick(trainingId)}
-                      >
-                        <div className="flex-1">
-                          <h3 className="text-lg font-black text-gray-900 mb-3 line-clamp-2 group-hover:text-harx-600 transition-colors">
-                            {training.title || 'Untitled Training'}
-                          </h3>
-                          {training.description && (
-                            <p className="text-sm text-gray-500 mb-6 line-clamp-3 leading-relaxed font-medium">
-                              {training.description}
-                            </p>
-                          )}
-
-                          {/* Progress Bar */}
-                          {progress && progressStatus !== 'not-started' && (
-                            <div className="mb-6">
-                              <div className="flex justify-between items-center mb-2">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Progress</span>
-                                <span className="text-xs font-black text-harx-600">{progressPercent}%</span>
-                              </div>
-                              <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                                <div
-                                  className="h-full bg-gradient-harx rounded-full transition-all duration-1000"
-                                  style={{ width: `${progressPercent}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-2 mb-6">
-                            {training.status && (
-                              <span className={`inline-block px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg ${training.status === 'active' || training.status === 'published'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-amber-50 text-amber-700'
-                                }`}>
-                                {training.status}
-                              </span>
-                            )}
-                            {progressStatus && progressStatus !== 'not-started' && (
-                              <span className={`inline-block px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg ${progressStatus === 'completed'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-harx-50 text-harx-600'
-                                }`}>
-                                {progressStatus === 'completed' ? 'Completed' : 'In Progress'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          className={`w-full mt-auto px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${progressStatus === 'completed'
-                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-1 relative'
-                            : 'bg-gradient-harx text-white hover:shadow-lg hover:shadow-harx-500/20'
-                            }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTrainingClick(trainingId);
-                          }}
-                        >
-                          {progressStatus === 'completed' ? 'Review Training' : progressStatus === 'in-progress' ? 'Continue Training' : 'Start Training'}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No trainings available for this gig.</p>
-                  <p className="text-sm mt-2">Trainings will appear here once they are assigned to this gig.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Leads Section - Full Width - Only for enrolled agents */}
-        {isAgentEnrolled() && (
-          <div className="mt-12">
-            {true ? (
-              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
-                <div className="flex justify-between items-center mb-8">
-                  <h2 className="text-2xl font-black text-gray-900 tracking-tight">Available Leads</h2>
-                  <div className="flex items-center gap-4">
-                    {engagementScore !== null && (
-                      <div className="flex items-center gap-2 px-4 py-2 bg-harx-50 rounded-xl border border-harx-100 shadow-sm shadow-harx-500/5">
-                        <span className="text-xs font-black uppercase tracking-widest text-gray-400">Score:</span>
-                        <span className="text-sm font-black text-harx-600">{engagementScore}/100</span>
-                      </div>
-                    )}
-                    {totalLeads > 0 && (
-                      <span className="inline-block px-3 py-1 bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400 rounded-lg">
-                        {totalLeads} leads
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {leadsLoading ? (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-harx-500"></div>
-                  </div>
-                ) : leadsError ? (
-                  <div className="text-center py-12 bg-red-50/30 rounded-3xl border border-dashed border-red-100">
-                    <p className="text-red-600 font-black mb-4">❌ {leadsError}</p>
-                    <button
-                      onClick={() => fetchLeads(currentPage)}
-                      className="px-6 py-2 bg-white text-red-600 border border-red-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-colors shadow-sm"
-                    >
-                      Try again
-                    </button>
-                  </div>
-                ) : leads.length === 0 ? (
-                  <div className="text-center py-12 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
-                    <p className="text-gray-400 font-medium">No leads available for this gig yet.</p>
-                  </div>
-                ) : (
-                  <>
-                    {/* Leads Table */}
-                    <div className="border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
-                      {/* Table Header - Fixed */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full border-collapse">
-                          <thead className="bg-gray-50/50 sticky top-0 z-10 backdrop-blur-sm">
-                            <tr className="border-b border-gray-100">
-                              <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Lead Name</th>
-                              <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Email</th>
-                              <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Phone</th>
-                              <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Actions</th>
-                            </tr>
-                          </thead>
-                        </table>
-                      </div>
-
-                      {/* Table Body - Scrollable */}
-                      <div className="overflow-y-auto overflow-x-auto max-h-96" style={{ maxHeight: '480px' }}>
-                        <table className="w-full border-collapse">
-                          <tbody>
-                            {leads.map((lead, index) => (
-                              <tr
-                                key={lead._id || index}
-                                className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                              >
-                                {/* Lead Name */}
-                                <td className="py-3 px-4" style={{ width: '25%' }}>
-                                  <div>
-                                    <div className="font-medium text-gray-900">
-                                      {lead.Deal_Name || lead.assignedTo?.name || `Lead #${index + 1}`}
-                                    </div>
-                                    {lead.Activity_Tag && (
-                                      <div className="text-xs text-gray-500 mt-1">
-                                        {lead.Activity_Tag}
-                                      </div>
-                                    )}
-                                  </div>
-                                </td>
-
-                                {/* Email */}
-                                <td className="py-4 px-6" style={{ width: '35%' }}>
-                                  {lead.Email_1 ? (
-                                    <div className="flex items-center group/email">
-                                      <Mail className="w-4 h-4 mr-3 text-harx-400 flex-shrink-0 group-hover/email:text-harx-600 transition-colors" />
-                                      <a
-                                        href={`mailto:${lead.Email_1}`}
-                                        className="text-harx-600 hover:text-harx-700 text-sm font-black tracking-tight truncate max-w-xs"
-                                        title={lead.Email_1}
-                                      >
-                                        {lead.Email_1}
-                                      </a>
-                                    </div>
-                                  ) : (
-                                    <span className="text-gray-300 text-xs font-black uppercase tracking-widest">N/A</span>
-                                  )}
-                                </td>
-
-                                {/* Phone */}
-                                <td className="py-3 px-4" style={{ width: '25%' }}>
-                                  {lead.Phone ? (
-                                    <div className="flex items-center">
-                                      <Phone className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
-                                      <span className="text-gray-900 text-sm">
-                                        {lead.Phone}
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <span className="text-gray-400 text-sm">-</span>
-                                  )}
-                                </td>
-
-                                {/* Actions */}
-                                <td className="py-4 px-6 text-right" style={{ width: '15%' }}>
-                                  <button
-                                    onClick={() => {
-                                      console.log('Redirecting to copilot for lead:', lead);
-                                      const copilotUrl = import.meta.env.VITE_COPILOT_URL;
-                                      if (copilotUrl) {
-                                        // Construire l'URL avec l'ID du lead comme paramètre
-                                        const leadId = lead._id || lead.id;
-                                        const fullUrl = leadId
-                                          ? `${copilotUrl}?leadId=${leadId}`
-                                          : copilotUrl;
-
-                                        // Le cookie gigId est déjà mis à jour lors du chargement de la page
-                                        // La page copilot peut maintenant récupérer à la fois le leadId (URL) et le gigId (cookie)
-                                        console.log('Navigating to copilot with lead ID:', leadId);
-                                        console.log('Current gigId available in cookie:', Cookies.get('currentGigId'));
-                                        window.location.href = fullUrl;
-                                      } else {
-                                        console.error('VITE_COPILOT_URL not configured');
-                                      }
-                                    }}
-                                    className="inline-flex items-center px-6 py-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all hover:-translate-y-0.5 whitespace-nowrap"
-                                    title="Call this lead"
-                                  >
-                                    <Phone className="w-3 h-3 mr-2" />
-                                    Call
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                      <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-100">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                          Page <span className="text-gray-900">{currentPage}</span> of <span className="text-gray-900">{totalPages}</span>
-                        </div>
-
-                        <div className="flex gap-4">
-                          <button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className={`flex items-center px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currentPage === 1
-                              ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                              : 'bg-white text-gray-700 hover:bg-harx-50 hover:text-harx-600 border border-gray-100 shadow-sm'
-                              }`}
-                          >
-                            <ChevronLeft className="w-4 h-4 mr-2" />
-                            Previous
-                          </button>
-
-                          <button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className={`flex items-center px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currentPage === totalPages
-                              ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                              : 'bg-white text-gray-700 hover:bg-harx-50 hover:text-harx-600 border border-gray-100 shadow-sm'
-                              }`}
-                          >
-                            Next
-                            <ChevronRight className="w-4 h-4 ml-2" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            ) : null}
-          </div>
-        )}
       </div>
     </div>
   );
