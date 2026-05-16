@@ -7,7 +7,7 @@ import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchEnrolledGigsFromProfile, fetchPendingRequests, refreshGigStatuses } from '../utils/gigStatusUtils';
 import { resolveGigStartRoute } from '../utils/gigStartRouting';
 import { getBonusPillDisplay, getTransactionPillDisplay } from '../utils/gigCommissionDisplay';
-import { persistCompanyProfile, type CompanyProfileData } from '../utils/companyProfileStorage';
+import { persistCompanyProfile, persistCompanyReturnGig, type CompanyProfileData } from '../utils/companyProfileStorage';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
 interface PopulatedGig {
@@ -424,10 +424,11 @@ export function GigDetails() {
   };
 
   const handleOpenCompanyProfile = () => {
-    if (!gig?.companyId?._id) return;
+    if (!gig?.companyId?._id || !gigId) return;
     const company = gig.companyId as unknown as CompanyProfileData;
     persistCompanyProfile(company._id, company);
-    navigate(`/company/${company._id}`, { state: { company } });
+    persistCompanyReturnGig(company._id, gigId);
+    navigate(`/company/${company._id}?gigId=${encodeURIComponent(gigId)}`, { state: { company, fromGigId: gigId } });
   };
 
   useEffect(() => {

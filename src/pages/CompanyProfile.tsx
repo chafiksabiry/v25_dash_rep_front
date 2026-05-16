@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Building2,
@@ -18,17 +18,26 @@ import {
   type CompanyProfileData,
   loadCompanyProfileFromStorage,
   persistCompanyProfile,
+  getCompanyReturnGig,
 } from '../utils/companyProfileStorage';
+
+type CompanyLocationState = {
+  company?: CompanyProfileData;
+  /** Gig the user came from (explicit back target). */
+  fromGigId?: string;
+};
 
 export function CompanyProfile() {
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [company, setCompany] = useState<CompanyProfileData | null>(null);
 
   useEffect(() => {
     if (!companyId) return;
-    const fromState = (location.state as { company?: CompanyProfileData } | null)?.company;
+    const state = location.state as CompanyLocationState | null;
+    const fromState = state?.company;
     if (fromState && fromState._id === companyId) {
       setCompany(fromState);
       persistCompanyProfile(companyId, fromState);
@@ -37,6 +46,26 @@ export function CompanyProfile() {
     const cached = loadCompanyProfileFromStorage(companyId);
     setCompany(cached);
   }, [companyId, location.state]);
+
+  const handleBack = useCallback(() => {
+    if (!companyId) {
+      navigate('/gigs-marketplace');
+      return;
+    }
+    const state = location.state as CompanyLocationState | null;
+    const fromQuery =
+      searchParams.get('gigId') || searchParams.get('fromGig') || searchParams.get('returnGig');
+    const fromGigId = state?.fromGigId || getCompanyReturnGig(companyId) || fromQuery || undefined;
+    if (fromGigId) {
+      navigate(`/gig/${fromGigId}`);
+      return;
+    }
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate('/gigs-marketplace');
+  }, [companyId, location.state, navigate, searchParams]);
 
   const mapsHref = useMemo(() => {
     const c = company?.contact;
@@ -93,7 +122,7 @@ export function CompanyProfile() {
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-28">
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="inline-flex items-center text-white/80 hover:text-white font-bold text-sm mb-8 transition-colors group"
           >
             <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
