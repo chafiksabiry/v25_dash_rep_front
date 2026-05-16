@@ -1214,44 +1214,9 @@ export function GigDetails() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mt-6">
-              <div className="flex items-center text-gray-600">
-                <DollarSign className="w-5 h-5 mr-2" />
-                <div>
-                  <p className="text-sm font-medium">{gig.commission?.commission_per_call || 0} {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || gig.commission?.currency?.code || 'USD' : gig.commission?.currency || 'USD'}</p>
-                  <p className="text-xs">Commission per Call</p>
-                </div>
-              </div>
-
-              <div className="flex items-center text-gray-600">
-                <Users className="w-5 h-5 mr-2" />
-                <div>
-                  <p className="text-sm font-medium">{gig.seniority?.yearsExperience || 'N/A'} years</p>
-                  <p className="text-xs">Experience</p>
-                </div>
-              </div>
-
-              <div className="flex items-center text-gray-600">
-                <Globe className="w-5 h-5 mr-2" />
-                <div>
-                  <p className="text-sm font-medium">{typeof gig.destination_zone === 'object' ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Unknown' : gig.destination_zone}</p>
-                  <p className="text-xs">
-                    {gig.availability?.time_zone?.countryCode || gig.availability?.time_zone?.abbreviation || 'Timezone'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center text-gray-600">
-                <Calendar className="w-5 h-5 mr-2" />
-                <div>
-                  <p className="text-sm font-medium">{gig.availability?.minimumHours?.weekly || 'N/A'}h/week</p>
-                  <p className="text-xs">Hours</p>
-                </div>
-              </div>
-            </div>
 
             {gig.commission?.additionalDetails && (
-              <div className="mt-6 pt-6 border-t border-slate-100/60 animate-fade-in">
+              <div className="mt-4 animate-fade-in">
                 <div className="flex items-start gap-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100/80">
                   <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 shrink-0">
                     <FileText className="w-4 h-4 text-slate-400" />
