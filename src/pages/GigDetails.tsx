@@ -1114,6 +1114,22 @@ export function GigDetails() {
           <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
             <div className="flex justify-between items-start mb-6">
               <div className="flex-1">
+                {/* Titre du gig, puis catégorie (toujours sous le titre) */}
+                <div className="mb-5">
+                  <div className="flex items-center flex-wrap gap-3">
+                    <h1 className="text-4xl font-black text-gray-900 tracking-tight">{gig.title}</h1>
+                    {getAgentStatus() === 'invited' && (
+                      <span className="inline-block px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-harx-50 text-harx-600 border border-harx-100 shadow-sm">
+                        ✉ Invited
+                      </span>
+                    )}
+                  </div>
+                  {gig.category && (
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-500 mt-2">
+                      {gig.category}
+                    </p>
+                  )}
+                </div>
 
                 {/* Company logo + name — lien vers profil entreprise */}
                 <button
@@ -1139,7 +1155,6 @@ export function GigDetails() {
                     <p className="text-base font-extrabold text-slate-900 leading-tight">
                       {gig.companyId?.name || (gig as any).company || gig.userId?.fullName || 'Unknown'}
                     </p>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-500 mt-0.5">{gig.category}</p>
                     {gig.companyId?._id && (
                       <p className="text-[10px] font-bold text-indigo-400/90 mt-1 uppercase tracking-wider">
                         View company profile →
@@ -1147,16 +1162,6 @@ export function GigDetails() {
                     )}
                   </div>
                 </button>
-
-                {/* Titre + badges statut */}
-                <div className="flex items-center flex-wrap gap-3 mb-4">
-                  <h1 className="text-4xl font-black text-gray-900 tracking-tight">{gig.title}</h1>
-                  {getAgentStatus() === 'invited' && (
-                    <span className="inline-block px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-harx-50 text-harx-600 border border-harx-100 shadow-sm">
-                      ✉ Invited
-                    </span>
-                  )}
-                </div>
               </div>
               <div className="ml-6">
                 {/* Status message */}
