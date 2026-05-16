@@ -135,7 +135,6 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [analyzingCallId, setAnalyzingCallId] = useState<string | null>(null);
-  const [openDropdownId, setOpenDropdownId] = useState<{ callId: string; type: 'validation' | 'transaction' } | null>(null);
 
   const fetchCallRecords = async () => {
     try {
@@ -177,59 +176,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
     }
   };
 
-  const handleUpdateTransactionValidationReps = async (callId: string, currentStatus: boolean | null, clickedStatus: boolean) => {
-    try {
-      const status = currentStatus === clickedStatus ? null : clickedStatus;
-      const response = await api.calls.update(callId, { 'transaction.validByReps': status } as any);
 
-      if (response && response.success) {
-        setCallRecords(prev => prev.map(c => {
-          if (c._id === callId) {
-            const updatedTx = c.transaction
-              ? { ...c.transaction, validByReps: status }
-              : { validByReps: status, validByCompany: null, valid: null };
-            return { ...c, transaction: updatedTx };
-          }
-          return c;
-        }));
-
-        setSelectedCall((prev: any) => {
-          if (prev && prev._id === callId) {
-            const updatedTx = prev.transaction
-              ? { ...prev.transaction, validByReps: status }
-              : { validByReps: status, validByCompany: null, valid: null };
-            return { ...prev, transaction: updatedTx };
-          }
-          return prev;
-        });
-
-        // Dispatch state updated event to synchronize other views like Wallet instantly
-        window.dispatchEvent(new Event('CALLS_STATE_UPDATED'));
-      }
-    } catch (error) {
-      console.error('Error updating reps transaction validation:', error);
-    }
-  };
-
-  const handleUpdateCallValidationReps = async (callId: string, currentStatus: string, clickedStatus: string) => {
-    try {
-      const status = currentStatus === clickedStatus ? 'pending' : clickedStatus;
-      const response = await api.calls.update(callId, { agentValidation: status } as any);
-
-      if (response && response.success) {
-        setCallRecords(prev => prev.map(c => c._id === callId ? { ...c, agentValidation: status } : c));
-
-        setSelectedCall((prev: any) => {
-          if (prev && prev._id === callId) {
-            return { ...prev, agentValidation: status };
-          }
-          return prev;
-        });
-      }
-    } catch (error) {
-      console.error('Error updating reps call validation:', error);
-    }
-  };
 
   useEffect(() => {
     fetchCallRecords();
@@ -383,9 +330,10 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                                 Analyse en cours
                               </span>
                             )}
-                          </div>/div>
+                          </div>
 
-                          <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></d                          {/* Validation de la Transaction AI */}
+                          <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
+
                           <div className="flex flex-col items-center gap-1 min-w-[120px]">
                             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Transaction AI</span>
                               {record.transaction?.validByCompany === true ? (
