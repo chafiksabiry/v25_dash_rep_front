@@ -22,6 +22,7 @@ import { SessionPlanning } from './pages/SessionPlanning';
 import { Calls } from './pages/Calls';
 import CallReportCard from './components/CallReport';
 import { fetchProfileFromAPI } from './utils/profileUtils';
+import { getRouterBasename } from './utils/routerBasename';
 import { PhaseProtectedRoute } from './components/ProtectedRoute';
 
 interface UserProfile {
@@ -81,7 +82,7 @@ function AppContent() {
       url: window.location.href,
       pathname: window.location.pathname,
       isQiankun: !!qiankunWindow.__POWERED_BY_QIANKUN__,
-      basename: !!qiankunWindow.__POWERED_BY_QIANKUN__ ? '/repdashboard' : '/'
+      basename: getRouterBasename(),
     });
 
     const initializeProfileData = async () => {
@@ -193,8 +194,7 @@ function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen }: any) {
 }
 
 function App() {
-  const isStandaloneMode = import.meta.env.VITE_RUN_MODE === 'standalone';
-  const basename = isStandaloneMode ? '/' : '/repdashboard';
+  const basename = getRouterBasename();
 
   return (
     <Router basename={basename}>
