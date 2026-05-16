@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Mail, ChevronLeft, ChevronRight, FileText, Play, Sparkles } from 'lucide-react';
+import { ArrowLeft, DollarSign, Users, Globe, Calendar, Building, MapPin, Target, Phone, Mail, ChevronLeft, ChevronRight, Repeat, Star, FileText, Play, Sparkles } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchEnrolledGigsFromProfile, fetchPendingRequests, refreshGigStatuses } from '../utils/gigStatusUtils';
 import { resolveGigStartRoute } from '../utils/gigStartRouting';
-import { getGigCardStyleForStatus, renderGigCommissionBadges } from '../utils/gigMarketplaceCardUtils';
+import { getBonusPillDisplay, getTransactionPillDisplay } from '../utils/gigCommissionDisplay';
 import { persistCompanyProfile, type CompanyProfileData } from '../utils/companyProfileStorage';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
@@ -413,8 +413,6 @@ export function GigDetails() {
   const [applying, setApplying] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [applicationMessage, setApplicationMessage] = useState('');
-  const [detailsIndustriesExpanded, setDetailsIndustriesExpanded] = useState(false);
-  const [detailsActivitiesExpanded, setDetailsActivitiesExpanded] = useState(false);
 
   // États pour les statuts depuis le profil
   const [pendingGigIds, setPendingGigIds] = useState<string[]>([]);
@@ -1084,9 +1082,20 @@ export function GigDetails() {
     );
   }
 
-  const agentCardStatus = getAgentStatus();
-  const gigCardStyle = getGigCardStyleForStatus(agentCardStatus, 'page');
+  const commissionCurrencySymbol =
+    typeof gig.commission?.currency === 'object'
+      ? gig.commission?.currency?.symbol || gig.commission?.currency?.code || '€'
+      : gig.commission?.currency || '€';
+  const commissionPerCall = gig.commission?.commission_per_call;
+  const transactionPill = getTransactionPillDisplay(gig.commission, commissionCurrencySymbol);
+  const bonusPill = getBonusPillDisplay(gig.commission, commissionCurrencySymbol);
+  const hasCommissionPills = Boolean(
+    (commissionPerCall && Number(commissionPerCall) > 0) ||
+      transactionPill !== null ||
+      bonusPill !== null
+  );
   const hasAdditionalCommissionDetails = Boolean(gig.commission?.additionalDetails);
+  const showCommissionDetailsColumn = hasCommissionPills || hasAdditionalCommissionDetails;
 
   return (
     <div className="min-h-screen bg-transparent py-8">
@@ -1101,168 +1110,167 @@ export function GigDetails() {
             Back to Marketplace
           </button>
 
-          <div className={gigCardStyle.container}>
-            <div className="flex justify-between items-start gap-3 mb-3">
-              <button
-                type="button"
-                onClick={handleOpenCompanyProfile}
-                disabled={!gig.companyId?._id}
-                className={`flex items-center gap-3 min-w-0 text-left rounded-xl p-1 -m-1 transition-colors ${
-                  gig.companyId?._id ? 'hover:bg-white/60 cursor-pointer' : 'opacity-60 cursor-not-allowed'
-                }`}
-              >
-                <div className="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
-                  {gig.companyId?.logo ? (
-                    <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-bold text-base uppercase">
-                      {gig.companyId?.name?.[0] || (gig as any).company?.[0] || gig.userId?.fullName?.[0] || '?'}
-                    </div>
-                  )}
-                </div>
-                {gig.companyId?.name && (
-                  <span
-                    className="text-[13px] font-extrabold text-slate-950 line-clamp-2 leading-tight flex-1"
-                    title={gig.companyId.name}
-                  >
-                    {gig.companyId.name}
-                  </span>
-                )}
-              </button>
-              <div className="flex flex-col items-end gap-2 shrink-0">
-                {applicationStatus === 'error' && (
-                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg max-w-[220px]">
-                    <p className="text-xs text-red-800 font-medium">❌ {applicationMessage}</p>
+          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1">
+
+                {/* Company logo + name — lien vers profil entreprise */}
+                <button
+                  type="button"
+                  onClick={handleOpenCompanyProfile}
+                  disabled={!gig.companyId?._id}
+                  className={`flex items-center gap-3 mb-4 w-full max-w-xl rounded-2xl border text-left transition-all ${
+                    gig.companyId?._id
+                      ? 'cursor-pointer border-transparent -m-2 p-2 hover:bg-slate-50/90 hover:border-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50'
+                      : 'cursor-not-allowed border-slate-100 opacity-75'
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                    {gig.companyId?.logo ? (
+                      <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-black text-lg uppercase">
+                        {(gig.companyId?.name || (gig as any).company || gig.userId?.fullName || '?')[0]}
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="flex items-center gap-2 flex-wrap justify-end">
-                  {getAgentStatus() === 'none' && (
-                    <button
-                      type="button"
-                      onClick={handleApply}
-                      disabled={applying}
-                      className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm ${
-                        applying
-                          ? 'bg-harx-100 text-harx-400 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-pink-500 to-rose-600 text-white border border-pink-400 shadow-[0_2px_10px_-2px_rgba(244,63,94,0.4)] animate-pulse-ring cursor-pointer'
-                      }`}
-                    >
-                      {applying ? '⏳ Applying...' : '🚀 Apply Now'}
-                    </button>
-                  )}
-                  {getAgentStatus() === 'pending' && (
-                    <span className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm bg-gradient-to-r from-amber-500 to-orange-600 text-white border-amber-400">
-                      ⌛ Pending
-                    </span>
-                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-extrabold text-slate-900 leading-tight">
+                      {gig.companyId?.name || (gig as any).company || gig.userId?.fullName || 'Unknown'}
+                    </p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-500 mt-0.5">{gig.category}</p>
+                    {gig.companyId?._id && (
+                      <p className="text-[10px] font-bold text-indigo-400/90 mt-1 uppercase tracking-wider">
+                        View company profile →
+                      </p>
+                    )}
+                  </div>
+                </button>
+
+                {/* Titre + badges statut */}
+                <div className="flex items-center flex-wrap gap-3 mb-4">
+                  <h1 className="text-4xl font-black text-gray-900 tracking-tight">{gig.title}</h1>
                   {getAgentStatus() === 'invited' && (
-                    <span className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm bg-gradient-to-r from-indigo-500 to-violet-600 text-white border-indigo-400">
+                    <span className="inline-block px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-harx-50 text-harx-600 border border-harx-100 shadow-sm">
                       ✉ Invited
                     </span>
                   )}
-                  {getAgentStatus() === 'enrolled' && (
+                </div>
+              </div>
+              <div className="ml-6">
+                {/* Status message */}
+                {applicationStatus === 'error' && (
+                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-800 font-medium">
+                      ❌ {applicationMessage}
+                    </p>
+                  </div>
+                )}
+
+                {/* Bouton selon le statut d'enrollment */}
+                {getAgentStatus() === 'enrolled' ? (
+                  <div className="flex gap-3">
                     <button
-                      type="button"
                       onClick={handleSmartStart}
-                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_4px_15px_-3px_rgba(244,63,94,0.4)] hover:shadow-[0_8px_25px_-4px_rgba(244,63,94,0.5)] hover:-translate-y-0.5 active:translate-y-0 overflow-hidden relative group/btn"
+                      className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-[0_4px_15px_-3px_rgba(244,63,94,0.4)] hover:shadow-[0_8px_25px_-4px_rgba(244,63,94,0.5)] hover:-translate-y-0.5 active:translate-y-0 overflow-hidden relative group/btn"
                     >
                       <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />
-                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <Play className="w-4 h-4 fill-current" />
                       START
                     </button>
+                  </div>
+                ) : getAgentStatus() === 'pending' ? (
+                  <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-xs uppercase tracking-widest border border-amber-400 shadow-[0_2px_10px_-2px_rgba(245,158,11,0.4)]">
+                    ⌛ Pending Review
+                  </span>
+                ) : getAgentStatus() === 'invited' ? (
+                  <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-black text-xs uppercase tracking-widest border border-indigo-400 shadow-[0_2px_10px_-2px_rgba(99,102,241,0.4)]">
+                    ✉ Invited
+                  </span>
+                ) : (
+                  <button
+                    onClick={handleApply}
+                    disabled={applying}
+                    className={`relative overflow-hidden flex items-center gap-2 px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-500 hover:-translate-y-0.5 active:translate-y-0 group/btn ${applying
+                        ? 'bg-harx-100 text-harx-400 cursor-not-allowed shadow-none'
+                        : 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-500 bg-[length:200%_auto] hover:bg-right text-white shadow-[0_4px_15px_-3px_rgba(244,63,94,0.4)] hover:shadow-[0_8px_25px_-4px_rgba(244,63,94,0.5)]'
+                      }`}
+                  >
+                    {!applying && <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />}
+                    {applying ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-harx-400" />
+                        <span>Applying...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Apply Now</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div
+              className={`mt-8 grid gap-8 animate-fade-in ${showCommissionDetailsColumn ? 'lg:grid-cols-2 lg:gap-10' : ''}`}
+            >
+              <div className="min-w-0">
+                <h2 className="text-xl font-black text-gray-900 mb-4 tracking-tight">Job Description</h2>
+                <p className="text-gray-600 font-medium leading-relaxed whitespace-pre-wrap">{gig.description}</p>
+              </div>
+              {showCommissionDetailsColumn && (
+                <div className="min-w-0 lg:pl-8 lg:border-l lg:border-slate-100">
+                  <h2 className="text-xl font-black text-gray-900 mb-4 tracking-tight">Commission & details</h2>
+                  {hasCommissionPills && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {commissionPerCall && Number(commissionPerCall) > 0 && (
+                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg border border-cyan-400 shadow-[0_2px_12px_-2px_rgba(6,182,212,0.5)] animate-shine animate-pulse-ring">
+                          <Phone className="w-3.5 h-3.5 shrink-0" />
+                          <span className="font-black text-sm">
+                            {commissionPerCall}
+                            {commissionCurrencySymbol}
+                          </span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ APPEL</span>
+                        </div>
+                      )}
+                      {transactionPill && (
+                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg border border-violet-400 shadow-[0_2px_12px_-2px_rgba(139,92,246,0.5)] animate-shine animate-pulse-ring">
+                          <Repeat className="w-3.5 h-3.5 shrink-0" />
+                          <span className="font-black text-sm">
+                            {transactionPill.primary}
+                            {!transactionPill.isPercent ? commissionCurrencySymbol : ''}
+                          </span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ TRANSACTION</span>
+                        </div>
+                      )}
+                      {bonusPill && (
+                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg border border-pink-400 shadow-[0_2px_12px_-2px_rgba(244,63,94,0.5)] animate-shine animate-pulse-ring">
+                          <Star className="w-3.5 h-3.5 shrink-0" />
+                          <div className="flex flex-col leading-tight min-w-0">
+                            <span className="font-black text-sm">{bonusPill.primary}</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-widest opacity-90">
+                              {bonusPill.secondary || 'BONUS'}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {hasAdditionalCommissionDetails && (
+                    <div className="flex items-start gap-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100/80">
+                      <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 shrink-0">
+                        <FileText className="w-4 h-4 text-slate-400" />
+                      </div>
+                      <p className="text-sm text-slate-600 font-medium leading-relaxed italic pt-0.5">
+                        {gig.commission!.additionalDetails}
+                      </p>
+                    </div>
                   )}
                 </div>
-              </div>
-            </div>
-
-            <div className="mb-2">
-              <h1 className="text-lg sm:text-xl font-bold text-indigo-950 mb-0.5 tracking-tight leading-tight line-clamp-3" title={gig.title}>
-                {gig.title}
-              </h1>
-              <p className={`text-[10px] font-semibold uppercase tracking-wider transition-colors mb-3 ${gigCardStyle.category}`}>
-                {gig.category}
-              </p>
-              {renderGigCommissionBadges(gig)}
-            </div>
-
-            <div className="mt-1 space-y-2">
-              <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400 pt-1 flex-wrap">
-                <div className="flex items-center gap-1 shrink-0">
-                  <Globe className="w-3 h-3 opacity-70" />
-                  <span className="truncate max-w-[180px]">
-                    {typeof gig.destination_zone === 'object'
-                      ? gig.destination_zone?.name?.common || gig.destination_zone?.cca2 || 'Remote'
-                      : (gig as any).destination_zone || 'Remote'}
-                  </span>
-                </div>
-                <div className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
-                <div className="flex items-center gap-1 shrink-0">
-                  <Calendar className="w-3 h-3 opacity-70" />
-                  <span>{gig.availability?.minimumHours?.weekly ?? 'N/A'}h/wk</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 flex-grow">
-              {gig.industries && gig.industries.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {(detailsIndustriesExpanded ? gig.industries : gig.industries.slice(0, 3)).map((industry) => (
-                      <span key={industry._id} className="px-2 py-1 bg-harx-alt-100/50 rounded-lg text-[10px] font-bold text-harx-alt-700">
-                        {industry.name}
-                      </span>
-                    ))}
-                    {gig.industries.length > 3 && (
-                      <button
-                        type="button"
-                        onClick={() => setDetailsIndustriesExpanded((v) => !v)}
-                        className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors"
-                      >
-                        {detailsIndustriesExpanded ? 'Show less' : `+${gig.industries.length - 3} more`}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {gig.activities && gig.activities.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {(detailsActivitiesExpanded ? gig.activities : gig.activities.slice(0, 3)).map((activity) => (
-                      <span key={activity._id} className="px-2 py-1 bg-emerald-50 rounded-lg text-[10px] font-bold text-emerald-700">
-                        {activity.name}
-                      </span>
-                    ))}
-                    {gig.activities.length > 3 && (
-                      <button
-                        type="button"
-                        onClick={() => setDetailsActivitiesExpanded((v) => !v)}
-                        className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs text-gray-600 transition-colors"
-                      >
-                        {detailsActivitiesExpanded ? 'Show less' : `+${gig.activities.length - 3} more`}
-                      </button>
-                    )}
-                  </div>
-                </div>
               )}
             </div>
-          </div>
-
-          <div className="mt-8 space-y-6 animate-fade-in">
-            <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-black text-gray-900 mb-4 tracking-tight">Job Description</h2>
-              <p className="text-gray-600 font-medium leading-relaxed whitespace-pre-wrap">{gig.description}</p>
-            </div>
-            {hasAdditionalCommissionDetails && (
-              <div className="flex items-start gap-3 bg-slate-50/50 p-5 rounded-2xl border border-slate-100/80">
-                <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 shrink-0">
-                  <FileText className="w-4 h-4 text-slate-400" />
-                </div>
-                <p className="text-sm text-slate-600 font-medium leading-relaxed italic pt-0.5">{gig.commission!.additionalDetails}</p>
-              </div>
-            )}
           </div>
         </div>
 
