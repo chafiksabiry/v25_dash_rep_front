@@ -1127,11 +1127,6 @@ export function GigDetails() {
                 {/* Titre + badges statut */}
                 <div className="flex items-center flex-wrap gap-3 mb-4">
                   <h1 className="text-4xl font-black text-gray-900 tracking-tight">{gig.title}</h1>
-                  {getAgentStatus() === 'enrolled' && (
-                    <span className="inline-block px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
-                      ✓ Enrolled
-                    </span>
-                  )}
                   {getAgentStatus() === 'invited' && (
                     <span className="inline-block px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-harx-50 text-harx-600 border border-harx-100 shadow-sm">
                       ✉ Invited
