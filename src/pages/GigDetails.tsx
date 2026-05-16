@@ -1260,9 +1260,6 @@ export function GigDetails() {
                   )}
                   {hasAdditionalCommissionDetails && (
                     <div className="flex items-start gap-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100/80">
-                      <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 shrink-0">
-                        <FileText className="w-4 h-4 text-slate-400" />
-                      </div>
                       <p className="text-sm text-slate-600 font-medium leading-relaxed italic pt-0.5">
                         {gig.commission!.additionalDetails}
                       </p>
