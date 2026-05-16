@@ -164,7 +164,10 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
           setSelectedCall({
             ...selectedCall,
             ai_call_score: response.data,
-            transcript: response.transcript || selectedCall.transcript
+            transcript: response.transcript || selectedCall.transcript,
+            validByAI: response.validByAI,
+            valid: response.validByAI,
+            argumentation_score: response.data?.Argumentation?.score
           });
         }
         fetchCallRecords();
@@ -487,12 +490,24 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                 })()}
               </div>
 
-              <button
-                onClick={() => setSelectedCall(null)}
-                className="p-3 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-900 rounded-2xl border border-slate-100 transition-all shadow-sm"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex items-center gap-3">
+                {(!selectedCall.ai_call_score || !selectedCall.ai_call_score.overall?.score) && selectedCall.recording_url_cloudinary && (
+                  <button
+                    onClick={() => handleAnalyzeCall(selectedCall._id)}
+                    disabled={analyzingCallId === selectedCall._id}
+                    className="flex items-center gap-2 px-6 py-3 bg-harx-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-harx-600 transition-all shadow-lg shadow-harx-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Brain className={`w-4 h-4 ${analyzingCallId === selectedCall._id ? 'animate-spin' : ''}`} />
+                    {analyzingCallId === selectedCall._id ? 'Analyse...' : 'Analyze & Transcribe'}
+                  </button>
+                )}
+                <button
+                  onClick={() => setSelectedCall(null)}
+                  className="p-3 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-900 rounded-2xl border border-slate-100 transition-all shadow-sm"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
             {/* Tabs */}
@@ -537,15 +552,6 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                   ) : (
                     <div className="py-20 text-center flex flex-col items-center gap-4">
                       <p className="text-slate-400 font-bold uppercase tracking-widest text-xs italic">Transcript not available</p>
-                      {!selectedCall.ai_call_score && selectedCall.recording_url_cloudinary && (
-                        <button
-                          onClick={() => handleAnalyzeCall(selectedCall._id)}
-                          className="flex items-center gap-2 px-6 py-3 bg-harx-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-harx-600 transition-all shadow-lg"
-                        >
-                          <Brain className={`w-4 h-4 ${analyzingCallId === selectedCall._id ? 'animate-spin' : ''}`} />
-                          Analyze & Transcribe
-                        </button>
-                      )}
                     </div>
                   )}
                 </div>
