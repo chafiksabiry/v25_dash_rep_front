@@ -28,8 +28,6 @@ import api from '../utils/client';
 import { PremiumAudioPlayer } from './PremiumAudioPlayer';
 
 export interface CallRecord {
-  agentValidation: string;
-  companyValidation: string;
   _id: string;
   call_id?: string;
   agent: string;
@@ -49,29 +47,26 @@ export interface CallRecord {
   transactionOccurred?: boolean | null;
   transaction?: {
     _id?: string;
-    validByReps?: boolean;
+    validByAI?: boolean;
     validByCompany?: boolean;
     updatedAt?: string;
     valid?: boolean | null;
   } | null;
+  validByAI?: boolean | null;
+  valid?: boolean | null;
+  argumentation_score?: number;
   ai_call_score?: {
-    'Agent fluency': {
-      score: number;
-      feedback: string;
-    };
-    'Sentiment analysis': {
-      score: number;
-      feedback: string;
-    };
-    'Fraud detection': {
-      score: number;
-      feedback: string;
-    };
-    overall: {
-      score: number;
-      feedback: string;
-    };
+    'Agent fluency': { score: number; feedback: string };
+    'Sentiment analysis': { score: number; feedback: string };
+    'Fraud detection': { score: number; feedback: string };
+    'Script coherence': { score: number; feedback: string };
+    'Argumentation': { score: number; feedback: string };
+    overall: { score: number; feedback: string };
+    transaction_detected?: boolean;
+    refusal_detected?: boolean;
   };
+  agentValidation?: string;
+  companyValidation?: string;
   childCalls?: string[];
   from?: string;
   to?: string;
@@ -369,165 +364,57 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                       {record.status?.toLowerCase() === 'completed' ? (
                         <>
                           <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
-
-                          {/* Validation de l'Appel */}
+                          {/* Validation de l'Appel AI */}
                           <div className="flex flex-col items-center gap-1 min-w-[120px]">
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Appel (Validation)</span>
-                              {record.companyValidation === 'approved' && record.agentValidation === 'approved' ? (
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Appel (Validation AI)</span>
+                              {record.validByAI === true || record.valid === true ? (
                                 <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-36 whitespace-nowrap">
                                   <Check className="w-3.5 h-3.5" />
-                                  Validé (+{(record.lead?.gigId?.commission?.commission_per_call || record.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)
+                                  Validé par AI (+{(record.lead?.gigId?.commission?.commission_per_call || record.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)
                                 </span>
-                            ) : record.companyValidation === 'rejected' || record.agentValidation === 'rejected' ? (
+                            ) : record.validByAI === false ? (
                               <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32 whitespace-nowrap">
                                 <X className="w-3.5 h-3.5" />
-                                Refusé
-                              </span>
-                            ) : record.agentValidation === 'approved' && record.companyValidation !== 'approved' ? (
-                              <span
-                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200/40 shadow-sm w-32 whitespace-nowrap text-center cursor-help"
-                                title="En attente de la confirmation de la compagnie"
-                              >
-                                <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-                                Attente Cie
+                                Refusé AI
                               </span>
                             ) : (
-                              <div className="relative">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenDropdownId(
-                                      openDropdownId?.callId === record._id && openDropdownId?.type === 'validation'
-                                        ? null
-                                        : { callId: record._id, type: 'validation' }
-                                    );
-                                  }}
-                                  className="w-24 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 shadow-sm bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                                >
-                                  <span>Action</span>
-                                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${openDropdownId?.callId === record._id && openDropdownId?.type === 'validation' ? 'rotate-180' : ''
-                                    }`} />
-                                </button>
-
-                                {openDropdownId?.callId === record._id && openDropdownId?.type === 'validation' && (
-                                  <>
-                                    <div className="fixed inset-0 z-30" onClick={() => setOpenDropdownId(null)} />
-                                    <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-32 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-xl py-1.5 z-40 animate-in fade-in slide-in-from-top-1 duration-200">
-                                      <button
-                                        onClick={() => {
-                                          handleUpdateCallValidationReps(record._id, record.agentValidation || 'pending', 'approved');
-                                          setOpenDropdownId(null);
-                                        }}
-                                        className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50/60 flex items-center gap-2 transition-colors"
-                                      >
-                                        <Check className="w-3.5 h-3.5 shrink-0" />
-                                        <span>Valider</span>
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          handleUpdateCallValidationReps(record._id, record.agentValidation || 'pending', 'rejected');
-                                          setOpenDropdownId(null);
-                                        }}
-                                        className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50/60 flex items-center gap-2 transition-colors"
-                                      >
-                                        <X className="w-3.5 h-3.5 shrink-0" />
-                                        <span>Refuser</span>
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
+                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border border-slate-200/40 shadow-sm w-32 whitespace-nowrap">
+                                <Clock className="w-3.5 h-3.5 animate-pulse" />
+                                Analyse en cours
+                              </span>
                             )}
-                          </div>
+                          </div>/div>
 
-                          <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
-
-                          {/* Validation de la Transaction */}
+                          <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></d                          {/* Validation de la Transaction AI */}
                           <div className="flex flex-col items-center gap-1 min-w-[120px]">
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Transaction</span>
-                              {record.transaction?.validByCompany === true && record.transaction?.validByReps === true ? (
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Transaction AI</span>
+                              {record.transaction?.validByCompany === true ? (
                                 <div className="flex flex-col items-center gap-1">
                                   <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100/40 shadow-sm w-36 whitespace-nowrap">
                                     <Check className="w-3.5 h-3.5" />
                                     Signé (+{(record.lead?.gigId?.commission?.transactionCommission || record.lead?.gigId?.rewardPerSale || 30).toFixed(2)}€)
                                   </span>
-                                  {record.transaction?._id && (
-                                    <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter">ID: {record.transaction._id}</span>
+                                </div>
+                              ) : record.transaction?.validByAI === true ? (
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-200/40 shadow-sm w-44 whitespace-nowrap text-center cursor-help" title="Analyse IA positive, en attente de validation finale par l'entreprise">
+                                    <Clock className="w-3.5 h-3.5 text-blue-500 animate-pulse" />
+                                    Wait for Company Validation
+                                  </span>
+                                  {record.argumentation_score !== undefined && (
+                                    <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Score: {record.argumentation_score}%</span>
                                   )}
                                 </div>
-                              ) : record.transaction?.validByCompany === false || record.transaction?.validByReps === false ? (
+                              ) : record.transaction?.validByAI === false ? (
                                 <div className="flex flex-col items-center gap-1">
                                   <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32 whitespace-nowrap">
                                     <X className="w-3.5 h-3.5" />
-                                    Refusé
+                                    Refusé AI
                                   </span>
-                                  {record.transaction?._id && (
-                                    <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter">ID: {record.transaction._id}</span>
-                                  )}
-                                </div>
-                            ) : record.transaction?.validByReps === true && record.transaction?.validByCompany !== true ? (
-                                <div className="flex flex-col items-center gap-1">
-                                  <span
-                                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200/40 shadow-sm w-32 whitespace-nowrap text-center cursor-help"
-                                    title="En attente de la confirmation de la compagnie"
-                                  >
-                                    <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-                                    Attente Cie
-                                  </span>
-                                  {record.transaction?._id && (
-                                    <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter">ID: {record.transaction._id}</span>
-                                  )}
                                 </div>
                             ) : (
-                              <div className="flex flex-col items-center gap-1">
-                                <div className="relative">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setOpenDropdownId(
-                                        openDropdownId?.callId === record._id && openDropdownId?.type === 'transaction'
-                                          ? null
-                                          : { callId: record._id, type: 'transaction' }
-                                      );
-                                    }}
-                                    className="w-24 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 shadow-sm bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                                  >
-                                    <span>Action</span>
-                                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${openDropdownId?.callId === record._id && openDropdownId?.type === 'transaction' ? 'rotate-180' : ''
-                                      }`} />
-                                  </button>
-
-                                  {openDropdownId?.callId === record._id && openDropdownId?.type === 'transaction' && (
-                                    <>
-                                      <div className="fixed inset-0 z-30" onClick={() => setOpenDropdownId(null)} />
-                                      <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-32 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-xl py-1.5 z-40 animate-in fade-in slide-in-from-top-1 duration-200">
-                                        <button
-                                          onClick={() => {
-                                            handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, true);
-                                            setOpenDropdownId(null);
-                                          }}
-                                          className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50/60 flex items-center gap-2 transition-colors"
-                                        >
-                                          <Check className="w-3.5 h-3.5 shrink-0" />
-                                          <span>Signer</span>
-                                        </button>
-                                        <button
-                                          onClick={() => {
-                                            handleUpdateTransactionValidationReps(record._id, record.transaction?.validByReps ?? null, false);
-                                            setOpenDropdownId(null);
-                                          }}
-                                          className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50/60 flex items-center gap-2 transition-colors"
-                                        >
-                                          <X className="w-3.5 h-3.5 shrink-0" />
-                                          <span>Refuser</span>
-                                        </button>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                                {record.transaction?._id && (
-                                  <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter">ID: {record.transaction._id}</span>
-                                )}
+                              <div className="flex flex-col items-center justify-center min-w-[80px]">
+                                <span className="text-slate-300 font-bold text-sm tracking-widest">-</span>
                               </div>
                             )}
                           </div>
@@ -597,86 +484,45 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                   </div>
                   <div className="flex flex-wrap items-center gap-4 mt-3">
                     <div className="flex flex-col gap-1">
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appel (Compagnie)</span>
-                      <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${selectedCall.companyValidation === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
-                          selectedCall.companyValidation === 'rejected' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appel (Validation AI)</span>
+                      <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${selectedCall.validByAI === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                          selectedCall.validByAI === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
                             'bg-amber-500/10 text-amber-600 border-amber-500/20'
                         }`}>
-                        {selectedCall.companyValidation === 'approved' ? `Validé (+${(selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)` :
-                          selectedCall.companyValidation === 'rejected' ? 'Refusé' :
-                            'En attente'}
+                        {selectedCall.validByAI === true ? `Validé par AI (+${(selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)` :
+                          selectedCall.validByAI === false ? 'Refusé AI' :
+                            'Analyse en cours'}
                       </span>
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Vente (Agent)</span>
-                      {selectedCall.transaction?.validByReps === true ? (
-                        <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-32 whitespace-nowrap">
-                          <Check className="w-3.5 h-3.5" />
-                          Signé (+{(selectedCall.lead?.gigId?.commission?.transactionCommission || selectedCall.lead?.gigId?.rewardPerSale || 30).toFixed(2)}€)
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Vente (Statut AI)</span>
+                      {selectedCall.transaction?.validByAI === true ? (
+                        <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-44 whitespace-nowrap">
+                          <Clock className="w-3.5 h-3.5 animate-pulse" />
+                          Wait for Company Validation
                         </span>
-                      ) : selectedCall.transaction?.validByReps === false ? (
-                        <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-24">
+                      ) : selectedCall.transaction?.validByAI === false ? (
+                        <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32">
                           <X className="w-3.5 h-3.5" />
-                          Refusé
+                          Refusé AI
                         </span>
                       ) : (
-                        <div className="relative">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenDropdownId(
-                                openDropdownId?.callId === selectedCall._id && openDropdownId?.type === 'transaction'
-                                  ? null
-                                  : { callId: selectedCall._id, type: 'transaction' }
-                              );
-                            }}
-                            className="w-24 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1 shadow-sm bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-                          >
-                            <span>Action</span>
-                            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${openDropdownId?.callId === selectedCall._id && openDropdownId?.type === 'transaction' ? 'rotate-180' : ''
-                              }`} />
-                          </button>
-
-                          {openDropdownId?.callId === selectedCall._id && openDropdownId?.type === 'transaction' && (
-                            <>
-                              <div className="fixed inset-0 z-30" onClick={() => setOpenDropdownId(null)} />
-                              <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-32 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-xl py-1.5 z-40 animate-in fade-in slide-in-from-top-1 duration-200">
-                                <button
-                                  onClick={() => {
-                                    handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, true);
-                                    setOpenDropdownId(null);
-                                  }}
-                                  className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50/60 flex items-center gap-2 transition-colors"
-                                >
-                                  <Check className="w-3.5 h-3.5 shrink-0" />
-                                  <span>Valider</span>
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    handleUpdateTransactionValidationReps(selectedCall._id, selectedCall.transaction?.validByReps ?? null, false);
-                                    setOpenDropdownId(null);
-                                  }}
-                                  className="w-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50/60 flex items-center gap-2 transition-colors"
-                                >
-                                  <X className="w-3.5 h-3.5 shrink-0" />
-                                  <span>Refuser</span>
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
+                        <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border border-slate-100/40 shadow-sm w-32">
+                          <Clock className="w-3.5 h-3.5" />
+                          Aucune vente
+                        </span>
                       )}
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Vente (Compagnie)</span>
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Validation Finale</span>
                       <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${selectedCall.transaction?.validByCompany === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
                           selectedCall.transaction?.validByCompany === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
                             'bg-amber-500/10 text-amber-600 border-amber-500/20'
                         }`}>
                         {selectedCall.transaction?.validByCompany === true ? `Validé (+${(selectedCall.lead?.gigId?.commission?.transactionCommission || selectedCall.lead?.gigId?.rewardPerSale || 30).toFixed(2)}€)` :
-                          selectedCall.transaction?.validByCompany === false ? 'Refusé' :
+                          selectedCall.transaction?.validByCompany === false ? 'Refusé par Compagnie' :
                             'En attente'}
                       </span>
                     </div>
@@ -761,15 +607,8 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                     {[
                       { label: 'Agent Fluency', data: selectedCall.ai_call_score?.["Agent fluency"], icon: Globe },
                       { label: 'Sentiment Analysis', data: selectedCall.ai_call_score?.["Sentiment analysis"], icon: ActivityIcon },
-                      { label: 'Fraud Detection', data: selectedCall.ai_call_score?.["Fraud detection"], icon: Shield },
-                      {
-                        label: 'Conversion Potential',
-                        data: {
-                          score: Math.round(((selectedCall.ai_call_score?.["Agent fluency"]?.score || 0) * 0.4) + ((selectedCall.ai_call_score?.["Sentiment analysis"]?.score || 0) * 0.6)),
-                          feedback: "Probabilité de conversion basée sur l'élocution et le sentiment du client."
-                        },
-                        icon: TrendingUp
-                      }
+                      { label: 'Script Coherence', data: selectedCall.ai_call_score?.["Script coherence"], icon: Shield },
+                      { label: 'Argumentation Quality', data: selectedCall.ai_call_score?.["Argumentation"], icon: TrendingUp }
                     ].map((metric, mIdx) => (
                       <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl">
                         <div className="flex justify-between items-start mb-6">
