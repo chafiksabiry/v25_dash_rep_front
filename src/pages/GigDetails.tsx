@@ -501,7 +501,7 @@ export function GigDetails() {
         ]);
 
         console.log('📝 Profile statuses fetched:', { pendingIds, enrolledIds });
-        
+
         // Fix: Si on vient de postuler avec succès, s'assurer que le gigId reste dans pendingIds
         // Même si le serveur a un léger délai de mise à jour
         let finalPendingIds = pendingIds;
@@ -526,7 +526,7 @@ export function GigDetails() {
     };
 
     window.addEventListener('refreshGigStatuses', handleRefresh);
-    
+
     return () => {
       window.removeEventListener('refreshGigStatuses', handleRefresh);
     };
@@ -993,7 +993,7 @@ export function GigDetails() {
 
       setApplicationStatus('success');
       setApplicationMessage(data.message || 'Application sent successfully!');
-      
+
       // Mise à jour optimiste pour affichage immédiat
       setPendingGigIds(prev => [...prev, gigId!]);
 
@@ -1014,7 +1014,7 @@ export function GigDetails() {
       <div className="min-h-screen py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <Skeleton className="h-6 w-32" variant="rounded" />
-          
+
           <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 border border-gray-100 space-y-6">
             <div className="flex justify-between items-start">
               <div className="space-y-4 flex-1">
@@ -1192,11 +1192,10 @@ export function GigDetails() {
                   <button
                     onClick={handleApply}
                     disabled={applying}
-                    className={`relative overflow-hidden flex items-center gap-2 px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-500 hover:-translate-y-0.5 active:translate-y-0 group/btn ${
-                      applying
+                    className={`relative overflow-hidden flex items-center gap-2 px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-500 hover:-translate-y-0.5 active:translate-y-0 group/btn ${applying
                         ? 'bg-harx-100 text-harx-400 cursor-not-allowed shadow-none'
                         : 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-500 bg-[length:200%_auto] hover:bg-right text-white shadow-[0_4px_15px_-3px_rgba(244,63,94,0.4)] hover:shadow-[0_8px_25px_-4px_rgba(244,63,94,0.5)]'
-                    }`}
+                      }`}
                   >
                     {!applying && <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500 skew-x-[-30deg]" />}
                     {applying ? (
@@ -1250,6 +1249,22 @@ export function GigDetails() {
                 </div>
               </div>
             </div>
+
+            {gig.commission?.additionalDetails && (
+              <div className="mt-6 pt-6 border-t border-slate-100/60 animate-fade-in">
+                <div className="flex items-start gap-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100/80">
+                  <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 shrink-0">
+                    <FileText className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Additional Commission Details</span>
+                    <p className="text-sm text-slate-600 font-medium leading-relaxed italic">
+                      {gig.commission.additionalDetails}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1397,150 +1412,6 @@ export function GigDetails() {
                 )}
               </div>
             )}
-
-            {/* Commission Structure — style Marketplace pills */}
-            <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="p-2 bg-harx-50 rounded-xl">
-                  <DollarSign className="h-6 w-6 text-harx-600" />
-                </div>
-                <h2 className="text-xl font-black text-gray-900 tracking-tight">Commission Structure</h2>
-              </div>
-
-              {/* Two-column layout: commission left, additional details right */}
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-                {/* LEFT — pills + detail cards */}
-                <div className="xl:col-span-2 space-y-6">
-                  {/* Pill badges */}
-                  <div className="flex flex-wrap gap-3">
-                    {(gig.commission?.commission_per_call ?? 0) > 0 && (
-                      <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg border border-cyan-400 shadow-[0_2px_12px_-2px_rgba(6,182,212,0.5)] animate-shine animate-pulse-ring" title="Commission par appel">
-                        <Phone className="w-3.5 h-3.5 shrink-0" />
-                        <span className="text-sm font-black">
-                          {gig.commission.commission_per_call}
-                          {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}
-                        </span>
-                        <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ APPEL</span>
-                      </div>
-                    )}
-                    {(() => {
-                      const txVal = typeof gig.commission?.transactionCommission === 'number'
-                        ? gig.commission.transactionCommission
-                        : (gig.commission?.transactionCommission as any)?.amount;
-                      return txVal && Number(txVal) > 0 ? (
-                        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg border border-violet-400 shadow-[0_2px_12px_-2px_rgba(139,92,246,0.5)] animate-shine animate-pulse-ring" title="Commission par transaction">
-                          <Repeat className="w-3.5 h-3.5 shrink-0" />
-                          <span className="text-sm font-black">
-                            {txVal}
-                            {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}
-                          </span>
-                          <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">/ TRANSACTION</span>
-                        </div>
-                      ) : null;
-                    })()}
-                    {gig.commission?.bonusAmount && Number(gig.commission.bonusAmount) > 0 && (
-                      <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg border border-pink-400 shadow-[0_2px_12px_-2px_rgba(244,63,94,0.5)] animate-shine animate-pulse-ring" title="Bonus">
-                        <Star className="w-3.5 h-3.5 shrink-0" />
-                        <span className="text-sm font-black">
-                          {gig.commission.bonusAmount}
-                          {typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}
-                        </span>
-                        <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">BONUS</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Detail cards */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Per call */}
-                    <div className="p-5 rounded-2xl bg-cyan-50/60 border border-cyan-100 flex flex-col gap-3 hover:shadow-md transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-cyan-100 rounded-xl">
-                          <Phone className="h-5 w-5 text-cyan-600" />
-                        </div>
-                        <span className="text-sm font-black text-gray-600 uppercase tracking-wider">Per Call</span>
-                      </div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-4xl font-black text-gray-900">{gig.commission?.commission_per_call ?? 0}</span>
-                        <span className="text-xl text-gray-400 font-black">{typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}</span>
-                      </div>
-                    </div>
-
-                    {/* Transaction */}
-                    <div className="p-5 rounded-2xl bg-violet-50/60 border border-violet-100 flex flex-col gap-3 hover:shadow-md transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-violet-100 rounded-xl">
-                          <Repeat className="h-5 w-5 text-violet-600" />
-                        </div>
-                        <span className="text-sm font-black text-gray-600 uppercase tracking-wider">Transaction</span>
-                      </div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-4xl font-black text-gray-900">
-                          {typeof gig.commission?.transactionCommission === 'number'
-                            ? gig.commission.transactionCommission
-                            : (gig.commission?.transactionCommission as any)?.amount || 0}
-                        </span>
-                        <span className="text-xl text-gray-400 font-black">{typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}</span>
-                      </div>
-                    </div>
-
-                    {/* Bonus */}
-                    <div className="p-5 rounded-2xl bg-pink-50/60 border border-pink-100 flex flex-col gap-3 hover:shadow-md transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-pink-100 rounded-xl">
-                          <Star className="h-5 w-5 text-pink-600" />
-                        </div>
-                        <span className="text-sm font-black text-gray-600 uppercase tracking-wider">Bonus & Incentives</span>
-                      </div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-4xl font-black text-gray-900">{gig.commission?.bonusAmount || 0}</span>
-                        <span className="text-xl text-gray-400 font-black">{typeof gig.commission?.currency === 'object' ? gig.commission?.currency?.symbol || '€' : gig.commission?.currency || '€'}</span>
-                      </div>
-                    </div>
-
-                    {/* Min Volume */}
-                    <div className="p-5 rounded-2xl bg-amber-50/60 border border-amber-100 flex flex-col gap-3 hover:shadow-md transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-amber-100 rounded-xl">
-                          <Target className="h-5 w-5 text-amber-600" />
-                        </div>
-                        <span className="text-sm font-black text-gray-600 uppercase tracking-wider">Min. Volume (Bonus)</span>
-                      </div>
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-4xl font-black text-gray-900">{gig.commission?.minimumVolume?.amount || 0}</span>
-                        <span className="px-2.5 py-1 bg-white/80 border border-amber-200 rounded-lg text-[10px] font-black text-amber-700 uppercase tracking-widest">
-                          {gig.commission?.minimumVolume?.period || 'MONTHLY'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* RIGHT — Additional Details */}
-                <div className="xl:col-span-1">
-                  {gig.commission?.additionalDetails ? (
-                    <div className="h-full p-6 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/80 border border-slate-200 flex flex-col gap-4">
-                      <div className="flex items-center gap-2">
-                        <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-                          <FileText className="h-4 w-4 text-slate-500" />
-                        </div>
-                        <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Additional Details</span>
-                      </div>
-                      <p className="text-sm text-slate-700 leading-relaxed flex-1">{gig.commission.additionalDetails}</p>
-                    </div>
-                  ) : (
-                    <div className="h-full p-6 rounded-2xl bg-slate-50/60 border border-dashed border-slate-200 flex flex-col items-center justify-center gap-3 text-center">
-                      <FileText className="h-8 w-8 text-slate-200" />
-                      <p className="text-xs text-slate-400 font-medium">No additional details provided</p>
-                    </div>
-                  )}
-                </div>
-
-              </div>
-            </div>
-
-
             {/* Leads Information - Only for enrolled agents */}
             {isAgentEnrolled() && gig.leads?.types?.length > 0 && (
               <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-sm border border-gray-100">
@@ -2001,7 +1872,7 @@ export function GigDetails() {
                         <span className="text-sm font-black text-harx-600">{engagementScore}/100</span>
                       </div>
                     )}
-                  {totalLeads > 0 && (
+                    {totalLeads > 0 && (
                       <span className="inline-block px-3 py-1 bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400 rounded-lg">
                         {totalLeads} leads
                       </span>
@@ -2027,22 +1898,22 @@ export function GigDetails() {
                     <p className="text-gray-400 font-medium">No leads available for this gig yet.</p>
                   </div>
                 ) : (
-                    <>
-                      {/* Leads Table */}
-                      <div className="border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
-                        {/* Table Header - Fixed */}
-                        <div className="overflow-x-auto">
-                          <table className="w-full border-collapse">
-                            <thead className="bg-gray-50/50 sticky top-0 z-10 backdrop-blur-sm">
-                              <tr className="border-b border-gray-100">
-                                <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Lead Name</th>
-                                <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Email</th>
-                                <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Phone</th>
-                                <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Actions</th>
-                              </tr>
-                            </thead>
-                          </table>
-                        </div>
+                  <>
+                    {/* Leads Table */}
+                    <div className="border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+                      {/* Table Header - Fixed */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
+                          <thead className="bg-gray-50/50 sticky top-0 z-10 backdrop-blur-sm">
+                            <tr className="border-b border-gray-100">
+                              <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Lead Name</th>
+                              <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Email</th>
+                              <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Phone</th>
+                              <th className="text-left py-4 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                        </table>
+                      </div>
 
                       {/* Table Body - Scrollable */}
                       <div className="overflow-y-auto overflow-x-auto max-h-96" style={{ maxHeight: '480px' }}>
@@ -2135,40 +2006,40 @@ export function GigDetails() {
                       </div>
                     </div>
 
-                      {/* Pagination */}
-                      {totalPages > 1 && (
-                        <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-100">
-                          <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                            Page <span className="text-gray-900">{currentPage}</span> of <span className="text-gray-900">{totalPages}</span>
-                          </div>
-
-                          <div className="flex gap-4">
-                            <button
-                              onClick={() => handlePageChange(currentPage - 1)}
-                              disabled={currentPage === 1}
-                              className={`flex items-center px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currentPage === 1
-                                ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                                : 'bg-white text-gray-700 hover:bg-harx-50 hover:text-harx-600 border border-gray-100 shadow-sm'
-                                }`}
-                            >
-                              <ChevronLeft className="w-4 h-4 mr-2" />
-                              Previous
-                            </button>
-
-                            <button
-                              onClick={() => handlePageChange(currentPage + 1)}
-                              disabled={currentPage === totalPages}
-                              className={`flex items-center px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currentPage === totalPages
-                                ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                                : 'bg-white text-gray-700 hover:bg-harx-50 hover:text-harx-600 border border-gray-100 shadow-sm'
-                                }`}
-                            >
-                              Next
-                              <ChevronRight className="w-4 h-4 ml-2" />
-                            </button>
-                          </div>
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-100">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                          Page <span className="text-gray-900">{currentPage}</span> of <span className="text-gray-900">{totalPages}</span>
                         </div>
-                      )}
+
+                        <div className="flex gap-4">
+                          <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className={`flex items-center px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currentPage === 1
+                              ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                              : 'bg-white text-gray-700 hover:bg-harx-50 hover:text-harx-600 border border-gray-100 shadow-sm'
+                              }`}
+                          >
+                            <ChevronLeft className="w-4 h-4 mr-2" />
+                            Previous
+                          </button>
+
+                          <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className={`flex items-center px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currentPage === totalPages
+                              ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                              : 'bg-white text-gray-700 hover:bg-harx-50 hover:text-harx-600 border border-gray-100 shadow-sm'
+                              }`}
+                          >
+                            Next
+                            <ChevronRight className="w-4 h-4 ml-2" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
