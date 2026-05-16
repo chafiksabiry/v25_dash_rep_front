@@ -7,6 +7,7 @@ import { getAgentId, getAuthToken } from '../utils/authUtils';
 import { fetchEnrolledGigsFromProfile, fetchPendingRequests, refreshGigStatuses } from '../utils/gigStatusUtils';
 import { resolveGigStartRoute } from '../utils/gigStartRouting';
 import { getBonusPillDisplay, getTransactionPillDisplay } from '../utils/gigCommissionDisplay';
+import { persistCompanyProfile, type CompanyProfileData } from '../utils/companyProfileStorage';
 
 // Interface pour les gigs populés (même que dans GigsMarketplace)
 interface PopulatedGig {
@@ -420,6 +421,13 @@ export function GigDetails() {
   const handleSmartStart = () => {
     if (!gigId) return;
     navigate(`/workspace?tab=copilot&gigId=${encodeURIComponent(gigId)}`, { state: { gigId } });
+  };
+
+  const handleOpenCompanyProfile = () => {
+    if (!gig?.companyId?._id) return;
+    const company = gig.companyId as unknown as CompanyProfileData;
+    persistCompanyProfile(company._id, company);
+    navigate(`/company/${company._id}`, { state: { company } });
   };
 
   useEffect(() => {
@@ -1106,8 +1114,17 @@ export function GigDetails() {
             <div className="flex justify-between items-start mb-6">
               <div className="flex-1">
 
-                {/* Company logo + name — avant le titre */}
-                <div className="flex items-center gap-3 mb-4">
+                {/* Company logo + name — lien vers profil entreprise */}
+                <button
+                  type="button"
+                  onClick={handleOpenCompanyProfile}
+                  disabled={!gig.companyId?._id}
+                  className={`flex items-center gap-3 mb-4 w-full max-w-xl rounded-2xl border text-left transition-all ${
+                    gig.companyId?._id
+                      ? 'cursor-pointer border-transparent -m-2 p-2 hover:bg-slate-50/90 hover:border-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50'
+                      : 'cursor-not-allowed border-slate-100 opacity-75'
+                  }`}
+                >
                   <div className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
                     {gig.companyId?.logo ? (
                       <img src={gig.companyId.logo} alt={gig.companyId.name} className="w-full h-full object-contain p-1.5" />
@@ -1117,13 +1134,18 @@ export function GigDetails() {
                       </div>
                     )}
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-base font-extrabold text-slate-900 leading-tight">
                       {gig.companyId?.name || (gig as any).company || gig.userId?.fullName || 'Unknown'}
                     </p>
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-500 mt-0.5">{gig.category}</p>
+                    {gig.companyId?._id && (
+                      <p className="text-[10px] font-bold text-indigo-400/90 mt-1 uppercase tracking-wider">
+                        View company profile →
+                      </p>
+                    )}
                   </div>
-                </div>
+                </button>
 
                 {/* Titre + badges statut */}
                 <div className="flex items-center flex-wrap gap-3 mb-4">

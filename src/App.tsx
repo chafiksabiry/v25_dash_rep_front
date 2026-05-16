@@ -8,6 +8,7 @@ import { TopBar } from './components/TopBar';
 import { Dashboard } from './pages/Dashboard';
 import { GigsMarketplace } from './pages/GigsMarketplace';
 import { GigDetails } from './pages/GigDetails';
+import { CompanyProfile } from './pages/CompanyProfile';
 import { Profile } from './pages/Profile';
 import { Payouts } from './pages/Payouts';
 import { Learning } from './pages/Learning';
@@ -148,6 +149,11 @@ function RoutingWrapper({ userProfile, isSidebarOpen, setIsSidebarOpen }: any) {
             <Route path="/gig/:gigId" element={
               <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
                 <GigDetails />
+              </PhaseProtectedRoute>
+            } />
+            <Route path="/company/:companyId" element={
+              <PhaseProtectedRoute phases={userProfile?.onboardingProgress?.phases} requiredPhase={4}>
+                <CompanyProfile />
               </PhaseProtectedRoute>
             } />
             <Route path="/profile" element={<Profile />} />
