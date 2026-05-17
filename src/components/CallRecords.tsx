@@ -481,7 +481,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                     {selectedCall.validByAI === true ? (
                       <div className="flex items-center gap-1">
                         <Check className="w-3 h-3" />
-                        +{(selectedCall.repCallCommission !== undefined ? selectedCall.repCallCommission : (selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4) * 0.7).toFixed(2)}€
+                        +{((selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4) * 0.7).toFixed(2)}€
                       </div>
                     ) : selectedCall.validByAI === false ? (
                       <X className="w-3 h-3" />
