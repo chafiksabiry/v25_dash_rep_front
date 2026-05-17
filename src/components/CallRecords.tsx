@@ -349,7 +349,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                               <div className="flex flex-col items-center gap-1">
                                 <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100/40 shadow-sm w-36 whitespace-nowrap">
                                   <Check className="w-3.5 h-3.5" />
-                                  Signé (+{(record.transaction?.repTransactionCommission !== undefined ? record.transaction.repTransactionCommission : (record.lead?.gigId?.commission?.transactionCommission || record.lead?.gigId?.rewardPerSale || 30) * 0.7).toFixed(2)}€)
+                                  Signé (+{(record.repTransactionCommission !== undefined ? record.repTransactionCommission : (record.transaction?.repTransactionCommission !== undefined ? record.transaction.repTransactionCommission : (record.lead?.gigId?.commission?.transactionCommission || record.lead?.gigId?.rewardPerSale || 30) * 0.7)).toFixed(2)}€)
                                 </span>
                               </div>
                             ) : (record.validByAI === null || record.validByAI === undefined) ? (
