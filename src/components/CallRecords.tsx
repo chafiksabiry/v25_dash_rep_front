@@ -24,7 +24,8 @@ import {
   Activity as ActivityIcon,
   BookOpen,
   ChevronDown,
-  Clock
+  Clock,
+  CreditCard
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
@@ -468,52 +469,68 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
               </div>
 
               <div className="flex flex-wrap items-center gap-4">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appel</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 text-slate-400" title="Appel (Validation AI)">
+                    <Phone className="w-4 h-4" />
+                  </div>
                   <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${selectedCall.validByAI === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
                     selectedCall.validByAI === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
                       'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                    }`}>
-                    {selectedCall.validByAI === true ? `Validé (+${(selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)` :
-                      selectedCall.validByAI === false ? 'Refusé' :
-                        'En cours'}
+                    }`} title={selectedCall.validByAI === true ? 'Validé par AI' : selectedCall.validByAI === false ? 'Refusé AI' : 'En cours'}>
+                    {selectedCall.validByAI === true ? (
+                      <div className="flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        +{(selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€
+                      </div>
+                    ) : selectedCall.validByAI === false ? (
+                      <X className="w-3 h-3" />
+                    ) : (
+                      <Clock className="w-3 h-3 animate-pulse" />
+                    )}
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Vente</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 text-slate-400" title="Vente">
+                    <CreditCard className="w-4 h-4" />
+                  </div>
                   {(selectedCall.validByAI === null || selectedCall.validByAI === undefined) ? (
-                    <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border border-slate-100/40 shadow-sm w-24">
+                    <span className="inline-flex items-center justify-center p-1.5 rounded-full bg-slate-50 text-slate-400 border border-slate-100/40 shadow-sm" title="En attente">
                       <Clock className="w-3 h-3" />
-                      En attente
                     </span>
                   ) : selectedCall.transaction?.validByAI === true ? (
-                    <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border-blue-100/40 shadow-sm w-36 whitespace-nowrap">
+                    <span className="inline-flex items-center justify-center p-1.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm" title="Wait for Company Validation">
                       <Clock className="w-3 h-3 animate-pulse" />
-                      Wait Company
                     </span>
                   ) : selectedCall.transaction?.validByAI === false ? (
-                    <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-24">
+                    <span className="inline-flex items-center justify-center p-1.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm" title="Refusé AI">
                       <X className="w-3 h-3" />
-                      Refusé AI
                     </span>
                   ) : (
-                    <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border border-slate-100/40 shadow-sm w-24">
+                    <span className="inline-flex items-center justify-center p-1.5 rounded-full bg-slate-50 text-slate-400 border border-slate-100/40 shadow-sm" title="Aucune vente">
                       <Clock className="w-3 h-3" />
-                      Aucune
                     </span>
                   )}
                 </div>
 
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Finale</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 text-slate-400" title="Validation Finale">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
                   <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${selectedCall.transaction?.validByCompany === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
                     selectedCall.transaction?.validByCompany === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
                       'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                    }`}>
-                    {selectedCall.transaction?.validByCompany === true ? `Validé (+${(selectedCall.transaction?.repTransactionCommission !== undefined ? selectedCall.transaction.repTransactionCommission : (selectedCall.lead?.gigId?.commission?.transactionCommission || selectedCall.lead?.gigId?.rewardPerSale || 30) * 0.7).toFixed(2)}€)` :
-                      selectedCall.transaction?.validByCompany === false ? 'Refusé' :
-                        'En attente'}
+                    }`} title={selectedCall.transaction?.validByCompany === true ? 'Validé' : selectedCall.transaction?.validByCompany === false ? 'Refusé' : 'En attente'}>
+                    {selectedCall.transaction?.validByCompany === true ? (
+                      <div className="flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        +{(selectedCall.transaction?.repTransactionCommission !== undefined ? selectedCall.transaction.repTransactionCommission : (selectedCall.lead?.gigId?.commission?.transactionCommission || selectedCall.lead?.gigId?.rewardPerSale || 30) * 0.7).toFixed(2)}€
+                      </div>
+                    ) : selectedCall.transaction?.validByCompany === false ? (
+                      <X className="w-3 h-3" />
+                    ) : (
+                      <Clock className="w-3 h-3" />
+                    )}
                   </span>
                 </div>
               </div>
