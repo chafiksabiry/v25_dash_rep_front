@@ -472,6 +472,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                 <div className="flex items-center gap-1.5">
                   <div className="flex items-center gap-1.5 text-slate-400" title="Appel">
                     <Phone className="w-4 h-4" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Appel</span>
                   </div>
                   <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${selectedCall.validByAI === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
                     selectedCall.validByAI === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
@@ -491,8 +492,9 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <div className="flex items-center gap-1.5 text-slate-400" title="Vente">
+                  <div className="flex items-center gap-1.5 text-slate-400" title="Transaction">
                     <CreditCard className="w-4 h-4" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaction</span>
                   </div>
                   {(selectedCall.validByAI === null || selectedCall.validByAI === undefined) ? (
                     <span className="inline-flex items-center justify-center p-1.5 rounded-full bg-slate-50 text-slate-400 border border-slate-100/40 shadow-sm" title="En attente">
