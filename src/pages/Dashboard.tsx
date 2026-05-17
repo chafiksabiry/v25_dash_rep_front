@@ -33,14 +33,18 @@ export function Dashboard({ profile }: DashboardProps) {
   const { t } = useTranslation();
 
   useEffect(() => {
-    const userId = profile?._id || localStorage.getItem('userId');
-    if (!userId) return;
+    const agentId = profile?._id || localStorage.getItem('agentId') || localStorage.getItem('userId');
+    const realUserId = (profile?.userId && typeof profile?.userId === 'object')
+      ? profile?.userId?._id
+      : (profile?.userId || localStorage.getItem('userId'));
+
+    if (!agentId) return;
 
     const fetchData = async () => {
       try {
         const [callsRes, gigsRes] = await Promise.all([
-          fetch(`https://v25dashboardbackend-production.up.railway.app/api/calls?userId=${userId}`),
-          fetch(`https://v25dashboardbackend-production.up.railway.app/api/calls/gigs?userId=${userId}`)
+          fetch(`https://v25dashboardbackend-production.up.railway.app/api/calls?agentId=${agentId}`),
+          fetch(`https://v25dashboardbackend-production.up.railway.app/api/calls/gigs?userId=${realUserId || agentId}`)
         ]);
         
         const [calls, gigs] = await Promise.all([callsRes.json(), gigsRes.json()]);
