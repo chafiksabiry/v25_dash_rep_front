@@ -30,6 +30,8 @@ export function Dashboard({ profile }: DashboardProps) {
   const [gigsData, setGigsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGigId, setSelectedGigId] = useState<string>('all');
+  type ChartMetric = 'all' | 'reachability' | 'argumentation' | 'validation' | 'conversion';
+  const [activeChartMetric, setActiveChartMetric] = useState<ChartMetric>('all');
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -152,22 +154,51 @@ export function Dashboard({ profile }: DashboardProps) {
       return d;
     });
 
+    const metricCalls = filteredCalls.filter(call => {
+      if (activeChartMetric === 'all') return true;
+      if (call.status?.toLowerCase() !== 'completed') return false;
+      
+      switch (activeChartMetric) {
+        case 'reachability':
+          return true; // Any completed call
+        case 'argumentation':
+          return call.argumentation_score >= 50 || (call.ai_call_score?.["Argumentation"]?.score || 0) >= 50 || call.ai_call_score?.overall?.score > 0;
+        case 'validation':
+          return call.valid === true || call.validByAI === true;
+        case 'conversion':
+          return call.transactionOccurred === true || call.ai_call_score?.transaction_detected === true;
+        default:
+          return true;
+      }
+    });
+
     const counts = range.map(date => {
       const dateString = date.toDateString();
-      return filteredCalls.filter(call => {
+      return metricCalls.filter(call => {
         const callDate = new Date(call.createdAt || call.date);
         return callDate.toDateString() === dateString;
       }).length;
     });
 
+    let label = t('dashboard.performance.chartLabel');
+    let color = 'rgba(59, 130, 246, 0.5)';
+    let borderColor = 'rgb(59, 130, 246)';
+    
+    switch(activeChartMetric) {
+      case 'reachability': label = "Appels Connectés"; color = 'rgba(6, 182, 212, 0.5)'; borderColor = 'rgb(6, 182, 212)'; break;
+      case 'argumentation': label = "Appels Argumentés"; color = 'rgba(245, 158, 11, 0.5)'; borderColor = 'rgb(245, 158, 11)'; break;
+      case 'validation': label = "Appels Conformes"; color = 'rgba(99, 102, 241, 0.5)'; borderColor = 'rgb(99, 102, 241)'; break;
+      case 'conversion': label = "Ventes Réalisées"; color = 'rgba(244, 63, 94, 0.5)'; borderColor = 'rgb(244, 63, 94)'; break;
+    }
+
     return {
       labels: range.map(d => dayNames[d.getDay()]),
       datasets: [
         {
-          label: t('dashboard.performance.chartLabel'),
+          label,
           data: counts,
-          backgroundColor: 'rgba(59, 130, 246, 0.5)',
-          borderColor: 'rgb(59, 130, 246)',
+          backgroundColor: color,
+          borderColor: borderColor,
           borderWidth: 2,
           borderRadius: 8,
         },
@@ -235,7 +266,10 @@ export function Dashboard({ profile }: DashboardProps) {
       {/* 4 Interactive Rate Gauges Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Gauge 1: Reachability */}
-        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-cyan-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default flex flex-col justify-between">
+        <div 
+          onClick={() => setActiveChartMetric(activeChartMetric === 'reachability' ? 'all' : 'reachability')}
+          className={`bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-cyan-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-pointer flex flex-col justify-between ${activeChartMetric === 'reachability' ? 'ring-2 ring-cyan-500 shadow-cyan-500/20' : ''}`}
+        >
           <div className="flex flex-col items-center text-center space-y-4">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taux de Joignabilité</span>
             
@@ -265,7 +299,10 @@ export function Dashboard({ profile }: DashboardProps) {
         </div>
 
         {/* Gauge 2: Pitch/Argumentation */}
-        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-amber-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default flex flex-col justify-between">
+        <div 
+          onClick={() => setActiveChartMetric(activeChartMetric === 'argumentation' ? 'all' : 'argumentation')}
+          className={`bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-amber-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-pointer flex flex-col justify-between ${activeChartMetric === 'argumentation' ? 'ring-2 ring-amber-500 shadow-amber-500/20' : ''}`}
+        >
           <div className="flex flex-col items-center text-center space-y-4">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taux d'Argumentation</span>
             
@@ -295,7 +332,10 @@ export function Dashboard({ profile }: DashboardProps) {
         </div>
 
         {/* Gauge 3: AI Validation */}
-        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default flex flex-col justify-between">
+        <div 
+          onClick={() => setActiveChartMetric(activeChartMetric === 'validation' ? 'all' : 'validation')}
+          className={`bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-pointer flex flex-col justify-between ${activeChartMetric === 'validation' ? 'ring-2 ring-indigo-500 shadow-indigo-500/20' : ''}`}
+        >
           <div className="flex flex-col items-center text-center space-y-4">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taux d'Appels Valides</span>
             
@@ -325,7 +365,10 @@ export function Dashboard({ profile }: DashboardProps) {
         </div>
 
         {/* Gauge 4: Conversion Rate */}
-        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-rose-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default flex flex-col justify-between">
+        <div 
+          onClick={() => setActiveChartMetric(activeChartMetric === 'conversion' ? 'all' : 'conversion')}
+          className={`bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-rose-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-pointer flex flex-col justify-between ${activeChartMetric === 'conversion' ? 'ring-2 ring-rose-500 shadow-rose-500/20' : ''}`}
+        >
           <div className="flex flex-col items-center text-center space-y-4">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taux de Conversion</span>
             
@@ -365,7 +408,7 @@ export function Dashboard({ profile }: DashboardProps) {
               </div>
               <div>
                 <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase tracking-widest">
-                  {t('dashboard.performance.title')}
+                  {activeChartMetric === 'all' ? t('dashboard.performance.title') : `Évolution : ${chartData.datasets[0].label}`}
                 </h2>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
                   {t('dashboard.performance.subtitle')}
