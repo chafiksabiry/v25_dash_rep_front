@@ -349,6 +349,10 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                                     Signé (+{(record.lead?.gigId?.commission?.transactionCommission || record.lead?.gigId?.rewardPerSale || 30).toFixed(2)}€)
                                   </span>
                                 </div>
+                              ) : (record.validByAI === null || record.validByAI === undefined) ? (
+                                <div className="flex flex-col items-center justify-center min-w-[80px]">
+                                  <span className="text-slate-300 font-bold text-sm tracking-widest">-</span>
+                                </div>
                               ) : record.transaction?.validByAI === true ? (
                                 <div className="flex flex-col items-center gap-1">
                                   <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-200/40 shadow-sm w-44 whitespace-nowrap text-center cursor-help" title="Analyse IA positive, en attente de validation finale par l'entreprise">
