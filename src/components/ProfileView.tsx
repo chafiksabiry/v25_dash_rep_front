@@ -798,19 +798,7 @@ export const ProfileView: React.FC<{
           onSaveAvailability={handleSaveAvailability}
         />
       );
-      case 'onboarding': return (
-        <OnboardingTab
-          profile={profile}
-          countryMismatch={countryMismatch}
-          checkingCountryMismatch={checkingCountryMismatch}
-          showLoadingSpinner={showLoadingSpinner}
-          timezoneData={timezoneData}
-          allTimezones={allTimezones}
-          getTimezoneMismatchInfo={getTimezoneMismatchInfo}
-          repWizardApi={repWizardApi}
-          onSaveAvailability={handleSaveAvailability}
-        />
-      );
+
       default: return <ProfileTab profile={profile} onSaveAbout={handleSaveAbout} onReplaceVideo={handleReplaceVideo} isUploadingVideo={isUploadingVideo} />;
     }
   };

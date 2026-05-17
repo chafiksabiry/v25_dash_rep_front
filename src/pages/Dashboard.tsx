@@ -29,6 +29,7 @@ export function Dashboard({ profile }: DashboardProps) {
   const [callsData, setCallsData] = useState<any[]>([]);
   const [gigsData, setGigsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedGigId, setSelectedGigId] = useState<string>('all');
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -55,6 +56,61 @@ export function Dashboard({ profile }: DashboardProps) {
     fetchData();
   }, [profile]);
 
+  // Dynamic filter logic
+  const filteredCalls = React.useMemo(() => {
+    if (selectedGigId === 'all') {
+      return callsData;
+    }
+    return callsData.filter(call => {
+      const cGigId = typeof call.gigId === 'object' ? (call.gigId?._id || call.gigId?.id) : call.gigId;
+      return cGigId === selectedGigId;
+    });
+  }, [callsData, selectedGigId]);
+
+  // Rate calculations
+  const totalCallsCount = filteredCalls.length;
+  const completedCallsCount = filteredCalls.filter(call => 
+    call.status?.toLowerCase() === 'completed'
+  ).length;
+
+  const reachabilityPct = totalCallsCount > 0 
+    ? Math.round((completedCallsCount / totalCallsCount) * 100) 
+    : 0;
+
+  const pitchCount = filteredCalls.filter(call => 
+    call.status?.toLowerCase() === 'completed' && (
+      call.argumentation_score >= 50 || 
+      (call.ai_call_score?.["Argumentation"]?.score || 0) >= 50 ||
+      call.ai_call_score?.overall?.score > 0
+    )
+  ).length;
+
+  const argumentationPct = completedCallsCount > 0 
+    ? Math.round((pitchCount / completedCallsCount) * 100) 
+    : 0;
+
+  const validCount = filteredCalls.filter(call => 
+    call.status?.toLowerCase() === 'completed' && (
+      call.valid === true || 
+      call.validByAI === true
+    )
+  ).length;
+
+  const validationPct = completedCallsCount > 0 
+    ? Math.round((validCount / completedCallsCount) * 100) 
+    : 0;
+
+  const transactionCount = filteredCalls.filter(call => 
+    call.status?.toLowerCase() === 'completed' && (
+      call.transactionOccurred === true || 
+      call.ai_call_score?.transaction_detected === true
+    )
+  ).length;
+
+  const conversionPct = completedCallsCount > 0 
+    ? Math.round((transactionCount / completedCallsCount) * 100) 
+    : 0;
+
   // Helper to calculate score (ported from ProfileView)
   const calculateOverallScore = () => {
     if (!profile?.skills?.contactCenter?.length || !profile?.skills?.contactCenter[0]?.assessmentResults?.keyMetrics) return 75; // Fallback
@@ -78,7 +134,7 @@ export function Dashboard({ profile }: DashboardProps) {
     { icon: TrendingUp, label: t('dashboard.stats.repsScore'), value: `${overallScore}/100`, change: t('dashboard.stats.current'), type: 'positive', color: 'harx' },
     { icon: Layout, label: t('dashboard.stats.onboarding'), value: `${onboardingProgress}%`, change: t('dashboard.stats.progress'), type: 'positive', color: 'blue' },
     { icon: Briefcase, label: t('dashboard.stats.gigsEnrolled'), value: gigsData.length, change: t('dashboard.stats.active'), type: 'neutral', color: 'amber' },
-    { icon: Phone, label: t('dashboard.stats.callsPassed'), value: callsData.length, change: t('dashboard.stats.total'), type: 'positive', color: 'emerald' },
+    { icon: Phone, label: t('dashboard.stats.callsPassed'), value: filteredCalls.length, change: t('dashboard.stats.total'), type: 'positive', color: 'emerald' },
   ];
 
   const processCallsForChart = () => {
@@ -94,7 +150,7 @@ export function Dashboard({ profile }: DashboardProps) {
 
     const counts = range.map(date => {
       const dateString = date.toDateString();
-      return callsData.filter(call => {
+      return filteredCalls.filter(call => {
         const callDate = new Date(call.createdAt || call.date);
         return callDate.toDateString() === dateString;
       }).length;
@@ -135,6 +191,42 @@ export function Dashboard({ profile }: DashboardProps) {
 
   return (
     <div className="space-y-10 pb-10 animate-in fade-in duration-700">
+      {/* Dynamic Filter Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 border border-white/60 shadow-xl shadow-slate-200/10">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+            Bonjour, {displayName} 👋
+          </h1>
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+            Suivi en temps réel de vos indicateurs de performance commerciale
+          </p>
+        </div>
+
+        {/* Beautiful Glassmorphic Dropdown */}
+        <div className="relative flex items-center gap-2.5 shrink-0">
+          <Briefcase size={16} className="text-purple-600 animate-pulse" />
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filtrer :</span>
+          <select
+            value={selectedGigId}
+            onChange={(e) => setSelectedGigId(e.target.value)}
+            className="appearance-none bg-white/80 border border-slate-100 hover:border-purple-200 px-4 py-2.5 pr-10 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 min-w-[200px]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+              backgroundPosition: 'right 0.75rem center',
+              backgroundSize: '1rem',
+              backgroundRepeat: 'no-repeat'
+            }}
+          >
+            <option value="all">Tous les Gigs (All Gigs)</option>
+            {gigsData.map((gig) => (
+              <option key={gig._id || gig.id} value={gig._id || gig.id}>
+                {gig.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
@@ -168,6 +260,117 @@ export function Dashboard({ profile }: DashboardProps) {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* 4 Interactive Rate Gauges Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Gauge 1: Reachability */}
+        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-cyan-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taux de Joignabilité</span>
+            
+            {/* SVG Circle Gauge */}
+            <div className="relative w-28 h-28 flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle cx="56" cy="56" r="48" className="stroke-slate-100/50" strokeWidth="8" fill="transparent" />
+                <circle cx="56" cy="56" r="48" className="stroke-cyan-500 transition-all duration-1000 ease-out" strokeWidth="8" fill="transparent"
+                  strokeDasharray={301.6}
+                  strokeDashoffset={301.6 - (301.6 * reachabilityPct) / 100}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute flex flex-col items-center">
+                <span className="text-2xl font-black text-slate-800 tracking-tighter">{reachabilityPct}%</span>
+                <span className="text-[9px] text-cyan-600 font-extrabold uppercase tracking-wide">Connected</span>
+              </div>
+            </div>
+            
+            <p className="text-[11px] text-slate-500 font-bold leading-tight">
+              {completedCallsCount} / {totalCallsCount} Appels Réussis
+            </p>
+          </div>
+        </div>
+
+        {/* Gauge 2: Pitch/Argumentation */}
+        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-amber-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taux d'Argumentation</span>
+            
+            {/* SVG Circle Gauge */}
+            <div className="relative w-28 h-28 flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle cx="56" cy="56" r="48" className="stroke-slate-100/50" strokeWidth="8" fill="transparent" />
+                <circle cx="56" cy="56" r="48" className="stroke-amber-500 transition-all duration-1000 ease-out" strokeWidth="8" fill="transparent"
+                  strokeDasharray={301.6}
+                  strokeDashoffset={301.6 - (301.6 * argumentationPct) / 100}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute flex flex-col items-center">
+                <span className="text-2xl font-black text-slate-800 tracking-tighter">{argumentationPct}%</span>
+                <span className="text-[9px] text-amber-600 font-extrabold uppercase tracking-wide">Pitched</span>
+              </div>
+            </div>
+            
+            <p className="text-[11px] text-slate-500 font-bold leading-tight">
+              {pitchCount} / {completedCallsCount} Appels Argumentés
+            </p>
+          </div>
+        </div>
+
+        {/* Gauge 3: AI Validation */}
+        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taux d'Appels Valides</span>
+            
+            {/* SVG Circle Gauge */}
+            <div className="relative w-28 h-28 flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle cx="56" cy="56" r="48" className="stroke-slate-100/50" strokeWidth="8" fill="transparent" />
+                <circle cx="56" cy="56" r="48" className="stroke-indigo-500 transition-all duration-1000 ease-out" strokeWidth="8" fill="transparent"
+                  strokeDasharray={301.6}
+                  strokeDashoffset={301.6 - (301.6 * validationPct) / 100}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute flex flex-col items-center">
+                <span className="text-2xl font-black text-slate-800 tracking-tighter">{validationPct}%</span>
+                <span className="text-[9px] text-indigo-600 font-extrabold uppercase tracking-wide">AI Compliant</span>
+              </div>
+            </div>
+            
+            <p className="text-[11px] text-slate-500 font-bold leading-tight">
+              {validCount} / {completedCallsCount} Appels Conformes
+            </p>
+          </div>
+        </div>
+
+        {/* Gauge 4: Conversion Rate */}
+        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-rose-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taux de Conversion</span>
+            
+            {/* SVG Circle Gauge */}
+            <div className="relative w-28 h-28 flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle cx="56" cy="56" r="48" className="stroke-slate-100/50" strokeWidth="8" fill="transparent" />
+                <circle cx="56" cy="56" r="48" className="stroke-rose-500 transition-all duration-1000 ease-out" strokeWidth="8" fill="transparent"
+                  strokeDasharray={301.6}
+                  strokeDashoffset={301.6 - (301.6 * conversionPct) / 100}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute flex flex-col items-center">
+                <span className="text-2xl font-black text-slate-800 tracking-tighter">{conversionPct}%</span>
+                <span className="text-[9px] text-rose-600 font-extrabold uppercase tracking-wide">Transactions</span>
+              </div>
+            </div>
+            
+            <p className="text-[11px] text-slate-500 font-bold leading-tight">
+              {transactionCount} / {completedCallsCount} Ventes Réalisées
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -208,7 +411,7 @@ export function Dashboard({ profile }: DashboardProps) {
                   </div>
                   <p className="text-[11px] font-black text-white/70 uppercase tracking-widest">{metric.label}</p>
                 </div>
-                <p className="text-2xl font-black text-white tracking-tighter group-hover/item:scale-110 transition-transform">{metric.value}{typeof metric.value === 'number' ? '' : ''}</p>
+                <p className="text-2xl font-black text-white tracking-tighter group-hover/item:scale-110 transition-transform">{metric.value}</p>
               </div>
             ))}
           </div>
@@ -218,4 +421,3 @@ export function Dashboard({ profile }: DashboardProps) {
     </div>
   );
 }
-
