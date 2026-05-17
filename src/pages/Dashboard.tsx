@@ -231,40 +231,6 @@ export function Dashboard({ profile }: DashboardProps) {
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="group relative overflow-hidden bg-white/40 backdrop-blur-xl rounded-[32px] p-8 border border-white/60 shadow-xl shadow-slate-200/20 hover:shadow-harx-500/10 transition-all duration-500">
-            <div className={`absolute top-0 right-0 w-24 h-24 rounded-full -mr-12 -mt-12 blur-3xl opacity-20 group-hover:opacity-30 transition-opacity ${
-              stat.color === 'harx' ? 'bg-harx-500' :
-              stat.color === 'blue' ? 'bg-blue-500' :
-              stat.color === 'amber' ? 'bg-amber-500' :
-              'bg-emerald-500'
-            }`}></div>
-            
-            <div className="flex items-center justify-between mb-6 relative z-10">
-              <div className={`w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center transition-transform group-hover:scale-110 duration-500 ${
-                stat.color === 'harx' ? 'text-harx-500' :
-                stat.color === 'blue' ? 'text-blue-500' :
-                stat.color === 'amber' ? 'text-amber-500' :
-                'text-emerald-500'
-              }`}>
-                <stat.icon className="w-6 h-6" />
-              </div>
-              <div className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/80 border border-slate-100 text-slate-500 shadow-sm">
-                {stat.change}
-              </div>
-            </div>
-            
-            <div className="space-y-1 relative z-10">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
-                {loading ? '...' : stat.value}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
 
       {/* 4 Interactive Rate Gauges Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
