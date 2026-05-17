@@ -67,6 +67,7 @@ export interface CallRecord {
     'Fraud detection': { score: number; feedback: string };
     'Script coherence': { score: number; feedback: string };
     'Argumentation': { score: number; feedback: string };
+    'Transaction analysis'?: { score: number; feedback: string };
     overall: { score: number; feedback: string };
     transaction_detected?: boolean;
     refusal_detected?: boolean;
@@ -646,7 +647,8 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                             { label: 'Fraud Detection', key: "Fraud detection", icon: ShieldAlert, color: 'rose' },
                             { label: 'Script Coherence', key: "Script coherence", icon: ShieldCheck, color: 'indigo' },
                             { label: 'Argumentation Quality', key: "Argumentation", icon: TrendingUp, color: 'amber' },
-                            { label: 'Script Adherence', key: "Script adherence", icon: BookOpen, color: 'violet' }
+                            { label: 'Script Adherence', key: "Script adherence", icon: BookOpen, color: 'violet' },
+                            { label: 'Transaction Analysis', key: "Transaction analysis", icon: TrendingUp, color: 'emerald' }
                           ].map((metric, mIdx) => {
                             const metricData = selectedCall.ai_call_score?.[metric.key];
                             if (!metricData && metric.key === "Script adherence") return null;
