@@ -31,6 +31,7 @@ import api from '../utils/client';
 import { PremiumAudioPlayer } from './PremiumAudioPlayer';
 
 export interface CallRecord {
+  repCallCommission: undefined;
   _id: string;
   call_id?: string;
   agent: string;
@@ -49,6 +50,7 @@ export interface CallRecord {
   quality_score?: number;
   transactionOccurred?: boolean | null;
   transaction?: {
+    repTransactionCommission: undefined;
     _id?: string;
     validByAI?: boolean;
     validByCompany?: boolean;
@@ -320,11 +322,11 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                           {/* Validation de l'Appel AI */}
                           <div className="flex flex-col items-center gap-1 min-w-[120px]">
                             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Appel (Validation AI)</span>
-                              {record.validByAI === true || record.valid === true ? (
-                                <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-36 whitespace-nowrap">
-                                  <Check className="w-3.5 h-3.5" />
-                                  Validé par AI (+{(record.lead?.gigId?.commission?.commission_per_call || record.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)
-                                </span>
+                            {record.validByAI === true || record.valid === true ? (
+                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-36 whitespace-nowrap">
+                                <Check className="w-3.5 h-3.5" />
+                                Validé par AI (+{(record.repCallCommission !== undefined ? record.repCallCommission : (record.lead?.gigId?.commission?.commission_per_call || record.lead?.gigId?.rewardPerCall || 4) * 0.7).toFixed(2)}€)
+                              </span>
                             ) : record.validByAI === false ? (
                               <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32 whitespace-nowrap">
                                 <X className="w-3.5 h-3.5" />
@@ -342,34 +344,34 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
 
                           <div className="flex flex-col items-center gap-1 min-w-[120px]">
                             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Transaction AI</span>
-                              {record.transaction?.validByCompany === true ? (
-                                <div className="flex flex-col items-center gap-1">
-                                  <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100/40 shadow-sm w-36 whitespace-nowrap">
-                                    <Check className="w-3.5 h-3.5" />
-                                    Signé (+{(record.lead?.gigId?.commission?.transactionCommission || record.lead?.gigId?.rewardPerSale || 30).toFixed(2)}€)
-                                  </span>
-                                </div>
-                              ) : (record.validByAI === null || record.validByAI === undefined) ? (
-                                <div className="flex flex-col items-center justify-center min-w-[80px]">
-                                  <span className="text-slate-300 font-bold text-sm tracking-widest">-</span>
-                                </div>
-                              ) : record.transaction?.validByAI === true ? (
-                                <div className="flex flex-col items-center gap-1">
-                                  <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-200/40 shadow-sm w-44 whitespace-nowrap text-center cursor-help" title="Analyse IA positive, en attente de validation finale par l'entreprise">
-                                    <Clock className="w-3.5 h-3.5 text-blue-500 animate-pulse" />
-                                    Wait for Company Validation
-                                  </span>
-                                  {record.argumentation_score !== undefined && (
-                                    <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Score: {record.argumentation_score}%</span>
-                                  )}
-                                </div>
-                              ) : record.transaction?.validByAI === false ? (
-                                <div className="flex flex-col items-center gap-1">
-                                  <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32 whitespace-nowrap">
-                                    <X className="w-3.5 h-3.5" />
-                                    Refusé AI
-                                  </span>
-                                </div>
+                            {record.transaction?.validByCompany === true ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100/40 shadow-sm w-36 whitespace-nowrap">
+                                  <Check className="w-3.5 h-3.5" />
+                                  Signé (+{(record.transaction?.repTransactionCommission !== undefined ? record.transaction.repTransactionCommission : (record.lead?.gigId?.commission?.transactionCommission || record.lead?.gigId?.rewardPerSale || 30) * 0.7).toFixed(2)}€)
+                                </span>
+                              </div>
+                            ) : (record.validByAI === null || record.validByAI === undefined) ? (
+                              <div className="flex flex-col items-center justify-center min-w-[80px]">
+                                <span className="text-slate-300 font-bold text-sm tracking-widest">-</span>
+                              </div>
+                            ) : record.transaction?.validByAI === true ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-200/40 shadow-sm w-44 whitespace-nowrap text-center cursor-help" title="Analyse IA positive, en attente de validation finale par l'entreprise">
+                                  <Clock className="w-3.5 h-3.5 text-blue-500 animate-pulse" />
+                                  Wait for Company Validation
+                                </span>
+                                {record.argumentation_score !== undefined && (
+                                  <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Score: {record.argumentation_score}%</span>
+                                )}
+                              </div>
+                            ) : record.transaction?.validByAI === false ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32 whitespace-nowrap">
+                                  <X className="w-3.5 h-3.5" />
+                                  Refusé AI
+                                </span>
+                              </div>
                             ) : (
                               <div className="flex flex-col items-center justify-center min-w-[80px]">
                                 <span className="text-slate-300 font-bold text-sm tracking-widest">-</span>
@@ -437,8 +439,8 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                     <div className="flex flex-col gap-1">
                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appel (Validation AI)</span>
                       <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${selectedCall.validByAI === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
-                          selectedCall.validByAI === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
-                            'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                        selectedCall.validByAI === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
+                          'bg-amber-500/10 text-amber-600 border-amber-500/20'
                         }`}>
                         {selectedCall.validByAI === true ? `Validé par AI (+${(selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)` :
                           selectedCall.validByAI === false ? 'Refusé AI' :
@@ -448,7 +450,12 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
 
                     <div className="flex flex-col gap-1">
                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Vente (Statut AI)</span>
-                      {selectedCall.transaction?.validByAI === true ? (
+                      {(selectedCall.validByAI === null || selectedCall.validByAI === undefined) ? (
+                        <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border border-slate-100/40 shadow-sm w-32">
+                          <Clock className="w-3.5 h-3.5" />
+                          En attente
+                        </span>
+                      ) : selectedCall.transaction?.validByAI === true ? (
                         <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-44 whitespace-nowrap">
                           <Clock className="w-3.5 h-3.5 animate-pulse" />
                           Wait for Company Validation
@@ -469,10 +476,10 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                     <div className="flex flex-col gap-1">
                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Validation Finale</span>
                       <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${selectedCall.transaction?.validByCompany === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
-                          selectedCall.transaction?.validByCompany === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
-                            'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                        selectedCall.transaction?.validByCompany === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
+                          'bg-amber-500/10 text-amber-600 border-amber-500/20'
                         }`}>
-                        {selectedCall.transaction?.validByCompany === true ? `Validé (+${(selectedCall.lead?.gigId?.commission?.transactionCommission || selectedCall.lead?.gigId?.rewardPerSale || 30).toFixed(2)}€)` :
+                        {selectedCall.transaction?.validByCompany === true ? `Validé (+${(selectedCall.transaction?.repTransactionCommission !== undefined ? selectedCall.transaction.repTransactionCommission : (selectedCall.lead?.gigId?.commission?.transactionCommission || selectedCall.lead?.gigId?.rewardPerSale || 30) * 0.7).toFixed(2)}€)` :
                           selectedCall.transaction?.validByCompany === false ? 'Refusé' :
                             'En attente'}
                       </span>
@@ -532,8 +539,8 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                             <span className="text-[9px] font-bold text-slate-300">{t.timestamp}</span>
                           </div>
                           <div className={`px-5 py-4 rounded-3xl text-sm font-medium leading-relaxed ${t.speaker?.toLowerCase().includes('agent')
-                              ? 'bg-white text-slate-700 rounded-tl-none border border-slate-100 shadow-sm'
-                              : 'bg-gradient-harx text-white rounded-tr-none shadow-lg shadow-harx-500/20'
+                            ? 'bg-white text-slate-700 rounded-tl-none border border-slate-100 shadow-sm'
+                            : 'bg-gradient-harx text-white rounded-tr-none shadow-lg shadow-harx-500/20'
                             }`}>
                             {t.text}
                           </div>
@@ -575,7 +582,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                         <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-[40px] blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
                         <div className="relative bg-white rounded-[40px] border border-emerald-100/50 shadow-2xl shadow-emerald-500/5 p-10 overflow-hidden">
                           <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full -mr-40 -mt-40 blur-3xl"></div>
-                          
+
                           <div className="relative z-10">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-8">
                               <div className="flex items-center gap-6">
@@ -587,7 +594,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                                   <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mt-1 opacity-80">Audit Global de Performance</p>
                                 </div>
                               </div>
-                              
+
                               <div className="flex items-center gap-4 bg-slate-50/80 px-6 py-4 rounded-3xl border border-slate-100 shadow-sm">
                                 <div className="text-right">
                                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Score Global</p>
@@ -596,7 +603,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                                   </div>
                                 </div>
                                 <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
-                                   <TrendingUp className={`w-6 h-6 ${(selectedCall.ai_call_score?.overall?.score || 0) >= 70 ? 'text-emerald-500' : 'text-rose-500'}`} />
+                                  <TrendingUp className={`w-6 h-6 ${(selectedCall.ai_call_score?.overall?.score || 0) >= 70 ? 'text-emerald-500' : 'text-rose-500'}`} />
                                 </div>
                               </div>
                             </div>
@@ -631,11 +638,10 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                           ].map((metric, mIdx) => {
                             const metricData = selectedCall.ai_call_score?.[metric.key];
                             if (!metricData && metric.key === "Script adherence") return null;
-                            
                             const score = metricData?.score || 0;
-                            const scoreColorClass = score >= 80 ? 'text-emerald-600 bg-emerald-50' : 
-                                                   score >= 50 ? 'text-amber-600 bg-amber-50' : 
-                                                   'text-rose-600 bg-rose-50';
+                            const scoreColorClass = score >= 80 ? 'text-emerald-600 bg-emerald-50' :
+                              score >= 50 ? 'text-amber-600 bg-amber-50' :
+                                'text-rose-600 bg-rose-50';
 
                             return (
                               <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl shadow-slate-200/20 hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500 flex flex-col h-full group">
@@ -650,15 +656,15 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">Score de qualité</p>
                                   </div>
                                 </div>
-                                
+
                                 <h5 className="text-[12px] font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
                                   <span className={`w-1.5 h-4 bg-${metric.color}-500 rounded-full`}></span>
                                   {metric.label}
                                 </h5>
-                                
+
                                 <div className="flex-1">
                                   <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-slate-50/50 rounded-2xl p-5 border border-slate-50 group-hover:bg-white group-hover:border-slate-100 transition-all">
-                                    {metricData?.feedback?.split('"').map((part, i) => 
+                                    {metricData?.feedback?.split('"').map((part, i) =>
                                       i % 2 === 1 ? (
                                         <span key={i} className="bg-amber-100/50 text-amber-900 font-bold px-1 rounded border-b-2 border-amber-200 italic">&quot;{part}&quot;</span>
                                       ) : part
