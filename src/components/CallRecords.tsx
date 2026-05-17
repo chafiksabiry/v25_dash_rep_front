@@ -469,7 +469,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                             'bg-amber-500/10 text-amber-600 border-amber-500/20'
                         }`}>
                         {selectedCall.transaction?.validByCompany === true ? `Validé (+${(selectedCall.lead?.gigId?.commission?.transactionCommission || selectedCall.lead?.gigId?.rewardPerSale || 30).toFixed(2)}€)` :
-                          selectedCall.transaction?.validByCompany === false ? 'Refusé par Compagnie' :
+                          selectedCall.transaction?.validByCompany === false ? 'Refusé' :
                             'En attente'}
                       </span>
                     </div>
