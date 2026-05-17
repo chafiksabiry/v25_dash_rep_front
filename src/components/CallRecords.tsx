@@ -32,7 +32,7 @@ import api from '../utils/client';
 import { PremiumAudioPlayer } from './PremiumAudioPlayer';
 
 export interface CallRecord {
-  repCallCommission: undefined;
+  repCallCommission?: number;
   _id: string;
   call_id?: string;
   agent: string;
@@ -51,7 +51,7 @@ export interface CallRecord {
   quality_score?: number;
   transactionOccurred?: boolean | null;
   transaction?: {
-    repTransactionCommission: undefined;
+    repTransactionCommission?: number;
     _id?: string;
     validByAI?: boolean;
     validByCompany?: boolean;
@@ -481,7 +481,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                     {selectedCall.validByAI === true ? (
                       <div className="flex items-center gap-1">
                         <Check className="w-3 h-3" />
-                        +{(selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€
+                        +{(selectedCall.repCallCommission !== undefined ? selectedCall.repCallCommission : (selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4) * 0.7).toFixed(2)}€
                       </div>
                     ) : selectedCall.validByAI === false ? (
                       <X className="w-3 h-3" />
