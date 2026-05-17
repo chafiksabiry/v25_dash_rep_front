@@ -552,106 +552,122 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                 </div>
               ) : (
                 <div className="max-w-5xl mx-auto space-y-10 pb-12">
-                  {/* Executive Summary Section - Now at the Top */}
-                  <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-[40px] blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
-                    <div className="relative bg-white rounded-[40px] border border-emerald-100/50 shadow-2xl shadow-emerald-500/5 p-10 overflow-hidden">
-                      <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full -mr-40 -mt-40 blur-3xl"></div>
-                      
-                      <div className="relative z-10">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-8">
-                          <div className="flex items-center gap-6">
-                            <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                              <Star className="w-8 h-8" />
-                            </div>
-                            <div>
-                              <h4 className="text-2xl font-black text-slate-900 uppercase tracking-widest">{t('calls.executiveSummary')}</h4>
-                              <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mt-1 opacity-80">Audit Global de Performance</p>
-                            </div>
-                          </div>
+                  {(!selectedCall.ai_call_score || !selectedCall.ai_call_score.overall?.score) ? (
+                    <div className="py-20 text-center flex flex-col items-center justify-center gap-4">
+                      <p className="text-slate-400 font-bold uppercase tracking-widest text-xs italic">No analysis available for this call</p>
+                      <button
+                        onClick={() => handleAnalyzeCall(selectedCall._id)}
+                        disabled={analyzingCallId === selectedCall._id}
+                        className="flex items-center gap-2 px-6 py-3 bg-harx-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-harx-600 transition-all shadow-lg shadow-harx-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Brain className={`w-4 h-4 ${analyzingCallId === selectedCall._id ? 'animate-spin' : ''}`} />
+                        {analyzingCallId === selectedCall._id ? 'Analyse...' : 'Analyze & Transcribe'}
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Executive Summary Section - Now at the Top */}
+                      <div className="relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-[40px] blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
+                        <div className="relative bg-white rounded-[40px] border border-emerald-100/50 shadow-2xl shadow-emerald-500/5 p-10 overflow-hidden">
+                          <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full -mr-40 -mt-40 blur-3xl"></div>
                           
-                          <div className="flex items-center gap-4 bg-slate-50/80 px-6 py-4 rounded-3xl border border-slate-100 shadow-sm">
-                            <div className="text-right">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Score Global</p>
-                              <div className="text-4xl font-black text-slate-900 leading-none">
-                                {selectedCall.ai_call_score?.overall?.score || 0}<span className="text-xl text-slate-400">%</span>
+                          <div className="relative z-10">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-8">
+                              <div className="flex items-center gap-6">
+                                <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                                  <Star className="w-8 h-8" />
+                                </div>
+                                <div>
+                                  <h4 className="text-2xl font-black text-slate-900 uppercase tracking-widest">{t('calls.executiveSummary')}</h4>
+                                  <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mt-1 opacity-80">Audit Global de Performance</p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-4 bg-slate-50/80 px-6 py-4 rounded-3xl border border-slate-100 shadow-sm">
+                                <div className="text-right">
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Score Global</p>
+                                  <div className="text-4xl font-black text-slate-900 leading-none">
+                                    {selectedCall.ai_call_score?.overall?.score || 0}<span className="text-xl text-slate-400">%</span>
+                                  </div>
+                                </div>
+                                <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+                                   <TrendingUp className={`w-6 h-6 ${(selectedCall.ai_call_score?.overall?.score || 0) >= 70 ? 'text-emerald-500' : 'text-rose-500'}`} />
+                                </div>
                               </div>
                             </div>
-                            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
-                               <TrendingUp className={`w-6 h-6 ${(selectedCall.ai_call_score?.overall?.score || 0) >= 70 ? 'text-emerald-500' : 'text-rose-500'}`} />
+
+                            <div className="bg-gradient-to-br from-slate-50 to-white rounded-[32px] p-8 border border-slate-100 shadow-inner">
+                              <p className="text-xl font-bold text-slate-800 leading-relaxed italic relative">
+                                <span className="absolute -left-4 -top-4 text-emerald-200 text-6xl font-serif opacity-50">&quot;</span>
+                                {selectedCall.ai_call_score?.overall?.feedback || 'Analyse en cours...'}
+                                <span className="text-emerald-200 text-6xl font-serif opacity-50 ml-1 leading-none align-bottom">&quot;</span>
+                              </p>
                             </div>
                           </div>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-slate-50 to-white rounded-[32px] p-8 border border-slate-100 shadow-inner">
-                          <p className="text-xl font-bold text-slate-800 leading-relaxed italic relative">
-                            <span className="absolute -left-4 -top-4 text-emerald-200 text-6xl font-serif opacity-50">&quot;</span>
-                            {selectedCall.ai_call_score?.overall?.feedback || 'Analyse en cours...'}
-                            <span className="text-emerald-200 text-6xl font-serif opacity-50 ml-1 leading-none align-bottom">&quot;</span>
-                          </p>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Detailed Metrics Section */}
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-4 px-4">
-                      <div className="h-px flex-1 bg-slate-200/60"></div>
-                      <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{t('calls.detailedAnalysis')}</h5>
-                      <div className="h-px flex-1 bg-slate-200/60"></div>
-                    </div>
+                      {/* Detailed Metrics Section */}
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-4 px-4">
+                          <div className="h-px flex-1 bg-slate-200/60"></div>
+                          <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{t('calls.detailedAnalysis')}</h5>
+                          <div className="h-px flex-1 bg-slate-200/60"></div>
+                        </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {[
-                        { label: 'Agent Fluency', key: "Agent fluency", icon: Globe, color: 'emerald' },
-                        { label: 'Sentiment Analysis', key: "Sentiment analysis", icon: ActivityIcon, color: 'blue' },
-                        { label: 'Fraud Detection', key: "Fraud detection", icon: ShieldAlert, color: 'rose' },
-                        { label: 'Script Coherence', key: "Script coherence", icon: ShieldCheck, color: 'indigo' },
-                        { label: 'Argumentation Quality', key: "Argumentation", icon: TrendingUp, color: 'amber' },
-                        { label: 'Script Adherence', key: "Script adherence", icon: BookOpen, color: 'violet' }
-                      ].map((metric, mIdx) => {
-                        const metricData = selectedCall.ai_call_score?.[metric.key];
-                        if (!metricData && metric.key === "Script adherence") return null;
-                        
-                        const score = metricData?.score || 0;
-                        const scoreColorClass = score >= 80 ? 'text-emerald-600 bg-emerald-50' : 
-                                               score >= 50 ? 'text-amber-600 bg-amber-50' : 
-                                               'text-rose-600 bg-rose-50';
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {[
+                            { label: 'Agent Fluency', key: "Agent fluency", icon: Globe, color: 'emerald' },
+                            { label: 'Sentiment Analysis', key: "Sentiment analysis", icon: ActivityIcon, color: 'blue' },
+                            { label: 'Fraud Detection', key: "Fraud detection", icon: ShieldAlert, color: 'rose' },
+                            { label: 'Script Coherence', key: "Script coherence", icon: ShieldCheck, color: 'indigo' },
+                            { label: 'Argumentation Quality', key: "Argumentation", icon: TrendingUp, color: 'amber' },
+                            { label: 'Script Adherence', key: "Script adherence", icon: BookOpen, color: 'violet' }
+                          ].map((metric, mIdx) => {
+                            const metricData = selectedCall.ai_call_score?.[metric.key];
+                            if (!metricData && metric.key === "Script adherence") return null;
+                            
+                            const score = metricData?.score || 0;
+                            const scoreColorClass = score >= 80 ? 'text-emerald-600 bg-emerald-50' : 
+                                                   score >= 50 ? 'text-amber-600 bg-amber-50' : 
+                                                   'text-rose-600 bg-rose-50';
 
-                        return (
-                          <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl shadow-slate-200/20 hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500 flex flex-col h-full group">
-                            <div className="flex justify-between items-start mb-8">
-                              <div className={`w-14 h-14 rounded-2xl bg-${metric.color}-50 text-${metric.color}-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500`}>
-                                <metric.icon className="w-7 h-7" />
-                              </div>
-                              <div className="text-right flex flex-col items-end">
-                                <div className={`px-4 py-2 rounded-2xl text-xl font-black shadow-sm border border-transparent ${scoreColorClass}`}>
-                                  {score}%
+                            return (
+                              <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl shadow-slate-200/20 hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500 flex flex-col h-full group">
+                                <div className="flex justify-between items-start mb-8">
+                                  <div className={`w-14 h-14 rounded-2xl bg-${metric.color}-50 text-${metric.color}-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500`}>
+                                    <metric.icon className="w-7 h-7" />
+                                  </div>
+                                  <div className="text-right flex flex-col items-end">
+                                    <div className={`px-4 py-2 rounded-2xl text-xl font-black shadow-sm border border-transparent ${scoreColorClass}`}>
+                                      {score}%
+                                    </div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">Score de qualité</p>
+                                  </div>
                                 </div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">Score de qualité</p>
+                                
+                                <h5 className="text-[12px] font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                  <span className={`w-1.5 h-4 bg-${metric.color}-500 rounded-full`}></span>
+                                  {metric.label}
+                                </h5>
+                                
+                                <div className="flex-1">
+                                  <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-slate-50/50 rounded-2xl p-5 border border-slate-50 group-hover:bg-white group-hover:border-slate-100 transition-all">
+                                    {metricData?.feedback?.split('"').map((part, i) => 
+                                      i % 2 === 1 ? (
+                                        <span key={i} className="bg-amber-100/50 text-amber-900 font-bold px-1 rounded border-b-2 border-amber-200 italic">&quot;{part}&quot;</span>
+                                      ) : part
+                                    ) || 'Analyse détaillée indisponible.'}
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                            
-                            <h5 className="text-[12px] font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
-                              <span className={`w-1.5 h-4 bg-${metric.color}-500 rounded-full`}></span>
-                              {metric.label}
-                            </h5>
-                            
-                            <div className="flex-1">
-                              <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-slate-50/50 rounded-2xl p-5 border border-slate-50 group-hover:bg-white group-hover:border-slate-100 transition-all">
-                                {metricData?.feedback?.split('"').map((part, i) => 
-                                  i % 2 === 1 ? (
-                                    <span key={i} className="bg-amber-100/50 text-amber-900 font-bold px-1 rounded border-b-2 border-amber-200 italic">&quot;{part}&quot;</span>
-                                  ) : part
-                                ) || 'Analyse détaillée indisponible.'}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
