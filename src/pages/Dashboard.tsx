@@ -269,7 +269,7 @@ export function Dashboard({ profile }: DashboardProps) {
       {/* 4 Interactive Rate Gauges Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Gauge 1: Reachability */}
-        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-cyan-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default">
+        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-cyan-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default flex flex-col justify-between">
           <div className="flex flex-col items-center text-center space-y-4">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taux de Joignabilité</span>
             
@@ -293,10 +293,13 @@ export function Dashboard({ profile }: DashboardProps) {
               {completedCallsCount} / {totalCallsCount} Appels Réussis
             </p>
           </div>
+          <p className="border-t border-slate-100/80 pt-3 mt-4 text-[10px] text-slate-400 font-semibold italic text-center w-full leading-relaxed">
+            Pourcentage d'appels ayant abouti à un échange de vive voix avec le client.
+          </p>
         </div>
 
         {/* Gauge 2: Pitch/Argumentation */}
-        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-amber-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default">
+        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-amber-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default flex flex-col justify-between">
           <div className="flex flex-col items-center text-center space-y-4">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taux d'Argumentation</span>
             
@@ -320,10 +323,13 @@ export function Dashboard({ profile }: DashboardProps) {
               {pitchCount} / {completedCallsCount} Appels Argumentés
             </p>
           </div>
+          <p className="border-t border-slate-100/80 pt-3 mt-4 text-[10px] text-slate-400 font-semibold italic text-center w-full leading-relaxed">
+            Pourcentage d'appels connectés où un argumentaire structuré a été présenté.
+          </p>
         </div>
 
         {/* Gauge 3: AI Validation */}
-        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default">
+        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default flex flex-col justify-between">
           <div className="flex flex-col items-center text-center space-y-4">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taux d'Appels Valides</span>
             
@@ -347,10 +353,13 @@ export function Dashboard({ profile }: DashboardProps) {
               {validCount} / {completedCallsCount} Appels Conformes
             </p>
           </div>
+          <p className="border-t border-slate-100/80 pt-3 mt-4 text-[10px] text-slate-400 font-semibold italic text-center w-full leading-relaxed">
+            Pourcentage d'appels qualifiés et validés conformes par notre audit IA.
+          </p>
         </div>
 
         {/* Gauge 4: Conversion Rate */}
-        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-rose-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default">
+        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 hover:shadow-rose-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default flex flex-col justify-between">
           <div className="flex flex-col items-center text-center space-y-4">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Taux de Conversion</span>
             
@@ -374,6 +383,9 @@ export function Dashboard({ profile }: DashboardProps) {
               {transactionCount} / {completedCallsCount} Ventes Réalisées
             </p>
           </div>
+          <p className="border-t border-slate-100/80 pt-3 mt-4 text-[10px] text-slate-400 font-semibold italic text-center w-full leading-relaxed">
+            Pourcentage d'appels aboutissant à une transaction ou vente confirmée.
+          </p>
         </div>
       </div>
 
