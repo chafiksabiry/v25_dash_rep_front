@@ -344,7 +344,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                           <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
 
                           <div className="flex flex-col items-center gap-1 min-w-[120px]">
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Transaction AI</span>
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Transaction</span>
                             {record.transaction?.validByCompany === true ? (
                               <div className="flex flex-col items-center gap-1">
                                 <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100/40 shadow-sm w-36 whitespace-nowrap">
