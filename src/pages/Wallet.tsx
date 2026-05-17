@@ -62,8 +62,8 @@ export function WalletPage() {
       const gigData = typeof recordGig === 'object' ? recordGig : null;
       const comm = gigData?.commission as GigCommissionExtended | undefined;
 
-      let callRate = resolveWalletPerCallEur(comm, gigData?.rewardPerCall);
-      let txRate = resolveWalletTransactionEur(comm, gigData?.rewardPerSale);
+      let callRate = resolveWalletPerCallEur(comm, gigData?.rewardPerCall) * 0.7;
+      let txRate = resolveWalletTransactionEur(comm, gigData?.rewardPerSale) * 0.7;
 
       // 1. Call Validation commission
       if (call.companyValidation === 'approved') {
@@ -95,8 +95,8 @@ export function WalletPage() {
       const gigTitle = gigData?.title || "Projet";
       const gigId = typeof call.lead?.gigId === 'object' ? call.lead.gigId?._id : call.lead?.gigId;
       const comm = gigData?.commission as GigCommissionExtended | undefined;
-      const callRate = resolveWalletPerCallEur(comm, gigData?.rewardPerCall);
-      const txRate = resolveWalletTransactionEur(comm, gigData?.rewardPerSale);
+      const callRate = resolveWalletPerCallEur(comm, gigData?.rewardPerCall) * 0.7;
+      const txRate = resolveWalletTransactionEur(comm, gigData?.rewardPerSale) * 0.7;
 
       // Call Commission
       if (call.companyValidation === 'approved') {
@@ -312,8 +312,8 @@ export function WalletPage() {
       const callDate = new Date(call.createdAt || call.startTime);
       if (callDate >= oneWeekAgo) {
         const gigData = typeof call.lead?.gigId === 'object' ? call.lead.gigId : null;
-        const callRate = gigData?.commission?.commission_per_call || gigData?.rewardPerCall || 4.00;
-        const txRate = gigData?.commission?.transactionCommission || gigData?.rewardPerSale || 30.00;
+        const callRate = (gigData?.commission?.commission_per_call || gigData?.rewardPerCall || 4.00) * 0.7;
+        const txRate = (gigData?.commission?.transactionCommission || gigData?.rewardPerSale || 30.00) * 0.7;
         
         if (call.companyValidation === 'approved') {
           total += callRate;

@@ -411,84 +411,24 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setSelectedCall(null)}></div>
 
-          <div className="relative bg-white w-full max-w-4xl max-h-[85vh] rounded-[48px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-white/20">
+          <div className="relative bg-white w-full max-w-4xl max-h-[85vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-white/20">
             {/* Modal Header */}
-            <div className="px-8 py-8 border-b border-slate-100 bg-slate-50/40 flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-harx text-white flex items-center justify-center shadow-xl shadow-harx-500/20">
-                  <Phone className="w-7 h-7" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-widest">
-                    {selectedCall.lead?.First_Name ? `${selectedCall.lead.First_Name} ${selectedCall.lead.Last_Name || ''}`.trim() : 'Call Details'}
-                  </h2>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-                    {new Date(selectedCall.startTime || selectedCall.createdAt).toLocaleString()} • {selectedCall.duration ? `${Math.floor(selectedCall.duration / 60)}m ${selectedCall.duration % 60}s` : '0s'}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-3 mt-1 opacity-60">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">
-                      Call ID: {typeof selectedCall._id === 'object' ? (selectedCall._id as any).$oid : selectedCall._id}
-                    </span>
-                    {selectedCall.transaction?._id && (
-                      <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded-md">
-                        Tx ID: {selectedCall.transaction._id}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-4 mt-3">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appel (Validation AI)</span>
-                      <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${selectedCall.validByAI === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
-                        selectedCall.validByAI === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
-                          'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                        }`}>
-                        {selectedCall.validByAI === true ? `Validé par AI (+${(selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)` :
-                          selectedCall.validByAI === false ? 'Refusé AI' :
-                            'Analyse en cours'}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Vente (Statut AI)</span>
-                      {(selectedCall.validByAI === null || selectedCall.validByAI === undefined) ? (
-                        <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border border-slate-100/40 shadow-sm w-32">
-                          <Clock className="w-3.5 h-3.5" />
-                          En attente
-                        </span>
-                      ) : selectedCall.transaction?.validByAI === true ? (
-                        <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/40 shadow-sm w-44 whitespace-nowrap">
-                          <Clock className="w-3.5 h-3.5 animate-pulse" />
-                          Wait for Company Validation
-                        </span>
-                      ) : selectedCall.transaction?.validByAI === false ? (
-                        <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32">
-                          <X className="w-3.5 h-3.5" />
-                          Refusé AI
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border border-slate-100/40 shadow-sm w-32">
-                          <Clock className="w-3.5 h-3.5" />
-                          Aucune vente
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Validation Finale</span>
-                      <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${selectedCall.transaction?.validByCompany === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
-                        selectedCall.transaction?.validByCompany === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
-                          'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                        }`}>
-                        {selectedCall.transaction?.validByCompany === true ? `Validé (+${(selectedCall.transaction?.repTransactionCommission !== undefined ? selectedCall.transaction.repTransactionCommission : (selectedCall.lead?.gigId?.commission?.transactionCommission || selectedCall.lead?.gigId?.rewardPerSale || 30) * 0.7).toFixed(2)}€)` :
-                          selectedCall.transaction?.validByCompany === false ? 'Refusé' :
-                            'En attente'}
-                      </span>
-                    </div>
-                  </div>
+            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-3 relative z-10">
+              <div className="flex flex-col">
+                <h2 className="text-base font-black text-slate-900 uppercase tracking-widest">
+                  {selectedCall.lead?.First_Name ? `${selectedCall.lead.First_Name} ${selectedCall.lead.Last_Name || ''}`.trim() : 'Call Details'}
+                </h2>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5 italic">
+                  {new Date(selectedCall.startTime || selectedCall.createdAt).toLocaleString()} • {selectedCall.duration ? `${Math.floor(selectedCall.duration / 60)}m ${selectedCall.duration % 60}s` : '0s'}
+                </p>
+                <div className="flex items-center gap-1.5 mt-0.5 opacity-60">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-1.5 py-0.5 rounded-md">
+                    Call ID: {typeof selectedCall._id === 'object' ? (selectedCall._id as any).$oid : selectedCall._id}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex-1 max-w-lg">
+              <div className="flex-1 max-w-sm">
                 {(() => {
                   const recordingUrl = selectedCall.recording_url_cloudinary || selectedCall.recording_url;
                   if (!recordingUrl) return <div className="text-[10px] font-black text-slate-400 uppercase text-center py-2 bg-slate-100/50 rounded-xl italic">No recording</div>;
@@ -497,33 +437,86 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                 })()}
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
 
                 <button
                   onClick={() => setSelectedCall(null)}
-                  className="p-3 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-900 rounded-2xl border border-slate-100 transition-all shadow-sm"
+                  className="p-2 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-900 rounded-xl border border-slate-100 transition-all shadow-sm"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
             {/* Tabs */}
-            <div className="px-8 py-4 bg-white border-b border-slate-100 flex items-center gap-4">
-              <button
-                onClick={() => setActiveTab('transcript')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'transcript' ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
-              >
-                <MessageSquare className="w-4 h-4" />
-                {t('calls.transcript')}
-              </button>
-              <button
-                onClick={() => setActiveTab('insights')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'insights' ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
-              >
-                <ActivityIcon className="w-4 h-4" />
-                {t('calls.aiInsights')}
-              </button>
+            <div className="px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setActiveTab('transcript')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'transcript' ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  {t('calls.transcript')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('insights')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'insights' ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                >
+                  <ActivityIcon className="w-4 h-4" />
+                  {t('calls.aiInsights')}
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Appel</span>
+                  <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${selectedCall.validByAI === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                    selectedCall.validByAI === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
+                      'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                    }`}>
+                    {selectedCall.validByAI === true ? `Validé (+${(selectedCall.lead?.gigId?.commission?.commission_per_call || selectedCall.lead?.gigId?.rewardPerCall || 4).toFixed(2)}€)` :
+                      selectedCall.validByAI === false ? 'Refusé' :
+                        'En cours'}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Vente</span>
+                  {(selectedCall.validByAI === null || selectedCall.validByAI === undefined) ? (
+                    <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border border-slate-100/40 shadow-sm w-24">
+                      <Clock className="w-3 h-3" />
+                      En attente
+                    </span>
+                  ) : selectedCall.transaction?.validByAI === true ? (
+                    <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border-blue-100/40 shadow-sm w-36 whitespace-nowrap">
+                      <Clock className="w-3 h-3 animate-pulse" />
+                      Wait Company
+                    </span>
+                  ) : selectedCall.transaction?.validByAI === false ? (
+                    <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-24">
+                      <X className="w-3 h-3" />
+                      Refusé AI
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border border-slate-100/40 shadow-sm w-24">
+                      <Clock className="w-3 h-3" />
+                      Aucune
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Finale</span>
+                  <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${selectedCall.transaction?.validByCompany === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                    selectedCall.transaction?.validByCompany === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
+                      'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                    }`}>
+                    {selectedCall.transaction?.validByCompany === true ? `Validé (+${(selectedCall.transaction?.repTransactionCommission !== undefined ? selectedCall.transaction.repTransactionCommission : (selectedCall.lead?.gigId?.commission?.transactionCommission || selectedCall.lead?.gigId?.rewardPerSale || 30) * 0.7).toFixed(2)}€)` :
+                      selectedCall.transaction?.validByCompany === false ? 'Refusé' :
+                        'En attente'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Body */}

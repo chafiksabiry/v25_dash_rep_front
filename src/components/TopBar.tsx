@@ -39,7 +39,7 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
   const { logout } = useAuth();
   const [balance, setBalance] = useState(() => {
     const saved = localStorage.getItem('rep_available_balance');
-    return saved ? parseFloat(saved) : 1250.00;
+    return saved ? parseFloat(saved) : 0.00;
   });
 
   useEffect(() => {
