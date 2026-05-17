@@ -384,11 +384,11 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
 
                       <div className="flex items-center gap-2 ml-2">
                         <button
-                          onClick={() => openCallDetails(record, 'transcript')}
-                          className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 transition-all"
+                          onClick={() => openCallDetails(record, 'insights')}
+                          className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100 transition-all"
                           title="View Details"
                         >
-                          <MessageSquare className="w-5 h-5" />
+                          <Brain className="w-5 h-5" />
                         </button>
                       </div>
                     </div>
