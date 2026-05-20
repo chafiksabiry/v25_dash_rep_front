@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { TrendingUp, DollarSign, Clock, Star, Bell, BookOpen, MessageSquare, Phone, Target, Award, ArrowRight, Briefcase, CheckCircle2, Layout, Globe, Wallet as WalletIcon, Hourglass, Trophy, Flame, CalendarDays, CalendarCheck, CalendarClock, CalendarX, Timer, Filter as FilterIcon } from 'lucide-react';
+import { TrendingUp, DollarSign, Clock, Phone, Target, Award, Briefcase, CheckCircle2, Wallet as WalletIcon, Hourglass, Trophy, Flame, CalendarDays, CalendarCheck, CalendarClock, CalendarX, Timer, Filter as FilterIcon, Receipt, XCircle, Inbox } from 'lucide-react';
 import api, { repTransactionsApi, type RepTransactionRow } from '../utils/client';
-import { useTranslation } from 'react-i18next';
 import { slotApi, type Reservation } from '../services/api/slotApi';
 
 interface DashboardProps {
@@ -58,12 +57,13 @@ export function Dashboard({ profile }: DashboardProps) {
   const [callsData, setCallsData] = useState<any[]>([]);
   const [gigsData, setGigsData] = useState<any[]>([]);
   const [reservationsData, setReservationsData] = useState<Reservation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [selectedGigId, setSelectedGigId] = useState<string>('all');
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodKey>('month');
-  type ChartMetric = 'all' | 'reachability' | 'argumentation' | 'validation' | 'conversion';
-  const [activeChartMetric, setActiveChartMetric] = useState<ChartMetric>('all');
-  const { t } = useTranslation();
+  type TransactionFilter = 'all' | 'paid' | 'earned' | 'refused';
+  const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>('all');
+  type CallFilter = 'all' | 'valid' | 'invalid';
+  const [callFilter, setCallFilter] = useState<CallFilter>('all');
 
   // Earnings & objectifs (RepTransaction-backed)
   const [walletStats, setWalletStats] = useState<{
@@ -87,7 +87,7 @@ export function Dashboard({ profile }: DashboardProps) {
           fetch(`https://v25dashboardbackend-production.up.railway.app/api/calls?agentId=${agentId}`),
           fetch(`https://v25dashboardbackend-production.up.railway.app/api/calls/gigs?userId=${realUserId || agentId}`),
           api.get(`/escrow/agent/wallet/${agentId}`).catch(() => null),
-          repTransactionsApi.list(agentId, { status: 'earned', limit: 300 }).catch(() => null),
+          repTransactionsApi.list(agentId, { limit: 300 }).catch(() => null),
           slotApi.getReservations(agentId).catch(() => [])
         ]);
 
@@ -150,50 +150,6 @@ export function Dashboard({ profile }: DashboardProps) {
       return true;
     });
   }, [reservationsData, selectedGigId, periodStartTs]);
-
-  // Rate calculations
-  const totalCallsCount = filteredCalls.length;
-  const completedCallsCount = filteredCalls.filter(call => 
-    call.status?.toLowerCase() === 'completed'
-  ).length;
-
-  const reachabilityPct = totalCallsCount > 0 
-    ? Math.round((completedCallsCount / totalCallsCount) * 100) 
-    : 0;
-
-  const pitchCount = filteredCalls.filter(call => 
-    call.status?.toLowerCase() === 'completed' && (
-      call.argumentation_score >= 50 || 
-      (call.ai_call_score?.["Argumentation"]?.score || 0) >= 50 ||
-      call.ai_call_score?.overall?.score > 0
-    )
-  ).length;
-
-  const argumentationPct = completedCallsCount > 0 
-    ? Math.round((pitchCount / completedCallsCount) * 100) 
-    : 0;
-
-  const validCount = filteredCalls.filter(call => 
-    call.status?.toLowerCase() === 'completed' && (
-      call.valid === true || 
-      call.validByAI === true
-    )
-  ).length;
-
-  const validationPct = completedCallsCount > 0 
-    ? Math.round((validCount / completedCallsCount) * 100) 
-    : 0;
-
-  const transactionCount = filteredCalls.filter(call => 
-    call.status?.toLowerCase() === 'completed' && (
-      call.transactionOccurred === true || 
-      call.ai_call_score?.transaction_detected === true
-    )
-  ).length;
-
-  const conversionPct = completedCallsCount > 0 
-    ? Math.round((transactionCount / completedCallsCount) * 100) 
-    : 0;
 
   // Earnings this week (last 7 days), 70% rep share from the ledger
   const weeklyEarnings = useMemo(() => {
@@ -289,6 +245,85 @@ export function Dashboard({ profile }: DashboardProps) {
       })
       .slice(0, 3);
   }, [filteredReservations]);
+
+  // Transactions filtered by gig + period
+  const filteredTransactions = useMemo(() => {
+    return repLedger.filter((row: any) => {
+      if (selectedGigId !== 'all') {
+        const rGigId = typeof row.gigId === 'object' ? (row.gigId?._id || row.gigId?.id) : row.gigId;
+        if (rGigId !== selectedGigId) return false;
+      }
+      if (periodStartTs > 0) {
+        const ts = new Date(row.createdAt).getTime();
+        if (!ts || ts < periodStartTs) return false;
+      }
+      return true;
+    });
+  }, [repLedger, selectedGigId, periodStartTs]);
+
+  // Transaction breakdown by status (counts + totals)
+  const transactionStats = useMemo(() => {
+    const acc = {
+      all: { count: 0, total: 0 },
+      paid: { count: 0, total: 0 },
+      earned: { count: 0, total: 0 },
+      refused: { count: 0, total: 0 },
+    };
+    filteredTransactions.forEach((row: RepTransactionRow) => {
+      const share = row.repShare || 0;
+      acc.all.count += 1;
+      acc.all.total += share;
+      if (row.status === 'paid') {
+        acc.paid.count += 1;
+        acc.paid.total += share;
+      } else if (row.status === 'earned') {
+        acc.earned.count += 1;
+        acc.earned.total += share;
+      } else if (row.status === 'refused') {
+        acc.refused.count += 1;
+        acc.refused.total += share;
+      }
+    });
+    return acc;
+  }, [filteredTransactions]);
+
+  // Transactions list (filtered + sorted desc)
+  const visibleTransactions = useMemo(() => {
+    const list = filteredTransactions.filter((row: RepTransactionRow) => {
+      if (transactionFilter === 'all') return true;
+      return row.status === transactionFilter;
+    });
+    return [...list]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 8);
+  }, [filteredTransactions, transactionFilter]);
+
+  // Call validation breakdown + visible list
+  const callStats = useMemo(() => {
+    const acc = { all: 0, valid: 0, invalid: 0 };
+    filteredCalls.forEach((call: any) => {
+      acc.all += 1;
+      const isValid = call.valid === true || call.validByAI === true;
+      if (isValid) acc.valid += 1;
+      else acc.invalid += 1;
+    });
+    return acc;
+  }, [filteredCalls]);
+
+  const visibleCalls = useMemo(() => {
+    const list = filteredCalls.filter((call: any) => {
+      if (callFilter === 'all') return true;
+      const isValid = call.valid === true || call.validByAI === true;
+      return callFilter === 'valid' ? isValid : !isValid;
+    });
+    return [...list]
+      .sort((a: any, b: any) => {
+        const ta = new Date(a.createdAt || a.startTime || 0).getTime();
+        const tb = new Date(b.createdAt || b.startTime || 0).getTime();
+        return tb - ta;
+      })
+      .slice(0, 8);
+  }, [filteredCalls, callFilter]);
 
   // Multi-objectifs — daily / weekly / monthly call goals + reservation goal
   const multiObjectifs = useMemo(() => {
@@ -392,31 +427,7 @@ export function Dashboard({ profile }: DashboardProps) {
     };
   }, [selectedGigId, gigsData, callsData]);
 
-  // Helper to calculate score (ported from ProfileView)
-  const calculateOverallScore = () => {
-    if (!profile?.skills?.contactCenter?.length || !profile?.skills?.contactCenter[0]?.assessmentResults?.keyMetrics) return 75; // Fallback
-    const { professionalism = 0, effectiveness = 0, customerFocus = 0 } = profile.skills.contactCenter[0].assessmentResults.keyMetrics;
-    return Math.floor((professionalism + effectiveness + customerFocus) / 3);
-  };
-
   const displayName = profile?.personalInfo?.name ? profile.personalInfo.name.split(' ')[0] : 'User';
-  const overallScore = calculateOverallScore();
-  
-  const calculateOnboardingProgress = () => {
-    if (!profile?.onboardingProgress?.phases) return 0;
-    const phases = profile.onboardingProgress.phases;
-    const completedPhases = Object.values(phases).filter((p: any) => p.status === 'completed').length;
-    return Math.round((completedPhases / 5) * 100);
-  };
-
-  const onboardingProgress = calculateOnboardingProgress();
-
-  const stats = [
-    { icon: TrendingUp, label: t('dashboard.stats.repsScore'), value: `${overallScore}/100`, change: t('dashboard.stats.current'), type: 'positive', color: 'harx' },
-    { icon: Layout, label: t('dashboard.stats.onboarding'), value: `${onboardingProgress}%`, change: t('dashboard.stats.progress'), type: 'positive', color: 'blue' },
-    { icon: Briefcase, label: t('dashboard.stats.gigsEnrolled'), value: gigsData.length, change: t('dashboard.stats.active'), type: 'neutral', color: 'amber' },
-    { icon: Phone, label: t('dashboard.stats.callsPassed'), value: filteredCalls.length, change: t('dashboard.stats.total'), type: 'positive', color: 'emerald' },
-  ];
 
   return (
     <div className="space-y-10 pb-10 animate-in fade-in duration-700">
@@ -499,80 +510,292 @@ export function Dashboard({ profile }: DashboardProps) {
         </div>
       </div>
 
-      {/* Earnings & Objectifs — RepTransaction-backed (70% rep share) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Solde disponible */}
-        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Solde disponible</span>
-            <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-              <WalletIcon size={18} />
+      {/* Wallet strip — compact KPI row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            label: 'Solde disponible',
+            value: `${walletStats.availableBalance.toFixed(2)} €`,
+            sub: 'Prêt au retrait',
+            icon: WalletIcon,
+            accent: 'emerald'
+          },
+          {
+            label: 'En attente',
+            value: `${walletStats.pendingCommissions.toFixed(2)} €`,
+            sub: 'Validation IA',
+            icon: Hourglass,
+            accent: 'amber'
+          },
+          {
+            label: selectedPeriod === 'all' ? 'Cette semaine' : `Gains — ${PERIOD_OPTIONS.find(p => p.key === selectedPeriod)?.label}`,
+            value: `${(selectedPeriod === 'all' ? weeklyEarnings : periodEarnings).toFixed(2)} €`,
+            sub: selectedPeriod === 'all' ? '7 derniers jours' : 'Filtré par période',
+            icon: TrendingUp,
+            accent: 'blue'
+          },
+          {
+            label: 'Gains totaux',
+            value: `${walletStats.lifetimeEarnings.toFixed(2)} €`,
+            sub: 'Depuis votre arrivée',
+            icon: Trophy,
+            accent: 'dark'
+          },
+        ].map((kpi, idx) => {
+          const isDark = kpi.accent === 'dark';
+          return (
+            <div
+              key={idx}
+              className={`relative overflow-hidden rounded-3xl p-5 shadow-xl transition-all duration-300 hover:-translate-y-0.5 ${
+                isDark
+                  ? 'bg-slate-950 text-white border border-slate-800 shadow-slate-900/20'
+                  : 'bg-white/50 backdrop-blur-xl border border-white/60 shadow-slate-200/20'
+              }`}
+            >
+              {isDark && <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-harx-500/30 blur-3xl" />}
+              <div className="relative z-10 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className={`text-[9px] font-black uppercase tracking-widest truncate ${isDark ? 'text-white/50' : 'text-slate-400'}`}>
+                    {kpi.label}
+                  </p>
+                  <p className={`text-2xl font-black tracking-tighter mt-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {kpi.value}
+                  </p>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider mt-1 ${
+                    isDark ? 'text-white/50' : `text-${kpi.accent}-600`
+                  }`}>
+                    {kpi.sub}
+                  </p>
+                </div>
+                <div className={`h-9 w-9 rounded-2xl flex items-center justify-center shrink-0 ${
+                  isDark ? 'bg-white/10 text-white' : `bg-${kpi.accent}-500/10 text-${kpi.accent}-600`
+                }`}>
+                  <kpi.icon size={16} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Activité Récente — Transactions & Calls cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Transactions card */}
+        <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-[28px] shadow-xl shadow-slate-200/20 overflow-hidden flex flex-col">
+          <div className="px-6 pt-6 pb-4">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                  <Receipt size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900 tracking-tight uppercase">Transactions</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                    Vos commissions & paiements
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-black text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0">
+                {transactionStats.all.total.toFixed(2)} €
+              </span>
+            </div>
+
+            {/* Filter pills */}
+            <div className="flex flex-wrap gap-2">
+              {([
+                { key: 'all', label: 'Tous', accent: 'slate', count: transactionStats.all.count },
+                { key: 'paid', label: 'Payé', accent: 'emerald', count: transactionStats.paid.count },
+                { key: 'earned', label: 'À payer', accent: 'amber', count: transactionStats.earned.count },
+                { key: 'refused', label: 'Non payé', accent: 'rose', count: transactionStats.refused.count },
+              ] as { key: TransactionFilter; label: string; accent: string; count: number }[]).map((tab) => {
+                const active = transactionFilter === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setTransactionFilter(tab.key)}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-200 flex items-center gap-1.5 ${
+                      active
+                        ? tab.accent === 'slate'
+                          ? 'bg-slate-900 text-white shadow-md'
+                          : tab.accent === 'emerald'
+                          ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
+                          : tab.accent === 'amber'
+                          ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
+                          : 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
+                        : 'bg-white/60 text-slate-500 hover:bg-white hover:text-slate-800'
+                    }`}
+                  >
+                    {tab.label}
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${
+                      active ? 'bg-white/25' : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <div>
-            <span className="text-3xl font-black text-slate-900 tracking-tighter">
-              {walletStats.availableBalance.toFixed(2)} €
-            </span>
-            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mt-1">
-              Prêt au retrait
-            </p>
+
+          {/* Transactions list */}
+          <div className="px-6 pb-6 flex-1">
+            {visibleTransactions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="h-14 w-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+                  <Inbox size={22} />
+                </div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Aucune transaction</p>
+                <p className="text-[11px] text-slate-400 mt-1">Aucun résultat pour ce filtre</p>
+              </div>
+            ) : (
+              <ul className="space-y-2 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
+                {visibleTransactions.map((tx) => {
+                  const statusMeta =
+                    tx.status === 'paid'
+                      ? { label: 'Payé', cls: 'bg-emerald-50 text-emerald-700 border-emerald-100' }
+                      : tx.status === 'earned'
+                      ? { label: 'À payer', cls: 'bg-amber-50 text-amber-700 border-amber-100' }
+                      : { label: 'Refusé', cls: 'bg-rose-50 text-rose-700 border-rose-100' };
+                  const typeLabel =
+                    tx.type === 'call_validated' ? 'Appel validé'
+                    : tx.type === 'transaction' ? 'Vente'
+                    : 'Bonus';
+                  const gigTitle = tx.gig?.title || (gigsData.find((g: any) => (g._id || g.id) === tx.gigId)?.title) || 'Gig';
+                  return (
+                    <li key={tx._id} className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-white/70 border border-white/60 hover:border-emerald-200/60 hover:bg-white transition-all duration-200">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                          <DollarSign size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-black text-slate-900 truncate">{typeLabel} · {gigTitle}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            {new Date(tx.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full border ${statusMeta.cls}`}>
+                          {statusMeta.label}
+                        </span>
+                        <span className="text-sm font-black text-slate-900 tracking-tighter">
+                          +{(tx.repShare || 0).toFixed(2)} €
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </div>
 
-        {/* En attente */}
-        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">En attente</span>
-            <div className="h-10 w-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
-              <Hourglass size={18} />
+        {/* Calls card */}
+        <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-[28px] shadow-xl shadow-slate-200/20 overflow-hidden flex flex-col">
+          <div className="px-6 pt-6 pb-4">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
+                  <Phone size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900 tracking-tight uppercase">Appels</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                    Historique & validation IA
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-black text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0">
+                {callStats.all} appel{callStats.all > 1 ? 's' : ''}
+              </span>
             </div>
-          </div>
-          <div>
-            <span className="text-3xl font-black text-slate-900 tracking-tighter">
-              {walletStats.pendingCommissions.toFixed(2)} €
-            </span>
-            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mt-1">
-              Validation IA en cours
-            </p>
-          </div>
-        </div>
 
-        {/* Cette période */}
-        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {selectedPeriod === 'all' ? 'Cette semaine' : `Gains — ${PERIOD_OPTIONS.find(p => p.key === selectedPeriod)?.label}`}
-            </span>
-            <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
-              <TrendingUp size={18} />
+            {/* Filter pills */}
+            <div className="flex flex-wrap gap-2">
+              {([
+                { key: 'all', label: 'Tous', accent: 'slate', count: callStats.all },
+                { key: 'valid', label: 'Validés', accent: 'emerald', count: callStats.valid },
+                { key: 'invalid', label: 'Non validés', accent: 'rose', count: callStats.invalid },
+              ] as { key: CallFilter; label: string; accent: string; count: number }[]).map((tab) => {
+                const active = callFilter === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setCallFilter(tab.key)}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-200 flex items-center gap-1.5 ${
+                      active
+                        ? tab.accent === 'slate'
+                          ? 'bg-slate-900 text-white shadow-md'
+                          : tab.accent === 'emerald'
+                          ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
+                          : 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
+                        : 'bg-white/60 text-slate-500 hover:bg-white hover:text-slate-800'
+                    }`}
+                  >
+                    {tab.label}
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${
+                      active ? 'bg-white/25' : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <div>
-            <span className="text-3xl font-black text-slate-900 tracking-tighter">
-              {(selectedPeriod === 'all' ? weeklyEarnings : periodEarnings).toFixed(2)} €
-            </span>
-            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mt-1">
-              {selectedPeriod === 'all' ? '7 derniers jours' : 'Filtré par période'}
-            </p>
-          </div>
-        </div>
 
-        {/* Gains totaux */}
-        <div className="bg-slate-950 text-white border border-slate-800 rounded-[32px] p-6 shadow-xl shadow-slate-900/20 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-harx-500/20 blur-3xl" />
-          <div className="flex items-center justify-between mb-4 relative z-10">
-            <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">Gains totaux</span>
-            <div className="h-10 w-10 rounded-2xl bg-white/10 text-white flex items-center justify-center">
-              <Trophy size={18} />
-            </div>
-          </div>
-          <div className="relative z-10">
-            <span className="text-3xl font-black tracking-tighter">
-              {walletStats.lifetimeEarnings.toFixed(2)} €
-            </span>
-            <p className="text-[10px] font-bold text-white/60 uppercase tracking-wider mt-1">
-              Depuis votre arrivée
-            </p>
+          {/* Calls list */}
+          <div className="px-6 pb-6 flex-1">
+            {visibleCalls.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="h-14 w-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+                  <Inbox size={22} />
+                </div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Aucun appel</p>
+                <p className="text-[11px] text-slate-400 mt-1">Aucun résultat pour ce filtre</p>
+              </div>
+            ) : (
+              <ul className="space-y-2 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
+                {visibleCalls.map((call: any) => {
+                  const isValid = call.valid === true || call.validByAI === true;
+                  const contact = call.lead?.name || call.contactName || call.to || call.from || call.phoneNumber || 'Contact inconnu';
+                  const durationSec = Number(call.duration || 0);
+                  const mm = Math.floor(durationSec / 60);
+                  const ss = durationSec % 60;
+                  const dateStr = call.startTime || call.createdAt;
+                  const cGigId = typeof call.gigId === 'object' ? (call.gigId?._id || call.gigId?.id) : call.gigId;
+                  const gigTitle = (typeof call.gigId === 'object' && call.gigId?.title) || (gigsData.find((g: any) => (g._id || g.id) === cGigId)?.title) || '';
+                  return (
+                    <li key={call._id || call.sid || `${contact}-${dateStr}`} className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-white/70 border border-white/60 hover:border-indigo-200/60 hover:bg-white transition-all duration-200">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          isValid ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'
+                        }`}>
+                          {isValid ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-black text-slate-900 truncate">{contact}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                            {dateStr ? new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '—'}
+                            {durationSec > 0 && ` · ${mm}m ${ss}s`}
+                            {gigTitle && ` · ${gigTitle}`}
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full border shrink-0 ${
+                        isValid
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                          : 'bg-rose-50 text-rose-700 border-rose-100'
+                      }`}>
+                        {isValid ? 'Validé' : 'Non validé'}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </div>
       </div>
