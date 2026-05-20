@@ -449,22 +449,58 @@ export function WalletPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {balanceStats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <stat.icon className="w-6 h-6 text-blue-600" />
+        {balanceStats.map((stat, index) => {
+          const isAvailable = index === 0;
+          const progressPct = isAvailable
+            ? Math.min(100, Math.round((availableBalance / MIN_WITHDRAWAL_AMOUNT) * 100))
+            : 0;
+          const remainingToMin = Math.max(0, MIN_WITHDRAWAL_AMOUNT - availableBalance);
+          const canWithdraw = isAvailable && availableBalance >= MIN_WITHDRAWAL_AMOUNT;
+          return (
+            <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+              <div className="flex items-center justify-between">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <stat.icon className="w-6 h-6 text-blue-600" />
+                </div>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  stat.status === 'positive' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
+                }`}>
+                  {stat.change}
+                </span>
               </div>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                stat.status === 'positive' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
-              }`}>
-                {stat.change}
-              </span>
+              <p className="mt-4 text-2xl font-black text-slate-800 tracking-tight">{stat.amount}</p>
+              <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{stat.title}</p>
+
+              {isAvailable && (
+                <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                    <span className="text-slate-400">
+                      Retrait minimum : {MIN_WITHDRAWAL_AMOUNT.toLocaleString('fr-FR')}€
+                    </span>
+                    <span className={canWithdraw ? 'text-emerald-600' : 'text-slate-600'}>
+                      {progressPct}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-700 ease-out rounded-full ${
+                        canWithdraw
+                          ? 'bg-gradient-to-r from-emerald-400 to-emerald-600'
+                          : 'bg-gradient-to-r from-blue-400 to-blue-600'
+                      }`}
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                  <p className={`text-[10px] font-bold ${canWithdraw ? 'text-emerald-600' : 'text-slate-500'}`}>
+                    {canWithdraw
+                      ? 'Vous pouvez demander un retrait.'
+                      : `Encore ${remainingToMin.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€ avant de pouvoir retirer.`}
+                  </p>
+                </div>
+              )}
             </div>
-            <p className="mt-4 text-2xl font-black text-slate-800 tracking-tight">{stat.amount}</p>
-            <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{stat.title}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div>
