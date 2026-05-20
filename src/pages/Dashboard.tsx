@@ -1,36 +1,66 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { TrendingUp, Users, DollarSign, Clock, Star, Bell, BookOpen, MessageSquare, Phone, Target, Award, ArrowRight, Briefcase, Zap, Shield, CheckCircle2, Layout, Globe, Activity as ActivityIcon, Wallet as WalletIcon, Hourglass, Trophy, Flame } from 'lucide-react';
+import { TrendingUp, DollarSign, Clock, Star, Bell, BookOpen, MessageSquare, Phone, Target, Award, ArrowRight, Briefcase, CheckCircle2, Layout, Globe, Wallet as WalletIcon, Hourglass, Trophy, Flame, CalendarDays, CalendarCheck, CalendarClock, CalendarX, Timer, Filter as FilterIcon } from 'lucide-react';
 import api, { repTransactionsApi, type RepTransactionRow } from '../utils/client';
 import { useTranslation } from 'react-i18next';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import { Bar } from 'react-chartjs-2';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
+import { slotApi, type Reservation } from '../services/api/slotApi';
 
 interface DashboardProps {
   profile?: any;
 }
 
+type PeriodKey = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'all';
+
+const PERIOD_OPTIONS: { key: PeriodKey; label: string }[] = [
+  { key: 'today', label: "Aujourd'hui" },
+  { key: 'week', label: 'Cette semaine' },
+  { key: 'month', label: 'Ce mois' },
+  { key: 'quarter', label: 'Ce trimestre' },
+  { key: 'year', label: 'Cette année' },
+  { key: 'all', label: 'Tout' },
+];
+
+const getPeriodStart = (period: PeriodKey): number => {
+  const now = new Date();
+  switch (period) {
+    case 'today': {
+      const d = new Date(now);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    }
+    case 'week': {
+      const d = new Date(now);
+      const day = d.getDay();
+      const diff = (day + 6) % 7; // Monday start
+      d.setDate(d.getDate() - diff);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    }
+    case 'month': {
+      const d = new Date(now.getFullYear(), now.getMonth(), 1);
+      return d.getTime();
+    }
+    case 'quarter': {
+      const q = Math.floor(now.getMonth() / 3);
+      const d = new Date(now.getFullYear(), q * 3, 1);
+      return d.getTime();
+    }
+    case 'year': {
+      const d = new Date(now.getFullYear(), 0, 1);
+      return d.getTime();
+    }
+    case 'all':
+    default:
+      return 0;
+  }
+};
+
 export function Dashboard({ profile }: DashboardProps) {
   const [callsData, setCallsData] = useState<any[]>([]);
   const [gigsData, setGigsData] = useState<any[]>([]);
+  const [reservationsData, setReservationsData] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGigId, setSelectedGigId] = useState<string>('all');
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodKey>('month');
   type ChartMetric = 'all' | 'reachability' | 'argumentation' | 'validation' | 'conversion';
   const [activeChartMetric, setActiveChartMetric] = useState<ChartMetric>('all');
   const { t } = useTranslation();
@@ -53,16 +83,18 @@ export function Dashboard({ profile }: DashboardProps) {
 
     const fetchData = async () => {
       try {
-        const [callsRes, gigsRes, walletRes, ledgerRes] = await Promise.all([
+        const [callsRes, gigsRes, walletRes, ledgerRes, reservationsRes] = await Promise.all([
           fetch(`https://v25dashboardbackend-production.up.railway.app/api/calls?agentId=${agentId}`),
           fetch(`https://v25dashboardbackend-production.up.railway.app/api/calls/gigs?userId=${realUserId || agentId}`),
           api.get(`/escrow/agent/wallet/${agentId}`).catch(() => null),
-          repTransactionsApi.list(agentId, { status: 'earned', limit: 300 }).catch(() => null)
+          repTransactionsApi.list(agentId, { status: 'earned', limit: 300 }).catch(() => null),
+          slotApi.getReservations(agentId).catch(() => [])
         ]);
 
         const [calls, gigs] = await Promise.all([callsRes.json(), gigsRes.json()]);
         setCallsData(Array.isArray(calls.data) ? calls.data : []);
         setGigsData(Array.isArray(gigs.data) ? gigs.data : []);
+        setReservationsData(Array.isArray(reservationsRes) ? reservationsRes : []);
 
         if (walletRes?.data?.success && walletRes.data.data) {
           const w = walletRes.data.data;
@@ -85,16 +117,39 @@ export function Dashboard({ profile }: DashboardProps) {
     fetchData();
   }, [profile]);
 
-  // Dynamic filter logic
+  const periodStartTs = useMemo(() => getPeriodStart(selectedPeriod), [selectedPeriod]);
+
+  // Dynamic filter logic — apply gig + period
   const filteredCalls = React.useMemo(() => {
-    if (selectedGigId === 'all') {
-      return callsData;
-    }
     return callsData.filter(call => {
-      const cGigId = typeof call.gigId === 'object' ? (call.gigId?._id || call.gigId?.id) : call.gigId;
-      return cGigId === selectedGigId;
+      if (selectedGigId !== 'all') {
+        const cGigId = typeof call.gigId === 'object' ? (call.gigId?._id || call.gigId?.id) : call.gigId;
+        if (cGigId !== selectedGigId) return false;
+      }
+      if (periodStartTs > 0) {
+        const ts = new Date(call.createdAt || call.startTime || call.date || 0).getTime();
+        if (!ts || ts < periodStartTs) return false;
+      }
+      return true;
     });
-  }, [callsData, selectedGigId]);
+  }, [callsData, selectedGigId, periodStartTs]);
+
+  // Reservations filtered by gig + period (period applies to reservation date)
+  const filteredReservations = useMemo(() => {
+    return reservationsData.filter((r: any) => {
+      if (selectedGigId !== 'all') {
+        const rGigId = typeof r.gigId === 'object' ? (r.gigId?._id || r.gigId?.id) : r.gigId;
+        if (rGigId !== selectedGigId) return false;
+      }
+      if (periodStartTs > 0) {
+        const dateStr = r.reservationDate || r.date;
+        if (!dateStr) return false;
+        const ts = new Date(dateStr).getTime();
+        if (!ts || ts < periodStartTs) return false;
+      }
+      return true;
+    });
+  }, [reservationsData, selectedGigId, periodStartTs]);
 
   // Rate calculations
   const totalCallsCount = filteredCalls.length;
@@ -150,6 +205,146 @@ export function Dashboard({ profile }: DashboardProps) {
       return sum + (row.repShare || 0);
     }, 0);
   }, [repLedger]);
+
+  // Earnings within the currently selected period
+  const periodEarnings = useMemo(() => {
+    return repLedger.reduce((sum, row) => {
+      if (row.status !== 'earned') return sum;
+      const created = new Date(row.createdAt).getTime();
+      if (periodStartTs > 0 && created < periodStartTs) return sum;
+      return sum + (row.repShare || 0);
+    }, 0);
+  }, [repLedger, periodStartTs]);
+
+  // Reservation statistics (work the rep has booked)
+  const reservationStats = useMemo(() => {
+    const nowTs = Date.now();
+    let total = 0;
+    let upcoming = 0;
+    let completed = 0;
+    let cancelled = 0;
+    let noShow = 0;
+    let scheduledHours = 0;
+    let workedHours = 0;
+
+    filteredReservations.forEach((r: any) => {
+      total += 1;
+      const dateStr = r.reservationDate || r.date;
+      const ts = dateStr ? new Date(dateStr).getTime() : 0;
+      const duration = Number(r.duration || 0);
+      scheduledHours += duration;
+
+      if (r.status === 'cancelled') {
+        cancelled += 1;
+        return;
+      }
+
+      if (ts && ts > nowTs) {
+        upcoming += 1;
+        return;
+      }
+
+      // Past reservation
+      if (r.attended === true) {
+        completed += 1;
+        workedHours += duration;
+      } else if (r.attended === false) {
+        noShow += 1;
+      } else {
+        // No explicit attendance flag — assume completed
+        completed += 1;
+        workedHours += duration;
+      }
+    });
+
+    const pastCount = completed + noShow;
+    const attendanceRate = pastCount > 0 ? Math.round((completed / pastCount) * 100) : 0;
+
+    return {
+      total,
+      upcoming,
+      completed,
+      cancelled,
+      noShow,
+      scheduledHours: Math.round(scheduledHours * 10) / 10,
+      workedHours: Math.round(workedHours * 10) / 10,
+      attendanceRate,
+    };
+  }, [filteredReservations]);
+
+  // Next 3 upcoming reservations (sorted ascending)
+  const upcomingReservations = useMemo(() => {
+    const nowTs = Date.now();
+    return [...filteredReservations]
+      .filter((r: any) => {
+        if (r.status === 'cancelled') return false;
+        const dateStr = r.reservationDate || r.date;
+        const ts = dateStr ? new Date(dateStr).getTime() : 0;
+        return ts > nowTs;
+      })
+      .sort((a: any, b: any) => {
+        const ta = new Date(a.reservationDate || a.date).getTime();
+        const tb = new Date(b.reservationDate || b.date).getTime();
+        return ta - tb;
+      })
+      .slice(0, 3);
+  }, [filteredReservations]);
+
+  // Multi-objectifs — daily / weekly / monthly call goals + reservation goal
+  const multiObjectifs = useMemo(() => {
+    const todayStart = getPeriodStart('today');
+    const weekStart = getPeriodStart('week');
+    const monthStart = getPeriodStart('month');
+
+    const callsByPeriod = (startTs: number) =>
+      callsData.filter((c: any) => {
+        if (selectedGigId !== 'all') {
+          const cGigId = typeof c.gigId === 'object' ? (c.gigId?._id || c.gigId?.id) : c.gigId;
+          if (cGigId !== selectedGigId) return false;
+        }
+        const ts = new Date(c.createdAt || c.startTime || c.date || 0).getTime();
+        return ts >= startTs;
+      }).length;
+
+    const reservationsByPeriod = (startTs: number) =>
+      reservationsData.filter((r: any) => {
+        if (selectedGigId !== 'all') {
+          const rGigId = typeof r.gigId === 'object' ? (r.gigId?._id || r.gigId?.id) : r.gigId;
+          if (rGigId !== selectedGigId) return false;
+        }
+        if (r.status === 'cancelled') return false;
+        const ts = new Date(r.reservationDate || r.date || 0).getTime();
+        return ts >= startTs;
+      }).length;
+
+    const dailyTarget = 5;
+    const weeklyTarget = 25;
+    const reservationsWeekTarget = 5;
+
+    const dailyCurrent = callsByPeriod(todayStart);
+    const weeklyCurrent = callsByPeriod(weekStart);
+    const monthCalls = callsByPeriod(monthStart);
+    const reservationsThisWeek = reservationsByPeriod(weekStart);
+
+    return {
+      daily: {
+        current: dailyCurrent,
+        target: dailyTarget,
+        progressPct: Math.min(100, Math.round((dailyCurrent / dailyTarget) * 100)),
+      },
+      weekly: {
+        current: weeklyCurrent,
+        target: weeklyTarget,
+        progressPct: Math.min(100, Math.round((weeklyCurrent / weeklyTarget) * 100)),
+      },
+      monthCalls,
+      reservationsWeekly: {
+        current: reservationsThisWeek,
+        target: reservationsWeekTarget,
+        progressPct: Math.min(100, Math.round((reservationsThisWeek / reservationsWeekTarget) * 100)),
+      },
+    };
+  }, [callsData, reservationsData, selectedGigId]);
 
   // Objectif gig — uses the selected gig's bonus thresholds (volume + bonus amount).
   // Counts only this month's calls of the matching gig.
@@ -223,122 +418,84 @@ export function Dashboard({ profile }: DashboardProps) {
     { icon: Phone, label: t('dashboard.stats.callsPassed'), value: filteredCalls.length, change: t('dashboard.stats.total'), type: 'positive', color: 'emerald' },
   ];
 
-  const processCallsForChart = () => {
-    const now = new Date();
-    const daysToShow = 7;
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    
-    const range = Array.from({ length: daysToShow }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (daysToShow - 1 - i));
-      return d;
-    });
-
-    const metricCalls = filteredCalls.filter(call => {
-      if (activeChartMetric === 'all') return true;
-      if (call.status?.toLowerCase() !== 'completed') return false;
-      
-      switch (activeChartMetric) {
-        case 'reachability':
-          return true; // Any completed call
-        case 'argumentation':
-          return call.argumentation_score >= 50 || (call.ai_call_score?.["Argumentation"]?.score || 0) >= 50 || call.ai_call_score?.overall?.score > 0;
-        case 'validation':
-          return call.valid === true || call.validByAI === true;
-        case 'conversion':
-          return call.transactionOccurred === true || call.ai_call_score?.transaction_detected === true;
-        default:
-          return true;
-      }
-    });
-
-    const counts = range.map(date => {
-      const dateString = date.toDateString();
-      return metricCalls.filter(call => {
-        const callDate = new Date(call.createdAt || call.date);
-        return callDate.toDateString() === dateString;
-      }).length;
-    });
-
-    let label = t('dashboard.performance.chartLabel');
-    let color = 'rgba(59, 130, 246, 0.5)';
-    let borderColor = 'rgb(59, 130, 246)';
-    
-    switch(activeChartMetric) {
-      case 'reachability': label = "Appels Connectés"; color = 'rgba(6, 182, 212, 0.5)'; borderColor = 'rgb(6, 182, 212)'; break;
-      case 'argumentation': label = "Appels Argumentés"; color = 'rgba(245, 158, 11, 0.5)'; borderColor = 'rgb(245, 158, 11)'; break;
-      case 'validation': label = "Appels Conformes"; color = 'rgba(99, 102, 241, 0.5)'; borderColor = 'rgb(99, 102, 241)'; break;
-      case 'conversion': label = "Ventes Réalisées"; color = 'rgba(244, 63, 94, 0.5)'; borderColor = 'rgb(244, 63, 94)'; break;
-    }
-
-    return {
-      labels: range.map(d => dayNames[d.getDay()]),
-      datasets: [
-        {
-          label,
-          data: counts,
-          backgroundColor: color,
-          borderColor: borderColor,
-          borderWidth: 2,
-          borderRadius: 8,
-        },
-      ],
-    };
-  };
-
-  const chartData = processCallsForChart();
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { stepSize: 1 } },
-      x: { grid: { display: false } }
-    }
-  };
-
-  const performanceMetrics = [
-    { label: t('dashboard.expertise.professionalism'), value: profile?.skills?.contactCenter?.[0]?.assessmentResults?.keyMetrics?.professionalism || 85, icon: Shield, color: 'text-blue-500' },
-    { label: t('dashboard.expertise.effectiveness'), value: profile?.skills?.contactCenter?.[0]?.assessmentResults?.keyMetrics?.effectiveness || 90, icon: Zap, color: 'text-amber-500' },
-    { label: t('dashboard.expertise.customerFocus'), value: profile?.skills?.contactCenter?.[0]?.assessmentResults?.keyMetrics?.customerFocus || 92, icon: Users, color: 'text-emerald-500' },
-    { label: t('dashboard.expertise.overallMatch'), value: `${overallScore}%`, icon: Target, color: 'text-harx-500' }
-  ];
-
   return (
     <div className="space-y-10 pb-10 animate-in fade-in duration-700">
       {/* Dynamic Filter Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 border border-white/60 shadow-xl shadow-slate-200/10">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
-            Bonjour, {displayName} 👋
-          </h1>
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-            Suivi en temps réel de vos indicateurs de performance commerciale
-          </p>
+      <div className="flex flex-col gap-4 bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 border border-white/60 shadow-xl shadow-slate-200/10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+              Bonjour, {displayName} 👋
+            </h1>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+              Suivi en temps réel de vos indicateurs de performance commerciale
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <div className="relative flex items-center gap-2.5">
+              <Briefcase size={16} className="text-purple-600 animate-pulse" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gig :</span>
+              <select
+                value={selectedGigId}
+                onChange={(e) => setSelectedGigId(e.target.value)}
+                className="appearance-none bg-white/80 border border-slate-100 hover:border-purple-200 px-4 py-2.5 pr-10 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 min-w-[200px]"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                  backgroundPosition: 'right 0.75rem center',
+                  backgroundSize: '1rem',
+                  backgroundRepeat: 'no-repeat'
+                }}
+              >
+                <option value="all">Tous les Gigs (All Gigs)</option>
+                {gigsData.map((gig) => (
+                  <option key={gig._id || gig.id} value={gig._id || gig.id}>
+                    {gig.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="relative flex items-center gap-2.5">
+              <CalendarDays size={16} className="text-blue-600" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Période :</span>
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value as PeriodKey)}
+                className="appearance-none bg-white/80 border border-slate-100 hover:border-blue-200 px-4 py-2.5 pr-10 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 min-w-[180px]"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                  backgroundPosition: 'right 0.75rem center',
+                  backgroundSize: '1rem',
+                  backgroundRepeat: 'no-repeat'
+                }}
+              >
+                {PERIOD_OPTIONS.map((opt) => (
+                  <option key={opt.key} value={opt.key}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
-        {/* Beautiful Glassmorphic Dropdown */}
-        <div className="relative flex items-center gap-2.5 shrink-0">
-          <Briefcase size={16} className="text-purple-600 animate-pulse" />
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filtrer :</span>
-          <select
-            value={selectedGigId}
-            onChange={(e) => setSelectedGigId(e.target.value)}
-            className="appearance-none bg-white/80 border border-slate-100 hover:border-purple-200 px-4 py-2.5 pr-10 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 min-w-[200px]"
-            style={{
-              backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-              backgroundPosition: 'right 0.75rem center',
-              backgroundSize: '1rem',
-              backgroundRepeat: 'no-repeat'
-            }}
-          >
-            <option value="all">Tous les Gigs (All Gigs)</option>
-            {gigsData.map((gig) => (
-              <option key={gig._id || gig.id} value={gig._id || gig.id}>
-                {gig.title}
-              </option>
-            ))}
-          </select>
+        {/* Quick period chips for fast switching */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/40">
+          <FilterIcon size={12} className="text-slate-400" />
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Raccourcis :</span>
+          {PERIOD_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => setSelectedPeriod(opt.key)}
+              className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
+                selectedPeriod === opt.key
+                  ? 'bg-slate-900 text-white shadow-md'
+                  : 'bg-white/60 text-slate-500 hover:bg-white hover:text-slate-800'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -516,20 +673,22 @@ export function Dashboard({ profile }: DashboardProps) {
           </div>
         </div>
 
-        {/* Cette semaine */}
+        {/* Cette période */}
         <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cette semaine</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              {selectedPeriod === 'all' ? 'Cette semaine' : `Gains — ${PERIOD_OPTIONS.find(p => p.key === selectedPeriod)?.label}`}
+            </span>
             <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
               <TrendingUp size={18} />
             </div>
           </div>
           <div>
             <span className="text-3xl font-black text-slate-900 tracking-tighter">
-              {weeklyEarnings.toFixed(2)} €
+              {(selectedPeriod === 'all' ? weeklyEarnings : periodEarnings).toFixed(2)} €
             </span>
             <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mt-1">
-              7 derniers jours
+              {selectedPeriod === 'all' ? '7 derniers jours' : 'Filtré par période'}
             </p>
           </div>
         </div>
@@ -550,6 +709,220 @@ export function Dashboard({ profile }: DashboardProps) {
             <p className="text-[10px] font-bold text-white/60 uppercase tracking-wider mt-1">
               Depuis votre arrivée
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Reservations / Travail planifié */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-violet-500/10 text-violet-600 flex items-center justify-center">
+              <CalendarCheck size={18} />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">Mes Réservations</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                Sessions planifiées & heures travaillées
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            {reservationStats.total} réservation{reservationStats.total > 1 ? 's' : ''} sur la période
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[24px] p-5 shadow-xl shadow-slate-200/20">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total</span>
+              <CalendarDays size={16} className="text-slate-500" />
+            </div>
+            <span className="text-2xl font-black text-slate-900 tracking-tighter">{reservationStats.total}</span>
+            <p className="text-[10px] font-bold text-slate-500 mt-1">Sessions</p>
+          </div>
+
+          <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[24px] p-5 shadow-xl shadow-slate-200/20">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">À venir</span>
+              <CalendarClock size={16} className="text-blue-500" />
+            </div>
+            <span className="text-2xl font-black text-blue-600 tracking-tighter">{reservationStats.upcoming}</span>
+            <p className="text-[10px] font-bold text-slate-500 mt-1">Planifiées</p>
+          </div>
+
+          <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[24px] p-5 shadow-xl shadow-slate-200/20">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Effectuées</span>
+              <CheckCircle2 size={16} className="text-emerald-500" />
+            </div>
+            <span className="text-2xl font-black text-emerald-600 tracking-tighter">{reservationStats.completed}</span>
+            <p className="text-[10px] font-bold text-slate-500 mt-1">Honorées</p>
+          </div>
+
+          <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[24px] p-5 shadow-xl shadow-slate-200/20">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Manquées</span>
+              <CalendarX size={16} className="text-rose-500" />
+            </div>
+            <span className="text-2xl font-black text-rose-600 tracking-tighter">{reservationStats.noShow + reservationStats.cancelled}</span>
+            <p className="text-[10px] font-bold text-slate-500 mt-1">
+              {reservationStats.cancelled} annul. · {reservationStats.noShow} no-show
+            </p>
+          </div>
+
+          <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[24px] p-5 shadow-xl shadow-slate-200/20">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Heures travaillées</span>
+              <Timer size={16} className="text-amber-500" />
+            </div>
+            <span className="text-2xl font-black text-amber-600 tracking-tighter">{reservationStats.workedHours}h</span>
+            <p className="text-[10px] font-bold text-slate-500 mt-1">/ {reservationStats.scheduledHours}h prévues</p>
+          </div>
+
+          <div className="bg-slate-950 text-white border border-slate-800 rounded-[24px] p-5 shadow-xl shadow-slate-900/30 relative overflow-hidden">
+            <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-harx-500/30 blur-2xl" />
+            <div className="flex items-center justify-between mb-3 relative z-10">
+              <span className="text-[9px] font-black text-white/50 uppercase tracking-widest">Assiduité</span>
+              <Award size={16} className="text-harx-400" />
+            </div>
+            <span className="text-2xl font-black tracking-tighter relative z-10">{reservationStats.attendanceRate}%</span>
+            <p className="text-[10px] font-bold text-white/60 mt-1 relative z-10">Taux d'assiduité</p>
+          </div>
+        </div>
+
+        {/* Upcoming reservations list */}
+        {upcomingReservations.length > 0 && (
+          <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[24px] p-6 shadow-xl shadow-slate-200/20">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Prochaines sessions</h3>
+              <Clock size={14} className="text-slate-400" />
+            </div>
+            <ul className="space-y-2.5">
+              {upcomingReservations.map((r: any) => {
+                const dateStr = r.reservationDate || r.date;
+                const d = new Date(dateStr);
+                const gigTitle = typeof r.gigId === 'object' ? (r.gigId?.title || 'Gig') : (gigsData.find((g: any) => (g._id || g.id) === r.gigId)?.title || 'Gig');
+                return (
+                  <li key={r._id || `${r.gigId}-${dateStr}-${r.startTime}`} className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-white/60 border border-white/60">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-10 w-10 rounded-xl bg-violet-500/10 text-violet-600 flex items-center justify-center shrink-0">
+                        <CalendarClock size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-slate-900 truncate">{gigTitle}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          {d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' })} · {r.startTime}–{r.endTime}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0">
+                      {r.duration}h
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Multi-objectifs */}
+      <div className="bg-white/40 backdrop-blur-xl rounded-[32px] border border-white/60 shadow-xl shadow-slate-200/20 p-8 overflow-hidden relative">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+              <Target size={18} />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">Mes Objectifs</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                Suivi des cibles quotidiennes, hebdomadaires et mensuelles
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {/* Daily objective */}
+          <div className="bg-white/60 border border-white/60 rounded-[24px] p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Phone size={14} className="text-cyan-600" />
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Objectif du jour</span>
+              </div>
+              <span className="text-[10px] font-black text-slate-700">{multiObjectifs.daily.progressPct}%</span>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-2xl font-black text-slate-900 tracking-tighter">
+                {multiObjectifs.daily.current}<span className="text-base text-slate-400">/{multiObjectifs.daily.target}</span>
+              </span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Appels aujourd'hui</span>
+            </div>
+            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all duration-700 ease-out rounded-full ${
+                  multiObjectifs.daily.progressPct >= 100
+                    ? 'bg-gradient-to-r from-emerald-400 to-emerald-600'
+                    : 'bg-gradient-to-r from-cyan-400 to-cyan-600'
+                }`}
+                style={{ width: `${multiObjectifs.daily.progressPct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Weekly objective */}
+          <div className="bg-white/60 border border-white/60 rounded-[24px] p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CalendarDays size={14} className="text-indigo-600" />
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Objectif hebdo</span>
+              </div>
+              <span className="text-[10px] font-black text-slate-700">{multiObjectifs.weekly.progressPct}%</span>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-2xl font-black text-slate-900 tracking-tighter">
+                {multiObjectifs.weekly.current}<span className="text-base text-slate-400">/{multiObjectifs.weekly.target}</span>
+              </span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Appels cette semaine</span>
+            </div>
+            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all duration-700 ease-out rounded-full ${
+                  multiObjectifs.weekly.progressPct >= 100
+                    ? 'bg-gradient-to-r from-emerald-400 to-emerald-600'
+                    : 'bg-gradient-to-r from-indigo-400 to-indigo-600'
+                }`}
+                style={{ width: `${multiObjectifs.weekly.progressPct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Reservations objective */}
+          <div className="bg-white/60 border border-white/60 rounded-[24px] p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CalendarCheck size={14} className="text-violet-600" />
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sessions hebdo</span>
+              </div>
+              <span className="text-[10px] font-black text-slate-700">{multiObjectifs.reservationsWeekly.progressPct}%</span>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-2xl font-black text-slate-900 tracking-tighter">
+                {multiObjectifs.reservationsWeekly.current}<span className="text-base text-slate-400">/{multiObjectifs.reservationsWeekly.target}</span>
+              </span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Réservations actives</span>
+            </div>
+            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all duration-700 ease-out rounded-full ${
+                  multiObjectifs.reservationsWeekly.progressPct >= 100
+                    ? 'bg-gradient-to-r from-emerald-400 to-emerald-600'
+                    : 'bg-gradient-to-r from-violet-400 to-violet-600'
+                }`}
+                style={{ width: `${multiObjectifs.reservationsWeekly.progressPct}%` }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -619,51 +992,6 @@ export function Dashboard({ profile }: DashboardProps) {
             )}
           </div>
         )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Activity Histogram */}
-        <div className="lg:col-span-2 bg-white/40 backdrop-blur-xl rounded-[40px] border border-white/60 shadow-2xl shadow-slate-200/30 overflow-hidden">
-          <div className="px-10 py-8 border-b border-white/40 flex items-center justify-between bg-white/20">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-harx-500 text-white flex items-center justify-center shadow-lg shadow-harx-500/20">
-                <ActivityIcon className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase tracking-widest">
-                  {activeChartMetric === 'all' ? t('dashboard.performance.title') : `Évolution : ${chartData.datasets[0].label}`}
-                </h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-                  {t('dashboard.performance.subtitle')}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="p-10">
-            <div className="h-[300px] w-full">
-              <Bar data={chartData} options={chartOptions} />
-            </div>
-          </div>
-        </div>
-
-        {/* Assessment Metrics */}
-        <div className="bg-slate-950 rounded-[40px] p-10 shadow-2xl relative overflow-hidden group h-full">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-harx-500/20 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-harx-500/30 transition-colors"></div>
-          <h2 className="text-xs font-black text-white uppercase tracking-[0.3em] mb-10 relative z-10 opacity-70">{t('dashboard.expertise.title')}</h2>
-          <div className="grid grid-cols-1 gap-6 relative z-10">
-            {performanceMetrics.map((metric, index) => (
-              <div key={index} className="flex items-center justify-between p-5 rounded-[24px] bg-white/5 border border-white/10 hover:bg-white/10 transition-all group/item">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl bg-white/5 ${metric.color}`}>
-                    <metric.icon className="w-5 h-5" />
-                  </div>
-                  <p className="text-[11px] font-black text-white/70 uppercase tracking-widest">{metric.label}</p>
-                </div>
-                <p className="text-2xl font-black text-white tracking-tighter group-hover/item:scale-110 transition-transform">{metric.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
     </div>
