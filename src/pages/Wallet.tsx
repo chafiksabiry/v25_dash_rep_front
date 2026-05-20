@@ -472,30 +472,88 @@ export function WalletPage() {
               <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{stat.title}</p>
 
               {isAvailable && (
-                <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
-                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-                    <span className="text-slate-400">
-                      Retrait minimum : {MIN_WITHDRAWAL_AMOUNT.toLocaleString('fr-FR')}€
-                    </span>
-                    <span className={canWithdraw ? 'text-emerald-600' : 'text-slate-600'}>
-                      {progressPct}%
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className={`mt-5 relative overflow-hidden rounded-2xl p-4 border ${
+                    canWithdraw
+                      ? 'bg-gradient-to-br from-emerald-50/80 via-white to-emerald-50/40 border-emerald-100'
+                      : 'bg-gradient-to-br from-slate-50 via-white to-blue-50/40 border-slate-100'
+                  }`}
+                >
+                  {/* Decorative glow */}
+                  <div
+                    className={`absolute -top-10 -right-10 h-24 w-24 rounded-full blur-2xl ${
+                      canWithdraw ? 'bg-emerald-300/30' : 'bg-blue-300/20'
+                    }`}
+                  />
+
+                  <div className="relative z-10 flex items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
+                          canWithdraw
+                            ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
+                            : 'bg-slate-900 text-white shadow-md shadow-slate-900/20'
+                        }`}
+                      >
+                        {canWithdraw ? <ShieldCheck className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-tight">
+                          Seuil de retrait
+                        </p>
+                        <p className="text-sm font-black text-slate-900 tracking-tight leading-tight">
+                          {MIN_WITHDRAWAL_AMOUNT.toLocaleString('fr-FR')}€
+                        </p>
+                      </div>
+                    </div>
                     <div
-                      className={`h-full transition-all duration-700 ease-out rounded-full ${
+                      className={`text-xs font-black px-2.5 py-1 rounded-full shrink-0 ${
                         canWithdraw
-                          ? 'bg-gradient-to-r from-emerald-400 to-emerald-600'
-                          : 'bg-gradient-to-r from-blue-400 to-blue-600'
+                          ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
+                          : 'bg-white text-slate-700 border border-slate-200'
                       }`}
-                      style={{ width: `${progressPct}%` }}
-                    />
+                    >
+                      {progressPct}%
+                    </div>
                   </div>
-                  <p className={`text-[10px] font-bold ${canWithdraw ? 'text-emerald-600' : 'text-slate-500'}`}>
-                    {canWithdraw
-                      ? 'Vous pouvez demander un retrait.'
-                      : `Encore ${remainingToMin.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€ avant de pouvoir retirer.`}
-                  </p>
+
+                  <div className="relative z-10 h-2.5 w-full bg-slate-100/80 rounded-full overflow-hidden shadow-inner">
+                    <div
+                      className={`h-full transition-all duration-1000 ease-out rounded-full relative ${
+                        canWithdraw
+                          ? 'bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/40'
+                          : 'bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 shadow-lg shadow-blue-500/30'
+                      }`}
+                      style={{ width: `${Math.max(progressPct, 2)}%` }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/40 to-transparent rounded-full" />
+                    </div>
+                  </div>
+
+                  <div className="relative z-10 mt-3 flex items-center gap-2">
+                    {canWithdraw ? (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <p className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">
+                          Retrait disponible
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <p className="text-[11px] font-bold text-slate-500">
+                          Encore{' '}
+                          <span className="font-black text-slate-900">
+                            {remainingToMin.toLocaleString('fr-FR', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}€
+                          </span>{' '}
+                          avant retrait
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
