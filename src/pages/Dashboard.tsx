@@ -604,9 +604,9 @@ export function Dashboard({ profile }: DashboardProps) {
             <div className="flex flex-wrap gap-2">
               {([
                 { key: 'all', label: 'Tous', accent: 'slate', count: transactionStats.all.count },
-                { key: 'paid', label: 'Payé', accent: 'emerald', count: transactionStats.paid.count },
-                { key: 'earned', label: 'À payer', accent: 'amber', count: transactionStats.earned.count },
-                { key: 'refused', label: 'Non payé', accent: 'rose', count: transactionStats.refused.count },
+                { key: 'earned', label: 'Payé', accent: 'emerald', count: transactionStats.earned.count },
+                { key: 'paid', label: 'Versé', accent: 'blue', count: transactionStats.paid.count },
+                { key: 'refused', label: 'Refusé', accent: 'rose', count: transactionStats.refused.count },
               ] as { key: TransactionFilter; label: string; accent: string; count: number }[]).map((tab) => {
                 const active = transactionFilter === tab.key;
                 return (
@@ -620,8 +620,8 @@ export function Dashboard({ profile }: DashboardProps) {
                           ? 'bg-slate-900 text-white shadow-md'
                           : tab.accent === 'emerald'
                           ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
-                          : tab.accent === 'amber'
-                          ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
+                          : tab.accent === 'blue'
+                          ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
                           : 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
                         : 'bg-white/60 text-slate-500 hover:bg-white hover:text-slate-800'
                     }`}
@@ -652,10 +652,10 @@ export function Dashboard({ profile }: DashboardProps) {
               <ul className="space-y-2 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
                 {visibleTransactions.map((tx) => {
                   const statusMeta =
-                    tx.status === 'paid'
+                    tx.status === 'earned'
                       ? { label: 'Payé', cls: 'bg-emerald-50 text-emerald-700 border-emerald-100' }
-                      : tx.status === 'earned'
-                      ? { label: 'À payer', cls: 'bg-amber-50 text-amber-700 border-amber-100' }
+                      : tx.status === 'paid'
+                      ? { label: 'Versé', cls: 'bg-blue-50 text-blue-700 border-blue-100' }
                       : { label: 'Refusé', cls: 'bg-rose-50 text-rose-700 border-rose-100' };
                   const typeLabel =
                     tx.type === 'call_validated' ? 'Appel validé'
