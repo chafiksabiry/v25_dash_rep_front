@@ -34,6 +34,10 @@ import {
   getBonusPillDisplay
 } from '../utils/gigCommissionDisplay';
 
+// Minimum withdrawal amount enforced by the backend
+// (see `requestAgentWithdrawal` in escrowController.js).
+const MIN_WITHDRAWAL_AMOUNT = 1000;
+
 export function WalletPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -329,6 +333,13 @@ export function WalletPage() {
       showToast('Votre solde disponible est insuffisant pour un retrait.', 'error');
       return;
     }
+    if (availableBalance < MIN_WITHDRAWAL_AMOUNT) {
+      showToast(
+        `Le retrait minimum est de ${MIN_WITHDRAWAL_AMOUNT}€. Solde actuel : ${availableBalance.toFixed(2)}€.`,
+        'error'
+      );
+      return;
+    }
     setWithdrawAmount('');
     setSelectedMethod('bank');
     setWithdrawStep(1);
@@ -343,6 +354,10 @@ export function WalletPage() {
     const amount = parseFloat(withdrawAmount);
     if (isNaN(amount) || amount <= 0) {
       setValidationError('Veuillez saisir un montant valide supérieur à 0.');
+      return;
+    }
+    if (amount < MIN_WITHDRAWAL_AMOUNT) {
+      setValidationError(`Le montant minimum de retrait est de ${MIN_WITHDRAWAL_AMOUNT}€.`);
       return;
     }
     if (amount > availableBalance) {
@@ -777,7 +792,7 @@ export function WalletPage() {
                       Montant à Retirer
                     </label>
                     <span className="text-[10px] text-slate-500 font-black uppercase">
-                      Max: {availableBalance.toFixed(2)}€
+                      Min: {MIN_WITHDRAWAL_AMOUNT}€ · Max: {availableBalance.toFixed(2)}€
                     </span>
                   </div>
                   <div className="relative">
@@ -787,9 +802,9 @@ export function WalletPage() {
                     <input
                       type="number"
                       required
-                      min="1"
+                      min={MIN_WITHDRAWAL_AMOUNT}
                       step="any"
-                      placeholder="0.00"
+                      placeholder={`${MIN_WITHDRAWAL_AMOUNT}.00`}
                       value={withdrawAmount}
                       onChange={(e) => {
                         setWithdrawAmount(e.target.value);
@@ -808,22 +823,40 @@ export function WalletPage() {
                     </div>
                   </div>
 
-                  {/* Fast selection buttons */}
+                  {/* Fast selection buttons — only show those reachable
+                      with the current available balance. */}
                   <div className="flex gap-2 mt-2">
-                    {[100, 250, 500].map((quick) => (
-                      <button
-                        key={quick}
-                        type="button"
-                        onClick={() => {
-                          setWithdrawAmount(quick.toString());
-                          setValidationError('');
-                        }}
-                        className="flex-1 py-1 bg-slate-50 hover:bg-slate-100 text-[10px] font-extrabold text-slate-600 rounded-lg transition-all border border-slate-100"
-                      >
-                        {quick}€
-                      </button>
-                    ))}
+                    {[MIN_WITHDRAWAL_AMOUNT, 2000, 5000].map((quick) => {
+                      const reachable = quick <= availableBalance;
+                      return (
+                        <button
+                          key={quick}
+                          type="button"
+                          disabled={!reachable}
+                          onClick={() => {
+                            setWithdrawAmount(quick.toString());
+                            setValidationError('');
+                          }}
+                          className={`flex-1 py-1 text-[10px] font-extrabold rounded-lg transition-all border ${
+                            reachable
+                              ? 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-100'
+                              : 'bg-slate-50/50 text-slate-300 border-slate-100/50 cursor-not-allowed'
+                          }`}
+                        >
+                          {quick.toLocaleString('fr-FR')}€
+                        </button>
+                      );
+                    })}
                   </div>
+                </div>
+
+                {/* Minimum amount banner */}
+                <div className="bg-blue-50/70 border border-blue-100 p-3.5 rounded-2xl flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                  <p className="text-[10px] text-blue-900 font-semibold leading-relaxed">
+                    <span className="font-black uppercase tracking-wider">Retrait minimum : {MIN_WITHDRAWAL_AMOUNT}€.</span>
+                    {' '}Les demandes inférieures à ce seuil sont automatiquement refusées par la plateforme.
+                  </p>
                 </div>
 
                 {/* Security hint disclaimer */}
@@ -835,12 +868,27 @@ export function WalletPage() {
                 </div>
 
                 <div className="pt-2">
-                  <button
-                    type="submit"
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs uppercase tracking-widest rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-95"
-                  >
-                    Suivant: Vérifier l'identité
-                  </button>
+                  {(() => {
+                    const numericAmount = parseFloat(withdrawAmount);
+                    const isBelowMin = !Number.isNaN(numericAmount) && numericAmount > 0 && numericAmount < MIN_WITHDRAWAL_AMOUNT;
+                    const isAboveBalance = !Number.isNaN(numericAmount) && numericAmount > availableBalance;
+                    const disabled = !withdrawAmount || isBelowMin || isAboveBalance || numericAmount <= 0;
+                    return (
+                      <button
+                        type="submit"
+                        disabled={disabled}
+                        className={`w-full py-3 text-white font-extrabold text-xs uppercase tracking-widest rounded-2xl shadow-md transition-all active:scale-95 ${
+                          disabled
+                            ? 'bg-slate-300 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
+                        }`}
+                      >
+                        {isBelowMin
+                          ? `Minimum ${MIN_WITHDRAWAL_AMOUNT}€ requis`
+                          : "Suivant: Vérifier l'identité"}
+                      </button>
+                    );
+                  })()}
                 </div>
               </form>
             )}

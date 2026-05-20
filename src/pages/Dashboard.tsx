@@ -488,26 +488,6 @@ export function Dashboard({ profile }: DashboardProps) {
             </div>
           </div>
         </div>
-
-        {/* Quick period chips for fast switching */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/40">
-          <FilterIcon size={12} className="text-slate-400" />
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Raccourcis :</span>
-          {PERIOD_OPTIONS.map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => setSelectedPeriod(opt.key)}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
-                selectedPeriod === opt.key
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-white/60 text-slate-500 hover:bg-white hover:text-slate-800'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Wallet strip — compact KPI row */}
