@@ -687,11 +687,7 @@ export function WalletPage() {
                         </div>
                       </div>
                       <div className="mt-4 flex items-center justify-between text-[11px] text-slate-400 font-bold">
-                        <div className="flex items-center space-x-4">
-                          <span>Ref: {transaction.reference}</span>
-                          <span>•</span>
-                          <span>Via: {transaction.method}</span>
-                        </div>
+                        <span>Ref: {transaction.reference}</span>
                         <span>{new Date(transaction.date).toLocaleDateString()}</span>
                       </div>
                     </div>
