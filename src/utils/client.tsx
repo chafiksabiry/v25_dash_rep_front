@@ -198,6 +198,66 @@ const orchestratorApiClient = axios.create({
 addAuthInterceptor(orchestratorApiClient);
 
 // API methods
+export type RepTransactionType = 'call_validated' | 'transaction' | 'bonus';
+
+export interface RepTransactionRow {
+  _id: string;
+  type: RepTransactionType;
+  sourceId: string;
+  repId: string;
+  companyId: string;
+  gigId?: string;
+  callId?: string;
+  amount: number;
+  repShare: number;
+  harxShare: number;
+  status: 'earned' | 'paid' | 'refused';
+  description?: string;
+  createdAt: string;
+  call?: {
+    _id: string;
+    sid?: string;
+    duration?: number;
+    startTime?: string;
+    direction?: string;
+    to?: string;
+    from?: string;
+  } | null;
+  gig?: {
+    _id: string;
+    title?: string;
+    commission_per_call?: number;
+    transactionCommission?: number;
+  } | null;
+}
+
+export const repTransactionsApi = {
+  list: async (
+    agentId: string,
+    params?: { type?: RepTransactionType; status?: string; limit?: number }
+  ) => {
+    const qs = new URLSearchParams();
+    if (params?.type) qs.set('type', params.type);
+    if (params?.status) qs.set('status', params.status);
+    if (params?.limit) qs.set('limit', String(params.limit));
+    const query = qs.toString();
+    const response = await orchestratorApiClient.get(
+      `/escrow/agent/transactions/${agentId}${query ? `?${query}` : ''}`
+    );
+    return response.data as {
+      success: boolean;
+      data: RepTransactionRow[];
+      totals: {
+        amount: number;
+        repShare: number;
+        harxShare: number;
+        countByType: Record<string, number>;
+        count: number;
+      };
+    };
+  },
+};
+
 export const callsApi = {
   getByAgentId: async (agentId: string) => {
     const response = await callsApiClient.get(`/api/calls/agent/${agentId}`);
@@ -258,6 +318,7 @@ export { repApiClient, dashboardCompanyApiClient, apiClient, callsApiClient, orc
 // Default export with all APIs
 export default {
   calls: callsApi,
+  repTransactions: repTransactionsApi,
   vertex: vertexApi,
   auth: authApi,
   profile: profileApi,

@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 import { CallRecords } from '../components/CallRecords';
-import api from '../utils/client';
+import api, { repTransactionsApi, type RepTransactionRow } from '../utils/client';
 import { useAuth } from '../contexts/AuthContext';
 import Cookies from 'js-cookie';
 import type { GigCommissionExtended } from '../utils/gigCommissionDisplay';
@@ -38,7 +38,9 @@ export function WalletPage() {
   const [selectedDateRange, setSelectedDateRange] = useState('this-month');
   const [selectedGigId, setSelectedGigId] = useState('all');
   const [callValidationFilter, setCallValidationFilter] = useState<'all' | 'approved' | 'pending'>('all');
-  const [transactionValidationFilter, setTransactionValidationFilter] = useState<'all' | 'approved' | 'refused' | 'pending'>('all');
+  const [transactionValidationFilter, setTransactionValidationFilter] = useState<
+    'all' | 'approved' | 'validated' | 'refused' | 'pending'
+  >('all');
 
   // Dynamic state metrics for real payouts
   const [availableBalance, setAvailableBalance] = useState(0);
@@ -49,7 +51,33 @@ export function WalletPage() {
   // Filter and Call Records for "Liste des Appels"
   const [realCalls, setRealCalls] = useState<any[]>([]);
   const [backendWithdrawals, setBackendWithdrawals] = useState<any[]>([]);
+  const [repLedgerRows, setRepLedgerRows] = useState<RepTransactionRow[]>([]);
   const [isLoadingWallet, setIsLoadingWallet] = useState(false);
+
+  const mapRepLedgerToDisplay = (rows: RepTransactionRow[]) =>
+    rows.map((row) => {
+      const typeLabel =
+        row.type === 'call_validated'
+          ? 'Appel validé'
+          : row.type === 'transaction'
+            ? 'Vente validée'
+            : 'Bonus';
+      const gigTitle = row.gig?.title || 'Projet';
+      return {
+        id: `rep-${row._id}`,
+        type: typeLabel,
+        ledgerType: row.type,
+        amount: row.repShare,
+        grossAmount: row.amount,
+        harxShare: row.harxShare,
+        status: row.status === 'earned' ? 'Completed' : row.status === 'paid' ? 'Paid' : 'Refused',
+        date: row.createdAt,
+        method: 'Wallet',
+        reference: row.callId || row.sourceId,
+        description: row.description || `${typeLabel} — ${gigTitle} (70% rep)`,
+        gigId: row.gigId
+      };
+    });
 
   // Dynamic balance calculations based on call records
   const calculateBalances = (callsList: any[]) => {
@@ -161,11 +189,15 @@ export function WalletPage() {
 
   useEffect(() => {
     fetchRealCalls();
+    fetchWalletData();
 
-    // Listen to calls state updates
-    window.addEventListener('CALLS_STATE_UPDATED', fetchRealCalls);
+    const onCallsUpdated = () => {
+      fetchRealCalls();
+      fetchWalletData();
+    };
+    window.addEventListener('CALLS_STATE_UPDATED', onCallsUpdated);
     return () => {
-      window.removeEventListener('CALLS_STATE_UPDATED', fetchRealCalls);
+      window.removeEventListener('CALLS_STATE_UPDATED', onCallsUpdated);
     };
   }, []);
 
@@ -258,19 +290,24 @@ export function WalletPage() {
     if (!agentId) return;
     setIsLoadingWallet(true);
     try {
-      const [walletRes, withdrawalsRes] = await Promise.all([
+      const [walletRes, withdrawalsRes, ledgerRes] = await Promise.all([
         api.get(`/escrow/agent/wallet/${agentId}`),
-        api.get(`/escrow/agent/withdrawals/${agentId}`)
+        api.get(`/escrow/agent/withdrawals/${agentId}`),
+        repTransactionsApi.list(agentId, { status: 'earned', limit: 300 }).catch(() => null)
       ]);
 
       if (walletRes.data?.success) {
         setAvailableBalance(walletRes.data.data.availableBalance);
-        // Pending Earnings = Pending Withdrawals + Pending Commissions
-        const pendingTotal = (walletRes.data.data.pendingWithdrawals || 0) + (walletRes.data.data.pendingCommissions || 0);
+        const pendingTotal =
+          (walletRes.data.data.pendingWithdrawals || 0) +
+          (walletRes.data.data.pendingCommissions || 0);
         setPendingEarnings(pendingTotal);
         setLifetimeEarnings(walletRes.data.data.lifetimeEarnings);
-        // Store pending count for the badge
         setPendingTransactionsCount(walletRes.data.data.pendingCount || 0);
+      }
+
+      if (ledgerRes?.success && Array.isArray(ledgerRes.data)) {
+        setRepLedgerRows(ledgerRes.data);
       }
 
       if (withdrawalsRes.data?.success) {
@@ -335,11 +372,18 @@ export function WalletPage() {
   // Stateful transaction log
   const [transactions, setTransactions] = useState<any[]>([]);
 
-  // Update transactions list when backend data or calls change
+  // Ledger from API (authoritative 70% repShare) + withdrawals; fallback to client-side estimate
   useEffect(() => {
-    const callTxs = generateTransactionsFromCalls(realCalls);
-    setTransactions([...backendWithdrawals, ...callTxs]);
-  }, [realCalls, backendWithdrawals]);
+    const ledgerTxs =
+      repLedgerRows.length > 0
+        ? mapRepLedgerToDisplay(repLedgerRows)
+        : generateTransactionsFromCalls(realCalls);
+    setTransactions(
+      [...backendWithdrawals, ...ledgerTxs].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      )
+    );
+  }, [realCalls, backendWithdrawals, repLedgerRows]);
 
 
 
@@ -566,11 +610,13 @@ export function WalletPage() {
                       // Apply Gig Filter if it's a commission transaction
                       if (selectedGigId !== 'all' && tx.gigId && tx.gigId !== selectedGigId) return false;
                       
-                      // Apply Status Filter
                       if (transactionValidationFilter !== 'all') {
-                        if (transactionValidationFilter === 'validated' && tx.status !== 'Completed') return false;
-                        if (transactionValidationFilter === 'pending' && tx.status !== 'Pending') return false;
-                        // Note: current transactions state doesn't have 'Rejected' status, but we can extend it
+                        if (transactionValidationFilter === 'approved' || transactionValidationFilter === 'validated') {
+                          if (tx.type === 'Payout') return false;
+                          if (tx.status !== 'Completed' && tx.status !== 'Paid') return false;
+                        }
+                        if (transactionValidationFilter === 'pending' && tx.status !== 'Processing' && tx.status !== 'Pending') return false;
+                        if (transactionValidationFilter === 'refused' && tx.status !== 'Refused') return false;
                       }
                       
                       return true;
@@ -581,7 +627,8 @@ export function WalletPage() {
                         <div className="flex items-center space-x-4">
                           <div className={`p-2.5 rounded-xl ${
                             transaction.type === 'Payout' ? 'bg-orange-50 text-orange-600' :
-                            transaction.type === 'Bonus' ? 'bg-blue-50 text-blue-600' :
+                            transaction.type === 'Bonus' ? 'bg-violet-50 text-violet-600' :
+                            transaction.type === 'Vente validée' ? 'bg-blue-50 text-blue-600' :
                             'bg-emerald-50 text-emerald-600'
                           }`}>
                             {transaction.type === 'Payout' ? (
@@ -596,7 +643,15 @@ export function WalletPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-black text-slate-900 text-sm">${transaction.amount.toFixed(2)}</p>
+                          <p className="font-black text-slate-900 text-sm">
+                            {transaction.type === 'Payout' ? '-' : '+'}
+                            {transaction.amount.toFixed(2)} €
+                          </p>
+                          {transaction.grossAmount != null && transaction.type !== 'Payout' && (
+                            <p className="text-[9px] text-slate-400 font-bold mt-0.5">
+                              Brut {transaction.grossAmount.toFixed(2)} € · HARX 30% {transaction.harxShare?.toFixed(2)} €
+                            </p>
+                          )}
                           <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
                             transaction.status === 'Completed' 
                               ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'

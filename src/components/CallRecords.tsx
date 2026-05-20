@@ -16,6 +16,7 @@ import {
   RefreshCw,
   X,
   Check,
+  BadgeCheck,
   MessageSquare,
   Star,
   Globe,
@@ -284,9 +285,19 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                         <Phone className="w-6 h-6" />
                       </div>
                       <div>
-                        <h3 className="font-black text-slate-900 text-sm tracking-tight">
-                          {record.lead?.First_Name ? `${record.lead.First_Name} ${record.lead.Last_Name || ''}`.trim() :
-                            record.lead?.name || record.to || record.from || 'Unknown Customer'}
+                        <h3 className="font-black text-slate-900 text-sm tracking-tight flex items-center gap-2">
+                          <span>
+                            {record.lead?.First_Name ? `${record.lead.First_Name} ${record.lead.Last_Name || ''}`.trim() :
+                              record.lead?.name || record.to || record.from || 'Unknown Customer'}
+                          </span>
+                          {(record.valid === true || record.companyValidation === 'approved') && (
+                            <span
+                              title="Appel validé par l'entreprise"
+                              className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 shrink-0"
+                            >
+                              <BadgeCheck className="w-3 h-3" />
+                            </span>
+                          )}
                         </h3>
                         <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border ${record.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50' : 'bg-rose-50 text-rose-600 border-rose-100/50'}`}>
