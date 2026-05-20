@@ -83,108 +83,18 @@ export function WalletPage() {
       };
     });
 
-  // Dynamic balance calculations based on call records
-  const calculateBalances = (callsList: any[]) => {
-    let available = 0; 
-    let pending = 0;   
-    let lifetime = 0;
-
-    callsList.forEach(call => {
-      const recordGig = call.lead?.gigId;
-      const gigData = typeof recordGig === 'object' ? recordGig : null;
-      const comm = gigData?.commission as GigCommissionExtended | undefined;
-
-      let callRate = resolveWalletPerCallEur(comm, gigData?.rewardPerCall) * 0.7;
-      let txRate = resolveWalletTransactionEur(comm, gigData?.rewardPerSale) * 0.7;
-
-      // 1. Call Validation commission
-      if (call.companyValidation === 'approved') {
-        available += callRate;
-        lifetime += callRate;
-      } else if (call.companyValidation === 'pending' || !call.companyValidation) {
-        pending += callRate;
-      }
-
-      // 2. Transaction Validation commission
-      const hasTransaction = call.transaction?.validByReps === true || call.transactionOccurred === true;
-      if (hasTransaction) {
-        if (call.transaction?.validByCompany === true) {
-          available += txRate;
-          lifetime += txRate;
-        } else if (call.transaction?.validByCompany === null || call.transaction?.validByCompany === undefined) {
-          pending += txRate;
-        }
-      }
-    });
-
-    return { available, pending, lifetime };
-  };
-
-  const generateTransactionsFromCalls = (callsList: any[]) => {
-    const dynamicTxs: any[] = [];
-    callsList.forEach(call => {
-      const gigData = typeof call.lead?.gigId === 'object' ? call.lead.gigId : null;
-      const gigTitle = gigData?.title || "Projet";
-      const gigId = typeof call.lead?.gigId === 'object' ? call.lead.gigId?._id : call.lead?.gigId;
-      const comm = gigData?.commission as GigCommissionExtended | undefined;
-      const callRate = resolveWalletPerCallEur(comm, gigData?.rewardPerCall) * 0.7;
-      const txRate = resolveWalletTransactionEur(comm, gigData?.rewardPerSale) * 0.7;
-
-      // Call Commission
-      if (call.companyValidation === 'approved') {
-        dynamicTxs.push({
-          id: `call-${call._id}`,
-          type: 'Commission',
-          amount: callRate,
-          status: 'Completed',
-          date: call.createdAt || call.startTime,
-          method: 'Wallet',
-          reference: call._id,
-          description: `Com. Appel Validé - ${gigTitle}`,
-          gigId: gigId
-        });
-      }
-
-      // Transaction Commission
-      const hasTransaction = call.transaction?.validByReps === true || call.transactionOccurred === true;
-      if (hasTransaction && call.transaction?.validByCompany === true) {
-        dynamicTxs.push({
-          id: `tx-${call._id}`,
-          type: 'Bonus',
-          amount: txRate,
-          status: 'Completed',
-          date: call.transaction?.updatedAt || call.createdAt,
-          method: 'Wallet',
-          reference: call._id,
-          description: `Com. Vente Validée - ${gigTitle}`,
-          gigId: gigId
-        });
-      }
-    });
-    
-    // Sort by date descending
-    return dynamicTxs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  };
-
+  // The rep wallet is fed exclusively by RepTransaction (via /escrow/agent/wallet
+  // and /escrow/agent/transactions). We no longer recompute balances client-side
+  // from calls: that would diverge from the server ledger as soon as the booking
+  // logic evolves. Calls are still fetched so the gigs filter / call records UI
+  // can render, but the balances above come from `fetchWalletData` only.
   const fetchRealCalls = async () => {
     try {
-      const agentId = localStorage.getItem('agentId');
-      if (!agentId) return;
-      const response = await api.calls.getByAgentId(agentId);
+      const localAgentId = localStorage.getItem('agentId');
+      if (!localAgentId) return;
+      const response = await api.calls.getByAgentId(localAgentId);
       if (response && response.success && Array.isArray(response.data)) {
         setRealCalls(response.data);
-        const { available, pending, lifetime } = calculateBalances(response.data);
-        setAvailableBalance(available);
-        setPendingEarnings(pending);
-        setLifetimeEarnings(lifetime);
-        
-        // Update transaction history
-        const callTxs = generateTransactionsFromCalls(response.data);
-        setTransactions(prev => {
-          // Keep existing Payouts (withdrawals) from the session
-          const payouts = prev.filter(t => t.type === 'Payout');
-          return [...payouts, ...callTxs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        });
       }
     } catch (err) {
       console.error('Error fetching real calls for counts in Wallet:', err);
@@ -364,24 +274,13 @@ export function WalletPage() {
     window.dispatchEvent(new Event('WALLET_BALANCE_UPDATED'));
   }, [availableBalance, pendingEarnings]);
 
+  // Earned this week, sourced directly from the RepTransaction ledger (70% rep share).
   const getWeeklyEarnings = () => {
-    const now = new Date();
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    
-    return realCalls.reduce((total, call) => {
-      const callDate = new Date(call.createdAt || call.startTime);
-      if (callDate >= oneWeekAgo) {
-        const gigData = typeof call.lead?.gigId === 'object' ? call.lead.gigId : null;
-        const callRate = (gigData?.commission?.commission_per_call || gigData?.rewardPerCall || 4.00) * 0.7;
-        const txRate = (gigData?.commission?.transactionCommission || gigData?.rewardPerSale || 30.00) * 0.7;
-        
-        if (call.companyValidation === 'approved') {
-          total += callRate;
-        }
-        if (call.transaction?.validByCompany === true) {
-          total += txRate;
-        }
-      }
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return repLedgerRows.reduce((total, row) => {
+      if (row.status !== 'earned') return total;
+      const created = new Date(row.createdAt);
+      if (created >= oneWeekAgo) total += row.repShare || 0;
       return total;
     }, 0);
   };
@@ -395,18 +294,16 @@ export function WalletPage() {
   // Stateful transaction log
   const [transactions, setTransactions] = useState<any[]>([]);
 
-  // Ledger from API (authoritative 70% repShare) + withdrawals; fallback to client-side estimate
+  // RepTransaction ledger is the sole source of truth (70% repShare).
+  // Withdrawals come from the agent withdrawal collection.
   useEffect(() => {
-    const ledgerTxs =
-      repLedgerRows.length > 0
-        ? mapRepLedgerToDisplay(repLedgerRows)
-        : generateTransactionsFromCalls(realCalls);
+    const ledgerTxs = mapRepLedgerToDisplay(repLedgerRows);
     setTransactions(
       [...backendWithdrawals, ...ledgerTxs].sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       )
     );
-  }, [realCalls, backendWithdrawals, repLedgerRows]);
+  }, [backendWithdrawals, repLedgerRows]);
 
 
 

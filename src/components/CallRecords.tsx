@@ -210,13 +210,13 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
     }
 
     // Call Validation Filter
-    if (callValidationFilter === 'approved' && record.companyValidation !== 'approved') return false;
-    if (callValidationFilter === 'pending' && record.companyValidation === 'approved') return false;
+    if (callValidationFilter === 'approved' && record.validByAI !== true) return false;
+    if (callValidationFilter === 'pending' && record.validByAI != null) return false;
 
     // Transaction Validation Filter
-    if (transactionValidationFilter === 'approved' && record.transaction?.validByCompany !== true) return false;
-    if (transactionValidationFilter === 'refused' && record.transaction?.validByCompany !== false) return false;
-    if (transactionValidationFilter === 'pending' && record.transaction?.validByCompany !== null) return false;
+    if (transactionValidationFilter === 'approved' && record.transaction?.validByReps !== true) return false;
+    if (transactionValidationFilter === 'refused' && record.transaction?.validByReps !== false) return false;
+    if (transactionValidationFilter === 'pending' && record.transaction?.validByReps != null) return false;
 
     return true;
   });
@@ -290,9 +290,9 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                             {record.lead?.First_Name ? `${record.lead.First_Name} ${record.lead.Last_Name || ''}`.trim() :
                               record.lead?.name || record.to || record.from || 'Unknown Customer'}
                           </span>
-                          {(record.valid === true || record.companyValidation === 'approved') && (
+                          {record.validByAI === true && (
                             <span
-                              title="Appel validé par l'entreprise"
+                              title="Appel validé par l'IA — commission RepTransaction créée"
                               className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 shrink-0"
                             >
                               <BadgeCheck className="w-3 h-3" />
@@ -357,7 +357,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
 
                           <div className="flex flex-col items-center gap-1 min-w-[120px]">
                             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Transaction</span>
-                            {record.transaction?.validByCompany === true ? (
+                            {record.transaction?.validByReps === true ? (
                               <div className="flex flex-col items-center gap-1">
                                 <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100/40 shadow-sm w-36 whitespace-nowrap">
                                   <Check className="w-3.5 h-3.5" />
@@ -531,16 +531,16 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                   <div className="flex items-center gap-1.5 text-slate-400" title="Validation Finale">
                     <ShieldCheck className="w-4 h-4" />
                   </div>
-                  <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${selectedCall.transaction?.validByCompany === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
-                    selectedCall.transaction?.validByCompany === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
+                  <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${selectedCall.transaction?.validByReps === true ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                    selectedCall.transaction?.validByReps === false ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
                       'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                    }`} title={selectedCall.transaction?.validByCompany === true ? 'Validé' : selectedCall.transaction?.validByCompany === false ? 'Refusé' : 'En attente'}>
-                    {selectedCall.transaction?.validByCompany === true ? (
+                    }`} title={selectedCall.transaction?.validByReps === true ? 'Vente déclarée' : selectedCall.transaction?.validByReps === false ? 'Pas de vente' : 'En attente'}>
+                    {selectedCall.transaction?.validByReps === true ? (
                       <div className="flex items-center gap-1">
                         <Check className="w-3 h-3" />
                         +{(selectedCall.transaction?.repTransactionCommission !== undefined ? selectedCall.transaction.repTransactionCommission : (selectedCall.lead?.gigId?.commission?.transactionCommission || selectedCall.lead?.gigId?.rewardPerSale || 30) * 0.7).toFixed(2)}€
                       </div>
-                    ) : selectedCall.transaction?.validByCompany === false ? (
+                    ) : selectedCall.transaction?.validByReps === false ? (
                       <X className="w-3 h-3" />
                     ) : (
                       <Clock className="w-3 h-3" />
