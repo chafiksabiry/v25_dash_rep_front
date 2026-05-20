@@ -228,29 +228,33 @@ export function WalletPage() {
     })
   ];
 
+  // Rep keeps 70% of every commission; HARX keeps 30%. We only display the rep share.
+  const REP_SHARE = 0.7;
+  const fmtEur = (value: number) => `${(value).toFixed(2)} €`;
+
   const gigCommissions: Record<string, { rate: string; rules: string; bonus: string }> = {
     all: {
       rate: 'Taux Variable',
-      rules: 'Sélectionnez un Gig spécifique pour consulter son barème de commission exact.',
+      rules: 'Sélectionnez un Gig spécifique pour consulter votre part (70%) sur ce projet.',
       bonus: 'Bonus actifs'
     },
     '69df585b6cad0fd23cffc2ae': {
-      rate: '4.00 € / appel + 30.00 € / transaction',
+      rate: `${fmtEur(4 * REP_SHARE)} / appel + ${fmtEur(30 * REP_SHARE)} / transaction`,
       rules: "Une transaction est comptabilisée uniquement si le contrat est signé et non rétracté dans les 14 jours. Les résiliations dans les 3 mois suivant la signature entraînent l'annulation et le remboursement de la commission correspondante.",
-      bonus: '+100.00 € prime performance (25 transactions/mois)'
+      bonus: `+${fmtEur(100 * REP_SHARE)} prime performance (25 transactions/mois)`
     },
     'insurance-premium': {
-      rate: '2.00 € / min d\'appel',
+      rate: `${fmtEur(2 * REP_SHARE)} / min d'appel`,
       rules: 'Commissions calculées sur la durée totale des appels validés par la compagnie.',
-      bonus: '+5.00 € bonus validation'
+      bonus: `+${fmtEur(5 * REP_SHARE)} bonus validation`
     },
     'cpf-booster': {
-      rate: '2.00 € / min d\'appel',
+      rate: `${fmtEur(2 * REP_SHARE)} / min d'appel`,
       rules: 'Applicable sur les appels d\'une durée supérieure à 1 minute avec CPF valide.',
-      bonus: '+10.00 € bonus conversion'
+      bonus: `+${fmtEur(10 * REP_SHARE)} bonus conversion`
     },
     'telecom-pro': {
-      rate: '2.00 € / min d\'appel',
+      rate: `${fmtEur(2 * REP_SHARE)} / min d'appel`,
       rules: 'Taux standard appliqué sur tous les appels professionnels validés.',
       bonus: 'Aucun bonus'
     }
@@ -259,7 +263,6 @@ export function WalletPage() {
   const getSelectedGigCommission = () => {
     if (selectedGigId === 'all') return gigCommissions.all;
 
-    // Find a call from this gig to extract live rates
     const callFromGig = realCalls.find(record => {
       const recordGig = record.lead?.gigId;
       const idStr = typeof recordGig === 'object' ? (recordGig?._id || (recordGig as any)?.$oid) : recordGig;
@@ -268,12 +271,12 @@ export function WalletPage() {
 
     if (callFromGig) {
       const gigData = typeof callFromGig.lead?.gigId === 'object' ? callFromGig.lead.gigId : null;
-      const callRate = gigData?.commission?.commission_per_call || gigData?.rewardPerCall || 4.00;
-      const txRate = gigData?.commission?.transactionCommission || gigData?.rewardPerSale || 30.00;
-      
+      const callRate = (gigData?.commission?.commission_per_call || gigData?.rewardPerCall || 4.00) * REP_SHARE;
+      const txRate = (gigData?.commission?.transactionCommission || gigData?.rewardPerSale || 30.00) * REP_SHARE;
+
       return {
-        rate: `${callRate.toFixed(2)} € / appel + ${txRate.toFixed(2)} € / transaction`,
-        rules: gigData?.description || "Barème de commission standard pour ce projet.",
+        rate: `${fmtEur(callRate)} / appel + ${fmtEur(txRate)} / transaction`,
+        rules: gigData?.description || "Barème de commission standard pour ce projet — votre part 70%.",
         bonus: gigData?.bonusInfo || 'Aucun bonus actif'
       };
     }
@@ -751,7 +754,9 @@ export function WalletPage() {
                     </div>
                   </div>
                   <div className="text-left sm:text-right shrink-0">
-                    <span className="text-[9px] font-black text-slate-400 block uppercase tracking-wider">Commission</span>
+                    <span className="text-[9px] font-black text-slate-400 block uppercase tracking-wider">
+                      Ma commission (70%)
+                    </span>
                     <span className="text-sm font-black text-blue-600 block mt-0.5">
                       {getSelectedGigCommission().rate}
                     </span>
