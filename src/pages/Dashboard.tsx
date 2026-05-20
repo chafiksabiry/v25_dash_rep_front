@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { TrendingUp, Users, DollarSign, Clock, Star, Bell, BookOpen, MessageSquare, Phone, Target, Award, ArrowRight, Briefcase, Zap, Shield, CheckCircle2, Layout, Globe, Activity as ActivityIcon } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { TrendingUp, Users, DollarSign, Clock, Star, Bell, BookOpen, MessageSquare, Phone, Target, Award, ArrowRight, Briefcase, Zap, Shield, CheckCircle2, Layout, Globe, Activity as ActivityIcon, Wallet as WalletIcon, Hourglass, Trophy, Flame } from 'lucide-react';
+import api, { repTransactionsApi, type RepTransactionRow } from '../utils/client';
 import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
@@ -34,6 +35,14 @@ export function Dashboard({ profile }: DashboardProps) {
   const [activeChartMetric, setActiveChartMetric] = useState<ChartMetric>('all');
   const { t } = useTranslation();
 
+  // Earnings & objectifs (RepTransaction-backed)
+  const [walletStats, setWalletStats] = useState<{
+    availableBalance: number;
+    pendingCommissions: number;
+    lifetimeEarnings: number;
+  }>({ availableBalance: 0, pendingCommissions: 0, lifetimeEarnings: 0 });
+  const [repLedger, setRepLedger] = useState<RepTransactionRow[]>([]);
+
   useEffect(() => {
     const agentId = profile?._id || localStorage.getItem('agentId') || localStorage.getItem('userId');
     const realUserId = (profile?.userId && typeof profile?.userId === 'object')
@@ -44,14 +53,28 @@ export function Dashboard({ profile }: DashboardProps) {
 
     const fetchData = async () => {
       try {
-        const [callsRes, gigsRes] = await Promise.all([
+        const [callsRes, gigsRes, walletRes, ledgerRes] = await Promise.all([
           fetch(`https://v25dashboardbackend-production.up.railway.app/api/calls?agentId=${agentId}`),
-          fetch(`https://v25dashboardbackend-production.up.railway.app/api/calls/gigs?userId=${realUserId || agentId}`)
+          fetch(`https://v25dashboardbackend-production.up.railway.app/api/calls/gigs?userId=${realUserId || agentId}`),
+          api.get(`/escrow/agent/wallet/${agentId}`).catch(() => null),
+          repTransactionsApi.list(agentId, { status: 'earned', limit: 300 }).catch(() => null)
         ]);
-        
+
         const [calls, gigs] = await Promise.all([callsRes.json(), gigsRes.json()]);
         setCallsData(Array.isArray(calls.data) ? calls.data : []);
         setGigsData(Array.isArray(gigs.data) ? gigs.data : []);
+
+        if (walletRes?.data?.success && walletRes.data.data) {
+          const w = walletRes.data.data;
+          setWalletStats({
+            availableBalance: Number(w.availableBalance || 0),
+            pendingCommissions: Number(w.pendingCommissions || 0),
+            lifetimeEarnings: Number(w.lifetimeEarnings || 0)
+          });
+        }
+        if (ledgerRes?.success && Array.isArray(ledgerRes.data)) {
+          setRepLedger(ledgerRes.data);
+        }
       } catch (err) {
         console.error('Failed to fetch dashboard data', err);
       } finally {
@@ -116,6 +139,63 @@ export function Dashboard({ profile }: DashboardProps) {
   const conversionPct = completedCallsCount > 0 
     ? Math.round((transactionCount / completedCallsCount) * 100) 
     : 0;
+
+  // Earnings this week (last 7 days), 70% rep share from the ledger
+  const weeklyEarnings = useMemo(() => {
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return repLedger.reduce((sum, row) => {
+      if (row.status !== 'earned') return sum;
+      const created = new Date(row.createdAt).getTime();
+      if (created < oneWeekAgo) return sum;
+      return sum + (row.repShare || 0);
+    }, 0);
+  }, [repLedger]);
+
+  // Objectif gig — uses the selected gig's bonus thresholds (volume + bonus amount).
+  // Counts only this month's calls of the matching gig.
+  const objectif = useMemo(() => {
+    if (selectedGigId === 'all') {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      const monthCalls = callsData.filter((c) => {
+        const d = new Date(c.createdAt || c.startTime || 0).getTime();
+        return d >= monthStart.getTime();
+      }).length;
+      return {
+        label: 'Tous les Gigs',
+        current: monthCalls,
+        target: 0,
+        bonusAmount: 0,
+        progressPct: 0
+      };
+    }
+
+    const gig = gigsData.find((g) => (g._id || g.id) === selectedGigId);
+    const target = gig?.commission?.minimumVolume || gig?.commission?.bonusMinimumCalls || 25;
+    const bonusGross = gig?.commission?.bonusAmount || gig?.rewardBonus || 120;
+    const bonusRepShare = Math.round(bonusGross * 0.7 * 100) / 100;
+
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const current = callsData.filter((c) => {
+      const cGigId = typeof c.gigId === 'object' ? (c.gigId?._id || c.gigId?.id) : c.gigId;
+      if (cGigId !== selectedGigId) return false;
+      const d = new Date(c.createdAt || c.startTime || 0).getTime();
+      return d >= monthStart.getTime();
+    }).length;
+
+    const progressPct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+    return {
+      label: gig?.title || 'Gig',
+      current,
+      target,
+      bonusAmount: bonusRepShare,
+      progressPct
+    };
+  }, [selectedGigId, gigsData, callsData]);
 
   // Helper to calculate score (ported from ProfileView)
   const calculateOverallScore = () => {
@@ -396,6 +476,149 @@ export function Dashboard({ profile }: DashboardProps) {
             Pourcentage d'appels aboutissant à une transaction ou vente confirmée.
           </p>
         </div>
+      </div>
+
+      {/* Earnings & Objectifs — RepTransaction-backed (70% rep share) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Solde disponible */}
+        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Solde disponible</span>
+            <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+              <WalletIcon size={18} />
+            </div>
+          </div>
+          <div>
+            <span className="text-3xl font-black text-slate-900 tracking-tighter">
+              {walletStats.availableBalance.toFixed(2)} €
+            </span>
+            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mt-1">
+              Prêt au retrait
+            </p>
+          </div>
+        </div>
+
+        {/* En attente */}
+        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">En attente</span>
+            <div className="h-10 w-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+              <Hourglass size={18} />
+            </div>
+          </div>
+          <div>
+            <span className="text-3xl font-black text-slate-900 tracking-tighter">
+              {walletStats.pendingCommissions.toFixed(2)} €
+            </span>
+            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mt-1">
+              Validation IA en cours
+            </p>
+          </div>
+        </div>
+
+        {/* Cette semaine */}
+        <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[32px] p-6 shadow-xl shadow-slate-200/20 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cette semaine</span>
+            <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
+              <TrendingUp size={18} />
+            </div>
+          </div>
+          <div>
+            <span className="text-3xl font-black text-slate-900 tracking-tighter">
+              {weeklyEarnings.toFixed(2)} €
+            </span>
+            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mt-1">
+              7 derniers jours
+            </p>
+          </div>
+        </div>
+
+        {/* Gains totaux */}
+        <div className="bg-slate-950 text-white border border-slate-800 rounded-[32px] p-6 shadow-xl shadow-slate-900/20 flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-harx-500/20 blur-3xl" />
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">Gains totaux</span>
+            <div className="h-10 w-10 rounded-2xl bg-white/10 text-white flex items-center justify-center">
+              <Trophy size={18} />
+            </div>
+          </div>
+          <div className="relative z-10">
+            <span className="text-3xl font-black tracking-tighter">
+              {walletStats.lifetimeEarnings.toFixed(2)} €
+            </span>
+            <p className="text-[10px] font-bold text-white/60 uppercase tracking-wider mt-1">
+              Depuis votre arrivée
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Objectif gig */}
+      <div className="bg-white/40 backdrop-blur-xl rounded-[32px] border border-white/60 shadow-xl shadow-slate-200/20 p-8 overflow-hidden relative">
+        <div className="absolute top-0 right-0 h-48 w-48 rounded-full bg-harx-500/10 blur-3xl -mr-24 -mt-24" />
+        <div className="flex items-start justify-between gap-6 flex-wrap relative z-10">
+          <div className="flex items-start gap-4 min-w-0">
+            <div className="h-12 w-12 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0">
+              <Target size={22} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-base font-black text-slate-900 tracking-tight">Objectif du mois</h3>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 truncate">
+                {objectif.label}
+              </p>
+            </div>
+          </div>
+
+          {objectif.target > 0 ? (
+            <div className="text-right shrink-0">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                Bonus à débloquer
+              </span>
+              <span className="text-2xl font-black text-emerald-600 tracking-tighter block mt-1 flex items-center justify-end gap-1.5">
+                <Flame size={18} className="text-emerald-500" />
+                +{objectif.bonusAmount.toFixed(2)} €
+              </span>
+            </div>
+          ) : (
+            <span className="text-[10px] font-bold text-slate-400 italic">
+              Sélectionnez un Gig pour voir l'objectif
+            </span>
+          )}
+        </div>
+
+        {objectif.target > 0 && (
+          <div className="mt-6 space-y-3 relative z-10">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-600">
+                <span className="text-slate-900 text-base font-black">{objectif.current}</span>
+                {' '}/{' '}
+                <span>{objectif.target}</span>
+                {' appels validés ce mois-ci'}
+              </span>
+              <span className="font-black text-slate-900">{objectif.progressPct}%</span>
+            </div>
+            <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all duration-1000 ease-out rounded-full ${
+                  objectif.progressPct >= 100
+                    ? 'bg-gradient-to-r from-emerald-400 to-emerald-600'
+                    : 'bg-gradient-to-r from-rose-400 to-rose-600'
+                }`}
+                style={{ width: `${objectif.progressPct}%` }}
+              />
+            </div>
+            {objectif.progressPct >= 100 ? (
+              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1.5">
+                <CheckCircle2 size={12} /> Objectif atteint — bonus crédité
+              </p>
+            ) : (
+              <p className="text-[10px] font-bold text-slate-500">
+                Plus que {objectif.target - objectif.current} appels validés pour décrocher votre bonus.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
