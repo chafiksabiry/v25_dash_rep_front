@@ -28,7 +28,11 @@ import api, { repTransactionsApi, type RepTransactionRow } from '../utils/client
 import { useAuth } from '../contexts/AuthContext';
 import Cookies from 'js-cookie';
 import type { GigCommissionExtended } from '../utils/gigCommissionDisplay';
-import { resolveWalletPerCallEur, resolveWalletTransactionEur } from '../utils/gigCommissionDisplay';
+import {
+  resolveWalletPerCallEur,
+  resolveWalletTransactionEur,
+  getBonusPillDisplay
+} from '../utils/gigCommissionDisplay';
 
 export function WalletPage() {
   const { t } = useTranslation();
@@ -232,6 +236,13 @@ export function WalletPage() {
   const REP_SHARE = 0.7;
   const fmtEur = (value: number) => `${(value).toFixed(2)} €`;
 
+  /** Reads bonus from gig.commission.bonusAmount + minimumVolume (70% rep share). */
+  const formatGigBonusLine = (comm: GigCommissionExtended | undefined): string => {
+    const pill = getBonusPillDisplay(comm, ' €');
+    if (!pill) return 'Aucun bonus actif';
+    return pill.secondary ? `${pill.primary} — ${pill.secondary}` : pill.primary;
+  };
+
   const gigCommissions: Record<string, { rate: string; rules: string; bonus: string }> = {
     all: {
       rate: 'Taux Variable',
@@ -241,7 +252,7 @@ export function WalletPage() {
     '69df585b6cad0fd23cffc2ae': {
       rate: `${fmtEur(4 * REP_SHARE)} / appel + ${fmtEur(30 * REP_SHARE)} / transaction`,
       rules: "Une transaction est comptabilisée uniquement si le contrat est signé et non rétracté dans les 14 jours. Les résiliations dans les 3 mois suivant la signature entraînent l'annulation et le remboursement de la commission correspondante.",
-      bonus: `+${fmtEur(100 * REP_SHARE)} prime performance (25 transactions/mois)`
+      bonus: `+${fmtEur(120 * REP_SHARE)} — chaque 25 appels / mois`
     },
     'insurance-premium': {
       rate: `${fmtEur(2 * REP_SHARE)} / min d'appel`,
@@ -271,13 +282,22 @@ export function WalletPage() {
 
     if (callFromGig) {
       const gigData = typeof callFromGig.lead?.gigId === 'object' ? callFromGig.lead.gigId : null;
-      const callRate = (gigData?.commission?.commission_per_call || gigData?.rewardPerCall || 4.00) * REP_SHARE;
-      const txRate = (gigData?.commission?.transactionCommission || gigData?.rewardPerSale || 30.00) * REP_SHARE;
+      const comm = gigData?.commission as GigCommissionExtended | undefined;
+      const callRate = resolveWalletPerCallEur(comm, gigData?.rewardPerCall);
+      const txRate = resolveWalletTransactionEur(comm, gigData?.rewardPerSale);
+
+      let bonus = formatGigBonusLine(comm);
+      if (bonus.startsWith('Aucun') && gigCommissions[selectedGigId]) {
+        bonus = gigCommissions[selectedGigId].bonus;
+      }
 
       return {
         rate: `${fmtEur(callRate)} / appel + ${fmtEur(txRate)} / transaction`,
-        rules: gigData?.description || "Barème de commission standard pour ce projet — votre part 70%.",
-        bonus: gigData?.bonusInfo || 'Aucun bonus actif'
+        rules:
+          comm?.additionalDetails ||
+          gigData?.description ||
+          "Barème de commission standard pour ce projet — votre part 70%.",
+        bonus
       };
     }
 
@@ -760,8 +780,8 @@ export function WalletPage() {
                     <span className="text-sm font-black text-blue-600 block mt-0.5">
                       {getSelectedGigCommission().rate}
                     </span>
-                    {getSelectedGigCommission().bonus !== 'Aucun bonus' && (
-                      <span className="inline-block text-[8px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-md mt-1.5">
+                    {!getSelectedGigCommission().bonus.startsWith('Aucun') && (
+                      <span className="inline-block text-[8px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-md mt-1.5 max-w-[220px] text-right leading-snug">
                         {getSelectedGigCommission().bonus}
                       </span>
                     )}
