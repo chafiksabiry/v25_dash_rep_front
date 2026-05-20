@@ -61,6 +61,7 @@ export interface CallRecord {
   } | null;
   validByAI?: boolean | null;
   valid?: boolean | null;
+  ai_refusal_reason?: string | null;
   argumentation_score?: number;
   ai_call_score?: {
     'Agent fluency': { score: number; feedback: string };
@@ -329,7 +330,17 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                         </div>
                       )}
 
-                      {record.status?.toLowerCase() === 'completed' ? (
+                      {(() => {
+                        const status = record.status?.toLowerCase() || '';
+                        const isCompleted = status === 'completed';
+                        // Calls that never reached a human (no-answer / busy / canceled / failed)
+                        // are auto-refused server-side, so `validByAI` is already false.
+                        // We still render the badge in that case so the rep sees WHY there's
+                        // no commission, instead of a silent "-".
+                        const isUnansweredStatus = ['no-answer', 'noanswer', 'busy', 'canceled', 'cancelled', 'failed'].includes(status);
+                        const showValidationSection = isCompleted || record.validByAI != null || isUnansweredStatus;
+                        return showValidationSection;
+                      })() ? (
                         <>
                           <div className="h-8 w-px bg-slate-200/70 hidden sm:block"></div>
                           {/* Validation de l'Appel AI */}
@@ -341,10 +352,22 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                                 Validé par AI (+{(record.repCallCommission !== undefined ? record.repCallCommission : (record.lead?.gigId?.commission?.commission_per_call || record.lead?.gigId?.rewardPerCall || 4) * 0.7).toFixed(2)}€)
                               </span>
                             ) : record.validByAI === false ? (
-                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32 whitespace-nowrap">
-                                <X className="w-3.5 h-3.5" />
-                                Refusé AI
-                              </span>
+                              (() => {
+                                const status = record.status?.toLowerCase() || '';
+                                const isUnansweredStatus = ['no-answer', 'noanswer', 'busy', 'canceled', 'cancelled', 'failed'].includes(status);
+                                const label = isUnansweredStatus
+                                  ? (status === 'busy' ? 'Occupé' : status === 'no-answer' || status === 'noanswer' ? 'Non décroché' : status === 'failed' ? 'Échec' : 'Annulé')
+                                  : 'Refusé AI';
+                                return (
+                                  <span
+                                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32 whitespace-nowrap"
+                                    title={record.ai_refusal_reason || label}
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                    {label}
+                                  </span>
+                                );
+                              })()
                             ) : (
                               <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border border-slate-200/40 shadow-sm w-32 whitespace-nowrap">
                                 <Clock className="w-3.5 h-3.5 animate-pulse" />
