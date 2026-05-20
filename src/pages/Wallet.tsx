@@ -58,6 +58,9 @@ export function WalletPage() {
   const [repLedgerRows, setRepLedgerRows] = useState<RepTransactionRow[]>([]);
   const [isLoadingWallet, setIsLoadingWallet] = useState(false);
 
+  // Maps the backend rep ledger to a display row. We deliberately drop the
+  // gross amount and the HARX share so the rep never sees the 70/30 split —
+  // that info is confidential.
   const mapRepLedgerToDisplay = (rows: RepTransactionRow[]) =>
     rows.map((row) => {
       const typeLabel =
@@ -72,13 +75,11 @@ export function WalletPage() {
         type: typeLabel,
         ledgerType: row.type,
         amount: row.repShare,
-        grossAmount: row.amount,
-        harxShare: row.harxShare,
         status: row.status === 'earned' ? 'Completed' : row.status === 'paid' ? 'Paid' : 'Refused',
         date: row.createdAt,
         method: 'Wallet',
         reference: row.callId || row.sourceId,
-        description: row.description || `${typeLabel} — ${gigTitle} (70% rep)`,
+        description: `${typeLabel} — ${gigTitle}`,
         gigId: row.gigId
       };
     });
@@ -156,7 +157,7 @@ export function WalletPage() {
   const gigCommissions: Record<string, { rate: string; rules: string; bonus: string }> = {
     all: {
       rate: 'Taux Variable',
-      rules: 'Sélectionnez un Gig spécifique pour consulter votre part (70%) sur ce projet.',
+      rules: 'Sélectionnez un Gig spécifique pour consulter votre commission sur ce projet.',
       bonus: 'Bonus actifs'
     },
     '69df585b6cad0fd23cffc2ae': {
@@ -206,7 +207,7 @@ export function WalletPage() {
         rules:
           comm?.additionalDetails ||
           gigData?.description ||
-          "Barème de commission standard pour ce projet — votre part 70%.",
+          "Barème de commission standard pour ce projet.",
         bonus
       };
     }
@@ -567,11 +568,6 @@ export function WalletPage() {
                             {transaction.type === 'Payout' ? '-' : '+'}
                             {transaction.amount.toFixed(2)} €
                           </p>
-                          {transaction.grossAmount != null && transaction.type !== 'Payout' && (
-                            <p className="text-[9px] text-slate-400 font-bold mt-0.5">
-                              Brut {transaction.grossAmount.toFixed(2)} € · HARX 30% {transaction.harxShare?.toFixed(2)} €
-                            </p>
-                          )}
                           <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
                             transaction.status === 'Completed' 
                               ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
@@ -672,7 +668,7 @@ export function WalletPage() {
                   </div>
                   <div className="text-left sm:text-right shrink-0">
                     <span className="text-[9px] font-black text-slate-400 block uppercase tracking-wider">
-                      Ma commission (70%)
+                      Ma commission
                     </span>
                     <span className="text-sm font-black text-blue-600 block mt-0.5">
                       {getSelectedGigCommission().rate}
