@@ -798,6 +798,31 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                           <div className="h-px flex-1 bg-slate-200/60"></div>
                         </div>
 
+                        {/* Voicemail / non-productive banner.
+                            The backend neutralises every per-rubric score
+                            (→ "No" everywhere) when the LLM detects that
+                            the call never reached a human. Without this
+                            banner the grid below would look like a failing
+                            rep instead of "no contact, nothing to grade". */}
+                        {selectedCall.callOutcome === 'voicemail' && (
+                          <div className="rounded-3xl border border-amber-200 bg-amber-50/70 px-6 py-5 flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                              <ShieldAlert className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="text-[12px] font-black text-amber-900 uppercase tracking-widest">
+                                Appel non productif — messagerie vocale
+                              </p>
+                              <p className="text-[13px] text-amber-800/90 mt-1 leading-relaxed">
+                                Aucun échange exploitable n&apos;a eu lieu : les
+                                compétences de vente ne peuvent pas être
+                                évaluées sur cet appel. Les critères ci-dessous
+                                apparaissent en « No » par défaut.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {[
                             { label: 'Agent Fluency', key: "Agent fluency", icon: Globe, color: 'emerald' },
