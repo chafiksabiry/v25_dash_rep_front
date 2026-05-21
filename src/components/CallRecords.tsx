@@ -74,6 +74,38 @@ export interface CallRecord {
     transaction_detected?: boolean;
     refusal_detected?: boolean;
   };
+  // ── Unified call-analysis layer (shared with calls backend + ops dashboard) ──
+  /** Lifecycle of the AI analyzer: pending → processing → scored | auto_refused | error. */
+  ai_call_status?: 'pending' | 'processing' | 'scored' | 'auto_refused' | 'error' | null;
+  /** Persisted summary (LLM). Falls back to ai_call_score.overall.feedback when absent. */
+  ai_summary?: string | null;
+  /** Disposition of the call (transaction, appointment, refusal, voicemail, ...). */
+  callOutcome?:
+    | 'transaction'
+    | 'appointment'
+    | 'callback_requested'
+    | 'argued_interested'
+    | 'refusal'
+    | 'not_interested'
+    | 'already_insured'
+    | 'voicemail'
+    | 'no_answer'
+    | 'busy'
+    | 'wrong_number'
+    | 'fraud'
+    | 'too_short'
+    | 'connected_no_sale'
+    | null;
+  callOutcomeSource?: 'ai' | 'rep' | 'system' | null;
+  /** Denormalised flags. `flags.fraud` is the canonical fraud signal now. */
+  flags?: {
+    fraud?: boolean;
+    serious?: boolean;
+    transactionDetected?: boolean;
+    refusalDetected?: boolean;
+  };
+  callbackAt?: string | Date | null;
+  appointmentAt?: string | Date | null;
   agentValidation?: string;
   companyValidation?: string;
   childCalls?: string[];
@@ -135,6 +167,40 @@ interface CallRecordsProps {
   transactionValidationFilter?: 'all' | 'approved' | 'refused' | 'pending';
 }
 
+/** Is the AI analyzer still running (or hasn't run yet) for this call? */
+function isAnalysisPending(record: CallRecord): boolean {
+  // Prefer the explicit lifecycle field when the backend has set it.
+  if (record.ai_call_status) {
+    return record.ai_call_status === 'pending' || record.ai_call_status === 'processing';
+  }
+  // Legacy fallback: pre-analyzer calls only had `validByAI == null`.
+  return record.validByAI == null;
+}
+
+/** Map `callOutcome` to a short label + tone for the disposition pill. */
+function callOutcomeBadge(
+  outcome: CallRecord['callOutcome'] | undefined
+): { label: string; tone: string } | null {
+  if (!outcome) return null;
+  const map: Record<string, { label: string; tone: string }> = {
+    transaction:        { label: 'Transaction',  tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    appointment:        { label: 'RDV',          tone: 'bg-violet-50 text-violet-700 border-violet-200' },
+    callback_requested: { label: 'Rappel',       tone: 'bg-amber-50 text-amber-700 border-amber-200' },
+    argued_interested:  { label: 'Argumenté',    tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    refusal:            { label: 'Refus',        tone: 'bg-rose-50 text-rose-700 border-rose-200' },
+    not_interested:     { label: 'Pas intéressé', tone: 'bg-amber-50 text-amber-700 border-amber-200' },
+    already_insured:    { label: 'Déjà assuré',  tone: 'bg-blue-50 text-blue-700 border-blue-200' },
+    voicemail:          { label: 'Messagerie',   tone: 'bg-slate-50 text-slate-600 border-slate-200' },
+    no_answer:          { label: 'Non décroché', tone: 'bg-slate-50 text-slate-600 border-slate-200' },
+    busy:               { label: 'Occupé',       tone: 'bg-slate-50 text-slate-600 border-slate-200' },
+    wrong_number:       { label: 'Faux numéro',  tone: 'bg-rose-50 text-rose-700 border-rose-200' },
+    fraud:              { label: 'Fraude',       tone: 'bg-rose-100 text-rose-800 border-rose-300' },
+    too_short:          { label: 'Trop court',   tone: 'bg-slate-50 text-slate-500 border-slate-200' },
+    connected_no_sale:  { label: 'Sans suite',   tone: 'bg-slate-50 text-slate-600 border-slate-200' },
+  };
+  return map[outcome] || null;
+}
+
 export function CallRecords({ gigId, leadId, callValidationFilter = 'all', transactionValidationFilter = 'all' }: CallRecordsProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -170,14 +236,24 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
       const response = await api.calls.analyze(callId);
       if (response.success) {
         if (selectedCall && (selectedCall._id === callId || (selectedCall as any).$oid === callId)) {
-          setSelectedCall({
-            ...selectedCall,
-            ai_call_score: response.data,
-            transcript: response.transcript || selectedCall.transcript,
-            validByAI: response.validByAI,
-            valid: response.validByAI,
-            argumentation_score: response.data?.Argumentation?.score
-          });
+          // The analyzer returns different shapes depending on the path:
+          //   • auto-refused: { validByAI:false, callOutcome, data: <full updated call> }
+          //   • scored:       { validByAI, data: <scores>, transcript }
+          // We merge both shapes so the modal reflects the new lifecycle.
+          const isFullDoc =
+            response.data && typeof response.data === 'object' && '_id' in response.data;
+          const patch: Partial<CallRecord> = isFullDoc
+            ? (response.data as Partial<CallRecord>)
+            : {
+                ai_call_score: response.data,
+                transcript: response.transcript || selectedCall.transcript,
+                validByAI: response.validByAI,
+                valid: response.validByAI,
+                argumentation_score: response.data?.Argumentation?.score,
+                ai_call_status: 'scored',
+                callOutcome: response.callOutcome ?? selectedCall.callOutcome ?? null,
+              };
+          setSelectedCall({ ...selectedCall, ...patch });
         }
         fetchCallRecords();
       }
@@ -212,7 +288,10 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
 
     // Call Validation Filter
     if (callValidationFilter === 'approved' && record.validByAI !== true) return false;
-    if (callValidationFilter === 'pending' && record.validByAI != null) return false;
+    // "Pending" = analyzer hasn't reached a verdict yet. Uses the new
+    // ai_call_status field when available, falls back to the legacy
+    // `validByAI == null` heuristic for older calls.
+    if (callValidationFilter === 'pending' && !isAnalysisPending(record)) return false;
 
     // Transaction Validation Filter
     if (transactionValidationFilter === 'approved' && record.transaction?.validByReps !== true) return false;
@@ -286,7 +365,7 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                         <Phone className="w-6 h-6" />
                       </div>
                       <div>
-                        <h3 className="font-black text-slate-900 text-sm tracking-tight flex items-center gap-2">
+                        <h3 className="font-black text-slate-900 text-sm tracking-tight flex items-center gap-2 flex-wrap">
                           <span>
                             {record.lead?.First_Name ? `${record.lead.First_Name} ${record.lead.Last_Name || ''}`.trim() :
                               record.lead?.name || record.to || record.from || 'Unknown Customer'}
@@ -297,6 +376,27 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                               className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 shrink-0"
                             >
                               <BadgeCheck className="w-3 h-3" />
+                            </span>
+                          )}
+                          {(() => {
+                            const badge = callOutcomeBadge(record.callOutcome);
+                            if (!badge) return null;
+                            return (
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${badge.tone}`}
+                                title={`Issue de l'appel : ${badge.label}`}
+                              >
+                                {badge.label}
+                              </span>
+                            );
+                          })()}
+                          {record.flags?.fraud === true && record.callOutcome !== 'fraud' && (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border bg-rose-100 text-rose-800 border-rose-300"
+                              title="Score Fraud detection < 50"
+                            >
+                              <ShieldAlert className="w-2.5 h-2.5" />
+                              Fraude
                             </span>
                           )}
                         </h3>
@@ -368,8 +468,23 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                                   </span>
                                 );
                               })()
+                            ) : record.ai_call_status === 'error' ? (
+                              <span
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100/40 shadow-sm w-32 whitespace-nowrap"
+                                title="L'analyse a échoué — réessayez depuis l'aperçu"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                Erreur analyse
+                              </span>
                             ) : (
-                              <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border border-slate-200/40 shadow-sm w-32 whitespace-nowrap">
+                              <span
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-400 border border-slate-200/40 shadow-sm w-32 whitespace-nowrap"
+                                title={
+                                  record.ai_call_status === 'processing'
+                                    ? "L'IA scanne l'enregistrement…"
+                                    : "Analyse à venir"
+                                }
+                              >
                                 <Clock className="w-3.5 h-3.5 animate-pulse" />
                                 Analyse en cours
                               </span>
@@ -658,7 +773,10 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                             <div className="bg-gradient-to-br from-slate-50 to-white rounded-[32px] p-8 border border-slate-100 shadow-inner">
                               <p className="text-xl font-bold text-slate-800 leading-relaxed italic relative">
                                 <span className="absolute -left-4 -top-4 text-emerald-200 text-6xl font-serif opacity-50">&quot;</span>
-                                {selectedCall.ai_call_score?.overall?.feedback || 'Analyse en cours...'}
+                                {/* Prefer the persisted ai_summary; fall back to the rubric's overall feedback. */}
+                                {selectedCall.ai_summary ||
+                                  selectedCall.ai_call_score?.overall?.feedback ||
+                                  'Analyse en cours...'}
                                 <span className="text-emerald-200 text-6xl font-serif opacity-50 ml-1 leading-none align-bottom">&quot;</span>
                               </p>
                             </div>
