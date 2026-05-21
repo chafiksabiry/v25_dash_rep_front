@@ -27,15 +27,6 @@ import {
   ChevronDown,
   Clock,
   CreditCard,
-  Voicemail,
-  PhoneOff,
-  PhoneMissed,
-  Calendar as CalendarIcon,
-  Repeat,
-  Ban,
-  TrendingDown,
-  Hash,
-  HelpCircle,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
@@ -72,14 +63,18 @@ export interface CallRecord {
   valid?: boolean | null;
   ai_refusal_reason?: string | null;
   argumentation_score?: number;
+  // Each rubric carries: numeric `score`, free-text `feedback`, and a
+  // server-persisted boolean `passed` (true when score ≥ 50) used to render
+  // the Yes / No badge without re-thresholding on the client.
   ai_call_score?: {
-    'Agent fluency': { score: number; feedback: string };
-    'Sentiment analysis': { score: number; feedback: string };
-    'Fraud detection': { score: number; feedback: string };
-    'Script coherence': { score: number; feedback: string };
-    'Argumentation': { score: number; feedback: string };
-    'Transaction analysis'?: { score: number; feedback: string };
-    overall: { score: number; feedback: string };
+    'Agent fluency': { score: number; feedback: string; passed?: boolean };
+    'Sentiment analysis': { score: number; feedback: string; passed?: boolean };
+    'Fraud detection': { score: number; feedback: string; passed?: boolean };
+    'Script coherence': { score: number; feedback: string; passed?: boolean };
+    'Argumentation': { score: number; feedback: string; passed?: boolean };
+    'Script adherence'?: { score: number; feedback: string; passed?: boolean };
+    'Transaction analysis'?: { score: number; feedback: string; passed?: boolean };
+    overall: { score: number; feedback: string; passed?: boolean };
     transaction_detected?: boolean;
     refusal_detected?: boolean;
   };
@@ -184,180 +179,6 @@ function isAnalysisPending(record: CallRecord): boolean {
   }
   // Legacy fallback: pre-analyzer calls only had `validByAI == null`.
   return record.validByAI == null;
-}
-
-/**
- * Rich rendering details for the AI-Insights tab "Disposition" card.
- * One entry per `callOutcome` value, plus a sensible fallback for legacy
- * calls that don't carry the field yet.
- */
-type OutcomeDetail = {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  /** Tailwind color base used for borders, icons and the gradient header. */
-  color: 'emerald' | 'violet' | 'amber' | 'rose' | 'slate' | 'blue' | 'red';
-  /** One-liner explanation shown under the title. */
-  reason: string;
-  /** Suggested next-best-actions for the rep. */
-  nextActions: string[];
-};
-
-const OUTCOME_DETAILS: Record<string, OutcomeDetail> = {
-  transaction: {
-    label: 'Transaction conclue',
-    icon: BadgeCheck,
-    color: 'emerald',
-    reason: 'Le lead a accepté l\'offre durant l\'appel — vente détectée par l\'IA.',
-    nextActions: [
-      'Vérifier que la vente est bien marquée signée côté CRM',
-      'Confirmer la validation entreprise pour libérer la commission',
-    ],
-  },
-  appointment: {
-    label: 'Rendez-vous fixé',
-    icon: CalendarIcon,
-    color: 'violet',
-    reason: 'Un rendez-vous a été convenu avec le lead.',
-    nextActions: [
-      'S\'assurer que le RDV est synchronisé dans l\'agenda',
-      'Préparer la fiche lead pour le rappel de confirmation',
-    ],
-  },
-  callback_requested: {
-    label: 'Rappel demandé',
-    icon: Repeat,
-    color: 'amber',
-    reason: 'Le lead souhaite être rappelé plus tard.',
-    nextActions: [
-      'Planifier le rappel à l\'heure convenue',
-      'Noter le contexte pour éviter de repartir de zéro',
-    ],
-  },
-  argued_interested: {
-    label: 'Argumenté — intéressé',
-    icon: TrendingUp,
-    color: 'emerald',
-    reason: 'L\'argumentaire a été déroulé, le lead reste intéressé sans signer.',
-    nextActions: [
-      'Programmer un rappel court J+2',
-      'Préparer une réponse aux objections détectées',
-    ],
-  },
-  refusal: {
-    label: 'Refus catégorique',
-    icon: Ban,
-    color: 'rose',
-    reason: 'Le lead a refusé fermement l\'offre.',
-    nextActions: [
-      'Marquer le lead comme refus dans la base',
-      'Ne pas re-tenter avant la fenêtre de cooling-off',
-    ],
-  },
-  not_interested: {
-    label: 'Pas intéressé',
-    icon: TrendingDown,
-    color: 'amber',
-    reason: 'Lead poliment désintéressé — pas un refus catégorique.',
-    nextActions: [
-      'Tenter une approche différente plus tard',
-      'Vérifier si un autre produit correspond mieux',
-    ],
-  },
-  already_insured: {
-    label: 'Déjà assuré',
-    icon: ShieldCheck,
-    color: 'blue',
-    reason: 'Le lead a déjà une couverture en cours.',
-    nextActions: [
-      'Noter l\'échéance pour relancer avant renouvellement',
-      'Retirer le lead des prochaines campagnes immédiates',
-    ],
-  },
-  voicemail: {
-    label: 'Messagerie vocale',
-    icon: Voicemail,
-    color: 'slate',
-    reason: 'L\'appel est tombé sur la messagerie — aucun échange avec le lead.',
-    nextActions: [
-      'Replanifier l\'appel sur une plage horaire différente',
-      'Envoyer éventuellement un SMS court pour signaler le passage',
-    ],
-  },
-  no_answer: {
-    label: 'Non décroché',
-    icon: PhoneMissed,
-    color: 'slate',
-    reason: 'Le lead n\'a pas répondu.',
-    nextActions: [
-      'Rappeler dans 24h sur un autre créneau',
-      'Si > 5 tentatives sans réponse, basculer en "épuisé"',
-    ],
-  },
-  busy: {
-    label: 'Occupé',
-    icon: PhoneOff,
-    color: 'slate',
-    reason: 'Ligne occupée — pas de connexion établie.',
-    nextActions: ['Réessayer plus tard dans la journée'],
-  },
-  wrong_number: {
-    label: 'Faux numéro',
-    icon: Hash,
-    color: 'rose',
-    reason: 'Le numéro est invalide ou ne mène pas au lead.',
-    nextActions: [
-      'Marquer le lead comme "faux numéro" dans la base',
-      'Demander une mise à jour des coordonnées',
-    ],
-  },
-  fraud: {
-    label: 'Fraude détectée',
-    icon: ShieldAlert,
-    color: 'red',
-    reason: 'L\'IA a détecté un comportement frauduleux (score Fraud < 50).',
-    nextActions: [
-      'Signaler l\'appel pour revue par l\'équipe compliance',
-      'L\'appel ne génère pas de commission',
-    ],
-  },
-  too_short: {
-    label: 'Trop court',
-    icon: Clock,
-    color: 'slate',
-    // This outcome is reserved for calls the AI never scored (e.g. hangup
-    // before the analyzer pipeline ran). Scored calls go through
-    // `connected_no_sale` even when short, because content > duration.
-    reason: 'L\'appel a été interrompu avant l\'analyse IA — durée très courte.',
-    nextActions: [
-      'Rappeler le lead pour un vrai échange',
-      'Si l\'appel a duré quelques secondes seulement, vérifier l\'enregistrement',
-    ],
-  },
-  connected_no_sale: {
-    label: 'Connecté sans suite',
-    icon: HelpCircle,
-    color: 'slate',
-    // Catch-all for calls where the AI ran but no specific signal triggered
-    // (e.g. agent silent, dead-air, polite but non-engaging exchange).
-    reason: 'Conversation établie sans issue claire identifiée par l\'IA.',
-    nextActions: [
-      'Consulter le transcript et les scores IA pour comprendre',
-      'Replanifier un appel si le potentiel reste à explorer',
-    ],
-  },
-};
-
-/** Resolve a CallRecord to its OutcomeDetail (with a safe fallback). */
-function resolveOutcomeDetail(record: CallRecord): OutcomeDetail {
-  if (record.callOutcome && OUTCOME_DETAILS[record.callOutcome]) {
-    return OUTCOME_DETAILS[record.callOutcome]!;
-  }
-  // Legacy fallback: derive from telephony status when callOutcome is missing.
-  const status = (record.status || '').toLowerCase();
-  if (['no-answer', 'noanswer', 'canceled', 'cancelled'].includes(status)) return OUTCOME_DETAILS.no_answer!;
-  if (status === 'busy') return OUTCOME_DETAILS.busy!;
-  if (status === 'failed') return OUTCOME_DETAILS.wrong_number!;
-  return OUTCOME_DETAILS.connected_no_sale!;
 }
 
 /** Map `callOutcome` to a short label + tone for the disposition pill. */
@@ -907,37 +728,21 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                   )}
                 </div>
               ) : (
-                <div className="max-w-5xl mx-auto space-y-8 pb-4">
-                  {/* Disposition + schedule cards — shown for EVERY call so reps
-                      see the AI's verdict even when the rich rubric below is
-                      unavailable (voicemail, no-answer, busy, fraud, …). */}
-                  <OutcomeInsightCard
-                    record={selectedCall}
-                    pending={isAnalysisPending(selectedCall)}
-                    error={selectedCall.ai_call_status === 'error'}
-                    onAnalyze={() => handleAnalyzeCall(selectedCall._id)}
-                    analyzing={analyzingCallId === selectedCall._id}
-                  />
-                  <CallScheduleCard record={selectedCall} />
-
+                <div className="max-w-5xl mx-auto space-y-10 pb-4">
                   {(!selectedCall.ai_call_score || !selectedCall.ai_call_score.overall?.score) ? (
-                    // Legacy calls without any rubric → keep an inline analyze CTA
-                    // for the ones that COULD still be scored (completed with audio).
-                    selectedCall.recording_url_cloudinary && (
-                      <div className="py-6 text-center flex flex-col items-center justify-center gap-3 border border-dashed border-slate-200 rounded-3xl bg-white/70">
-                        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs italic">
-                          Analyse détaillée non encore générée
-                        </p>
-                        <button
-                          onClick={() => handleAnalyzeCall(selectedCall._id)}
-                          disabled={analyzingCallId === selectedCall._id}
-                          className="flex items-center gap-2 px-6 py-3 bg-harx-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-harx-600 transition-all shadow-lg shadow-harx-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Brain className={`w-4 h-4 ${analyzingCallId === selectedCall._id ? 'animate-spin' : ''}`} />
-                          {analyzingCallId === selectedCall._id ? 'Analyse...' : 'Lancer l\'analyse IA'}
-                        </button>
-                      </div>
-                    )
+                    <div className="py-10 text-center flex flex-col items-center justify-center gap-4">
+                      <p className="text-slate-400 font-bold uppercase tracking-widest text-xs italic">
+                        Analyse détaillée non encore générée
+                      </p>
+                      <button
+                        onClick={() => handleAnalyzeCall(selectedCall._id)}
+                        disabled={analyzingCallId === selectedCall._id}
+                        className="flex items-center gap-2 px-6 py-3 bg-harx-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-harx-600 transition-all shadow-lg shadow-harx-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Brain className={`w-4 h-4 ${analyzingCallId === selectedCall._id ? 'animate-spin' : ''}`} />
+                        {analyzingCallId === selectedCall._id ? 'Analyse...' : 'Lancer l\'analyse IA'}
+                      </button>
+                    </div>
                   ) : (
                     <>
                       {/* Executive Summary Section - Now at the Top */}
@@ -1009,6 +814,13 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                             const scoreColorClass = score >= 80 ? 'text-emerald-600 bg-emerald-50' :
                               score >= 50 ? 'text-amber-600 bg-amber-50' :
                                 'text-rose-600 bg-rose-50';
+                            // Binary verdict: prefer the persisted `passed`
+                            // boolean (written by analyzeCall), fall back to
+                            // the threshold for legacy calls.
+                            const passed =
+                              typeof metricData?.passed === 'boolean'
+                                ? metricData.passed
+                                : score >= 50;
 
                             return (
                               <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl shadow-slate-200/20 hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500 flex flex-col h-full group">
@@ -1016,11 +828,29 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
                                   <div className={`w-14 h-14 rounded-2xl bg-${metric.color}-50 text-${metric.color}-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500`}>
                                     <metric.icon className="w-7 h-7" />
                                   </div>
-                                  <div className="text-right flex flex-col items-end">
+                                  <div className="text-right flex flex-col items-end gap-2">
                                     <div className={`px-4 py-2 rounded-2xl text-xl font-black shadow-sm border border-transparent ${scoreColorClass}`}>
                                       {score}%
                                     </div>
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">Score de qualité</p>
+                                    {/* Yes / No verdict — single source of
+                                        truth for the binary read of this
+                                        rubric, persisted server-side as
+                                        ai_call_score[key].passed */}
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                        passed
+                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                          : 'bg-rose-50 text-rose-700 border-rose-200'
+                                      }`}
+                                      title={passed ? 'Critère validé' : 'Critère non validé'}
+                                    >
+                                      {passed ? (
+                                        <Check className="w-3 h-3" />
+                                      ) : (
+                                        <X className="w-3 h-3" />
+                                      )}
+                                      {passed ? 'Yes' : 'No'}
+                                    </span>
                                   </div>
                                 </div>
 
@@ -1066,273 +896,3 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-//  AI Insights — supporting components
-// ────────────────────────────────────────────────────────────────────────────
-
-/** Color palette used by OutcomeInsightCard. Centralised so each tone keeps
- *  border / icon / accent in sync without sprinkling Tailwind utilities. */
-const OUTCOME_PALETTE: Record<
-  OutcomeDetail['color'],
-  { gradient: string; border: string; icon: string; accent: string }
-> = {
-  emerald: {
-    gradient: 'from-emerald-400 to-teal-500',
-    border: 'border-emerald-100/50',
-    icon: 'bg-emerald-50 text-emerald-600',
-    accent: 'text-emerald-600',
-  },
-  violet: {
-    gradient: 'from-violet-400 to-fuchsia-500',
-    border: 'border-violet-100/50',
-    icon: 'bg-violet-50 text-violet-600',
-    accent: 'text-violet-600',
-  },
-  amber: {
-    gradient: 'from-amber-400 to-orange-500',
-    border: 'border-amber-100/50',
-    icon: 'bg-amber-50 text-amber-600',
-    accent: 'text-amber-600',
-  },
-  rose: {
-    gradient: 'from-rose-400 to-pink-500',
-    border: 'border-rose-100/50',
-    icon: 'bg-rose-50 text-rose-600',
-    accent: 'text-rose-600',
-  },
-  red: {
-    gradient: 'from-red-500 to-rose-600',
-    border: 'border-red-200',
-    icon: 'bg-red-100 text-red-700',
-    accent: 'text-red-700',
-  },
-  slate: {
-    gradient: 'from-slate-400 to-slate-600',
-    border: 'border-slate-200/60',
-    icon: 'bg-slate-100 text-slate-600',
-    accent: 'text-slate-600',
-  },
-  blue: {
-    gradient: 'from-blue-400 to-sky-500',
-    border: 'border-blue-100/50',
-    icon: 'bg-blue-50 text-blue-600',
-    accent: 'text-blue-600',
-  },
-};
-
-/**
- * Contextual "Disposition" card shown at the top of the AI Insights tab.
- *
- * Renders the persisted `callOutcome` with a human-readable explanation and
- * suggested next-best-actions. For pending/error analyses it shows a clear
- * lifecycle state instead of a vague spinner.
- */
-function OutcomeInsightCard({
-  record,
-  pending,
-  error,
-  onAnalyze,
-  analyzing,
-}: {
-  record: CallRecord;
-  pending: boolean;
-  error: boolean;
-  onAnalyze: () => void;
-  analyzing: boolean;
-}) {
-  // Lifecycle takes priority over the outcome itself.
-  if (error) {
-    return (
-      <div className="rounded-[32px] border border-rose-200 bg-rose-50/40 p-8 shadow-lg shadow-rose-100/30">
-        <div className="flex items-start gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
-            <ShieldAlert className="w-7 h-7" />
-          </div>
-          <div className="flex-1">
-            <h4 className="text-lg font-black text-rose-700 uppercase tracking-widest">
-              Analyse échouée
-            </h4>
-            <p className="mt-1 text-sm font-medium text-rose-700/80">
-              L'IA n'a pas pu noter cet appel. Vous pouvez relancer l'analyse.
-            </p>
-            <button
-              onClick={onAnalyze}
-              disabled={analyzing}
-              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-rose-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-700 transition-all disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${analyzing ? 'animate-spin' : ''}`} />
-              {analyzing ? 'Analyse…' : 'Relancer l\'analyse'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (pending) {
-    return (
-      <div className="rounded-[32px] border border-amber-200 bg-amber-50/40 p-8 shadow-lg shadow-amber-100/30">
-        <div className="flex items-start gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-            <Clock className="w-7 h-7 animate-pulse" />
-          </div>
-          <div className="flex-1">
-            <h4 className="text-lg font-black text-amber-700 uppercase tracking-widest">
-              Analyse en cours
-            </h4>
-            <p className="mt-1 text-sm font-medium text-amber-700/80">
-              L'IA scanne l'enregistrement. Les insights s'affichent automatiquement
-              dès que le scoring est terminé.
-            </p>
-            {record.recording_url_cloudinary && (
-              <button
-                onClick={onAnalyze}
-                disabled={analyzing}
-                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-700 transition-all disabled:opacity-50"
-              >
-                <Brain className={`w-3.5 h-3.5 ${analyzing ? 'animate-spin' : ''}`} />
-                {analyzing ? 'Analyse…' : 'Forcer l\'analyse maintenant'}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const detail = resolveOutcomeDetail(record);
-  const palette = OUTCOME_PALETTE[detail.color];
-  const Icon = detail.icon;
-  // Refusal reason is more informative than the generic label when present.
-  const subtitle =
-    record.ai_refusal_reason && detail.color !== 'emerald' ? record.ai_refusal_reason : null;
-
-  return (
-    <div className={`relative rounded-[32px] border ${palette.border} bg-white p-8 shadow-xl shadow-slate-200/20 overflow-hidden`}>
-      {/* Gradient blob */}
-      <div className={`absolute -top-20 -right-20 w-60 h-60 rounded-full bg-gradient-to-br ${palette.gradient} opacity-10 blur-3xl`} />
-
-      <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6 mb-6">
-        <div className="flex items-start gap-5">
-          <div className={`w-14 h-14 rounded-2xl ${palette.icon} flex items-center justify-center shrink-0 shadow-sm`}>
-            <Icon className="w-7 h-7" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">
-              Issue de l'appel
-            </p>
-            <h4 className={`mt-1 text-2xl font-black uppercase tracking-widest ${palette.accent}`}>
-              {detail.label}
-            </h4>
-            {record.callOutcomeSource && (
-              <span className="mt-1 inline-block text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                source : {record.callOutcomeSource === 'ai' ? 'IA' : record.callOutcomeSource === 'rep' ? 'rep' : 'système'}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="relative z-10 bg-slate-50/60 rounded-2xl p-5 border border-slate-100 mb-5">
-        <p className="text-sm font-medium text-slate-700 leading-relaxed">{detail.reason}</p>
-        {subtitle && (
-          <p className="mt-2 text-[12px] font-bold text-slate-500 italic">
-            Détail : {subtitle}
-          </p>
-        )}
-        {record.ai_summary && (
-          <p className="mt-3 text-[13px] font-medium text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
-            {record.ai_summary}
-          </p>
-        )}
-      </div>
-
-      {/* Flags grid — only show when meaningful so the card stays compact. */}
-      {(record.flags?.fraud || record.flags?.transactionDetected || record.flags?.refusalDetected) && (
-        <div className="relative z-10 flex flex-wrap gap-2 mb-5">
-          {record.flags?.fraud && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-red-100 text-red-700 border border-red-200">
-              <ShieldAlert className="w-3 h-3" /> Fraude
-            </span>
-          )}
-          {record.flags?.transactionDetected && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-700 border border-emerald-200">
-              <BadgeCheck className="w-3 h-3" /> Transaction détectée
-            </span>
-          )}
-          {record.flags?.refusalDetected && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-100 text-rose-700 border border-rose-200">
-              <Ban className="w-3 h-3" /> Refus exprimé
-            </span>
-          )}
-        </div>
-      )}
-
-      <div className="relative z-10">
-        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-3">
-          Prochaines actions
-        </p>
-        <ul className="space-y-2">
-          {detail.nextActions.map((action, i) => (
-            <li key={i} className="flex items-start gap-2 text-[13px] font-medium text-slate-600">
-              <Check className={`w-4 h-4 mt-0.5 shrink-0 ${palette.accent}`} />
-              <span>{action}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Surfaces `callbackAt` / `appointmentAt` when the analyzer extracted them.
- * Hidden when neither is set so non-scheduling calls keep the modal short.
- */
-function CallScheduleCard({ record }: { record: CallRecord }) {
-  const cb = record.callbackAt ? new Date(record.callbackAt) : null;
-  const ap = record.appointmentAt ? new Date(record.appointmentAt) : null;
-  if (!cb && !ap) return null;
-
-  const fmt = (d: Date) =>
-    d.toLocaleString('fr-FR', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-  return (
-    <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-md">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-          <CalendarIcon className="w-5 h-5" />
-        </div>
-        <h5 className="text-sm font-black text-slate-900 uppercase tracking-widest">
-          Planning
-        </h5>
-      </div>
-      <ul className="space-y-2">
-        {cb && (
-          <li className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-amber-50/60 border border-amber-100">
-            <span className="flex items-center gap-2 text-[12px] font-bold text-amber-700">
-              <Repeat className="w-3.5 h-3.5" />
-              Rappel programmé
-            </span>
-            <span className="text-[12px] font-black text-slate-800 tabular-nums">{fmt(cb)}</span>
-          </li>
-        )}
-        {ap && (
-          <li className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-violet-50/60 border border-violet-100">
-            <span className="flex items-center gap-2 text-[12px] font-bold text-violet-700">
-              <CalendarIcon className="w-3.5 h-3.5" />
-              Rendez-vous
-            </span>
-            <span className="text-[12px] font-black text-slate-800 tabular-nums">{fmt(ap)}</span>
-          </li>
-        )}
-      </ul>
-    </div>
-  );
-}
