@@ -73,8 +73,18 @@ export function AvailableSlotsGrid({ gigId, selectedDate, onReservationMade }: A
             return;
         }
 
-        // Check if already reserved
-        const existingReservation = reservations.find(r => r.slotId === slot._id);
+        // Already reserved? Slots can be recurring (same `_id` reusable
+        // across multiple dates), so we must compare BOTH the slotId AND
+        // the target date, AND ignore cancelled reservations. Otherwise a
+        // single past reservation would lock the rep out of every future
+        // booking on the same recurring slot.
+        const targetDateKey = format(selectedDate, 'yyyy-MM-dd');
+        const existingReservation = reservations.find((r) => {
+            if (r.slotId !== slot._id) return false;
+            if (r.status === 'cancelled') return false;
+            const reservedKey = (r.reservationDate || r.date || '').slice(0, 10);
+            return reservedKey === targetDateKey;
+        });
         if (existingReservation) {
             setMessage({ text: 'You already have a reservation for this slot', type: 'error' });
             return;
