@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAgent } from '../../contexts/AgentContext';
 import { Device } from '@twilio/voice-sdk';
 import axios from 'axios';
@@ -15,6 +16,7 @@ interface TokenResponse {
 }
 
 export function ContactInfo() {
+  const { t } = useTranslation();
   const { storeCall } = useCallStorage();
   const { profile: agentProfile } = useAgentProfile();
 
@@ -456,29 +458,57 @@ export function ContactInfo() {
     <>
       {/* Blocking "Saving call…" overlay shown right after the rep hangs up.
           Prevents premature navigation while the recording is being
-          finalised and the call document is being persisted in Mongo. */}
+          finalised and the call document is being persisted in Mongo.
+          The overlay is portal-style (fixed inset-0, z-[9999]) so it
+          floats above the COCKPIT tab, the dashboard layout's gig setup
+          banner, and any other modal that might be open. */}
       {isSaving && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 px-8 py-7 flex flex-col items-center gap-4 max-w-sm mx-4">
+        <div
+          role="alertdialog"
+          aria-busy="true"
+          aria-live="assertive"
+          aria-label={t('workspace.savingCall.title')}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
+        >
+          <div className="relative bg-white rounded-3xl shadow-2xl border border-slate-100 px-10 py-9 flex flex-col items-center gap-5 max-w-md mx-4 animate-in zoom-in-95 duration-300">
+            {/* Animated halo around the icon */}
             <div className="relative">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-harx-500 to-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/30">
-                <Phone className="w-6 h-6 text-white" />
+              <span className="absolute inset-0 -m-3 rounded-full bg-rose-500/20 animate-ping" />
+              <span className="absolute inset-0 -m-1.5 rounded-full bg-rose-500/30 animate-pulse" />
+              <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-harx-500 to-rose-500 flex items-center justify-center shadow-xl shadow-rose-500/40">
+                <Phone className="w-7 h-7 text-white" />
               </div>
-              <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full animate-pulse"></span>
+              <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
             </div>
+
             <div className="text-center">
-              <p className="text-sm font-black uppercase tracking-widest text-slate-900">
-                Saving call…
+              <p className="text-base font-black uppercase tracking-widest text-slate-900">
+                {t('workspace.savingCall.title')}
               </p>
-              <p className="text-[11px] font-bold text-slate-500 mt-1 leading-relaxed">
-                Hang on a few seconds — we're finalising the recording and
-                preparing the AI analysis.
+              <p className="text-[12px] font-bold text-slate-500 mt-2 leading-relaxed max-w-xs mx-auto">
+                {t('workspace.savingCall.subtitle')}
+              </p>
+              <p className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[9px] font-black uppercase tracking-widest text-amber-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                {t('workspace.savingCall.hint')}
               </p>
             </div>
-            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full w-1/3 bg-gradient-to-r from-harx-500 to-rose-500 rounded-full animate-[shimmer_1.4s_ease-in-out_infinite]"></div>
+
+            {/* Indeterminate progress bar */}
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full w-1/3 bg-gradient-to-r from-harx-500 via-rose-500 to-harx-500 rounded-full animate-[savingBar_1.4s_ease-in-out_infinite]" />
             </div>
           </div>
+          {/* Tailwind doesn't ship an indeterminate bar animation, so we
+              inject the keyframes inline. Scoped to the overlay so it
+              doesn't leak into other components. */}
+          <style>{`
+            @keyframes savingBar {
+              0%   { transform: translateX(-110%); }
+              50%  { transform: translateX(110%); }
+              100% { transform: translateX(110%); }
+            }
+          `}</style>
         </div>
       )}
       <div className="bg-white/80 border border-gray-100 backdrop-blur-md rounded-2xl shadow-sm px-5 py-3 flex items-center justify-between mt-2 mb-2">

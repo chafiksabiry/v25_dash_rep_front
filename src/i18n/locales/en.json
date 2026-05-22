@@ -59,7 +59,12 @@
     "closeDetails": "Close Details"
   },
   "workspace": {
-    "title": "Workspace"
+    "title": "Workspace",
+    "savingCall": {
+      "title": "Saving the call…",
+      "subtitle": "Hang on a few seconds — we're finalising the recording and preparing the AI analysis.",
+      "hint": "Please don't close this page."
+    }
   },
   "sessionPlanning": {
     "title": "Session Planning"
