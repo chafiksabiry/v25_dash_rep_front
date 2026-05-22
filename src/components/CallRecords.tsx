@@ -215,7 +215,10 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
   const [error, setError] = useState<string | null>(null);
   const [analyzingCallId, setAnalyzingCallId] = useState<string | null>(null);
 
-  const fetchCallRecords = async () => {
+  // `silent=true` skips the loading spinner — used by the auto-poll loop so
+  // the user doesn't see the skeleton flash every 5s while the backend's
+  // post-call AI analyzer catches up.
+  const fetchCallRecords = async (silent = false) => {
     try {
       const agentId = localStorage.getItem('agentId');
       if (!agentId) throw new Error('Agent ID not found');
@@ -227,10 +230,12 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
       } else {
         throw new Error(response.message || 'Failed to fetch call records');
       }
-      setLoading(false);
+      if (!silent) setLoading(false);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch call records');
-      setLoading(false);
+      if (!silent) {
+        setError(err.message || 'Failed to fetch call records');
+        setLoading(false);
+      }
     }
   };
 
@@ -273,6 +278,38 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
   useEffect(() => {
     fetchCallRecords();
   }, [gigId, leadId]);
+
+  // ── Auto-poll while the backend AI analyzer hasn't finished ──────────
+  //  The calls backend automatically triggers `analyzeCall` ~3s after the
+  //  recording is uploaded (see `twilio.js#saveCallToDB`), so the rep
+  //  shouldn't have to click "Lancer l'analyse IA" or hit the refresh
+  //  button manually. We poll every 5s as long as ≥1 record is still
+  //  pending (status `pending`/`processing` or legacy `validByAI == null`).
+  //  Silent fetches keep the UI calm — no skeletons, no flicker.
+  const hasPendingAnalyses = callRecords.some((r) => isAnalysisPending(r));
+
+  useEffect(() => {
+    if (!hasPendingAnalyses) return;
+    const interval = setInterval(() => {
+      fetchCallRecords(true);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [hasPendingAnalyses]);
+
+  // Keep the open call-details modal in sync with the auto-poll above: as
+  // soon as the matching record gets scored on the server, refresh the
+  // selected call so the user sees the freshly computed insights without
+  // closing & reopening the modal.
+  useEffect(() => {
+    if (!selectedCall) return;
+    const refreshed = callRecords.find((r) => r._id === selectedCall._id);
+    if (!refreshed) return;
+    const wasPending = isAnalysisPending(selectedCall);
+    const isScoredNow = !isAnalysisPending(refreshed);
+    if (wasPending && isScoredNow) {
+      setSelectedCall(refreshed);
+    }
+  }, [callRecords, selectedCall]);
 
 
   const openCallDetails = (call: CallRecord, tab: 'transcript' | 'insights') => {
