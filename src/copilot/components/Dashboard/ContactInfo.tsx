@@ -41,13 +41,15 @@ export function ContactInfo() {
     transactionOccurredRef.current = transactionOccurred;
   }, [transactionOccurred]);
 
-  const [showCallSummary, setShowCallSummary] = useState(false);
-  const [lastCallDetails, setLastCallDetails] = useState<{
-    sid: string;
-    leadName: string;
-    transactionOccurred: boolean | null;
-    recordingUrl?: string | null;
-  } | null>(null);
+  // `showCallSummary` / `lastCallDetails` (the inline "Journal de l'appel"
+  // banner) were removed — the rep is now auto-navigated to the Call
+  // History tab and the call-details modal opens automatically.
+  // Blocks the workspace UI while the call is being persisted to the DB so
+  // the rep cannot navigate away mid-save (storing a recorded call takes
+  // ~7s for Twilio to finalise the recording). Once the save resolves we
+  // dispatch `harx:call-saved` and the parent workspace switches to the
+  // Call History tab + auto-opens the just-saved call's modal.
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleToggleMic = () => {
     dispatch({ type: 'TOGGLE_MIC' });
@@ -266,40 +268,64 @@ export function ContactInfo() {
         dispatch({ type: 'END_CALL' });
       };
 
-      // Register disconnect listener once
+      // Register disconnect listener once.
+      // This is the SINGLE source of truth for post-hangup cleanup + save.
+      // We used to register a second `conn.on('disconnect')` further down
+      // which caused a double-save (and inconsistent UI updates). It has
+      // been removed in favour of this consolidated handler.
       conn.on('disconnect', async () => {
         console.log('🔴 Call disconnected - Starting cleanup and save');
-        
+
         const sidToSave = callSidRef.current;
         const recordingStatus = isRecordingRef.current;
-        
+
+        // Show the blocking "Saving call…" overlay BEFORE the storeCall
+        // promise resolves so the rep gets immediate feedback.
+        setIsSaving(true);
+
         try {
           if (sidToSave) {
             console.log(`💾 Triggering save for SID: ${sidToSave} (Recording: ${recordingStatus})`);
-            
+
             // Extract IDs for root level storage
             const gigId = (apiLead as any)?.gigId?._id || (apiLead as any)?.gigId || null;
             const companyId = (apiLead as any)?.companyId || null;
 
-            await storeCall(sidToSave, contact.id, recordingStatus, gigId, companyId, transactionOccurredRef.current);
+            const savedCall = await storeCall(
+              sidToSave,
+              contact.id,
+              recordingStatus,
+              gigId,
+              companyId,
+              transactionOccurredRef.current
+            );
             console.log('✅ Call details saved successfully via disconnect handler');
 
-            setLastCallDetails({
-              sid: sidToSave,
-              leadName: contact.name,
-              transactionOccurred: transactionOccurredRef.current,
-              recordingUrl: state.callState.recordingUrl
-            });
-            setShowCallSummary(true);
+            // Notify the parent Workspace so it can switch to the Call
+            // History tab and auto-open the modal for this specific call.
+            // We send the Twilio SID (always known) and, when available,
+            // the Mongo _id so the modal can deep-link without a fuzzy
+            // match on the records list.
+            const savedCallId = (savedCall && (savedCall._id || (savedCall as any).id)) || null;
+            window.dispatchEvent(
+              new CustomEvent('harx:call-saved', {
+                detail: {
+                  sid: sidToSave,
+                  callId: savedCallId,
+                  leadId: contact.id,
+                },
+              })
+            );
           } else {
             console.warn('⚠️ No SID available in Ref during disconnect');
           }
         } catch (error) {
           console.error('❌ Error saving call in disconnect handler:', error);
         } finally {
+          setIsSaving(false);
           cleanup();
           setCallStatus('idle');
-          setActiveConnection(null); // Changed from setConnection(null)
+          setActiveConnection(null);
           setCurrentCallSid(null);
           callSidRef.current = null;
         }
@@ -360,44 +386,10 @@ export function ContactInfo() {
         console.log('Setting call details:', { callSid: Sid, agentId: contact.id });
       });
 
-      conn.on('disconnect', async () => {
-        console.log("Call disconnected");
-        setCallStatus('idle'); // Reset to idle to allow new calls
-        setActiveConnection(null);
-        setActiveDevice(null);
-        dispatch({ type: 'SET_MEDIA_STREAM', mediaStream: null });
-        dispatch({ type: 'CLEAR_TWILIO_CONNECTION' });
-
-        // Cleanup local stream
-        if (localStreamRef.current) {
-          localStreamRef.current.getTracks().forEach(track => track.stop());
-          localStreamRef.current = null;
-        }
-
-        // Stop transcription
-        await stopTranscription();
-
-        if (currentCallSid && contact.id) {
-          console.log(`💾 Call disconnected. Triggering storage for SID: ${currentCallSid}. Recording: ${isRecordingRef.current}`);
-          
-          // Extract IDs for root level storage
-          const gigId = (apiLead as any)?.gigId?._id || (apiLead as any)?.gigId || null;
-          const companyId = (apiLead as any)?.companyId || null;
-
-          await storeCall(currentCallSid, contact.id, isRecordingRef.current, gigId, companyId, transactionOccurredRef.current);
-
-          setLastCallDetails({
-            sid: currentCallSid,
-            leadName: contact.name,
-            transactionOccurred: transactionOccurredRef.current,
-            recordingUrl: state.callState.recordingUrl
-          });
-          setShowCallSummary(true);
-        }
-
-        // Ajout : dispatch END_CALL pour mettre à jour le context global
-        dispatch({ type: 'END_CALL' });
-      });
+      // NOTE: a second `conn.on('disconnect')` listener used to live here
+      // and called `storeCall` again, causing a duplicate save in the
+      // backend and racy UI state. The consolidated handler above is now
+      // the single source of truth for post-hangup behaviour.
 
       conn.on('error', (error: any) => {
         console.error("Call error:", error);
@@ -462,6 +454,33 @@ export function ContactInfo() {
 
   return (
     <>
+      {/* Blocking "Saving call…" overlay shown right after the rep hangs up.
+          Prevents premature navigation while the recording is being
+          finalised and the call document is being persisted in Mongo. */}
+      {isSaving && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 px-8 py-7 flex flex-col items-center gap-4 max-w-sm mx-4">
+            <div className="relative">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-harx-500 to-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/30">
+                <Phone className="w-6 h-6 text-white" />
+              </div>
+              <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full animate-pulse"></span>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-black uppercase tracking-widest text-slate-900">
+                Saving call…
+              </p>
+              <p className="text-[11px] font-bold text-slate-500 mt-1 leading-relaxed">
+                Hang on a few seconds — we're finalising the recording and
+                preparing the AI analysis.
+              </p>
+            </div>
+            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full w-1/3 bg-gradient-to-r from-harx-500 to-rose-500 rounded-full animate-[shimmer_1.4s_ease-in-out_infinite]"></div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="bg-white/80 border border-gray-100 backdrop-blur-md rounded-2xl shadow-sm px-5 py-3 flex items-center justify-between mt-2 mb-2">
         {/* Avatar + Infos */}
         {/* Avatar + Infos */}
@@ -605,71 +624,12 @@ export function ContactInfo() {
         </div>
       </div>
 
-      {showCallSummary && lastCallDetails && (
-        <div className="bg-gradient-to-r from-gray-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-2xl shadow-xl p-5 mt-3 mb-3 animate-in slide-in-from-top-2 fade-in duration-300">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-indigo-500/10 text-indigo-400 rounded-lg border border-indigo-500/20">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              </div>
-              <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Journal de l'appel / Call Session Log</h3>
-            </div>
-            <button
-              onClick={() => setShowCallSummary(false)}
-              className="p-1.5 hover:bg-white/10 text-gray-400 hover:text-white rounded-lg transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-              <span className="text-[8px] font-black uppercase text-gray-400 tracking-widest block mb-1">PROSPECT (LEAD)</span>
-              <span className="text-xs font-black text-white">{lastCallDetails.leadName}</span>
-            </div>
-            
-            <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-              <span className="text-[8px] font-black uppercase text-gray-400 tracking-widest block mb-1">TWILIO SID</span>
-              <span className="text-[10px] font-mono font-bold text-indigo-300 truncate block">{lastCallDetails.sid}</span>
-            </div>
-            
-            <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-              <span className="text-[8px] font-black uppercase text-gray-400 tracking-widest block mb-1">TRANSACTION STATUS</span>
-              {lastCallDetails.transactionOccurred === true ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
-                  OK / Transaction validée
-                </span>
-              ) : lastCallDetails.transactionOccurred === false ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                  <span className="w-1.5 h-1.5 bg-rose-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(251,113,133,0.5)]"></span>
-                  Refus / Échec
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/5 text-gray-400 border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                  Non Précisé / Non renseigné
-                </span>
-              )}
-            </div>
-            
-            <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex flex-col justify-center">
-              <span className="text-[8px] font-black uppercase text-gray-400 tracking-widest block mb-1">AUDIO RECORDING</span>
-              {lastCallDetails.recordingUrl ? (
-                <a
-                  href={lastCallDetails.recordingUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 mt-0.5 transition-all"
-                >
-                  <Headphones className="w-3.5 h-3.5" /> Écouter la session
-                </a>
-              ) : (
-                <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 mt-0.5">Non sauvegardé / Indisponible</span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* The inline "Journal de l'appel / Call Session Log" banner used
+          to be rendered here right after a hangup. It was removed — the
+          rep is now auto-navigated to the Call History tab where the
+          full call-details modal (with AI insights) opens automatically
+          via the `harx:call-saved` event dispatched from the disconnect
+          handler above. */}
     </>
   );
 }

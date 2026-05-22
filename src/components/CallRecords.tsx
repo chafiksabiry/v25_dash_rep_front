@@ -169,6 +169,15 @@ interface CallRecordsProps {
   leadId?: string;
   callValidationFilter?: 'all' | 'approved' | 'pending';
   transactionValidationFilter?: 'all' | 'approved' | 'refused' | 'pending';
+  /** Twilio CallSid of a call that should auto-open in the details modal
+   *  as soon as it lands in the fetched records list. Used by Workspace
+   *  to deep-link the rep into the AI-insights modal right after they
+   *  hang up. */
+  autoOpenSid?: string;
+  /** Called once we've successfully opened the deep-linked modal so the
+   *  parent can clear its `pendingOpenCallSid` state and avoid re-opening
+   *  on subsequent renders. */
+  onAutoOpenHandled?: () => void;
 }
 
 /** Is the AI analyzer still running (or hasn't run yet) for this call? */
@@ -205,7 +214,14 @@ function callOutcomeBadge(
   return map[outcome] || null;
 }
 
-export function CallRecords({ gigId, leadId, callValidationFilter = 'all', transactionValidationFilter = 'all' }: CallRecordsProps) {
+export function CallRecords({
+  gigId,
+  leadId,
+  callValidationFilter = 'all',
+  transactionValidationFilter = 'all',
+  autoOpenSid,
+  onAutoOpenHandled,
+}: CallRecordsProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [callRecords, setCallRecords] = useState<CallRecord[]>([]);
@@ -278,6 +294,77 @@ export function CallRecords({ gigId, leadId, callValidationFilter = 'all', trans
   useEffect(() => {
     fetchCallRecords();
   }, [gigId, leadId]);
+
+  // ── Deep-link a freshly hung-up call into the details modal ──────────
+  //  When `autoOpenSid` flips to a value (set by `Workspace` after the
+  //  `harx:call-saved` event), we force a silent refetch so the new call
+  //  document — written ~7s ago during the disconnect handler — is in
+  //  the records list. Once we find it, we open the modal on the AI
+  //  insights tab (the "Lancer l'analyse IA" view from Image 2) and
+  //  notify the parent so it doesn't re-open the modal on every render.
+  const autoOpenHandledRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (!autoOpenSid) return;
+    if (autoOpenHandledRef.current === autoOpenSid) return;
+
+    // 1. First, kick a silent refetch to pick up the freshly stored call.
+    fetchCallRecords(true);
+
+    // 2. Try to find the matching record. If it's not there yet (e.g. the
+    //    backend write is still catching up), retry a couple of times.
+    let attempts = 0;
+    const tryOpen = () => {
+      attempts += 1;
+      const match = callRecords.find(
+        (r) => r.sid === autoOpenSid || r._id === autoOpenSid
+      );
+      if (match) {
+        autoOpenHandledRef.current = autoOpenSid;
+        setSelectedCall(match);
+        setActiveTab('insights');
+        onAutoOpenHandled?.();
+        return true;
+      }
+      return false;
+    };
+
+    if (tryOpen()) return;
+
+    // Poll every 1.5s for up to ~12s while the call propagates.
+    const interval = setInterval(async () => {
+      await fetchCallRecords(true);
+      if (tryOpen() || attempts >= 8) {
+        clearInterval(interval);
+        // Bail out silently — the auto-poll loop further down will still
+        // refresh the list and the user can open the call manually if it
+        // never showed up.
+        if (attempts >= 8) onAutoOpenHandled?.();
+      }
+    }, 1500);
+
+    return () => clearInterval(interval);
+    // We intentionally exclude `callRecords` from the deps so the effect
+    // only kicks on a new `autoOpenSid`; `tryOpen` reads the latest list
+    // from closure at each interval tick via the silent refetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenSid]);
+
+  // Re-evaluate the match whenever the records list changes so we open
+  // the modal the instant the just-saved call shows up (without waiting
+  // for the next poll tick).
+  useEffect(() => {
+    if (!autoOpenSid) return;
+    if (autoOpenHandledRef.current === autoOpenSid) return;
+    const match = callRecords.find(
+      (r) => r.sid === autoOpenSid || r._id === autoOpenSid
+    );
+    if (match) {
+      autoOpenHandledRef.current = autoOpenSid;
+      setSelectedCall(match);
+      setActiveTab('insights');
+      onAutoOpenHandled?.();
+    }
+  }, [callRecords, autoOpenSid, onAutoOpenHandled]);
 
   // ── Auto-poll while the backend AI analyzer hasn't finished ──────────
   //  The calls backend automatically triggers `analyzeCall` ~3s after the

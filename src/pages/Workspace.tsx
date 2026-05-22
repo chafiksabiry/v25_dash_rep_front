@@ -91,6 +91,10 @@ export function WorkspaceContent() {
 
   const [activeTab, setActiveTab] = useState(urlTab && ['voice', 'calls', 'copilot'].includes(urlTab) ? urlTab : 'voice');
   const [message, setMessage] = useState('');
+  // Twilio CallSid of the call that was just hung-up and persisted. When
+  // set, the Call History tab is auto-opened and `CallRecords` deep-links
+  // the matching call into its details modal.
+  const [pendingOpenCallSid, setPendingOpenCallSid] = useState<string | null>(null);
 
   // Sync activeTab with URL
   useEffect(() => {
@@ -98,6 +102,35 @@ export function WorkspaceContent() {
       setActiveTab(urlTab);
     }
   }, [urlTab]);
+
+  // ── Auto-open the Call History modal after a hangup ──────────────
+  //  `ContactInfo` dispatches `harx:call-saved` once the just-finished
+  //  call is persisted to Mongo. We catch it here, switch to the
+  //  Call History tab, and pass the Twilio SID down to `CallRecords`
+  //  which deep-links the matching record into its details modal
+  //  (the "Lancer l'analyse IA" view from Image 2).
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+      const sid: string | undefined = detail.sid;
+      if (!sid) return;
+      setPendingOpenCallSid(sid);
+      setActiveTab('calls');
+      const params = new URLSearchParams(location.search);
+      params.set('tab', 'calls');
+      navigate(
+        { pathname: location.pathname, search: `?${params.toString()}` },
+        { replace: true }
+      );
+    };
+    window.addEventListener('harx:call-saved', handler as EventListener);
+    return () =>
+      window.removeEventListener('harx:call-saved', handler as EventListener);
+    // We intentionally read `location.pathname` / `.search` inside the
+    // handler so we don't need them as deps (they'd cause re-registration
+    // on every URL change, which is undesirable for a one-shot listener).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate]);
 
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -705,7 +738,12 @@ export function WorkspaceContent() {
       case 'calls':
         return (
           <div className="h-[600px] bg-white/80 backdrop-blur-md rounded-2xl p-5 overflow-y-auto shadow-sm border border-gray-100">
-            <CallRecords gigId={selectedGigId} leadId={urlLeadId || undefined} />
+            <CallRecords
+              gigId={selectedGigId}
+              leadId={urlLeadId || undefined}
+              autoOpenSid={pendingOpenCallSid || undefined}
+              onAutoOpenHandled={() => setPendingOpenCallSid(null)}
+            />
           </div>
         );
 

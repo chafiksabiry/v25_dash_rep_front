@@ -31,8 +31,13 @@ export const useCallStorage = () => {
       if (callData && callData.recording_url_cloudinary) {
         dispatch({ type: 'SET_RECORDING_URL', url: callData.recording_url_cloudinary });
       }
+      // Return the freshly stored record so callers (e.g. ContactInfo's
+      // disconnect handler) can deep-link the just-saved call into the
+      // Call History modal without re-fetching the whole list.
+      return callData;
     } catch (error) {
       console.error('Failed to store call in database:', error);
+      return null;
     }
   }, [state.callState.isRecording, state.transcript]);
 
