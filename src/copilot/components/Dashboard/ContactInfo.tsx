@@ -801,8 +801,10 @@ export function ContactInfo() {
           </div>
         </div>
       </div>
+    </div>
 
       {/* Scheduled Status Indicator */}
+
       {(appointmentAt || callbackAt) && (
         <div className="w-full flex items-center justify-center mt-3 pt-3 border-t border-gray-100 animate-in fade-in duration-200 bg-white/80 border border-gray-100 backdrop-blur-md rounded-2xl py-3 px-5 shadow-sm">
           <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm border ${
@@ -838,5 +840,6 @@ export function ContactInfo() {
           via the `harx:call-saved` event dispatched from the disconnect
           handler above. */}
     </>
+
   );
 }
