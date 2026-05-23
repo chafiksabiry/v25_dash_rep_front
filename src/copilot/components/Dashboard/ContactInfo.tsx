@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useAgent } from '../../contexts/AgentContext';
 import { Device } from '@twilio/voice-sdk';
@@ -38,10 +39,30 @@ export function ContactInfo() {
   const localStreamRef = useRef<MediaStream | null>(null);
   const [transactionOccurred, setTransactionOccurred] = useState<boolean | null>(null);
   const transactionOccurredRef = useRef<boolean | null>(null);
+  const [isVoicemail, setIsVoicemail] = useState<boolean>(false);
+  const isVoicemailRef = useRef<boolean>(false);
+  const [appointmentAt, setAppointmentAt] = useState<string | null>(null);
+  const [callbackAt, setCallbackAt] = useState<string | null>(null);
+  const [showSchedulerPopover, setShowSchedulerPopover] = useState<boolean>(false);
+  const [schedulerType, setSchedulerType] = useState<'appointment' | 'callback' | null>(null);
+  const appointmentAtRef = useRef<string | null>(null);
+  const callbackAtRef = useRef<string | null>(null);
 
   useEffect(() => {
     transactionOccurredRef.current = transactionOccurred;
   }, [transactionOccurred]);
+
+  useEffect(() => {
+    isVoicemailRef.current = isVoicemail;
+  }, [isVoicemail]);
+
+  useEffect(() => {
+    appointmentAtRef.current = appointmentAt;
+  }, [appointmentAt]);
+
+  useEffect(() => {
+    callbackAtRef.current = callbackAt;
+  }, [callbackAt]);
 
   // `showCallSummary` / `lastCallDetails` (the inline "Journal de l'appel"
   // banner) were removed — the rep is now auto-navigated to the Call
@@ -180,6 +201,11 @@ export function ContactInfo() {
 
   const initiateTwilioCall = async () => {
     setTransactionOccurred(null);
+    setIsVoicemail(false);
+    setAppointmentAt(null);
+    setCallbackAt(null);
+    setShowSchedulerPopover(false);
+    setSchedulerType(null);
     /*  console.log("Contact phone number:", contact.phone);
      console.log("Contact object:", contact);
      console.log("Call status at start:", callStatus); */
@@ -299,7 +325,10 @@ export function ContactInfo() {
               recordingStatus,
               gigId,
               companyId,
-              transactionOccurredRef.current
+              transactionOccurredRef.current,
+              isVoicemailRef.current,
+              appointmentAtRef.current || undefined,
+              callbackAtRef.current || undefined
             );
             console.log('✅ Call details saved successfully via disconnect handler');
 
@@ -447,6 +476,17 @@ export function ContactInfo() {
     console.log("Contact phone after ending call:", contact.phone);
   };
 
+  const handleVoicemailCall = async () => {
+    console.log("☎️ Marked as Voicemail/Messagerie - hanging up");
+    setTransactionOccurred(null);
+    setIsVoicemail(true);
+    if (activeConnection) {
+      activeConnection.disconnect();
+    } else {
+      endCall();
+    }
+  };
+
   const handleStartCall = () => {
     initiateTwilioCall();
   };
@@ -511,10 +551,11 @@ export function ContactInfo() {
           `}</style>
         </div>
       )}
-      <div className="bg-white/80 border border-gray-100 backdrop-blur-md rounded-2xl shadow-sm px-5 py-3 flex items-center justify-between mt-2 mb-2">
-        {/* Avatar + Infos */}
-        {/* Avatar + Infos */}
-        <div className="flex items-center space-x-4">
+      <div className="bg-white/80 border border-gray-100 backdrop-blur-md rounded-2xl shadow-sm px-5 py-3 flex flex-col mt-2 mb-2">
+        <div className="flex items-center justify-between w-full">
+          {/* Avatar + Infos */}
+          {/* Avatar + Infos */}
+          <div className="flex items-center space-x-4">
           {leadLoading ? (
             <div className="flex items-center space-x-2">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -561,22 +602,35 @@ export function ContactInfo() {
           <div className="flex-1 flex flex-col items-center">
           {callStatus === 'active' ? (
             <div className="flex flex-col items-center gap-2">
-              <button
-                onClick={endCall}
-                className="w-48 flex items-center justify-center space-x-2 px-3 py-2 rounded-xl font-bold text-base transition-all duration-300 shadow-md bg-red-600 hover:bg-red-700 text-white hover:-translate-y-0.5"
-              >
-                <Phone className="w-4 h-4 mr-2" />
-                End Call
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={endCall}
+                  className="w-48 flex items-center justify-center space-x-2 px-3 py-2 rounded-xl font-bold text-base transition-all duration-300 shadow-md bg-red-600 hover:bg-red-700 text-white hover:-translate-y-0.5"
+                >
+                  <Phone className="w-4.5 h-4.5 mr-2" />
+                  End Call
+                </button>
+                
+                <button
+                  onClick={handleVoicemailCall}
+                  className="px-4 py-2 rounded-xl font-black text-sm transition-all duration-300 shadow-md bg-amber-500 hover:bg-amber-600 text-white hover:-translate-y-0.5 uppercase tracking-wider"
+                  title="Mark as voicemail and end call"
+                >
+                  Messagerie
+                </button>
+              </div>
               
               {/* Transaction Outcome Buttons */}
               <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100">
                 <span className="text-[8px] font-black uppercase text-gray-400 tracking-wider px-1.5">Transaction:</span>
                 <button
                   type="button"
-                  onClick={() => setTransactionOccurred(true)}
+                  onClick={() => {
+                    setIsVoicemail(false);
+                    setTransactionOccurred(true);
+                  }}
                   className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${
-                    transactionOccurred === true
+                    transactionOccurred === true && !isVoicemail
                       ? 'bg-emerald-500 text-white shadow-sm'
                       : 'bg-white hover:bg-gray-100 text-emerald-600 border border-emerald-100'
                   }`}
@@ -585,9 +639,12 @@ export function ContactInfo() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setTransactionOccurred(false)}
+                  onClick={() => {
+                    setIsVoicemail(false);
+                    setTransactionOccurred(false);
+                  }}
                   className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${
-                    transactionOccurred === false
+                    transactionOccurred === false && !isVoicemail
                       ? 'bg-rose-500 text-white shadow-sm'
                       : 'bg-white hover:bg-gray-100 text-rose-600 border border-rose-100'
                   }`}
@@ -617,6 +674,7 @@ export function ContactInfo() {
 
         </div >
         {/* Actions à droite */}
+        {/* Calendar/Scheduler Action */}
         <div className="flex items-center space-x-3 bg-gray-50/50 p-2 rounded-2xl border border-gray-100">
           {/* Mute Toggle */}
           <button 
@@ -647,12 +705,125 @@ export function ContactInfo() {
             </button>
           )}
 
-          {/* Other Actions */}
-          <button className="bg-white border border-gray-200 text-gray-300 p-2.5 rounded-xl cursor-not-allowed opacity-50" title="Coming Soon">
-            <Calendar className="w-4.5 h-4.5" />
-          </button>
+          {/* Calendar/Scheduler Action */}
+          <div className="relative">
+            <button 
+              type="button"
+              onClick={() => {
+                if (callStatus === 'active') {
+                  setShowSchedulerPopover(!showSchedulerPopover);
+                }
+              }}
+              disabled={callStatus !== 'active'}
+              className={`p-2.5 rounded-xl border transition-all shadow-sm ${
+                callStatus !== 'active'
+                  ? 'bg-white border-gray-200 text-gray-300 cursor-not-allowed opacity-50'
+                  : appointmentAt || callbackAt 
+                    ? 'bg-gradient-harx text-white border-harx-600 animate-pulse' 
+                    : 'bg-white text-indigo-500 hover:bg-indigo-50 border-indigo-100'
+              }`}
+              title={callStatus === 'active' ? "Planifier un RDV ou un Rappel" : "Disponible pendant un appel"}
+            >
+              <Calendar className="w-4.5 h-4.5" />
+            </button>
+
+            {showSchedulerPopover && (
+              <div className="absolute bottom-14 right-0 w-80 bg-white border border-gray-150 rounded-2xl shadow-xl p-4 z-[9999] animate-in slide-in-from-bottom-2 duration-200 text-gray-800">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-[10px] font-black uppercase text-gray-900 tracking-wider">Planification</span>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setShowSchedulerPopover(false);
+                      setSchedulerType(null);
+                    }} 
+                    className="text-gray-400 hover:text-gray-600 text-xs font-bold"
+                  >
+                    Fermer
+                  </button>
+                </div>
+
+                {!schedulerType ? (
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSchedulerType('appointment')}
+                      className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold text-gray-700 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-100 transition-all flex items-center gap-2"
+                    >
+                      <span>📅</span> Fixer un Rendez-vous (RDV)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSchedulerType('callback')}
+                      className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold text-gray-700 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-100 transition-all flex items-center gap-2"
+                    >
+                      <span>📞</span> Planifier un Rappel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <span className="text-[10px] font-black uppercase text-indigo-600">
+                      {schedulerType === 'appointment' ? 'Date & Heure du RDV' : 'Date & Heure du Rappel'}
+                    </span>
+                    <input
+                      type="datetime-local"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 text-gray-900"
+                      onChange={(e) => {
+                        if (schedulerType === 'appointment') {
+                          setAppointmentAt(e.target.value);
+                          setCallbackAt(null);
+                        } else {
+                          setCallbackAt(e.target.value);
+                          setAppointmentAt(null);
+                        }
+                        setShowSchedulerPopover(false);
+                        setSchedulerType(null);
+                        setTransactionOccurred(null);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setSchedulerType(null)}
+                      className="text-left text-[10px] text-gray-400 hover:text-gray-600 font-bold underline"
+                    >
+                      Retour
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Scheduled Status Indicator */}
+      {(appointmentAt || callbackAt) && (
+        <div className="w-full flex items-center justify-center mt-3 pt-3 border-t border-gray-100 animate-in fade-in duration-200 bg-white/80 border border-gray-100 backdrop-blur-md rounded-2xl py-3 px-5 shadow-sm">
+          <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm border ${
+            appointmentAt 
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+          }`}>
+            <span>{appointmentAt ? '📅 RDV fixé :' : '📞 Rappel programmé :'}</span>
+            <span className="font-extrabold">{new Date(appointmentAt || callbackAt!).toLocaleString('fr-FR', {
+              day: 'numeric',
+              month: 'long',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setAppointmentAt(null);
+                setCallbackAt(null);
+              }}
+              className="ml-2 font-bold text-red-500 hover:text-red-700 underline text-[9px] uppercase tracking-wider"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* The inline "Journal de l'appel / Call Session Log" banner used
           to be rendered here right after a hangup. It was removed — the

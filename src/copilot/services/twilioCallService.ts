@@ -10,6 +10,9 @@ export interface CallStorageData {
   gigId?: string;
   companyId?: string;
   transactionOccurred?: boolean | null;
+  isVoicemail?: boolean;
+  appointmentAt?: string;
+  callbackAt?: string;
 }
 
 export class TwilioCallService {
@@ -61,7 +64,10 @@ export class TwilioCallService {
         transcript: formattedTranscript,
         gigId: data.gigId,
         companyId: data.companyId,
-        transactionOccurred: data.transactionOccurred
+        transactionOccurred: data.transactionOccurred,
+        isVoicemail: data.isVoicemail,
+        appointmentAt: data.appointmentAt,
+        callbackAt: data.callbackAt
       });
 
       console.log('📝 Call stored in DB:', (callInDB.data as any)._id);
