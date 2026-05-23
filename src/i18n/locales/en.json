@@ -56,7 +56,16 @@
     "aiInsights": "AI Insights",
     "executiveSummary": "Executive Summary",
     "detailedAnalysis": "Detailed Analysis",
-    "closeDetails": "Close Details"
+    "closeDetails": "Close Details",
+    "metrics": {
+      "fluency": "Agent Fluency",
+      "sentiment": "Sentiment Analysis",
+      "fraud": "Fraud Detection",
+      "coherence": "Script Coherence",
+      "argumentation": "Argumentation Quality",
+      "adherence": "Script Adherence",
+      "transaction": "Transaction Analysis"
+    }
   },
   "workspace": {
     "title": "Workspace",

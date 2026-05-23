@@ -222,7 +222,7 @@ export function CallRecords({
   autoOpenSid,
   onAutoOpenHandled,
 }: CallRecordsProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [callRecords, setCallRecords] = useState<CallRecord[]>([]);
   const [selectedCall, setSelectedCall] = useState<CallRecord | null>(null);
@@ -903,10 +903,10 @@ export function CallRecords({
                             <div className="bg-gradient-to-br from-slate-50 to-white rounded-[32px] p-8 border border-slate-100 shadow-inner">
                               <p className="text-xl font-bold text-slate-800 leading-relaxed italic relative">
                                 <span className="absolute -left-4 -top-4 text-emerald-200 text-6xl font-serif opacity-50">&quot;</span>
-                                {/* Prefer the persisted ai_summary; fall back to the rubric's overall feedback. */}
-                                {selectedCall.ai_summary ||
-                                  selectedCall.ai_call_score?.overall?.feedback ||
-                                  'Analyse en cours...'}
+                                {/* Prefer the bilingual persisted ai_summary; fall back to bilingual overall feedback. */}
+                                {i18n.language === 'en'
+                                  ? (selectedCall.ai_summary_en || selectedCall.ai_call_score?.overall?.feedback_en || selectedCall.ai_summary || selectedCall.ai_call_score?.overall?.feedback || 'Analysis in progress...')
+                                  : (selectedCall.ai_summary_fr || selectedCall.ai_call_score?.overall?.feedback_fr || selectedCall.ai_summary || selectedCall.ai_call_score?.overall?.feedback || 'Analyse en cours...')}
                                 <span className="text-emerald-200 text-6xl font-serif opacity-50 ml-1 leading-none align-bottom">&quot;</span>
                               </p>
                             </div>
@@ -949,27 +949,35 @@ export function CallRecords({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {[
-                            { label: 'Agent Fluency', key: "Agent fluency", icon: Globe, color: 'emerald' },
-                            { label: 'Sentiment Analysis', key: "Sentiment analysis", icon: ActivityIcon, color: 'blue' },
-                            { label: 'Fraud Detection', key: "Fraud detection", icon: ShieldAlert, color: 'rose' },
-                            { label: 'Script Coherence', key: "Script coherence", icon: ShieldCheck, color: 'indigo' },
-                            { label: 'Argumentation Quality', key: "Argumentation", icon: TrendingUp, color: 'amber' },
-                            { label: 'Script Adherence', key: "Script adherence", icon: BookOpen, color: 'violet' },
-                            { label: 'Transaction Analysis', key: "Transaction analysis", icon: TrendingUp, color: 'emerald' }
+                            { label: t('calls.metrics.fluency', 'Agent Fluency'), key: "Agent fluency", icon: Globe, color: 'emerald' },
+                            { label: t('calls.metrics.sentiment', 'Sentiment Analysis'), key: "Sentiment analysis", icon: ActivityIcon, color: 'blue' },
+                            { label: t('calls.metrics.fraud', 'Fraud Detection'), key: "Fraud detection", icon: ShieldAlert, color: 'rose' },
+                            { label: t('calls.metrics.coherence', 'Script Coherence'), key: "Script coherence", icon: ShieldCheck, color: 'indigo' },
+                            { label: t('calls.metrics.argumentation', 'Argumentation Quality'), key: "Argumentation", icon: TrendingUp, color: 'amber' },
+                            { label: t('calls.metrics.adherence', 'Script Adherence'), key: "Script adherence", icon: BookOpen, color: 'violet' },
+                            { label: t('calls.metrics.transaction', 'Transaction Analysis'), key: "Transaction analysis", icon: TrendingUp, color: 'emerald' }
                           ].map((metric, mIdx) => {
                             const metricData = selectedCall.ai_call_score?.[metric.key];
                             if (!metricData && metric.key === "Script adherence") return null;
-                            const score = metricData?.score || 0;
-                            const scoreColorClass = score >= 80 ? 'text-emerald-600 bg-emerald-50' :
-                              score >= 50 ? 'text-amber-600 bg-amber-50' :
+
+                            const isFraudMetric = metric.key === "Fraud detection";
+                            const originalScore = metricData?.score || 0;
+                            const score = isFraudMetric ? (100 - originalScore) : originalScore;
+
+                            const scoreColorClass = originalScore >= 80 ? 'text-emerald-600 bg-emerald-50' :
+                              originalScore >= 50 ? 'text-amber-600 bg-amber-50' :
                                 'text-rose-600 bg-rose-50';
-                            // Binary verdict: prefer the persisted `passed`
-                            // boolean (written by analyzeCall), fall back to
-                            // the threshold for legacy calls.
+
                             const passed =
                               typeof metricData?.passed === 'boolean'
                                 ? metricData.passed
-                                : score >= 50;
+                                : originalScore >= 50;
+
+                            const displayedPassed = isFraudMetric ? (passed ? 'No' : 'Yes') : (passed ? 'Yes' : 'No');
+
+                            const rawFeedback = i18n.language === 'en'
+                              ? (metricData?.feedback_en || metricData?.feedback || '')
+                              : (metricData?.feedback_fr || metricData?.feedback || '');
 
                             return (
                               <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl shadow-slate-200/20 hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500 flex flex-col h-full group">
@@ -981,10 +989,6 @@ export function CallRecords({
                                     <div className={`px-4 py-2 rounded-2xl text-xl font-black shadow-sm border border-transparent ${scoreColorClass}`}>
                                       {score}%
                                     </div>
-                                    {/* Yes / No verdict — single source of
-                                        truth for the binary read of this
-                                        rubric, persisted server-side as
-                                        ai_call_score[key].passed */}
                                     <span
                                       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
                                         passed
@@ -998,7 +1002,7 @@ export function CallRecords({
                                       ) : (
                                         <X className="w-3 h-3" />
                                       )}
-                                      {passed ? 'Yes' : 'No'}
+                                      {displayedPassed}
                                     </span>
                                   </div>
                                 </div>
@@ -1010,11 +1014,11 @@ export function CallRecords({
 
                                 <div className="flex-1">
                                   <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-slate-50/50 rounded-2xl p-5 border border-slate-50 group-hover:bg-white group-hover:border-slate-100 transition-all">
-                                    {metricData?.feedback?.split('"').map((part, i) =>
+                                    {rawFeedback.split('"').map((part, i) =>
                                       i % 2 === 1 ? (
                                         <span key={i} className="bg-amber-100/50 text-amber-900 font-bold px-1 rounded border-b-2 border-amber-200 italic">&quot;{part}&quot;</span>
                                       ) : part
-                                    ) || 'Analyse détaillée indisponible.'}
+                                    ) || (i18n.language === 'en' ? 'Detailed analysis unavailable.' : 'Analyse détaillée indisponible.')}
                                   </div>
                                 </div>
                               </div>

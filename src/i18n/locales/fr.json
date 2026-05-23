@@ -56,7 +56,16 @@
     "aiInsights": "Analyses IA",
     "executiveSummary": "Résumé Exécutif",
     "detailedAnalysis": "Analyse Détaillée",
-    "closeDetails": "Fermer les détails"
+    "closeDetails": "Fermer les détails",
+    "metrics": {
+      "fluency": "Élocution Agent",
+      "sentiment": "Sentiment Client",
+      "fraud": "Détection de Fraude",
+      "coherence": "Cohérence Script",
+      "argumentation": "Qualité Argumentation",
+      "adherence": "Adhérence au Script",
+      "transaction": "Analyse de Vente"
+    }
   },
   "workspace": {
     "title": "Espace de Travail",
