@@ -91,7 +91,7 @@ export interface CallRecord {
     | 'argued_interested'
     | 'refusal'
     | 'not_interested'
-    | 'already_insured'
+    | 'already_equipped'
     | 'voicemail'
     | 'no_answer'
     | 'busy'
@@ -202,7 +202,7 @@ function callOutcomeBadge(
     argued_interested:  { label: 'Argumenté',    tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
     refusal:            { label: 'Refus',        tone: 'bg-rose-50 text-rose-700 border-rose-200' },
     not_interested:     { label: 'Pas intéressé', tone: 'bg-amber-50 text-amber-700 border-amber-200' },
-    already_insured:    { label: 'Déjà assuré',  tone: 'bg-blue-50 text-blue-700 border-blue-200' },
+    already_equipped:   { label: 'Déjà équipé',  tone: 'bg-blue-50 text-blue-700 border-blue-200' },
     voicemail:          { label: 'Messagerie',   tone: 'bg-slate-50 text-slate-600 border-slate-200' },
     no_answer:          { label: 'Non décroché', tone: 'bg-slate-50 text-slate-600 border-slate-200' },
     busy:               { label: 'Occupé',       tone: 'bg-slate-50 text-slate-600 border-slate-200' },
@@ -1015,6 +1015,76 @@ export function CallRecords({
                                         <span key={i} className="bg-amber-100/50 text-amber-900 font-bold px-1 rounded border-b-2 border-amber-200 italic">&quot;{part}&quot;</span>
                                       ) : part
                                     ) || 'Analyse détaillée indisponible.'}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Statuts et Réponses Prospect Section */}
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-4 px-4 pt-4">
+                          <div className="h-px flex-1 bg-slate-200/60"></div>
+                          <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Statuts & Réponses Prospect</h5>
+                          <div className="h-px flex-1 bg-slate-200/60"></div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {[
+                            { label: 'Pas intéressé', key: "PAS INTÉRESSÉS", icon: ShieldAlert, color: 'rose' },
+                            { label: 'Pas au courant', key: "PAS AU COURANT", icon: Globe, color: 'blue' },
+                            { label: 'Déjà équipé / Fourni', key: "DÉJÀ ÉQUIPÉS", icon: ShieldCheck, color: 'indigo' },
+                            { label: 'Prise de RDV', key: "RDV", icon: Calendar, color: 'emerald' },
+                            { label: 'À plus tard / Rappel', key: "A plus tard", icon: Clock, color: 'amber' }
+                          ].map((metric, mIdx) => {
+                            const metricData = selectedCall.ai_call_score?.[metric.key];
+                            if (!metricData) return null;
+                            const score = metricData?.score || 0;
+                            const scoreColorClass = score >= 50 ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-50';
+                            const passed = typeof metricData?.passed === 'boolean' ? metricData.passed : score >= 50;
+
+                            return (
+                              <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl shadow-slate-200/20 hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500 flex flex-col h-full group">
+                                <div className="flex justify-between items-start mb-8">
+                                  <div className={`w-14 h-14 rounded-2xl bg-${metric.color}-50 text-${metric.color}-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500`}>
+                                    <metric.icon className="w-7 h-7" />
+                                  </div>
+                                  <div className="text-right flex flex-col items-end gap-2">
+                                    <div className={`px-4 py-2 rounded-2xl text-xs font-black shadow-sm border border-transparent ${scoreColorClass}`}>
+                                      {passed ? 'Détecté' : 'Non détecté'} ({score}%)
+                                    </div>
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                        passed
+                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                          : 'bg-slate-50 text-slate-500 border-slate-100'
+                                      }`}
+                                      title={passed ? 'Détecté par l\'IA' : 'Non détecté par l\'IA'}
+                                    >
+                                      {passed ? (
+                                        <Check className="w-3 h-3" />
+                                      ) : (
+                                        <X className="w-3 h-3" />
+                                      )}
+                                      {passed ? 'Oui' : 'Non'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <h5 className="text-[12px] font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                  <span className={`w-1.5 h-4 bg-${metric.color}-500 rounded-full`}></span>
+                                  {metric.label}
+                                </h5>
+
+                                <div className="flex-1">
+                                  <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-slate-50/50 rounded-2xl p-5 border border-slate-50 group-hover:bg-white group-hover:border-slate-100 transition-all">
+                                    {metricData?.feedback?.split('"').map((part, i) =>
+                                      i % 2 === 1 ? (
+                                        <span key={i} className="bg-amber-100/50 text-amber-900 font-bold px-1 rounded border-b-2 border-amber-200 italic">&quot;{part}&quot;</span>
+                                      ) : part
+                                    ) || 'Analyse indisponible.'}
                                   </div>
                                 </div>
                               </div>
