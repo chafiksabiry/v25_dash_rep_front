@@ -686,22 +686,23 @@ export function CallRecords({
       </div>
 
       {/* Modal Detail View */}
+      {/* Modal Detail View */}
       {selectedCall && createPortal(
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 md:p-6 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setSelectedCall(null)}></div>
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => setSelectedCall(null)}></div>
 
-          <div className="relative bg-white w-full md:max-w-4xl h-[95vh] md:h-auto max-h-[95vh] md:max-h-[85vh] rounded-[24px] md:rounded-[32px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-white/20">
+          <div className="relative bg-white w-full md:max-w-5xl h-[92vh] md:h-[88vh] max-h-[92vh] md:max-h-[88vh] rounded-[24px] md:rounded-[36px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-slate-100/80">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-              <div className="flex justify-between items-start md:block flex-1">
+            <div className="px-4 py-4 md:px-8 md:py-5 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10 shrink-0">
+              <div className="flex justify-between items-start md:items-center w-full md:w-auto flex-1">
                 <div>
-                  <h2 className="text-base font-black text-slate-900 uppercase tracking-widest">
+                  <h2 className="text-sm md:text-base font-black text-slate-900 uppercase tracking-widest leading-snug">
                     {selectedCall.lead?.First_Name ? `${selectedCall.lead.First_Name} ${selectedCall.lead.Last_Name || ''}`.trim() : 'Call Details'}
                   </h2>
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5 italic">
                     {new Date(selectedCall.startTime || selectedCall.createdAt).toLocaleString()} • {selectedCall.duration ? `${Math.floor(selectedCall.duration / 60)}m ${selectedCall.duration % 60}s` : '0s'}
                   </p>
-                  <div className="flex items-center gap-1.5 mt-0.5 opacity-60">
+                  <div className="flex items-center gap-1.5 mt-1 opacity-60">
                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-1.5 py-0.5 rounded-md">
                       Call ID: {typeof selectedCall._id === 'object' ? (selectedCall._id as any).$oid : selectedCall._id}
                     </span>
@@ -718,7 +719,7 @@ export function CallRecords({
                 </div>
               </div>
 
-              <div className="w-full md:w-auto md:flex-1 max-w-md">
+              <div className="w-full md:w-auto md:flex-1 max-w-full md:max-w-md shrink-0">
                 {(() => {
                   const recordingUrl = selectedCall.recording_url_cloudinary || selectedCall.recording_url;
                   if (!recordingUrl) return <div className="text-[10px] font-black text-slate-400 uppercase text-center py-2 bg-slate-100/50 rounded-xl italic">No recording</div>;
@@ -728,7 +729,7 @@ export function CallRecords({
               </div>
 
               {/* Close button on desktop */}
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => setSelectedCall(null)}
                   className="p-2 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-900 rounded-xl border border-slate-100 transition-all shadow-sm"
@@ -738,9 +739,9 @@ export function CallRecords({
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100">
-              <div className="flex items-center gap-4">
+            {/* Tabs & Status Header */}
+            <div className="px-4 py-3 md:px-8 md:py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 bg-white shrink-0">
+              <div className="flex items-center gap-3 overflow-x-auto whitespace-nowrap scrollbar-none pb-1 lg:pb-0">
                 <button
                   onClick={() => setActiveTab('transcript')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'transcript' ? 'bg-gradient-harx text-white shadow-lg shadow-harx-500/20' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
@@ -757,7 +758,7 @@ export function CallRecords({
                 </button>
               </div>
 
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3 md:gap-4">
                 <div className="flex items-center gap-1.5">
                   <div className="flex items-center gap-1.5 text-slate-400" title="Appel">
                     <Phone className="w-4 h-4" />
@@ -828,18 +829,18 @@ export function CallRecords({
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50/20 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-slate-50/20 custom-scrollbar">
               {activeTab === 'transcript' ? (
                 <div className="max-w-4xl mx-auto space-y-6">
                   {selectedCall.transcript && selectedCall.transcript.length > 0 ? (
                     selectedCall.transcript.map((t, i) => (
-                      <div key={i} className={`flex gap-4 ${t.speaker?.toLowerCase().includes('agent') ? 'flex-row' : 'flex-row-reverse'}`}>
-                        <div className={`flex flex-col max-w-[75%] ${t.speaker?.toLowerCase().includes('agent') ? 'items-start' : 'items-end'}`}>
-                          <div className="flex items-center gap-2 mb-1.5 px-2">
+                      <div key={i} className={`flex gap-3 sm:gap-4 ${t.speaker?.toLowerCase().includes('agent') ? 'flex-row' : 'flex-row-reverse'}`}>
+                        <div className={`flex flex-col max-w-[85%] sm:max-w-[75%] ${t.speaker?.toLowerCase().includes('agent') ? 'items-start' : 'items-end'}`}>
+                          <div className="flex items-center gap-2 mb-1 px-2">
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.speaker}</span>
                             <span className="text-[9px] font-bold text-slate-300">{t.timestamp}</span>
                           </div>
-                          <div className={`px-5 py-4 rounded-3xl text-sm font-medium leading-relaxed ${t.speaker?.toLowerCase().includes('agent')
+                          <div className={`px-4 py-3 sm:px-5 sm:py-4 rounded-[20px] sm:rounded-3xl text-sm font-medium leading-relaxed ${t.speaker?.toLowerCase().includes('agent')
                             ? 'bg-white text-slate-700 rounded-tl-none border border-slate-100 shadow-sm'
                             : 'bg-gradient-harx text-white rounded-tr-none shadow-lg shadow-harx-500/20'
                             }`}>
@@ -863,7 +864,7 @@ export function CallRecords({
                   )}
                 </div>
               ) : (
-                <div className="max-w-5xl mx-auto space-y-10 pb-4">
+                <div className="max-w-5xl mx-auto space-y-8 pb-4">
                   {(!selectedCall.ai_call_score || !selectedCall.ai_call_score.overall?.score) ? (
                     <div className="py-10 text-center flex flex-col items-center justify-center gap-4">
                       <p className="text-slate-400 font-bold uppercase tracking-widest text-xs italic">
@@ -882,43 +883,43 @@ export function CallRecords({
                     <>
                       {/* Executive Summary Section - Now at the Top */}
                       <div className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-[40px] blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
-                        <div className="relative bg-white rounded-[40px] border border-emerald-100/50 shadow-2xl shadow-emerald-500/5 p-10 overflow-hidden">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-[28px] sm:rounded-[40px] blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
+                        <div className="relative bg-white rounded-[28px] sm:rounded-[40px] border border-emerald-100/50 shadow-2xl shadow-emerald-500/5 p-6 sm:p-10 overflow-hidden">
                           <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full -mr-40 -mt-40 blur-3xl"></div>
 
                           <div className="relative z-10">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-8">
-                              <div className="flex items-center gap-6">
-                                <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                                  <Star className="w-8 h-8" />
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-6 sm:mb-8">
+                              <div className="flex items-center gap-4 sm:gap-6">
+                                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
+                                  <Star className="w-6 h-6 sm:w-8 sm:h-8" />
                                 </div>
                                 <div>
-                                  <h4 className="text-2xl font-black text-slate-900 uppercase tracking-widest">{t('calls.executiveSummary')}</h4>
-                                  <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mt-1 opacity-80">Audit Global de Performance</p>
+                                  <h4 className="text-lg sm:text-2xl font-black text-slate-900 uppercase tracking-widest">{t('calls.executiveSummary')}</h4>
+                                  <p className="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase tracking-widest mt-0.5 sm:mt-1 opacity-80">Audit Global de Performance</p>
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-4 bg-slate-50/80 px-6 py-4 rounded-3xl border border-slate-100 shadow-sm">
+                              <div className="flex items-center gap-4 bg-slate-50/80 px-4 py-3 sm:px-6 sm:py-4 rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm self-start sm:self-auto">
                                 <div className="text-right">
-                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Score Global</p>
-                                  <div className="text-4xl font-black text-slate-900 leading-none">
-                                    {selectedCall.ai_call_score?.overall?.score || 0}<span className="text-xl text-slate-400">%</span>
+                                  <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Score Global</p>
+                                  <div className="text-2xl sm:text-4xl font-black text-slate-900 leading-none">
+                                    {selectedCall.ai_call_score?.overall?.score || 0}<span className="text-base sm:text-xl text-slate-400">%</span>
                                   </div>
                                 </div>
-                                <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
-                                  <TrendingUp className={`w-6 h-6 ${(selectedCall.ai_call_score?.overall?.score || 0) >= 70 ? 'text-emerald-500' : 'text-rose-500'}`} />
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+                                  <TrendingUp className={`w-5 h-5 sm:w-6 sm:h-6 ${(selectedCall.ai_call_score?.overall?.score || 0) >= 70 ? 'text-emerald-500' : 'text-rose-500'}`} />
                                 </div>
                               </div>
                             </div>
 
-                            <div className="bg-gradient-to-br from-slate-50 to-white rounded-[32px] p-8 border border-slate-100 shadow-inner">
-                              <p className="text-xl font-bold text-slate-800 leading-relaxed italic relative">
-                                <span className="absolute -left-4 -top-4 text-emerald-200 text-6xl font-serif opacity-50">&quot;</span>
+                            <div className="bg-gradient-to-br from-slate-50 to-white rounded-[20px] sm:rounded-[32px] p-5 sm:p-8 border border-slate-100 shadow-inner">
+                              <p className="text-base sm:text-xl font-bold text-slate-800 leading-relaxed italic relative">
+                                <span className="absolute -left-2 -top-4 sm:-left-4 sm:-top-4 text-emerald-200 text-4xl sm:text-6xl font-serif opacity-50">&quot;</span>
                                 {/* Prefer the bilingual persisted ai_summary; fall back to bilingual overall feedback. */}
                                 {i18n.language === 'en'
                                   ? (selectedCall.ai_summary_en || selectedCall.ai_call_score?.overall?.feedback_en || selectedCall.ai_summary || selectedCall.ai_call_score?.overall?.feedback || 'Analysis in progress...')
                                   : (selectedCall.ai_summary_fr || selectedCall.ai_call_score?.overall?.feedback_fr || selectedCall.ai_summary || selectedCall.ai_call_score?.overall?.feedback || 'Analyse en cours...')}
-                                <span className="text-emerald-200 text-6xl font-serif opacity-50 ml-1 leading-none align-bottom">&quot;</span>
+                                <span className="text-emerald-200 text-4xl sm:text-6xl font-serif opacity-50 ml-1 leading-none align-bottom">&quot;</span>
                               </p>
                             </div>
                           </div>
@@ -929,18 +930,13 @@ export function CallRecords({
                       <div className="space-y-6">
                         <div className="flex items-center gap-4 px-4">
                           <div className="h-px flex-1 bg-slate-200/60"></div>
-                          <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{t('calls.detailedAnalysis')}</h5>
+                          <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">{t('calls.detailedAnalysis')}</h5>
                           <div className="h-px flex-1 bg-slate-200/60"></div>
                         </div>
 
-                        {/* Voicemail / non-productive banner.
-                            The backend neutralises every per-rubric score
-                            (→ "No" everywhere) when the LLM detects that
-                            the call never reached a human. Without this
-                            banner the grid below would look like a failing
-                            rep instead of "no contact, nothing to grade". */}
+                        {/* Voicemail / non-productive banner */}
                         {selectedCall.callOutcome === 'voicemail' && (
-                          <div className="rounded-3xl border border-amber-200 bg-amber-50/70 px-6 py-5 flex items-start gap-4">
+                          <div className="rounded-[24px] border border-amber-200 bg-amber-50/70 px-5 py-4 sm:px-6 sm:py-5 flex items-start gap-4">
                             <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                               <ShieldAlert className="w-5 h-5" />
                             </div>
@@ -958,83 +954,98 @@ export function CallRecords({
                           </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {[
-                            { label: t('calls.metrics.fluency', 'Agent Fluency'), key: "Agent fluency", icon: Globe, color: 'emerald' },
-                            { label: t('calls.metrics.sentiment', 'Sentiment Analysis'), key: "Sentiment analysis", icon: ActivityIcon, color: 'blue' },
-                            { label: t('calls.metrics.fraud', 'Fraud Detection'), key: "Fraud detection", icon: ShieldAlert, color: 'rose' },
-                            { label: t('calls.metrics.coherence', 'Script Coherence'), key: "Script coherence", icon: ShieldCheck, color: 'indigo' },
-                            { label: t('calls.metrics.argumentation', 'Argumentation Quality'), key: "Argumentation", icon: TrendingUp, color: 'amber' },
-                            { label: t('calls.metrics.adherence', 'Script Adherence'), key: "Script adherence", icon: BookOpen, color: 'violet' },
-                            { label: t('calls.metrics.transaction', 'Transaction Analysis'), key: "Transaction analysis", icon: TrendingUp, color: 'emerald' }
-                          ].map((metric, mIdx) => {
-                            const metricData = selectedCall.ai_call_score?.[metric.key];
-                            if (!metricData && metric.key === "Script adherence") return null;
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                          {(() => {
+                            const colorMap: Record<string, { bg: string, text: string, bgBar: string }> = {
+                              emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', bgBar: 'bg-emerald-500' },
+                              blue: { bg: 'bg-blue-50', text: 'text-blue-600', bgBar: 'bg-blue-500' },
+                              rose: { bg: 'bg-rose-50', text: 'text-rose-600', bgBar: 'bg-rose-500' },
+                              indigo: { bg: 'bg-indigo-50', text: 'text-indigo-600', bgBar: 'bg-indigo-500' },
+                              amber: { bg: 'bg-amber-50', text: 'text-amber-600', bgBar: 'bg-amber-500' },
+                              violet: { bg: 'bg-violet-50', text: 'text-violet-600', bgBar: 'bg-violet-500' },
+                            };
 
-                            const isFraudMetric = metric.key === "Fraud detection";
-                            const originalScore = metricData?.score || 0;
-                            const score = isFraudMetric ? (100 - originalScore) : originalScore;
+                            return [
+                              { label: t('calls.metrics.fluency', 'Agent Fluency'), key: "Agent fluency", icon: Globe, color: 'emerald' },
+                              { label: t('calls.metrics.sentiment', 'Sentiment Analysis'), key: "Sentiment analysis", icon: ActivityIcon, color: 'blue' },
+                              { label: t('calls.metrics.fraud', 'Fraud Detection'), key: "Fraud detection", icon: ShieldAlert, color: 'rose' },
+                              { label: t('calls.metrics.coherence', 'Script Coherence'), key: "Script coherence", icon: ShieldCheck, color: 'indigo' },
+                              { label: t('calls.metrics.argumentation', 'Argumentation Quality'), key: "Argumentation", icon: TrendingUp, color: 'amber' },
+                              { label: t('calls.metrics.adherence', 'Script Adherence'), key: "Script adherence", icon: BookOpen, color: 'violet' },
+                              { label: t('calls.metrics.transaction', 'Transaction Analysis'), key: "Transaction analysis", icon: TrendingUp, color: 'emerald' }
+                            ].map((metric, mIdx) => {
+                              const metricData = selectedCall.ai_call_score?.[metric.key];
+                              if (!metricData && metric.key === "Script adherence") return null;
 
-                            const scoreColorClass = originalScore >= 80 ? 'text-emerald-600 bg-emerald-50' :
-                              originalScore >= 50 ? 'text-amber-600 bg-amber-50' :
-                                'text-rose-600 bg-rose-50';
+                              const isFraudMetric = metric.key === "Fraud detection";
+                              const originalScore = metricData?.score || 0;
+                              const score = isFraudMetric ? (100 - originalScore) : originalScore;
 
-                            const passed =
-                              typeof metricData?.passed === 'boolean'
-                                ? metricData.passed
-                                : originalScore >= 50;
+                              const scoreColorClass = originalScore >= 80 ? 'text-emerald-600 bg-emerald-50' :
+                                originalScore >= 50 ? 'text-amber-600 bg-amber-50' :
+                                  'text-rose-600 bg-rose-50';
 
-                            const displayedPassed = isFraudMetric ? (passed ? 'No' : 'Yes') : (passed ? 'Yes' : 'No');
+                              const passed =
+                                typeof metricData?.passed === 'boolean'
+                                  ? metricData.passed
+                                  : originalScore >= 50;
 
-                            const rawFeedback = i18n.language === 'en'
-                              ? (metricData?.feedback_en || metricData?.feedback || '')
-                              : (metricData?.feedback_fr || metricData?.feedback || '');
+                              const displayedPassed = isFraudMetric ? (passed ? 'No' : 'Yes') : (passed ? 'Yes' : 'No');
 
-                            return (
-                              <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl shadow-slate-200/20 hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500 flex flex-col h-full group">
-                                <div className="flex justify-between items-start mb-8">
-                                  <div className={`w-14 h-14 rounded-2xl bg-${metric.color}-50 text-${metric.color}-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500`}>
-                                    <metric.icon className="w-7 h-7" />
-                                  </div>
-                                  <div className="text-right flex flex-col items-end gap-2">
-                                    <div className={`px-4 py-2 rounded-2xl text-xl font-black shadow-sm border border-transparent ${scoreColorClass}`}>
-                                      {score}%
+                              const rawFeedback = i18n.language === 'en'
+                                ? (metricData?.feedback_en || metricData?.feedback || '')
+                                : (metricData?.feedback_fr || metricData?.feedback || '');
+
+                              const theme = colorMap[metric.color] || { bg: 'bg-slate-50', text: 'text-slate-600', bgBar: 'bg-slate-500' };
+
+                              return (
+                                <div key={mIdx} className="bg-white rounded-[24px] sm:rounded-[32px] p-5 sm:p-6 border border-slate-100 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+                                  <div>
+                                    <div className="flex justify-between items-start mb-4 sm:mb-6">
+                                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl ${theme.bg} ${theme.text} flex items-center justify-center shadow-sm shrink-0`}>
+                                        <metric.icon className="w-5 h-5 sm:w-6 sm:h-6" />
+                                      </div>
+                                      <div className="text-right flex flex-col items-end gap-1.5">
+                                        <div className={`px-2.5 py-1 rounded-xl text-base sm:text-lg font-black shadow-sm border border-transparent ${scoreColorClass}`}>
+                                          {score}%
+                                        </div>
+                                        <span
+                                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
+                                            passed
+                                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                              : 'bg-rose-50 text-rose-700 border-rose-200'
+                                          }`}
+                                          title={passed ? 'Critère validé' : 'Critère non validé'}
+                                        >
+                                          {passed ? (
+                                            <Check className="w-2.5 h-2.5" />
+                                          ) : (
+                                            <X className="w-2.5 h-2.5" />
+                                          )}
+                                          {displayedPassed}
+                                        </span>
+                                      </div>
                                     </div>
-                                    <span
-                                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                                        passed
-                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                          : 'bg-rose-50 text-rose-700 border-rose-200'
-                                      }`}
-                                      title={passed ? 'Critère validé' : 'Critère non validé'}
-                                    >
-                                      {passed ? (
-                                        <Check className="w-3 h-3" />
-                                      ) : (
-                                        <X className="w-3 h-3" />
-                                      )}
-                                      {displayedPassed}
-                                    </span>
+
+                                    <h5 className="text-[11px] sm:text-[12px] font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                      <span className={`w-1.5 h-3.5 ${theme.bgBar} rounded-full`}></span>
+                                      {metric.label}
+                                    </h5>
+                                  </div>
+
+                                  <div className="mt-2">
+                                    <div className="text-xs sm:text-[13px] font-medium text-slate-600 leading-relaxed bg-slate-50/50 rounded-xl sm:rounded-2xl p-4 border border-slate-50 group-hover:bg-white group-hover:border-slate-100 transition-all max-h-[160px] overflow-y-auto custom-scrollbar italic">
+                                      {rawFeedback ? rawFeedback.split('"').map((part, i) =>
+                                        i % 2 === 1 ? (
+                                          <span key={i} className="bg-amber-100/50 text-amber-900 font-bold px-1 rounded border-b border-amber-200 not-italic">&quot;{part}&quot;</span>
+                                        ) : part
+                                      ) : (i18n.language === 'en' ? 'Detailed analysis unavailable.' : 'Analyse détaillée indisponible.')}
+                                    </div>
                                   </div>
                                 </div>
-
-                                <h5 className="text-[12px] font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                  <span className={`w-1.5 h-4 bg-${metric.color}-500 rounded-full`}></span>
-                                  {metric.label}
-                                </h5>
-
-                                <div className="flex-1">
-                                  <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-slate-50/50 rounded-2xl p-5 border border-slate-50 group-hover:bg-white group-hover:border-slate-100 transition-all">
-                                    {rawFeedback.split('"').map((part, i) =>
-                                      i % 2 === 1 ? (
-                                        <span key={i} className="bg-amber-100/50 text-amber-900 font-bold px-1 rounded border-b-2 border-amber-200 italic">&quot;{part}&quot;</span>
-                                      ) : part
-                                    ) || (i18n.language === 'en' ? 'Detailed analysis unavailable.' : 'Analyse détaillée indisponible.')}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            });
+                          })()}
                         </div>
                       </div>
 
@@ -1042,69 +1053,83 @@ export function CallRecords({
                       <div className="space-y-6">
                         <div className="flex items-center gap-4 px-4 pt-4">
                           <div className="h-px flex-1 bg-slate-200/60"></div>
-                          <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Statuts & Réponses Prospect</h5>
+                          <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">Statuts & Réponses Prospect</h5>
                           <div className="h-px flex-1 bg-slate-200/60"></div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {[
-                            { label: 'Pas intéressé', key: "PAS INTÉRESSÉS", icon: ShieldAlert, color: 'rose' },
-                            { label: 'Pas au courant', key: "PAS AU COURANT", icon: Globe, color: 'blue' },
-                            { label: 'Déjà équipé / Fourni', key: "DÉJÀ ÉQUIPÉS", icon: ShieldCheck, color: 'indigo' },
-                            { label: 'Prise de RDV', key: "RDV", icon: Calendar, color: 'emerald' },
-                            { label: 'À plus tard / Rappel', key: "A plus tard", icon: Clock, color: 'amber' }
-                          ].map((metric, mIdx) => {
-                            const metricData = selectedCall.ai_call_score?.[metric.key];
-                            if (!metricData) return null;
-                            const score = metricData?.score || 0;
-                            const scoreColorClass = score >= 50 ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-50';
-                            const passed = typeof metricData?.passed === 'boolean' ? metricData.passed : score >= 50;
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                          {(() => {
+                            const colorMap: Record<string, { bg: string, text: string, bgBar: string }> = {
+                              emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', bgBar: 'bg-emerald-500' },
+                              blue: { bg: 'bg-blue-50', text: 'text-blue-600', bgBar: 'bg-blue-500' },
+                              rose: { bg: 'bg-rose-50', text: 'text-rose-600', bgBar: 'bg-rose-500' },
+                              indigo: { bg: 'bg-indigo-50', text: 'text-indigo-600', bgBar: 'bg-indigo-500' },
+                              amber: { bg: 'bg-amber-50', text: 'text-amber-600', bgBar: 'bg-amber-500' },
+                            };
 
-                            return (
-                              <div key={mIdx} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl shadow-slate-200/20 hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500 flex flex-col h-full group">
-                                <div className="flex justify-between items-start mb-8">
-                                  <div className={`w-14 h-14 rounded-2xl bg-${metric.color}-50 text-${metric.color}-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500`}>
-                                    <metric.icon className="w-7 h-7" />
-                                  </div>
-                                  <div className="text-right flex flex-col items-end gap-2">
-                                    <div className={`px-4 py-2 rounded-2xl text-xs font-black shadow-sm border border-transparent ${scoreColorClass}`}>
-                                      {passed ? 'Détecté' : 'Non détecté'} ({score}%)
+                            return [
+                              { label: 'Pas intéressé', key: "PAS INTÉRESSÉS", icon: ShieldAlert, color: 'rose' },
+                              { label: 'Pas au courant', key: "PAS AU COURANT", icon: Globe, color: 'blue' },
+                              { label: 'Déjà équipé / Fourni', key: "DÉJÀ ÉQUIPÉS", icon: ShieldCheck, color: 'indigo' },
+                              { label: 'Prise de RDV', key: "RDV", icon: Calendar, color: 'emerald' },
+                              { label: 'À plus tard / Rappel', key: "A plus tard", icon: Clock, color: 'amber' }
+                            ].map((metric, mIdx) => {
+                              const metricData = selectedCall.ai_call_score?.[metric.key];
+                              if (!metricData) return null;
+                              const score = metricData?.score || 0;
+                              const scoreColorClass = score >= 50 ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-50';
+                              const passed = typeof metricData?.passed === 'boolean' ? metricData.passed : score >= 50;
+
+                              const theme = colorMap[metric.color] || { bg: 'bg-slate-50', text: 'text-slate-600', bgBar: 'bg-slate-500' };
+
+                              return (
+                                <div key={mIdx} className="bg-white rounded-[24px] sm:rounded-[32px] p-5 sm:p-6 border border-slate-100 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+                                  <div>
+                                    <div className="flex justify-between items-start mb-4 sm:mb-6">
+                                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl ${theme.bg} ${theme.text} flex items-center justify-center shadow-sm shrink-0`}>
+                                        <metric.icon className="w-5 h-5 sm:w-6 sm:h-6" />
+                                      </div>
+                                      <div className="text-right flex flex-col items-end gap-1.5">
+                                        <div className={`px-2.5 py-1 rounded-xl text-[10px] sm:text-xs font-black shadow-sm border border-transparent ${scoreColorClass}`}>
+                                          {passed ? 'Détecté' : 'Non détecté'} ({score}%)
+                                        </div>
+                                        <span
+                                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
+                                            passed
+                                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                              : 'bg-slate-50 text-slate-500 border-slate-100'
+                                          }`}
+                                          title={passed ? 'Détecté par l\'IA' : 'Non détecté par l\'IA'}
+                                        >
+                                          {passed ? (
+                                            <Check className="w-2.5 h-2.5" />
+                                          ) : (
+                                            <X className="w-2.5 h-2.5" />
+                                          )}
+                                          {passed ? 'Oui' : 'Non'}
+                                        </span>
+                                      </div>
                                     </div>
-                                    <span
-                                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                                        passed
-                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                          : 'bg-slate-50 text-slate-500 border-slate-100'
-                                      }`}
-                                      title={passed ? 'Détecté par l\'IA' : 'Non détecté par l\'IA'}
-                                    >
-                                      {passed ? (
-                                        <Check className="w-3 h-3" />
-                                      ) : (
-                                        <X className="w-3 h-3" />
-                                      )}
-                                      {passed ? 'Oui' : 'Non'}
-                                    </span>
+
+                                    <h5 className="text-[11px] sm:text-[12px] font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                      <span className={`w-1.5 h-3.5 ${theme.bgBar} rounded-full`}></span>
+                                      {metric.label}
+                                    </h5>
+                                  </div>
+
+                                  <div className="mt-2">
+                                    <div className="text-xs sm:text-[13px] font-medium text-slate-600 leading-relaxed bg-slate-50/50 rounded-xl sm:rounded-2xl p-4 border border-slate-50 group-hover:bg-white group-hover:border-slate-100 transition-all max-h-[160px] overflow-y-auto custom-scrollbar italic">
+                                      {metricData?.feedback ? metricData.feedback.split('"').map((part, i) =>
+                                        i % 2 === 1 ? (
+                                          <span key={i} className="bg-amber-100/50 text-amber-900 font-bold px-1 rounded border-b border-amber-200 not-italic">&quot;{part}&quot;</span>
+                                        ) : part
+                                      ) : 'Analyse indisponible.'}
+                                    </div>
                                   </div>
                                 </div>
-
-                                <h5 className="text-[12px] font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                  <span className={`w-1.5 h-4 bg-${metric.color}-500 rounded-full`}></span>
-                                  {metric.label}
-                                </h5>
-
-                                <div className="flex-1">
-                                  <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-slate-50/50 rounded-2xl p-5 border border-slate-50 group-hover:bg-white group-hover:border-slate-100 transition-all">
-                                    {metricData?.feedback?.split('"').map((part, i) =>
-                                      i % 2 === 1 ? (
-                                        <span key={i} className="bg-amber-100/50 text-amber-900 font-bold px-1 rounded border-b-2 border-amber-200 italic">&quot;{part}&quot;</span>
-                                      ) : part
-                                    ) || 'Analyse indisponible.'}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            });
+                          })()}
                         </div>
                       </div>
                     </>
@@ -1114,10 +1139,10 @@ export function CallRecords({
 
             </div>
 
-            <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+            <div className="px-4 py-4 md:px-8 md:py-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 shrink-0">
               <button
                 onClick={() => setSelectedCall(null)}
-                className="px-8 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-800 transition-all shadow-lg"
+                className="px-6 py-2.5 sm:px-8 sm:py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-800 transition-all shadow-lg active:scale-95 shrink-0"
               >
                 {t('calls.closeDetails')}
               </button>
