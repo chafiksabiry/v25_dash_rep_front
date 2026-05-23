@@ -476,16 +476,7 @@ export function ContactInfo() {
     console.log("Contact phone after ending call:", contact.phone);
   };
 
-  const handleVoicemailCall = async () => {
-    console.log("☎️ Marked as Voicemail/Messagerie - hanging up");
-    setTransactionOccurred(null);
-    setIsVoicemail(true);
-    if (activeConnection) {
-      activeConnection.disconnect();
-    } else {
-      endCall();
-    }
-  };
+  // NOTE: Voicemail is now auto-detected by Twilio AMD — no manual handler needed.
 
   const handleStartCall = () => {
     initiateTwilioCall();
@@ -617,13 +608,7 @@ export function ContactInfo() {
                   End Call
                 </button>
                 
-                <button
-                  onClick={handleVoicemailCall}
-                  className="px-4 py-2 rounded-xl font-black text-sm transition-all duration-300 shadow-md bg-amber-500 hover:bg-amber-600 text-white hover:-translate-y-0.5 uppercase tracking-wider"
-                  title="Mark as voicemail and end call"
-                >
-                  Messagerie
-                </button>
+                {/* Messagerie button removed — voicemail is auto-detected by Twilio AMD */}
               </div>
               
               {/* Transaction Outcome Buttons — hidden for voicemail / RDV / Rappel states */}
