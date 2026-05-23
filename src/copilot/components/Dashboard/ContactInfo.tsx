@@ -626,38 +626,38 @@ export function ContactInfo() {
                 </button>
               </div>
               
-              {/* Transaction Outcome Buttons */}
-              <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100">
-                <span className="text-[8px] font-black uppercase text-gray-400 tracking-wider px-1.5">Transaction:</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsVoicemail(false);
-                    setTransactionOccurred(true);
-                  }}
-                  className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${
-                    transactionOccurred === true && !isVoicemail
-                      ? 'bg-emerald-500 text-white shadow-sm'
-                      : 'bg-white hover:bg-gray-100 text-emerald-600 border border-emerald-100'
-                  }`}
-                >
-                  OK
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsVoicemail(false);
-                    setTransactionOccurred(false);
-                  }}
-                  className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${
-                    transactionOccurred === false && !isVoicemail
-                      ? 'bg-rose-500 text-white shadow-sm'
-                      : 'bg-white hover:bg-gray-100 text-rose-600 border border-rose-100'
-                  }`}
-                >
-                  Refus
-                </button>
-              </div>
+              {/* Transaction Outcome Buttons — hidden for voicemail / RDV / Rappel states */}
+              {!isVoicemail && !appointmentAt && !callbackAt && (
+                <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100">
+                  <span className="text-[8px] font-black uppercase text-gray-400 tracking-wider px-1.5">Transaction:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTransactionOccurred(true);
+                    }}
+                    className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${
+                      transactionOccurred === true
+                        ? 'bg-emerald-500 text-white shadow-sm'
+                        : 'bg-white hover:bg-gray-100 text-emerald-600 border border-emerald-100'
+                    }`}
+                  >
+                    OK
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTransactionOccurred(false);
+                    }}
+                    className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${
+                      transactionOccurred === false
+                        ? 'bg-rose-500 text-white shadow-sm'
+                        : 'bg-white hover:bg-gray-100 text-rose-600 border border-rose-100'
+                    }`}
+                  >
+                    Refus
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <button
