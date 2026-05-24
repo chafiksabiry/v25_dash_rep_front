@@ -128,6 +128,32 @@ export function IframeWorkspace() {
     return pairs;
   }, [rawReplicas]);
 
+  // True only when the gig has real script content to display.
+  // When false, the script sidebar stays hidden and the iframe uses full width.
+  const hasScriptContent = useMemo(() => {
+    if (scriptLoading) return false;
+    if (!activeScript || scripts.length === 0) return false;
+
+    const stages = activeScript?.playbook?.stages;
+    if (Array.isArray(stages) && stages.length > 0) {
+      return stages.some(
+        (stage: any) =>
+          Boolean(String(stage?.introReplica || '').trim()) ||
+          (Array.isArray(stage?.options) && stage.options.length > 0) ||
+          (Array.isArray(stage?.checklist) && stage.checklist.length > 0) ||
+          (Array.isArray(stage?.reminders) && stage.reminders.length > 0)
+      );
+    }
+
+    const scriptItems = activeScript?.script;
+    return (
+      Array.isArray(scriptItems) &&
+      scriptItems.some((item: any) => Boolean(String(item?.replica || '').trim()))
+    );
+  }, [scriptLoading, activeScript, scripts.length]);
+
+  const shouldShowScriptPanel = showScript && hasScriptContent;
+
   // Reset active phase and replica when script changes
   useEffect(() => {
     setActivePhaseIndex(0);
@@ -297,18 +323,20 @@ export function IframeWorkspace() {
                   </div>
                 )}
 
-                {/* Toggle Script Display Button */}
-                <button
-                  onClick={() => setShowScript(!showScript)}
-                  className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1 border shrink-0 ${
-                    showScript 
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 border-indigo-400/50 text-white shadow-lg shadow-indigo-500/20' 
-                      : 'bg-indigo-950/40 hover:bg-indigo-900/40 border-indigo-500/30 text-indigo-300'
-                  }`}
-                >
-                  <Sparkles className={`w-3 h-3 ${showScript ? 'animate-pulse' : ''}`} />
-                  {showScript ? 'Masquer le Script' : 'Afficher le Script'}
-                </button>
+                {/* Toggle Script Display Button — only when a script exists */}
+                {hasScriptContent && (
+                  <button
+                    onClick={() => setShowScript(!showScript)}
+                    className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1 border shrink-0 ${
+                      showScript 
+                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 border-indigo-400/50 text-white shadow-lg shadow-indigo-500/20' 
+                        : 'bg-indigo-950/40 hover:bg-indigo-900/40 border-indigo-500/30 text-indigo-300'
+                    }`}
+                  >
+                    <Sparkles className={`w-3 h-3 ${showScript ? 'animate-pulse' : ''}`} />
+                    {showScript ? 'Masquer le Script' : 'Afficher le Script'}
+                  </button>
+                )}
 
                 {/* Close Drawer Button */}
                 <button
@@ -326,7 +354,7 @@ export function IframeWorkspace() {
           {/* Main Workspace Body Content */}
           <div className="flex-1 flex flex-col xl:flex-row min-h-0 overflow-hidden bg-slate-900">
             {/* Sidebar Area: Script displayed with custom toggle */}
-            {showScript && (
+            {shouldShowScriptPanel && (
               <div className="w-full xl:w-[420px] shrink-0 max-h-[40vh] xl:max-h-full overflow-y-auto custom-scrollbar bg-slate-900/60 backdrop-blur-2xl border-b xl:border-b-0 xl:border-r border-white/10 flex flex-col p-4 md:p-6 animate-in slide-in-from-top xl:slide-in-from-left duration-500 shadow-[inset_-10px_0_30px_rgba(0,0,0,0.2)] z-10">
                 <div className="flex flex-col gap-4">
                   
@@ -346,8 +374,7 @@ export function IframeWorkspace() {
 
 
                   {/* Combined Agent-Lead responsive pairs or Premium Interactive Cockpit */}
-                  {scripts.length > 0 ? (
-                    hasInteractiveStages ? (
+                  {hasInteractiveStages ? (
                       (() => {
                         const currentStage = interactiveStages[activePhaseIndex];
                         if (!currentStage) return null;
@@ -487,15 +514,7 @@ export function IframeWorkspace() {
                                       })}
                                     </div>
                                   </div>
-                                ) : (
-                                  <div className="h-full min-h-[140px] border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center p-5 text-center bg-slate-900/20">
-                                    <Bot className="w-5 h-5 text-indigo-400/30 mb-2 animate-bounce" />
-                                    <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest block">GUIDANCE ACTIVE HARX</span>
-                                    <p className="text-[9px] text-slate-500 font-bold leading-normal max-w-xs mt-1">
-                                      Écoutez attentivement le prospect et formulez votre réplique avec conviction et chaleur.
-                                    </p>
-                                  </div>
-                                )}
+                                ) : null}
                               </div>
                             </div>
 
@@ -640,18 +659,7 @@ export function IframeWorkspace() {
                           </div>
                         );
                       })()
-                    ) : (
-                      <div className="text-center py-8 bg-slate-900 border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center">
-                        <Sparkles className="w-6 h-6 text-slate-600 mb-2 opacity-50" />
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Aucune réplique disponible pour cette étape</p>
-                      </div>
-                    )
-                  ) : (
-                    <div className="text-center py-8 bg-slate-900 border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center">
-                      <Sparkles className="w-6 h-6 text-slate-600 mx-auto mb-2 opacity-50" />
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Aucun script disponible</p>
-                    </div>
-                  )}
+                    ) : null}
                 </div>
               </div>
             )}
