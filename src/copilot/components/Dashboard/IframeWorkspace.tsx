@@ -45,6 +45,31 @@ export function IframeWorkspace() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [iframeKey, setIframeKey] = useState(0);
 
+  // Active script iframe selection (when playbook.iframes is populated)
+  const [activeScriptIframeIdx, setActiveScriptIframeIdx] = useState(0);
+
+  // Normalized list of iframes coming from the active script's playbook.
+  // Falls back to an empty array so consumers can safely use `.length`.
+  const scriptIframes = useMemo(() => {
+    const raw = activeScript?.playbook?.iframes;
+    if (!Array.isArray(raw)) return [] as Array<{ id?: string; label?: string; url: string }>;
+    return raw
+      .filter((it: any) => it && typeof it.url === 'string' && it.url.trim().length > 0)
+      .map((it: any, idx: number) => ({
+        id: it.id || `script-iframe-${idx}`,
+        label: (it.label && String(it.label).trim()) || `Lien ${idx + 1}`,
+        url: String(it.url).trim()
+      }));
+  }, [activeScript]);
+
+  const hasScriptIframes = scriptIframes.length > 0;
+  const hasMultipleScriptIframes = scriptIframes.length > 1;
+
+  // Reset the active script iframe when the underlying script changes
+  useEffect(() => {
+    setActiveScriptIframeIdx(0);
+  }, [activeScript?._id]);
+
   // Script visibility state
   const [showScript, setShowScript] = useState(true);
 
@@ -114,7 +139,10 @@ export function IframeWorkspace() {
     setActiveReplicaIndex(0);
   }, [activePhaseIndex]);
 
-  // Sync iframe source when active tab changes, appending gigId and leadId dynamically
+  // Sync iframe source when active tab changes, appending gigId and leadId dynamically.
+  // Script iframes (defined inside the playbook) take precedence over the legacy
+  // hard-coded OGGODATA/Zoho/custom shortcuts so the cockpit always reflects the
+  // tools the company chose for the active gig.
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const leadId = searchParams.get('leadId') || sessionStorage.getItem('activeLeadId') || '';
@@ -139,6 +167,12 @@ export function IframeWorkspace() {
       }
     };
 
+    if (hasScriptIframes) {
+      const safeIdx = Math.min(activeScriptIframeIdx, scriptIframes.length - 1);
+      setCurrentIframeUrl(appendParams(scriptIframes[safeIdx].url));
+      return;
+    }
+
     if (activeTab === 'oggodata') {
       setCurrentIframeUrl(appendParams('https://www.oggodata.com/'));
     } else if (activeTab === 'zoho') {
@@ -146,7 +180,7 @@ export function IframeWorkspace() {
     } else {
       setCurrentIframeUrl(appendParams(customUrl));
     }
-  }, [activeTab, customUrl, location.search]);
+  }, [activeTab, customUrl, location.search, hasScriptIframes, scriptIframes, activeScriptIframeIdx]);
 
   const handleCustomUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -624,6 +658,89 @@ export function IframeWorkspace() {
 
             {/* Main Area: CRM Iframe Workspace */}
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-950 relative z-0">
+
+              {/* Script iframe tab bar - only rendered when the playbook ships
+                  more than one iframe so a single-iframe script stays clean. */}
+              {hasMultipleScriptIframes && (
+                <div className="shrink-0 bg-slate-900/80 backdrop-blur-md border-b border-white/10 px-3 py-2 flex items-center gap-2 overflow-x-auto custom-scrollbar">
+                  <div className="flex items-center gap-1.5 shrink-0 mr-1">
+                    <Globe className="w-3 h-3 text-indigo-300" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-300">Outils du script</span>
+                  </div>
+                  <div className="h-4 w-px bg-white/10 mx-1 shrink-0" />
+                  {scriptIframes.map((iframe, idx) => {
+                    const isActive = idx === activeScriptIframeIdx;
+                    return (
+                      <button
+                        key={iframe.id}
+                        onClick={() => {
+                          setActiveScriptIframeIdx(idx);
+                          setIframeKey(prev => prev + 1);
+                        }}
+                        title={iframe.url}
+                        className={`shrink-0 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 border ${
+                          isActive
+                            ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 border-transparent text-white shadow-lg shadow-purple-500/20'
+                            : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        <Globe className={`w-3 h-3 ${isActive ? 'animate-pulse' : ''}`} />
+                        <span className="truncate max-w-[160px]">{iframe.label}</span>
+                      </button>
+                    );
+                  })}
+                  <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={handleRefresh}
+                      title="Recharger la page"
+                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                    </button>
+                    <a
+                      href={currentIframeUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      title="Ouvrir dans un nouvel onglet"
+                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all flex items-center"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Single-iframe header strip - keeps refresh / open-in-new-tab
+                  affordances available without showing tabs. */}
+              {hasScriptIframes && !hasMultipleScriptIframes && (
+                <div className="shrink-0 bg-slate-900/80 backdrop-blur-md border-b border-white/10 px-3 py-2 flex items-center gap-2">
+                  <Globe className="w-3 h-3 text-indigo-300" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-indigo-300 truncate">
+                    {scriptIframes[0].label}
+                  </span>
+                  <span className="text-[9px] text-slate-500 font-bold truncate hidden md:inline">
+                    • {scriptIframes[0].url}
+                  </span>
+                  <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={handleRefresh}
+                      title="Recharger la page"
+                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                    </button>
+                    <a
+                      href={currentIframeUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      title="Ouvrir dans un nouvel onglet"
+                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all flex items-center"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+              )}
 
               <div className="flex-1 relative bg-white min-h-0">
                 <iframe
