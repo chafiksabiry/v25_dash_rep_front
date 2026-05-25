@@ -667,15 +667,17 @@ export function CallRecords({
                         </>
                       )}
 
-                      <div className="flex items-center gap-2 ml-2">
-                        <button
-                          onClick={() => openCallDetails(record, 'insights')}
-                          className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100 transition-all"
-                          title="View Details"
-                        >
-                          <Brain className="w-5 h-5" />
-                        </button>
-                      </div>
+                      {record.status?.toLowerCase() === 'completed' && (
+                        <div className="flex items-center gap-2 ml-2">
+                          <button
+                            onClick={() => openCallDetails(record, 'insights')}
+                            className="p-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100 transition-all"
+                            title="View Details"
+                          >
+                            <Brain className="w-5 h-5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
