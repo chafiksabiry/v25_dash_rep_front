@@ -45,13 +45,10 @@ export default defineConfig(({ mode }) => {
       cssCodeSplit: false,
       rollupOptions: {
         output: {
-          // 'es' (not 'umd') is required for dynamic imports to produce
-          // separate chunks. UMD inlines everything into one big file,
-          // which prevents code splitting and blows the 4 s single-spa
-          // bootstrap budget on the host shell.
-          format: 'es',
-          entryFileNames: 'index.js',
-          chunkFileNames: 'chunk-[name].js',
+          format: 'umd',
+          name: 'repdashboard',
+          entryFileNames: 'index.js', // Fixed name for the JS entry file
+          chunkFileNames: 'chunk-[name].js', // Fixed name for chunks
           assetFileNames: (assetInfo) => {
             // Ensure CSS files are consistently named
             const isCss = assetInfo.name?.endsWith('.css') || (assetInfo.names && assetInfo.names.some(n => n.endsWith('.css')));
