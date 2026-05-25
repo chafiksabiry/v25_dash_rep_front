@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { TrendingUp, DollarSign, Clock, Phone, Target, Award, Briefcase, CheckCircle2, Wallet as WalletIcon, Hourglass, Trophy, Flame, CalendarDays, CalendarCheck, CalendarClock, CalendarX, Timer, Filter as FilterIcon, Receipt, XCircle, Inbox } from 'lucide-react';
 import api, { repTransactionsApi, type RepTransactionRow } from '../utils/client';
 import { slotApi, type Reservation } from '../services/api/slotApi';
+import { billedMinutesFromSeconds } from '../utils/billingMinutes';
 
 interface DashboardProps {
   profile?: any;
@@ -742,8 +743,7 @@ export function Dashboard({ profile }: DashboardProps) {
                   const isValid = call.valid === true || call.validByAI === true;
                   const contact = call.lead?.name || call.contactName || call.to || call.from || call.phoneNumber || 'Contact inconnu';
                   const durationSec = Number(call.duration || 0);
-                  const mm = Math.floor(durationSec / 60);
-                  const ss = durationSec % 60;
+                  const billedMin = billedMinutesFromSeconds(durationSec);
                   const dateStr = call.startTime || call.createdAt;
                   const cGigId = typeof call.gigId === 'object' ? (call.gigId?._id || call.gigId?.id) : call.gigId;
                   const gigTitle = (typeof call.gigId === 'object' && call.gigId?.title) || (gigsData.find((g: any) => (g._id || g.id) === cGigId)?.title) || '';
@@ -759,7 +759,7 @@ export function Dashboard({ profile }: DashboardProps) {
                           <p className="text-sm font-black text-slate-900 truncate">{contact}</p>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
                             {dateStr ? new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '—'}
-                            {durationSec > 0 && ` · ${mm}m ${ss}s`}
+                            {billedMin > 0 && ` · ${billedMin} min`}
                             {gigTitle && ` · ${gigTitle}`}
                           </p>
                         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { vertexApi, callsApi } from "../utils/client.tsx";
+import { formatBilledMinutesFromSeconds } from '../utils/billingMinutes';
 import { Info, Target, Volume2, BookOpen, User, Phone, Clock, Calendar, CheckCircle, XCircle, FileText, ClipboardList, ArrowRight, ArrowLeft, Play, Pause, ChevronDown, ChevronRight } from 'lucide-react';
 
 // Define the Call interface locally
@@ -371,7 +372,11 @@ function CallReportCard() {
                                         <span className="text-xs text-gray-400 mb-1 uppercase tracking-wider font-medium">Duration</span>
                                         <div className="flex items-center space-x-2">
                                             <Clock className="w-4 h-4 text-gray-400" />
-                                            <span className="text-sm font-medium text-gray-900">{call?.duration ? `${call.duration} sec` : 'N/A'}</span>
+                                            <span className="text-sm font-medium text-gray-900">
+                                              {call?.duration
+                                                ? formatBilledMinutesFromSeconds(call.duration)
+                                                : 'N/A'}
+                                            </span>
                                         </div>
                                     </div>
                                     <div className="flex flex-col">
