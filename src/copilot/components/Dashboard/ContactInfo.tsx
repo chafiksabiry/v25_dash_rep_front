@@ -283,7 +283,13 @@ export function ContactInfo() {
       // Set up event listeners
       conn.on('connect', () => {
         const callSid = conn.parameters?.CallSid;
-        console.log("CallSid:", callSid);
+        console.log("CallSid from connect:", callSid);
+        // For failed calls the 'accept' event never fires (remote never answers),
+        // so we must store the SID here as a fallback so disconnect can save.
+        if (callSid && !callSidRef.current) {
+          callSidRef.current = callSid;
+          setCurrentCallSid(callSid);
+        }
       });
 
       const cleanup = () => {
