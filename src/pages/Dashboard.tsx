@@ -99,11 +99,16 @@ export function Dashboard({ profile }: DashboardProps) {
 
         if (walletRes?.data?.success && walletRes.data.data) {
           const w = walletRes.data.data;
+          const available = Number(w.availableBalance || 0);
           setWalletStats({
-            availableBalance: Number(w.availableBalance || 0),
+            availableBalance: available,
             pendingCommissions: Number(w.pendingCommissions || 0),
             lifetimeEarnings: Number(w.lifetimeEarnings || 0)
           });
+          // Sync to localStorage so TopBar shows the correct balance immediately
+          localStorage.setItem('rep_available_balance', String(available));
+          localStorage.setItem('rep_pending_balance', String(Number(w.pendingCommissions || 0)));
+          window.dispatchEvent(new Event('WALLET_BALANCE_UPDATED'));
         }
         if (ledgerRes?.success && Array.isArray(ledgerRes.data)) {
           setRepLedger(ledgerRes.data);

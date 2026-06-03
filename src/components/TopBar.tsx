@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Menu, Wallet, ChevronDown, UserCircle, LogOut, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getUserInfo, getAgentId } from '../utils/authUtils';
+import { getUserInfo } from '../utils/authUtils';
 import { useAuth } from '../contexts/AuthContext';
 import { LanguageSwitcher } from './ui/LanguageSwitcher';
-import { apiClient } from '../utils/client';
 
 interface TopBarProps {
   isSidebarOpen: boolean;
@@ -42,28 +41,6 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
     const saved = localStorage.getItem('rep_available_balance');
     return saved ? parseFloat(saved) : 0.00;
   });
-
-  // Fetch the real balance on mount using the authenticated apiClient
-  // (has auth token interceptor) so the navbar shows the correct value
-  // immediately after login, without waiting for Wallet.tsx to be visited.
-  useEffect(() => {
-    const fetchBalance = async () => {
-      const agentId = getAgentId();
-      if (!agentId) return;
-      try {
-        const res = await apiClient.get(`/escrow/agent/wallet/${agentId}`);
-        if (res.data?.success) {
-          const available = res.data.data.availableBalance ?? 0;
-          setBalance(available);
-          localStorage.setItem('rep_available_balance', String(available));
-          window.dispatchEvent(new Event('WALLET_BALANCE_UPDATED'));
-        }
-      } catch {
-        // silently ignore — fallback to localStorage value already shown
-      }
-    };
-    fetchBalance();
-  }, []);
 
   useEffect(() => {
     const handleBalanceUpdate = () => {
