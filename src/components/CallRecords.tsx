@@ -6,13 +6,8 @@ import {
   Phone,
   Calendar,
   Brain,
-  PhoneOutgoing,
-  Info,
-  Shield,
   ShieldAlert,
   ShieldCheck,
-  Zap,
-  PlayCircle,
   RefreshCw,
   X,
   Check,
@@ -20,19 +15,17 @@ import {
   MessageSquare,
   Star,
   Globe,
-  Download,
   TrendingUp,
   Activity as ActivityIcon,
   BookOpen,
-  ChevronDown,
   Clock,
   CreditCard,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import api from '../utils/client';
 import { PremiumAudioPlayer } from './PremiumAudioPlayer';
 
 export interface CallRecord {
+  repTransactionCommission: undefined;
   repCallCommission?: number;
   _id: string;
   call_id?: string;
@@ -56,6 +49,7 @@ export interface CallRecord {
     _id?: string;
     validByAI?: boolean;
     validByCompany?: boolean;
+    validByReps?: boolean | null;
     updatedAt?: string;
     valid?: boolean | null;
   } | null;
@@ -74,7 +68,10 @@ export interface CallRecord {
     'Argumentation': { score: number; feedback: string; passed?: boolean };
     'Script adherence'?: { score: number; feedback: string; passed?: boolean };
     'Transaction analysis'?: { score: number; feedback: string; passed?: boolean };
-    overall: { score: number; feedback: string; passed?: boolean };
+    overall: {
+      feedback_fr: string | null | undefined;
+      feedback_en: string | null | undefined; score: number; feedback: string; passed?: boolean 
+};
     transaction_detected?: boolean;
     refusal_detected?: boolean;
   };
@@ -124,6 +121,23 @@ export interface CallRecord {
   updatedAt: Date;
 }
 
+type AiRubricMetricData = {
+  score: number;
+  feedback: string;
+  passed?: boolean;
+  feedback_en?: string;
+  feedback_fr?: string;
+};
+
+function getAiRubricMetric(
+  scores: CallRecord['ai_call_score'] | undefined,
+  key: string
+): AiRubricMetricData | undefined {
+  if (!scores) return undefined;
+  const raw = (scores as Record<string, unknown>)[key];
+  if (!raw || typeof raw !== 'object' || !('score' in raw)) return undefined;
+  return raw as AiRubricMetricData;
+}
 
 interface Lead {
   _id: string;
@@ -223,17 +237,12 @@ export function CallRecords({
   onAutoOpenHandled,
 }: CallRecordsProps) {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const [callRecords, setCallRecords] = useState<CallRecord[]>([]);
   const [selectedCall, setSelectedCall] = useState<CallRecord | null>(null);
   const [activeTab, setActiveTab] = useState<'transcript' | 'insights'>('transcript');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [analyzingCallId, setAnalyzingCallId] = useState<string | null>(null);
-
-  // `silent=true` skips the loading spinner — used by the auto-poll loop so
-  // the user doesn't see the skeleton flash every 5s while the backend's
-  // post-call AI analyzer catches up.
   const fetchCallRecords = async (silent = false) => {
     try {
       const agentId = localStorage.getItem('agentId');
@@ -261,10 +270,6 @@ export function CallRecords({
       const response = await api.calls.analyze(callId);
       if (response.success) {
         if (selectedCall && (selectedCall._id === callId || (selectedCall as any).$oid === callId)) {
-          // The analyzer returns different shapes depending on the path:
-          //   • auto-refused: { validByAI:false, callOutcome, data: <full updated call> }
-          //   • scored:       { validByAI, data: <scores>, transcript }
-          // We merge both shapes so the modal reflects the new lifecycle.
           const isFullDoc =
             response.data && typeof response.data === 'object' && '_id' in response.data;
           const patch: Partial<CallRecord> = isFullDoc
@@ -289,29 +294,15 @@ export function CallRecords({
     }
   };
 
-
-
   useEffect(() => {
     fetchCallRecords();
   }, [gigId, leadId]);
-
-  // ── Deep-link a freshly hung-up call into the details modal ──────────
-  //  When `autoOpenSid` flips to a value (set by `Workspace` after the
-  //  `harx:call-saved` event), we force a silent refetch so the new call
-  //  document — written ~7s ago during the disconnect handler — is in
-  //  the records list. Once we find it, we open the modal on the AI
-  //  insights tab (the "Lancer l'analyse IA" view from Image 2) and
-  //  notify the parent so it doesn't re-open the modal on every render.
   const autoOpenHandledRef = React.useRef<string | null>(null);
   useEffect(() => {
     if (!autoOpenSid) return;
     if (autoOpenHandledRef.current === autoOpenSid) return;
 
-    // 1. First, kick a silent refetch to pick up the freshly stored call.
     fetchCallRecords(true);
-
-    // 2. Try to find the matching record. If it's not there yet (e.g. the
-    //    backend write is still catching up), retry a couple of times.
     let attempts = 0;
     const tryOpen = () => {
       attempts += 1;
@@ -329,29 +320,16 @@ export function CallRecords({
     };
 
     if (tryOpen()) return;
-
-    // Poll every 1.5s for up to ~12s while the call propagates.
     const interval = setInterval(async () => {
       await fetchCallRecords(true);
       if (tryOpen() || attempts >= 8) {
         clearInterval(interval);
-        // Bail out silently — the auto-poll loop further down will still
-        // refresh the list and the user can open the call manually if it
-        // never showed up.
         if (attempts >= 8) onAutoOpenHandled?.();
       }
     }, 1500);
 
     return () => clearInterval(interval);
-    // We intentionally exclude `callRecords` from the deps so the effect
-    // only kicks on a new `autoOpenSid`; `tryOpen` reads the latest list
-    // from closure at each interval tick via the silent refetch.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoOpenSid]);
-
-  // Re-evaluate the match whenever the records list changes so we open
-  // the modal the instant the just-saved call shows up (without waiting
-  // for the next poll tick).
   useEffect(() => {
     if (!autoOpenSid) return;
     if (autoOpenHandledRef.current === autoOpenSid) return;
@@ -365,14 +343,6 @@ export function CallRecords({
       onAutoOpenHandled?.();
     }
   }, [callRecords, autoOpenSid, onAutoOpenHandled]);
-
-  // ── Auto-poll while the backend AI analyzer hasn't finished ──────────
-  //  The calls backend automatically triggers `analyzeCall` ~3s after the
-  //  recording is uploaded (see `twilio.js#saveCallToDB`), so the rep
-  //  shouldn't have to click "Lancer l'analyse IA" or hit the refresh
-  //  button manually. We poll every 5s as long as ≥1 record is still
-  //  pending (status `pending`/`processing` or legacy `validByAI == null`).
-  //  Silent fetches keep the UI calm — no skeletons, no flicker.
   const hasPendingAnalyses = callRecords.some((r) => isAnalysisPending(r));
 
   useEffect(() => {
@@ -383,10 +353,6 @@ export function CallRecords({
     return () => clearInterval(interval);
   }, [hasPendingAnalyses]);
 
-  // Keep the open call-details modal in sync with the auto-poll above: as
-  // soon as the matching record gets scored on the server, refresh the
-  // selected call so the user sees the freshly computed insights without
-  // closing & reopening the modal.
   useEffect(() => {
     if (!selectedCall) return;
     const refreshed = callRecords.find((r) => r._id === selectedCall._id);
@@ -434,7 +400,7 @@ export function CallRecords({
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-black text-slate-900 uppercase tracking-widest">{t('calls.recordsTitle')}</h2>
         <button
-          onClick={fetchCallRecords}
+          onClick={() => void fetchCallRecords()}
           disabled={loading}
           className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
         >
@@ -919,8 +885,8 @@ export function CallRecords({
                                 <span className="absolute -left-2 -top-4 sm:-left-4 sm:-top-4 text-emerald-200 text-4xl sm:text-6xl font-serif opacity-50">&quot;</span>
                                 {/* Prefer the bilingual persisted ai_summary; fall back to bilingual overall feedback. */}
                                 {i18n.language === 'en'
-                                  ? (selectedCall.ai_summary_en || selectedCall.ai_call_score?.overall?.feedback_en || selectedCall.ai_summary || selectedCall.ai_call_score?.overall?.feedback || 'Analysis in progress...')
-                                  : (selectedCall.ai_summary_fr || selectedCall.ai_call_score?.overall?.feedback_fr || selectedCall.ai_summary || selectedCall.ai_call_score?.overall?.feedback || 'Analyse en cours...')}
+                                  ? (selectedCall.ai_summary || selectedCall.ai_call_score?.overall?.feedback_en || selectedCall.ai_summary || selectedCall.ai_call_score?.overall?.feedback || 'Analysis in progress...')
+                                  : (selectedCall.ai_summary || selectedCall.ai_call_score?.overall?.feedback_fr || selectedCall.ai_summary || selectedCall.ai_call_score?.overall?.feedback || 'Analyse en cours...')}
                                 <span className="text-emerald-200 text-4xl sm:text-6xl font-serif opacity-50 ml-1 leading-none align-bottom">&quot;</span>
                               </p>
                             </div>
@@ -958,7 +924,7 @@ export function CallRecords({
                               { label: t('calls.metrics.adherence', 'Script Adherence'), key: "Script adherence", icon: BookOpen, color: 'violet' },
                               { label: t('calls.metrics.transaction', 'Transaction Analysis'), key: "Transaction analysis", icon: TrendingUp, color: 'emerald' }
                             ].map((metric, mIdx) => {
-                              const metricData = selectedCall.ai_call_score?.[metric.key];
+                              const metricData = getAiRubricMetric(selectedCall.ai_call_score, metric.key);
                               if (!metricData && metric.key === "Script adherence") return null;
 
                               const isFraudMetric = metric.key === "Fraud detection";
@@ -1019,7 +985,7 @@ export function CallRecords({
 
                                   <div className="mt-2">
                                     <div className="text-xs sm:text-[13px] font-medium text-slate-600 leading-relaxed bg-slate-50/50 rounded-xl sm:rounded-2xl p-4 border border-slate-50 group-hover:bg-white group-hover:border-slate-100 transition-all max-h-[160px] overflow-y-auto custom-scrollbar italic">
-                                      {rawFeedback ? rawFeedback.split('"').map((part, i) =>
+                                      {rawFeedback ? rawFeedback.split('"').map((part: string, i: number) =>
                                         i % 2 === 1 ? (
                                           <span key={i} className="bg-amber-100/50 text-amber-900 font-bold px-1 rounded border-b border-amber-200 not-italic">&quot;{part}&quot;</span>
                                         ) : part
@@ -1058,7 +1024,7 @@ export function CallRecords({
                               { label: 'Prise de RDV', key: "RDV", icon: Calendar, color: 'emerald' },
                               { label: 'À plus tard / Rappel', key: "A plus tard", icon: Clock, color: 'amber' }
                             ].map((metric, mIdx) => {
-                              const metricData = selectedCall.ai_call_score?.[metric.key];
+                              const metricData = getAiRubricMetric(selectedCall.ai_call_score, metric.key);
                               if (!metricData) return null;
                               const score = metricData?.score || 0;
                               const scoreColorClass = score >= 50 ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-50';
@@ -1103,7 +1069,7 @@ export function CallRecords({
 
                                   <div className="mt-2">
                                     <div className="text-xs sm:text-[13px] font-medium text-slate-600 leading-relaxed bg-slate-50/50 rounded-xl sm:rounded-2xl p-4 border border-slate-50 group-hover:bg-white group-hover:border-slate-100 transition-all max-h-[160px] overflow-y-auto custom-scrollbar italic">
-                                      {metricData?.feedback ? metricData.feedback.split('"').map((part, i) =>
+                                      {metricData?.feedback ? metricData.feedback.split('"').map((part: string, i: number) =>
                                         i % 2 === 1 ? (
                                           <span key={i} className="bg-amber-100/50 text-amber-900 font-bold px-1 rounded border-b border-amber-200 not-italic">&quot;{part}&quot;</span>
                                         ) : part
