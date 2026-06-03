@@ -25,7 +25,7 @@ import { fetchProfileFromAPI } from './utils/profileUtils';
 import { getRouterBasename } from './utils/routerBasename';
 import { PhaseProtectedRoute } from './components/ProtectedRoute';
 import { getAgentId } from './utils/authUtils';
-import { apiClient } from './utils/client';
+import api from './utils/client';
 
 interface UserProfile {
   onboardingProgress: {
@@ -99,7 +99,7 @@ function AppContent() {
         const agentId = profileData?._id || getAgentId();
         if (agentId) {
           try {
-            const res = await apiClient.get(`/escrow/agent/wallet/${agentId}`);
+            const res = await api.get(`/escrow/agent/wallet/${agentId}`);
             if (res.data?.success) {
               const available = Number(res.data.data.availableBalance ?? 0);
               localStorage.setItem('rep_available_balance', String(available));
