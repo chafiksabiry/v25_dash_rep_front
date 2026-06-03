@@ -24,6 +24,8 @@ import CallReportCard from './components/CallReport';
 import { fetchProfileFromAPI } from './utils/profileUtils';
 import { getRouterBasename } from './utils/routerBasename';
 import { PhaseProtectedRoute } from './components/ProtectedRoute';
+import { getAgentId } from './utils/authUtils';
+import { apiClient } from './utils/client';
 
 interface UserProfile {
   onboardingProgress: {
@@ -94,7 +96,27 @@ function AppContent() {
         setLoading(false);
       }
     };
+
+    // Fetch wallet balance once on app mount so TopBar shows the correct
+    // value immediately regardless of which page the user lands on.
+    const syncWalletBalance = async () => {
+      const agentId = getAgentId();
+      if (!agentId) return;
+      try {
+        const res = await apiClient.get(`/escrow/agent/wallet/${agentId}`);
+        if (res.data?.success) {
+          const available = Number(res.data.data.availableBalance ?? 0);
+          localStorage.setItem('rep_available_balance', String(available));
+          localStorage.setItem('rep_pending_balance', String(Number(res.data.data.pendingCommissions ?? 0)));
+          window.dispatchEvent(new Event('WALLET_BALANCE_UPDATED'));
+        }
+      } catch {
+        // silently ignore — TopBar keeps its localStorage fallback
+      }
+    };
+
     initializeProfileData();
+    syncWalletBalance();
   }, []);
 
   if (loading) {
