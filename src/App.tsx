@@ -92,31 +92,30 @@ function AppContent() {
         const profileData = await fetchProfileFromAPI();
         setUserProfile(profileData);
         setLoading(false);
+
+        // Fetch wallet balance AFTER profile resolves so we have the correct
+        // agent _id (not the auth userId). profileUtils already wrote it to
+        // localStorage.agentId, but we pass it explicitly to be safe.
+        const agentId = profileData?._id || getAgentId();
+        if (agentId) {
+          try {
+            const res = await apiClient.get(`/escrow/agent/wallet/${agentId}`);
+            if (res.data?.success) {
+              const available = Number(res.data.data.availableBalance ?? 0);
+              localStorage.setItem('rep_available_balance', String(available));
+              localStorage.setItem('rep_pending_balance', String(Number(res.data.data.pendingCommissions ?? 0)));
+              window.dispatchEvent(new Event('WALLET_BALANCE_UPDATED'));
+            }
+          } catch {
+            // silently ignore — TopBar keeps its localStorage fallback
+          }
+        }
       } catch (err) {
         setLoading(false);
       }
     };
 
-    // Fetch wallet balance once on app mount so TopBar shows the correct
-    // value immediately regardless of which page the user lands on.
-    const syncWalletBalance = async () => {
-      const agentId = getAgentId();
-      if (!agentId) return;
-      try {
-        const res = await apiClient.get(`/escrow/agent/wallet/${agentId}`);
-        if (res.data?.success) {
-          const available = Number(res.data.data.availableBalance ?? 0);
-          localStorage.setItem('rep_available_balance', String(available));
-          localStorage.setItem('rep_pending_balance', String(Number(res.data.data.pendingCommissions ?? 0)));
-          window.dispatchEvent(new Event('WALLET_BALANCE_UPDATED'));
-        }
-      } catch {
-        // silently ignore — TopBar keeps its localStorage fallback
-      }
-    };
-
     initializeProfileData();
-    syncWalletBalance();
   }, []);
 
   if (loading) {
