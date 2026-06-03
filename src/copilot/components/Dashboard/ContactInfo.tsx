@@ -31,6 +31,9 @@ export function ContactInfo() {
   const [isRecording, setIsRecording] = useState(true);
   const isRecordingRef = useRef(true);
   const callSidRef = useRef<string | null>(null);
+  // True once the call reaches conn.on('accept') — used to decide whether
+  // to show the blocking "Saving…" overlay (only meaningful for real calls).
+  const callReachedActiveRef = useRef(false);
   const [isCallLoading, setIsCallLoading] = useState(false);
   const [activeConnection, setActiveConnection] = useState<any>(null);
   const [, setActiveDevice] = useState<Device | null>(null);
@@ -220,6 +223,7 @@ export function ContactInfo() {
 
     setIsCallLoading(true);
     setCallStatus('initiating');
+    callReachedActiveRef.current = false;  // reset for each new call attempt
     console.log("Starting Twilio call to:", phoneNumber);
 
     try {
@@ -306,10 +310,14 @@ export function ContactInfo() {
 
         const sidToSave = callSidRef.current;
         const recordingStatus = isRecordingRef.current;
+        const reachedActive = callReachedActiveRef.current;
 
-        // Show the blocking "Saving call…" overlay BEFORE the storeCall
-        // promise resolves so the rep gets immediate feedback.
-        setIsSaving(true);
+        // Only show the blocking overlay when the call actually connected
+        // (reached ringing/accept). If it failed before ringing (bad number,
+        // immediate reject) we save silently in background — no overlay needed.
+        if (reachedActive) {
+          setIsSaving(true);
+        }
 
         try {
           if (sidToSave) {
@@ -364,6 +372,7 @@ export function ContactInfo() {
 
       conn.on('accept', () => {
         console.log("✅ Call accepted");
+        callReachedActiveRef.current = true;  // call reached ringing → show overlay on disconnect
         const Sid = conn.parameters?.CallSid;
         console.log("CallSid recupéré", Sid);
         setCurrentCallSid(Sid);
