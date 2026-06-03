@@ -13,6 +13,7 @@ export interface CallStorageData {
   isVoicemail?: boolean;
   appointmentAt?: string;
   callbackAt?: string;
+  errorCode?: number | null;
 }
 
 export class TwilioCallService {
@@ -35,7 +36,9 @@ export class TwilioCallService {
         userId: data.userId
       });
       const call = (result.data as any).data;
-      console.log("📞 Call details retrieved from Twilio");
+      // Twilio error code for failed calls (21211 = invalid, 21214 = unreachable, 13224 = cannot dial)
+      const resolvedErrorCode = call?.errorCode ?? data.errorCode ?? null;
+      console.log("📞 Call details retrieved from Twilio", call?.status, resolvedErrorCode ? `ErrorCode: ${resolvedErrorCode}` : '');
 
       // Step 3: Fetch recording from Cloudinary if available (ONLY if isRecording is true)
       let cloudinaryRecord = { data: { url: null } };
@@ -67,7 +70,9 @@ export class TwilioCallService {
         transactionOccurred: data.transactionOccurred,
         isVoicemail: data.isVoicemail,
         appointmentAt: data.appointmentAt,
-        callbackAt: data.callbackAt
+        callbackAt: data.callbackAt,
+        // Pass Twilio error code so backend can classify failed calls precisely
+        ErrorCode: resolvedErrorCode ?? undefined,
       });
 
       console.log('📝 Call stored in DB:', (callInDB.data as any)._id);

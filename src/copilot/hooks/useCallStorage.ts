@@ -13,7 +13,8 @@ export const useCallStorage = () => {
     transactionOccurred?: boolean | null,
     isVoicemail?: boolean,
     appointmentAt?: string,
-    callbackAt?: string
+    callbackAt?: string,
+    errorCode?: number
   ) => {
     const agentId = localStorage.getItem('agentId') || ""; 
     const userId = localStorage.getItem('userId') || agentId; // Actual user ID if available
@@ -31,7 +32,8 @@ export const useCallStorage = () => {
         transactionOccurred,
         isVoicemail,
         appointmentAt,
-        callbackAt
+        callbackAt,
+        errorCode,
       });
 
       if (callData && callData.recording_url_cloudinary) {

@@ -39,6 +39,9 @@ export const CallControls: React.FC<CallControlsProps> = ({
   const [callSid, setCallSid] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  // Twilio SDK error code captured from conn.on('error') — passed to storeCall
+  // so the backend can persist it alongside the call and classify it precisely.
+  const [twilioErrorCode, setTwilioErrorCode] = useState<number | null>(null);
 
   const initiateCall = async () => {
     if (!phoneNumber || !agentId) {
@@ -114,15 +117,21 @@ export const CallControls: React.FC<CallControlsProps> = ({
         setConnection(null);
         
         if (callSid && agentId) {
-          await storeCall(callSid, agentId);
+          await storeCall(callSid, agentId, undefined, undefined, undefined,
+            undefined, undefined, undefined, undefined, twilioErrorCode ?? undefined);
         }
       });
 
-      conn.on('error', (error: any) => {
-        console.error("Call error:", error);
-        setError(`Call error: ${error.message}`);
+      conn.on('error', (err: any) => {
+        console.error("Call error:", err);
+        setError(`Call error: ${err.message}`);
         setCallStatus("error");
         onCallStatusChange?.("error");
+        // Capture browser-side Twilio error code (e.g. 31480 = not found / bad number)
+        // as fallback if the REST API doesn't provide a server-side code.
+        if (err?.code) {
+          setTwilioErrorCode(Number(err.code));
+        }
       });
 
     } catch (err: any) {
@@ -142,7 +151,8 @@ export const CallControls: React.FC<CallControlsProps> = ({
       onCallStatusChange?.("ended");
       
       if (callSid && agentId) {
-        await storeCall(callSid, agentId);
+        await storeCall(callSid, agentId, undefined, undefined, undefined,
+          undefined, undefined, undefined, undefined, twilioErrorCode ?? undefined);
       }
     }
   };
