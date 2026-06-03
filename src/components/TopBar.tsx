@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getUserInfo, getAgentId } from '../utils/authUtils';
 import { useAuth } from '../contexts/AuthContext';
 import { LanguageSwitcher } from './ui/LanguageSwitcher';
-import axios from 'axios';
+import { apiClient } from '../utils/client';
 
 interface TopBarProps {
   isSidebarOpen: boolean;
@@ -43,16 +43,15 @@ export function TopBar({ isSidebarOpen, setIsSidebarOpen }: TopBarProps) {
     return saved ? parseFloat(saved) : 0.00;
   });
 
-  // Fetch the real balance from the API on mount so the navbar is correct
+  // Fetch the real balance on mount using the authenticated apiClient
+  // (has auth token interceptor) so the navbar shows the correct value
   // immediately after login, without waiting for Wallet.tsx to be visited.
   useEffect(() => {
     const fetchBalance = async () => {
       const agentId = getAgentId();
       if (!agentId) return;
-      const API_URL = import.meta.env.VITE_API_URL;
-      if (!API_URL) return;
       try {
-        const res = await axios.get(`${API_URL}/escrow/agent/wallet/${agentId}`);
+        const res = await apiClient.get(`/escrow/agent/wallet/${agentId}`);
         if (res.data?.success) {
           const available = res.data.data.availableBalance ?? 0;
           setBalance(available);
